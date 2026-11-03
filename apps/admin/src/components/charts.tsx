@@ -23,12 +23,12 @@ function useWidth<T extends HTMLElement>() {
   return { ref, width };
 }
 
-function niceScale(maxValue: number, ticks = 4) {
-  if (maxValue <= 0) return { max: ticks, step: 1 };
+function niceScale(maxValue: number, ticks = 4, minStep = 1) {
+  if (maxValue <= 0) return { max: ticks * minStep, step: minStep };
   const raw = maxValue / ticks;
   const pow = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => s >= raw) ?? 10 * pow;
-  const niceStep = step < 1 ? 1 : step;
+  const niceStep = step < minStep ? minStep : step;
   return { max: Math.ceil(maxValue / niceStep) * niceStep, step: niceStep };
 }
 
@@ -241,20 +241,45 @@ export function DailyDesignsChart({ data }: { data: DailyDesigns[] }) {
   );
 }
 
-export function NewUsersChart({ data }: { data: { date: string; newUsers: number }[] }) {
+/** Single-series daily line (change over time): no legend, title names the series; table view + keyboard tooltip. */
+export function DailyLineChart({
+  title,
+  subtitle,
+  ariaLabel,
+  valueLabel,
+  columnLabel,
+  data,
+  format = fmtInt,
+  axisFormat = fmtCompact,
+  minStep = 1,
+}: {
+  title: string;
+  subtitle?: string;
+  ariaLabel: string;
+  valueLabel: string;
+  columnLabel: string;
+  data: { date: string; value: number }[];
+  format?: (v: number) => string;
+  axisFormat?: (v: number) => string;
+  /** Smallest y-axis step (1 for counts; e.g. 0.01 for currency). */
+  minStep?: number;
+}) {
   const { ref, width } = useWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
   const height = 220;
-  const margin = { top: 18, right: 40, bottom: 26, left: 36 };
+  const scale = niceScale(Math.max(0, ...data.map((d) => d.value)), 4, minStep);
+  // Left margin grows with the longest y-axis label (e.g. "$0.004") so nothing is clipped.
+  const longestTick = Math.max(...Array.from({ length: Math.round(scale.max / scale.step) + 1 }, (_, i) => axisFormat(i * scale.step).length));
+  const margin = { top: 18, right: 52, bottom: 26, left: Math.max(36, 12 + longestTick * 6.6) };
   const plotW = Math.max(0, width - margin.left - margin.right);
   const plotH = height - margin.top - margin.bottom;
   const n = data.length;
-  const { max, step } = niceScale(Math.max(0, ...data.map((d) => d.newUsers)));
+  const { max, step } = scale;
   const x = (i: number) => margin.left + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
   const y = (v: number) => margin.top + plotH - (v / max) * plotH;
   const ticks = Array.from({ length: Math.round(max / step) + 1 }, (_, i) => i * step);
   const labelEvery = Math.max(1, Math.ceil(n / 6));
-  const line = data.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.newUsers)}`).join("");
+  const line = data.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.value)}`).join("");
   const area = n ? `${line}L${x(n - 1)},${y(0)}L${x(0)},${y(0)}Z` : "";
   const last = data[n - 1];
 
@@ -270,21 +295,21 @@ export function NewUsersChart({ data }: { data: { date: string; newUsers: number
 
   return (
     <ChartCard
-      title="Yeni kullanıcılar"
-      subtitle="Günlük yeni kayıt ve misafir hesaplar"
+      title={title}
+      subtitle={subtitle}
       table={
         <table className="w-full text-left text-xs">
           <thead className="text-muted">
             <tr>
               <th className="py-1 font-medium">Gün</th>
-              <th className="py-1 text-right font-medium">Yeni kullanıcı</th>
+              <th className="py-1 text-right font-medium">{columnLabel}</th>
             </tr>
           </thead>
           <tbody className="tabular">
             {data.map((d) => (
               <tr key={d.date} className="border-t border-line">
                 <td className="py-1">{fmtDay(d.date, true)}</td>
-                <td className="py-1 text-right">{fmtInt(d.newUsers)}</td>
+                <td className="py-1 text-right">{format(d.value)}</td>
               </tr>
             ))}
           </tbody>
@@ -297,7 +322,7 @@ export function NewUsersChart({ data }: { data: { date: string; newUsers: number
             width={width}
             height={height}
             role="img"
-            aria-label="Günlük yeni kullanıcı çizgi grafiği"
+            aria-label={ariaLabel}
             onMouseMove={(e) => pick(e.clientX, e.currentTarget.getBoundingClientRect())}
             onMouseLeave={() => setActive(null)}
           >
@@ -305,7 +330,7 @@ export function NewUsersChart({ data }: { data: { date: string; newUsers: number
               <g key={t}>
                 <line x1={margin.left} x2={width - margin.right} y1={y(t)} y2={y(t)} stroke={t === 0 ? "var(--chart-axis)" : "var(--chart-grid)"} strokeWidth={1} />
                 <text x={margin.left - 6} y={y(t)} dy="0.32em" textAnchor="end" fontSize={AXIS_FONT} fill="var(--chart-muted)" className="tabular">
-                  {fmtCompact(t)}
+                  {axisFormat(t)}
                 </text>
               </g>
             ))}
@@ -321,14 +346,14 @@ export function NewUsersChart({ data }: { data: { date: string; newUsers: number
             {active !== null && <line x1={x(active)} x2={x(active)} y1={margin.top} y2={margin.top + plotH} stroke="var(--chart-axis)" strokeWidth={1} />}
             {last && (
               <>
-                <circle cx={x(n - 1)} cy={y(last.newUsers)} r={4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
-                <text x={x(n - 1) + 8} y={y(last.newUsers)} dy="0.32em" fontSize={AXIS_FONT} fill="var(--chart-ink-2)" className="tabular">
-                  {fmtInt(last.newUsers)}
+                <circle cx={x(n - 1)} cy={y(last.value)} r={4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
+                <text x={x(n - 1) + 8} y={y(last.value)} dy="0.32em" fontSize={AXIS_FONT} fill="var(--chart-ink-2)" className="tabular">
+                  {format(last.value)}
                 </text>
               </>
             )}
             {active !== null && active !== n - 1 && data[active] && (
-              <circle cx={x(active)} cy={y(data[active].newUsers)} r={4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
+              <circle cx={x(active)} cy={y(data[active].value)} r={4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
             )}
             <rect
               x={margin.left}
@@ -347,13 +372,26 @@ export function NewUsersChart({ data }: { data: { date: string; newUsers: number
         {active !== null && data[active] && (
           <Tooltip
             left={Math.min(Math.max(x(active), 80), width - 80)}
-            top={Math.max(y(data[active].newUsers) - 8, 50)}
+            top={Math.max(y(data[active].value) - 8, 50)}
             title={fmtDay(data[active].date, true)}
-            rows={[{ color: "var(--series-1)", value: fmtInt(data[active].newUsers), label: "yeni kullanıcı" }]}
+            rows={[{ color: "var(--series-1)", value: format(data[active].value), label: valueLabel }]}
           />
         )}
       </div>
     </ChartCard>
+  );
+}
+
+export function NewUsersChart({ data }: { data: { date: string; newUsers: number }[] }) {
+  return (
+    <DailyLineChart
+      title="Yeni kullanıcılar"
+      subtitle="Günlük yeni kayıt ve misafir hesaplar"
+      ariaLabel="Günlük yeni kullanıcı çizgi grafiği"
+      valueLabel="yeni kullanıcı"
+      columnLabel="Yeni kullanıcı"
+      data={data.map((d) => ({ date: d.date, value: d.newUsers }))}
+    />
   );
 }
 

@@ -42,3 +42,12 @@ PRO/aktif), Denetim kaydı, Sistem (AI/DB/Redis durumu).
 - `src/proxy.ts` yalnız iyimser yönlendirme yapar; yetki kararı her istekte backend'dedir
   (`aud=ai-room-admin`, rol ADMIN, MFA tamam — AZ-05).
 - Kullanıcı ve AI kaynaklı metinler yalnız React metni olarak basılır; HTML olarak işlenmez.
+
+## v1.1 ekranları
+
+| Sayfa | Yol | Backend ucu |
+|---|---|---|
+| İçerik bildirimleri | `/reports` | `GET/PATCH /v1/admin/reports` — çöz / reddet, galeriden kaldır, tasarımı sil |
+| AI maliyeti | `/ai-costs` | `GET /v1/admin/ai/usage` — bugünkü harcama, bütçe durumu, günlük grafik, sağlayıcı/iş kırılımı |
+| Ayarlar | `/settings` | `GET/PATCH /v1/admin/settings` — kota, varyant, bütçe freni, bakım, duyuru, AI onayı; gerekçe zorunlu |
+| Zamanlı işler | `/jobs` | `GET /v1/admin/jobs` — kuyruk sayaçları ve son çalışmalar |

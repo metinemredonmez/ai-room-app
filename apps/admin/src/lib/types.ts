@@ -106,3 +106,52 @@ export type SystemStatus = {
   redis: "ok" | "down";
   version: string;
 };
+
+// ---- v1.1 (docs/API.md §7)
+
+export type BrakeMode = "off" | "free_single_variant" | "free_paused";
+export type Settings = {
+  freeDailyGenerations: number;
+  proDailyGenerations: number;
+  maxVariantsFree: 1 | 2 | 3 | 4;
+  maxVariantsPro: 1 | 2 | 3 | 4;
+  dailyBudgetUsd: number;
+  budgetBrakeMode: BrakeMode;
+  maintenance: { enabled: boolean; messageTr: string; messageEn: string };
+  announcement: { enabled: boolean; textTr: string; textEn: string };
+  requireAiConsent: boolean;
+};
+export type SettingsResponse = { values: Settings; defaults: Settings };
+
+export type BudgetState = "normal" | "warning" | "exceeded";
+export type AiUsageStats = {
+  today: { costUsd: number; calls: number; images: number };
+  budget: { dailyBudgetUsd: number; spentTodayUsd: number; state: BudgetState; brakeMode: BrakeMode };
+  daily: { date: string; costUsd: number; calls: number }[];
+  byProvider: { provider: string; model: string; calls: number; costUsd: number }[];
+  byKind: { kind: string; calls: number; costUsd: number }[];
+};
+
+export type ReportStatus = "OPEN" | "RESOLVED" | "DISMISSED";
+export type ContentReport = {
+  id: string;
+  designId: string;
+  reason: "inappropriate" | "offensive" | "copyright" | "privacy" | "other";
+  note: string | null;
+  status: ReportStatus;
+  reporterId: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolution: string | null;
+  design: Design;
+};
+
+export type JobRun = {
+  id: string;
+  name: string;
+  status: "ok" | "error" | "running";
+  details: Record<string, unknown>;
+  startedAt: string;
+  finishedAt: string | null;
+};
+export type JobsOverview = { items: JobRun[]; queue: { waiting: number; active: number; failed: number; delayed: number } };
