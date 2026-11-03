@@ -55,7 +55,7 @@
         <li><b class="y">✓</b> Admin MFA, kod tekrarı reddi, öne çıkarma ve denetim kaydı (smoke)</li>
         <li><b class="y">✓</b> Typecheck, lint ve build temiz</li>
         <li><b class="p">◐</b> Ban sonrası anında iptal, misafir yükseltmede oturum yenileme</li>
-        <li><b class="n">○</b> Şifre sıfırlama ve e-posta doğrulama (AUT-03) — Faz 1</li>
+        <li><b class="y">✓</b> Şifre sıfırlama ve e-posta doğrulama: tek kullanımlık, amaca ve e-postaya bağlı token; Host başlığına güvenmeyen bağlantı; sıfırlamada tüm oturumların iptali (AUT-03, MAIL-01, SES-04 — smoke)</li>
         <li><b class="n">○</b> Asenkron kuyruk, S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
       </ul>
     </div>
@@ -107,7 +107,8 @@
         <li><b class="y">✓</b> Lint, typecheck ve production build temiz</li>
         <li><b class="y">✓</b> Stüdyoda bahçe sonucu ve Tasarımlarım ekranı çalışıyor (ekran görüntüsü 21–22)</li>
         <li><b class="p">◐</b> Token'ın tarayıcıya hiç inmemesi ve mutasyonlarda Origin reddi — web BFF için ayrı test</li>
-        <li><b class="n">○</b> iyzico/PayTR ödemesi, şifre sıfırlama, SEO içerik sayfaları</li>
+        <li><b class="y">✓</b> Şifremi unuttum, şifre sıfırlama (token URL fragment'ında, okunduktan sonra adresten silinir) ve e-posta doğrulama sayfaları; doğrulanmamış hesap bandı</li>
+        <li><b class="n">○</b> iyzico/PayTR ödemesi, SEO içerik sayfaları</li>
       </ul>
     </div>
   </div>
@@ -164,8 +165,8 @@
   <table class="compact">
     <thead><tr><th style="width:13%">Öncelik</th><th>Kapsam</th><th style="width:20%">Durum</th></tr></thead>
     <tbody>
-      <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
-      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; şifre sıfırlama ve e-posta doğrulama; S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; şifre sıfırlama ve e-posta doğrulama; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
+      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; gerçek SMTP sağlayıcısı (SPF/DKIM/DMARC, MAIL-02); S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Should</strong></td><td>iyzico/PayTR web ödemesi; kredi paketi satışı; anlık bildirim; ürün analitiği ve çökme raporlama; ETBİS/İYS; "Doğrulanacak" güvenlik testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Could</strong></td><td>Maske/fırça düzenleme; sonuç üzerinden yineleme; affiliate ve katalog eşleştirme; usta teklifi; emlakçı paneli; yüz/belge maskeleme</td><td>Faz 2</td></tr>
       <tr><td><strong>Won't</strong> (bu sürümde değil)</td><td>LiDAR/RoomPlan ölçü, 2D/3D plan, AR, video yürüyüşü, marka SDK'sı, kendi GPU modeli, yeni ülkeler</td><td>Faz 3</td></tr>

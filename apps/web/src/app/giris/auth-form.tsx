@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoaderCircle, UserRound } from "lucide-react";
@@ -122,6 +123,11 @@ export function AuthForm() {
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
             {mode === "register" && <p className="mt-1.5 text-xs text-muted">{t.auth.passwordHint}</p>}
+            {mode === "login" && (
+              <Link href="/sifremi-unuttum" className="mt-2 inline-block text-sm font-semibold text-primary hover:underline">
+                {t.auth.forgotLink}
+              </Link>
+            )}
           </div>
           {error ? <ErrorNotice error={error} /> : null}
           <button type="submit" disabled={busy !== null} className={`${btn.base} ${btn.primary} ${btn.md} w-full`}>

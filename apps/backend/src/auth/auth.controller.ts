@@ -1,15 +1,15 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
+import { Body, Controller, HttpCode, Inject, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';
 import { AppError, parse, unauthorized } from '../common/errors.js';
-import { Req, type AppRequest } from '../common/http.js';
+import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { LIMITS, PrismaService, RateLimiter } from '../common/infra.js';
 import { log } from '../common/log.js';
 import { AuditService } from '../admin/audit.service.js';
 import { UsersService } from '../users/users.service.js';
 import { hashPassword, sha256, verifyPassword, verifyTotp } from './crypto.js';
-import { AUD_APP, TokensService } from './tokens.service.js';
+import { EmailTokensService } from './email-tokens.service.js';
+import { AUD_APP, TokensService, UserGuard } from './tokens.service.js';
 
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
 // PWD (NIST 800-63B): length over composition rules; 10+ chars, no arbitrary complexity rules.
@@ -19,6 +19,10 @@ const GuestSchema = z.object({ deviceId: z.string().regex(/^[A-Za-z0-9-]{16,64}$
 const RegisterSchema = z.object({ email, password, name: z.string().trim().min(1).max(80).optional() }).strict();
 const LoginSchema = z.object({ email, password: z.string().min(1).max(128) }).strict();
 const RefreshSchema = z.object({ refreshToken: z.string().min(20).max(200) }).strict();
+const emailToken = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+const ForgotSchema = z.object({ email }).strict();
+const ResetSchema = z.object({ token: emailToken, password }).strict();
+const VerifySchema = z.object({ token: emailToken }).strict();
 const AdminLoginSchema = z.object({ email, password: z.string().min(1).max(128), otp: z.string().regex(/^\d{6}$/) }).strict();
 
 const INVALID = () => new AppError(401, 'unauthorized', 'E-posta veya şifre hatalı');
@@ -31,6 +35,7 @@ export class AuthController {
     private users: UsersService,
     private limiter: RateLimiter,
     private audit: AuditService,
+    private emailTokens: EmailTokensService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -78,6 +83,7 @@ export class AuthController {
       : await this.prisma.user.create({ data });
     if (guestId) await this.tokens.revokeAll(user.id).catch(() => undefined); // SES-02: new session on privilege change
     log.info('user_registered', { userId: user.id, upgradedGuest: Boolean(guestId) });
+    void this.emailTokens.sendVerification(user).catch((e: Error) => log.error('mail_failed', { kind: 'verify', error: e.name }));
     return this.respond(user.id);
   }
 
@@ -112,6 +118,64 @@ export class AuthController {
   async logout(@Body() body: unknown) {
     const { refreshToken } = parse(RefreshSchema, body);
     await this.tokens.revoke(refreshToken);
+  }
+
+  /**
+   * Always 202 with the same body: the answer, the per-account budget and (because the mail is sent
+   * in the background) the timing do not reveal whether the address has an account.
+   */
+  @Post('password/forgot')
+  @HttpCode(202)
+  async forgotPassword(@Body() body: unknown, @Req() req: AppRequest) {
+    const { email: address } = parse(ForgotSchema, body);
+    await this.limiter.hit(LIMITS.forgotIp, req.clientIp);
+    const withinBudget = await this.limiter.allow(LIMITS.forgotAccount, sha256(address));
+    const user = withinBudget ? await this.prisma.user.findUnique({ where: { email: address } }) : null;
+    if (user && !user.isGuest && user.passwordHash && user.status === 'ACTIVE') {
+      void this.emailTokens.sendPasswordReset(user).catch((e: Error) => log.error('mail_failed', { kind: 'reset', error: e.name }));
+    }
+    log.info('password_reset_requested', { ip: req.clientIp, delivered: Boolean(user), throttled: !withinBudget });
+    return { ok: true };
+  }
+
+  /** AUT-03 + SES-04: one-time token; on success every session and outstanding e-mail token is revoked. */
+  @Post('password/reset')
+  @HttpCode(204)
+  async resetPassword(@Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(ResetSchema, body);
+    await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
+    const user = await this.emailTokens.consume(input.token, 'RESET_PASSWORD');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: await hashPassword(input.password), emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
+    });
+    await this.tokens.revokeAll(user.id);
+    await this.prisma.emailToken.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
+    if (user.email) await this.limiter.reset(LIMITS.loginAccount, sha256(user.email));
+    if (user.role === 'ADMIN') await this.audit.record(user.id, 'auth.password_reset', 'user', user.id, {}, req.clientIp);
+    log.info('password_reset_completed', { userId: user.id });
+  }
+
+  @Post('email/verify')
+  async verifyEmail(@Body() body: unknown, @Req() req: AppRequest) {
+    const { token } = parse(VerifySchema, body);
+    await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
+    const user = await this.emailTokens.consume(token, 'VERIFY_EMAIL');
+    if (!user.emailVerifiedAt) await this.prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
+    log.info('email_verified', { userId: user.id });
+    return { ok: true };
+  }
+
+  @Post('email/resend')
+  @HttpCode(202)
+  @UseGuards(UserGuard)
+  async resendVerification(@Auth() auth: AuthContext) {
+    await this.limiter.hit(LIMITS.verifyResend, auth.userId);
+    const user = await this.users.get(auth.userId);
+    if (user.isGuest || !user.email) throw new AppError(400, 'bad_request', 'Önce bir e-posta ile kayıt olmalısın');
+    if (user.emailVerifiedAt) return { ok: true, alreadyVerified: true };
+    await this.emailTokens.sendVerification(user);
+    return { ok: true, alreadyVerified: false };
   }
 }
 

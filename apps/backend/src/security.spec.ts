@@ -1,7 +1,8 @@
 import type { Request } from 'express';
 import { base32Decode, base32Encode, totpAt, verifyTotp } from './auth/crypto.js';
 import { resolveClientIp } from './common/http.js';
-import { loadConfig } from './config.js';
+import { EmailTokensService } from './auth/email-tokens.service.js';
+import { loadConfig, type Config } from './config.js';
 import { isUuid, sniffMime } from './images/images.service.js';
 
 const RFC_SECRET = base32Encode(Buffer.from('12345678901234567890')); // RFC 6238 appendix B seed (SHA-1)
@@ -87,6 +88,21 @@ describe('configuration (KEY-01)', () => {
     expect(() =>
       loadConfig({ ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', IMAGE_URL_SECRET: base.JWT_SECRET }),
     ).toThrow(/distinct/);
-    expect(loadConfig({ ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com' }).isProd).toBe(true);
+    const prod = { ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com' };
+    expect(() => loadConfig(prod)).toThrow(/SMTP/);
+    expect(loadConfig({ ...prod, MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com' }).isProd).toBe(true);
+  });
+});
+
+describe('e-mailed links (MAIL-01 / AUT-03)', () => {
+  const svc = new EmailTokensService({} as never, {} as never, { WEB_APP_URL: 'https://airoom.example.com' } as Config);
+
+  it('builds links only from the configured origin and keeps the token in the fragment', () => {
+    const url = new URL(svc.link('RESET_PASSWORD', 'tok_123'));
+    expect(url.origin).toBe('https://airoom.example.com');
+    expect(url.pathname).toBe('/sifre-sifirla');
+    expect(url.search).toBe('');
+    expect(url.hash).toBe('#token=tok_123');
+    expect(new URL(svc.link('VERIFY_EMAIL', 'x')).pathname).toBe('/eposta-dogrula');
   });
 });

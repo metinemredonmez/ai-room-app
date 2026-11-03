@@ -117,6 +117,52 @@ if (admin.status === 401 || admin.status === 429) {
   ok(audit.json?.items?.some((a) => a.action === 'design.feature'), 'admin action audited (LOG-01)');
 }
 
+// AUT-03 / MAIL-01 / SES-04: e-mail verification and password reset (dev outbox transport).
+const outboxDir = new URL('../apps/backend/data/outbox/', import.meta.url);
+const { readdir } = await import('node:fs/promises');
+const lastMailTo = async (to, subjectPart) => {
+  for (let i = 0; i < 20; i++) {
+    const files = (await readdir(outboxDir).catch(() => [])).sort().reverse();
+    for (const f of files) {
+      const m = JSON.parse(await readFile(new URL(f, outboxDir), 'utf8'));
+      if (m.to === to && m.subject.includes(subjectPart)) return m;
+    }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return null;
+};
+const tokenFrom = (mail) => mail?.text.match(/#token=([A-Za-z0-9_-]{43})/)?.[1];
+const userEmail = `smoke-${Date.now()}@example.com`;
+const reg = await call('POST', '/auth/register', { body: { email: userEmail, password: 'first-password-123' } });
+ok(reg.status === 201 && reg.json?.user?.emailVerified === false, 'register → unverified e-mail');
+const verifyMail = await lastMailTo(userEmail, 'doğrula');
+ok(verifyMail?.text.includes('http://localhost:3000/eposta-dogrula#token='), 'verification mail uses the configured origin + fragment (MAIL-01)');
+const verified = await call('POST', '/auth/email/verify', { body: { token: tokenFrom(verifyMail) } });
+ok(verified.status === 201, 'e-mail verified');
+const meVerified = await call('GET', '/me', { token: reg.json.accessToken });
+ok(meVerified.json?.emailVerified === true, 'user now shows emailVerified');
+const verifyAgain = await call('POST', '/auth/email/verify', { body: { token: tokenFrom(verifyMail) } });
+ok(verifyAgain.status === 400 && verifyAgain.json?.error?.code === 'invalid_token', 'verification token is single-use');
+
+const unknown = await call('POST', '/auth/password/forgot', { body: { email: `nobody-${Date.now()}@example.com` } });
+const known = await call('POST', '/auth/password/forgot', { body: { email: userEmail }, headers: { 'x-forwarded-host': 'evil.example', host: 'evil.example' } });
+ok(unknown.status === 202 && known.status === 202 && JSON.stringify(unknown.json) === JSON.stringify(known.json), 'forgot-password answers identically for unknown addresses');
+const resetMail = await lastMailTo(userEmail, 'Şifre');
+ok(resetMail && !resetMail.text.includes('evil.example') && resetMail.text.includes('/sifre-sifirla#token='), 'reset link ignores spoofed Host headers (MAIL-01)');
+const resetToken = tokenFrom(resetMail);
+const wrongPurpose = await call('POST', '/auth/email/verify', { body: { token: resetToken } });
+ok(wrongPurpose.status === 400, 'reset token rejected for another purpose (AUT-03)');
+const reset = await call('POST', '/auth/password/reset', { body: { token: resetToken, password: 'second-password-456' } });
+ok(reset.status === 204, 'password reset with token');
+const replayReset = await call('POST', '/auth/password/reset', { body: { token: resetToken, password: 'third-password-789' } });
+ok(replayReset.status === 400, 'reset token cannot be reused');
+const oldSession = await call('GET', '/me', { token: reg.json.accessToken });
+const oldRefresh = await call('POST', '/auth/refresh', { body: { refreshToken: reg.json.refreshToken } });
+ok(oldSession.status === 401 && oldRefresh.status === 401, 'all sessions revoked after reset (SES-04)');
+const oldPw = await call('POST', '/auth/login', { body: { email: userEmail, password: 'first-password-123' } });
+const newPw = await call('POST', '/auth/login', { body: { email: userEmail, password: 'second-password-456' } });
+ok(oldPw.status === 401 && newPw.status === 201, 'old password rejected, new password works');
+
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });
 ok(del.status === 204, 'user deletes own design');
 

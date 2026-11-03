@@ -19,6 +19,11 @@ const Env = z.object({
   IMAGE_URL_SECRET: secret('IMAGE_URL_SECRET'),
   DEVICE_PEPPER: secret('DEVICE_PEPPER'),
   AI_SERVICE_URL: z.url().default('http://localhost:8001'),
+  // MAIL-01: the only origin ever used in e-mailed links (never the request Host header).
+  WEB_APP_URL: z.url().default('http://localhost:3000'),
+  MAIL_TRANSPORT: z.enum(['outbox', 'smtp']).default('outbox'),
+  SMTP_URL: z.string().optional(),
+  MAIL_FROM: z.string().default('AI Room <no-reply@airoom.local>'),
   AI_INTERNAL_TOKEN: secret('AI_INTERNAL_TOKEN'),
   DATA_DIR: z.string().default('./data'),
   CORS_ORIGINS: z.string().default('http://localhost:8081'),
@@ -46,6 +51,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     const problems: string[] = [];
     if (!cfg.PUBLIC_BASE_URL.startsWith('https://')) problems.push('PUBLIC_BASE_URL must use https');
     if (corsOrigins.includes('*')) problems.push('CORS_ORIGINS must not contain *');
+    if (!cfg.WEB_APP_URL.startsWith('https://')) problems.push('WEB_APP_URL must use https');
+    if (cfg.MAIL_TRANSPORT !== 'smtp' || !cfg.SMTP_URL) problems.push('MAIL_TRANSPORT=smtp with SMTP_URL is required');
     if (new Set([cfg.JWT_SECRET, cfg.IMAGE_URL_SECRET, cfg.DEVICE_PEPPER, cfg.AI_INTERNAL_TOKEN]).size < 4) {
       problems.push('each secret must be distinct');
     }

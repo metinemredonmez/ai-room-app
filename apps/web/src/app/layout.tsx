@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { AppProvider } from "@/components/app-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { HeaderFallback, SiteHeader } from "@/components/site-header";
+import { VerifyBanner } from "@/components/verify-banner";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={<HeaderFallback />}>
             <SiteHeader />
           </Suspense>
+          <VerifyBanner />
           <main className="flex-1">{children}</main>
           <SiteFooter />
         </AppProvider>

@@ -51,7 +51,19 @@ export const authApi = {
   register: (email: string, password: string, name?: string) =>
     request<{ user: User }>("/api/auth/register", "POST", { email, password, name }),
   logout: () => request<void>("/api/auth/logout", "POST", {}),
+  forgotPassword: (email: string) => api.post<{ ok: true }>("/auth/password/forgot", { email }),
+  resetPassword: (token: string, password: string) => api.post<void>("/auth/password/reset", { token, password }),
+  verifyEmail: (token: string) => api.post<{ ok: true }>("/auth/email/verify", { token }),
+  resendVerification: () => api.post<{ ok: true; alreadyVerified: boolean }>("/auth/email/resend"),
 };
+
+/** Reads `#token=…` once and strips it from the address bar so it doesn't linger in history. */
+export function takeFragmentToken(): string | null {
+  if (typeof window === "undefined") return null;
+  const token = new URLSearchParams(window.location.hash.slice(1)).get("token");
+  if (token) window.history.replaceState(null, "", window.location.pathname);
+  return token && /^[A-Za-z0-9_-]{43}$/.test(token) ? token : null;
+}
 
 export function downloadUrl(imageUrl: string) {
   return `/api/download?src=${encodeURIComponent(imageUrl)}`;

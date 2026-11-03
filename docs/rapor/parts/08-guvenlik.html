@@ -7,7 +7,7 @@
     <li><strong>Doğrulanacak:</strong> uygulandı, testi bekliyor.</li>
     <li><strong>Uygulanmaz:</strong> kapsam dışında.</li>
   </ul>
-  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (28/28), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
+  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (40/40), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
   <table class="compact">
     <thead><tr><th style="width:9%">Kontrol</th><th style="width:47%">Uygulama</th><th style="width:30%">Kanıt</th><th class="c" style="width:14%">Durum</th></tr></thead>
     <tbody>
@@ -26,6 +26,8 @@
       <tr><td>AI-02</td><td>RAG yok (tenant sızıntısı yüzeyi yok). LLM çıktısı istemcilerde yalnız düz metin olarak gösteriliyor.</td><td>İstemci kod incelemesi</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>AUT-01</td><td>Admin girişi tek adımda parola + TOTP (RFC 6238). Kod tek kullanımlık (son adım saklanıyor). Admin token'ı yalnız <code>amr:[pwd,otp]</code> ile veriliyor.</td><td>Smoke: OTP'siz red; MFA ile giriş; aynı kodun tekrarı reddedildi</td><td class="c y">Geçti</td></tr>
       <tr><td>AUT-02</td><td>Giriş limitleri: IP başına 30/15 dk, hesap başına 10/15 dk. Genel hata mesajı; olmayan hesapta sahte hash ile zaman eşitleme; kalıcı kilitleme yok.</td><td>Dağıtık deneme testi bekliyor</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AUT-03</td><td>Şifre sıfırlama ve e-posta doğrulama token'ı: 32 bayt rastgele, yalnız SHA-256'sı saklanır; kullanıcıya, amaca (RESET/VERIFY) ve gönderildiği e-postaya bağlı; 30 dk / 48 sa; atomik tek kullanım; yeni token eskisini düşürür; token URL fragment'ında taşınır (log/Referer'a düşmez).</td><td>Smoke: tekrar kullanım 400, yanlış amaç 400, bilinmeyen e-postada aynı 202 yanıtı</td><td class="c y">Geçti</td></tr>
+      <tr><td>MAIL-01</td><td>Bağlantılar yalnız yapılandırmadaki <code>WEB_APP_URL</code>'den üretilir; Host / X-Forwarded-Host kullanılmaz. Üretimde https ve SMTP zorunlu (açılış kontrolü).</td><td>Smoke: sahte Host başlığıyla istenen bağlantı yapılandırılmış origin'i kullanıyor; birim test</td><td class="c y">Geçti</td></tr>
       <tr><td>SES-01</td><td>Web ve admin'de token httpOnly çerezde (Lax / Strict), mobilde SecureStore'da; URL'de token yok.</td><td>Admin BFF: HttpOnly, SameSite=strict, Max-Age=7200 doğrulandı</td><td class="c y">Geçti (admin)</td></tr>
       <tr><td>SES-02</td><td>Misafir → kayıt yükseltmesinde <code>tokenVersion</code> artıyor ve eski oturumlar iptal ediliyor; cihaz bağı kaldırılıyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>SES-04</td><td>Askıya almada tüm access token'lar (<code>tokenVersion</code>) ve refresh aileleri iptal ediliyor; guard'lar durumu her istekte yeniden okuyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>

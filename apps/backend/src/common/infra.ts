@@ -62,6 +62,17 @@ export class RateLimiter {
     }
   }
 
+  /** Same budget, but answers false instead of throwing (for limits that must not leak via status). */
+  async allow(limit: Limit, key: string): Promise<boolean> {
+    try {
+      await this.hit(limit, key);
+      return true;
+    } catch (e) {
+      if (e instanceof AppError && e.status === 429) return false;
+      throw e;
+    }
+  }
+
   async reset(limit: Limit, key: string) {
     await this.redis.client.del(`rl:${limit.name}:${key}`).catch(() => undefined);
   }
@@ -73,6 +84,10 @@ export const LIMITS = {
   loginAccount: { name: 'login-acct', max: 10, windowSec: 900 },
   adminLogin: { name: 'admin-login', max: 5, windowSec: 900 },
   register: { name: 'register-ip', max: 10, windowSec: 3600 },
+  forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },
+  forgotAccount: { name: 'forgot-acct', max: 3, windowSec: 3600 },
+  tokenIp: { name: 'email-token-ip', max: 30, windowSec: 3600 },
+  verifyResend: { name: 'verify-resend', max: 5, windowSec: 3600 },
   guest: { name: 'guest-ip', max: 30, windowSec: 3600 },
   uploads: { name: 'uploads', max: 60, windowSec: 3600 },
   generateUser: { name: 'gen-user', max: 20, windowSec: 600 },

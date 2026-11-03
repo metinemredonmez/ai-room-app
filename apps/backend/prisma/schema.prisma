@@ -32,6 +32,11 @@ enum ImageKind {
   RESULT
 }
 
+enum EmailTokenPurpose {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
 enum DesignStatus {
   PENDING
   SUCCEEDED
@@ -40,7 +45,8 @@ enum DesignStatus {
 
 model User {
   id            String     @id @default(uuid()) @db.Uuid
-  email         String?    @unique
+  email           String?    @unique
+  emailVerifiedAt DateTime?
   passwordHash  String?
   name          String?
   role          Role       @default(USER)
@@ -61,6 +67,7 @@ model User {
   updatedAt     DateTime   @updatedAt
 
   refreshTokens RefreshToken[]
+  emailTokens   EmailToken[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -82,6 +89,22 @@ model RefreshToken {
 
   @@index([familyId])
   @@index([userId])
+}
+
+// AUT-03: single-use, purpose-bound, short-lived; only the SHA-256 of the token is stored and the
+// address it was sent to is pinned so a token dies if the account e-mail changes.
+model EmailToken {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String            @db.Uuid
+  purpose   EmailTokenPurpose
+  email     String
+  tokenHash String            @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime          @default(now())
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
 }
 
 model Image {

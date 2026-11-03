@@ -47,6 +47,10 @@ services:
       IMAGE_URL_SECRET: ${IMAGE_URL_SECRET:?set IMAGE_URL_SECRET}
       DEVICE_PEPPER: ${DEVICE_PEPPER:?set DEVICE_PEPPER}
       AI_SERVICE_URL: http://ai-service:8001
+      WEB_APP_URL: ${WEB_URL:-http://localhost:3000}
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-outbox}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-AI Room <no-reply@airoom.local>}
       AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-0}

@@ -656,7 +656,7 @@
   <div class="small">
     <p class="small">Rakip değerleri dünya ve Türkiye taramalarından alındı <sup class="ref">[1]–[124]</sup>.</p>
     <ul class="small">
-      <li>AI Room MVP sütunu bu depodaki çalışan kodu gösterir; uçtan uca test 28/28 geçti.</li>
+      <li>AI Room MVP sütunu bu depodaki çalışan kodu gösterir; uçtan uca test 40/40 geçti.</li>
       <li>Android ve iOS sütunlarında AI Room uygulaması Expo ile tek kod tabanından derleniyor. Web dışa aktarımı ve typecheck doğrulandı; fiziksel cihaz testi Faz 1'de.</li>
       <li>"Mağaza linki" MVP'de ürün eşleştirme değil, Türk mağazalarında arama linki. Gerçek katalog eşleştirme yol haritasında.</li>
     </ul>
@@ -752,7 +752,7 @@
   <h1><span class="num">8</span>MVP kapsamı</h1>
   <p>MVP beş ayrı uygulamadan oluşuyor. Hepsi <code>docs/API.md</code>'deki tek sözleşmeye uyuyor.</p>
   <div class="kpis">
-    <div class="kpi"><div class="v">28/28</div><div class="l">Uçtan uca smoke testi (<code>scripts/smoke.mjs</code>)</div></div>
+    <div class="kpi"><div class="v">40/40</div><div class="l">Uçtan uca smoke testi (<code>scripts/smoke.mjs</code>)</div></div>
     <div class="kpi"><div class="v">8/8</div><div class="l">AI servisi birim testleri (pytest)</div></div>
     <div class="kpi"><div class="v">5/5</div><div class="l">Uygulamada typecheck, lint ve build temiz</div></div>
     <div class="kpi"><div class="v">~9 sn</div><div class="l">Gerçek Gemini 2.5 Flash Image üretim süresi (tek örnek, Modern Türk)</div></div>
@@ -926,7 +926,7 @@
         <li><b class="y">✓</b> Admin MFA, kod tekrarı reddi, öne çıkarma ve denetim kaydı (smoke)</li>
         <li><b class="y">✓</b> Typecheck, lint ve build temiz</li>
         <li><b class="p">◐</b> Ban sonrası anında iptal, misafir yükseltmede oturum yenileme</li>
-        <li><b class="n">○</b> Şifre sıfırlama ve e-posta doğrulama (AUT-03) — Faz 1</li>
+        <li><b class="y">✓</b> Şifre sıfırlama ve e-posta doğrulama: tek kullanımlık, amaca ve e-postaya bağlı token; Host başlığına güvenmeyen bağlantı; sıfırlamada tüm oturumların iptali (AUT-03, MAIL-01, SES-04 — smoke)</li>
         <li><b class="n">○</b> Asenkron kuyruk, S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
       </ul>
     </div>
@@ -978,7 +978,8 @@
         <li><b class="y">✓</b> Lint, typecheck ve production build temiz</li>
         <li><b class="y">✓</b> Stüdyoda bahçe sonucu ve Tasarımlarım ekranı çalışıyor (ekran görüntüsü 21–22)</li>
         <li><b class="p">◐</b> Token'ın tarayıcıya hiç inmemesi ve mutasyonlarda Origin reddi — web BFF için ayrı test</li>
-        <li><b class="n">○</b> iyzico/PayTR ödemesi, şifre sıfırlama, SEO içerik sayfaları</li>
+        <li><b class="y">✓</b> Şifremi unuttum, şifre sıfırlama (token URL fragment'ında, okunduktan sonra adresten silinir) ve e-posta doğrulama sayfaları; doğrulanmamış hesap bandı</li>
+        <li><b class="n">○</b> iyzico/PayTR ödemesi, SEO içerik sayfaları</li>
       </ul>
     </div>
   </div>
@@ -1035,8 +1036,8 @@
   <table class="compact">
     <thead><tr><th style="width:13%">Öncelik</th><th>Kapsam</th><th style="width:20%">Durum</th></tr></thead>
     <tbody>
-      <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
-      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; şifre sıfırlama ve e-posta doğrulama; S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; şifre sıfırlama ve e-posta doğrulama; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
+      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; gerçek SMTP sağlayıcısı (SPF/DKIM/DMARC, MAIL-02); S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Should</strong></td><td>iyzico/PayTR web ödemesi; kredi paketi satışı; anlık bildirim; ürün analitiği ve çökme raporlama; ETBİS/İYS; "Doğrulanacak" güvenlik testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Could</strong></td><td>Maske/fırça düzenleme; sonuç üzerinden yineleme; affiliate ve katalog eşleştirme; usta teklifi; emlakçı paneli; yüz/belge maskeleme</td><td>Faz 2</td></tr>
       <tr><td><strong>Won't</strong> (bu sürümde değil)</td><td>LiDAR/RoomPlan ölçü, 2D/3D plan, AR, video yürüyüşü, marka SDK'sı, kendi GPU modeli, yeni ülkeler</td><td>Faz 3</td></tr>
@@ -1243,7 +1244,7 @@
     <li><strong>Doğrulanacak:</strong> uygulandı, testi bekliyor.</li>
     <li><strong>Uygulanmaz:</strong> kapsam dışında.</li>
   </ul>
-  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (28/28), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
+  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (40/40), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
   <table class="compact">
     <thead><tr><th style="width:9%">Kontrol</th><th style="width:47%">Uygulama</th><th style="width:30%">Kanıt</th><th class="c" style="width:14%">Durum</th></tr></thead>
     <tbody>
@@ -1262,6 +1263,8 @@
       <tr><td>AI-02</td><td>RAG yok (tenant sızıntısı yüzeyi yok). LLM çıktısı istemcilerde yalnız düz metin olarak gösteriliyor.</td><td>İstemci kod incelemesi</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>AUT-01</td><td>Admin girişi tek adımda parola + TOTP (RFC 6238). Kod tek kullanımlık (son adım saklanıyor). Admin token'ı yalnız <code>amr:[pwd,otp]</code> ile veriliyor.</td><td>Smoke: OTP'siz red; MFA ile giriş; aynı kodun tekrarı reddedildi</td><td class="c y">Geçti</td></tr>
       <tr><td>AUT-02</td><td>Giriş limitleri: IP başına 30/15 dk, hesap başına 10/15 dk. Genel hata mesajı; olmayan hesapta sahte hash ile zaman eşitleme; kalıcı kilitleme yok.</td><td>Dağıtık deneme testi bekliyor</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AUT-03</td><td>Şifre sıfırlama ve e-posta doğrulama token'ı: 32 bayt rastgele, yalnız SHA-256'sı saklanır; kullanıcıya, amaca (RESET/VERIFY) ve gönderildiği e-postaya bağlı; 30 dk / 48 sa; atomik tek kullanım; yeni token eskisini düşürür; token URL fragment'ında taşınır (log/Referer'a düşmez).</td><td>Smoke: tekrar kullanım 400, yanlış amaç 400, bilinmeyen e-postada aynı 202 yanıtı</td><td class="c y">Geçti</td></tr>
+      <tr><td>MAIL-01</td><td>Bağlantılar yalnız yapılandırmadaki <code>WEB_APP_URL</code>'den üretilir; Host / X-Forwarded-Host kullanılmaz. Üretimde https ve SMTP zorunlu (açılış kontrolü).</td><td>Smoke: sahte Host başlığıyla istenen bağlantı yapılandırılmış origin'i kullanıyor; birim test</td><td class="c y">Geçti</td></tr>
       <tr><td>SES-01</td><td>Web ve admin'de token httpOnly çerezde (Lax / Strict), mobilde SecureStore'da; URL'de token yok.</td><td>Admin BFF: HttpOnly, SameSite=strict, Max-Age=7200 doğrulandı</td><td class="c y">Geçti (admin)</td></tr>
       <tr><td>SES-02</td><td>Misafir → kayıt yükseltmesinde <code>tokenVersion</code> artıyor ve eski oturumlar iptal ediliyor; cihaz bağı kaldırılıyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>SES-04</td><td>Askıya almada tüm access token'lar (<code>tokenVersion</code>) ve refresh aileleri iptal ediliyor; guard'lar durumu her istekte yeniden okuyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
@@ -1408,7 +1411,7 @@
           <li>5 bileşen, 10 araç, 15 stil.</li>
           <li>Analiz ve TL bütçe, sohbet, admin MFA, imzalı URL'ler, kota/kredi.</li>
           <li>Mock + Gemini + Replicate + Claude sağlayıcıları.</li>
-          <li>Smoke 28/28, AI testleri 8/8, 5 uygulamada typecheck/lint/build temiz.</li>
+          <li>Smoke 40/40, AI testleri 8/8, 5 uygulamada typecheck/lint/build temiz.</li>
         </ul></td><td>Gerçek Gemini çağrısıyla örnek çıktı üretildi (~9 sn)</td></tr>
       <tr><td><strong>Faz 1 — Beta</strong><br><small>0–6 hafta</small></td><td>
         <ul>
@@ -1455,7 +1458,7 @@
       <g font-size="9" fill="#141414">
         <text x="4" y="38">Altyapı: S3/R2, kuyruk, bildirim</text>
         <text x="4" y="58">Ödeme: RevenueCat + iyzico/PayTR</text>
-        <text x="4" y="78">Uyum: KVKK, şifre sıfırlama, ETBİS/İYS</text>
+        <text x="4" y="78">Uyum: KVKK, SMTP/DMARC, ETBİS/İYS</text>
         <text x="4" y="98">Kalite seti + sağlayıcı seçimi</text>
         <text x="4" y="118">Kapalı beta (TestFlight / Play)</text>
         <text x="4" y="138">Maske/fırça + yineleme</text>
@@ -1583,7 +1586,7 @@ cd apps/mobile &amp;&amp; npm install &amp;&amp; npx expo start # i = iOS simül
 # 4) Testler
 cd apps/ai-service &amp;&amp; uv run pytest          # 8 test
 cd apps/backend &amp;&amp; npm test                  # birim testleri
-node scripts/smoke.mjs                       # 28 uçtan uca kontrol</pre>
+node scripts/smoke.mjs                       # 40 uçtan uca kontrol</pre>
   <p class="small">
     <strong>Gerçek sağlayıcılar:</strong> <code>IMAGE_PROVIDER=gemini</code> + <code>GEMINI_API_KEY</code>, <code>IMAGE_PROVIDER=replicate</code> + <code>REPLICATE_API_TOKEN</code>, <code>ANTHROPIC_API_KEY</code> (Claude). Üretimde <code>mock</code> sağlayıcıyla açılış reddedilir.
     <strong>Docker:</strong> depoda bir <code>docker compose</code> dosyası var; bu makinede Docker olmadığı için çalıştırılarak denenmedi.

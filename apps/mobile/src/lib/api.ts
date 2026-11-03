@@ -20,6 +20,7 @@ export type ToolId =
 export type User = {
   id: string;
   email: string | null;
+  emailVerified: boolean;
   name: string | null;
   role: 'USER' | 'ADMIN';
   isGuest: boolean;
@@ -273,6 +274,9 @@ export const api = {
   login: (body: { email: string; password: string }) =>
     request<AuthResponse>('/auth/login', { method: 'POST', body, auth: false }),
   logout: (token: string) => request<void>('/auth/logout', { method: 'POST', body: { refreshToken: token }, auth: false }),
+  // The reset link opens the web app (WEB_APP_URL), where the new password is chosen.
+  forgotPassword: (email: string) => request<{ ok: true }>('/auth/password/forgot', { method: 'POST', body: { email }, auth: false }),
+  resendVerification: () => request<{ ok: true; alreadyVerified: boolean }>('/auth/email/resend', { method: 'POST', body: {} }),
 
   me: () => request<User>('/me'),
   updateMe: (body: { name?: string; locale?: Locale }) => request<User>('/me', { method: 'PATCH', body }),

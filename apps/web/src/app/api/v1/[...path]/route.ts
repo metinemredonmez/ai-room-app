@@ -17,11 +17,14 @@ import {
 const SEGMENT = /^[A-Za-z0-9_-]{1,80}$/;
 // Auth has dedicated BFF routes; admin endpoints are never reachable from the public web app.
 const BLOCKED_ROOTS = new Set(["auth", "admin", "images"]);
+// …except the e-mail flows, which carry no session cookies of their own (AUT-03).
+const ALLOWED_AUTH = new Set(["auth/password/forgot", "auth/password/reset", "auth/email/verify", "auth/email/resend"]);
 const MAX_BODY_BYTES = 15 * 1024 * 1024;
 
 async function handle(req: NextRequest, ctx: RouteContext<"/api/v1/[...path]">): Promise<Response> {
   const { path } = await ctx.params;
-  if (!path.length || !path.every((s) => SEGMENT.test(s)) || BLOCKED_ROOTS.has(path[0])) {
+  const blocked = BLOCKED_ROOTS.has(path[0]) && !ALLOWED_AUTH.has(path.join("/"));
+  if (!path.length || !path.every((s) => SEGMENT.test(s)) || blocked) {
     return jsonError(404, "not_found", "Bulunamadı.");
   }
   const method = req.method.toUpperCase();

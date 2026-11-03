@@ -8,14 +8,15 @@ import { Screen } from '@/components/screen';
 import { AppText, Button, Card, ErrorBanner, Segmented, confirmAsync } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import type { Locale } from '@/lib/api';
+import { api, type Locale } from '@/lib/api';
 import { formatDate } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 
 export default function ProfileScreen() {
   const c = useTheme();
   const { t, user, locale, setLocale, signOut, deleteAccount, errorMessage, refreshUser } = useSession();
-  const [busy, setBusy] = useState<'signout' | 'delete' | null>(null);
+  const [busy, setBusy] = useState<'signout' | 'delete' | 'verify' | null>(null);
+  const [verifySent, setVerifySent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pro = user?.plan === 'PRO';
 
@@ -61,6 +62,30 @@ export default function ProfileScreen() {
             </AppText>
           </View>
         </View>
+        {user && !user.isGuest && !user.emailVerified ? (
+          <View style={{ gap: Spacing.two }}>
+            <AppText variant="small" color={c.accent}>
+              {verifySent ? t('profile.verifySent') : t('profile.verifyText')}
+            </AppText>
+            {!verifySent ? (
+              <Button
+                label={t('profile.verifyResend')}
+                kind="ghost"
+                icon="mail-outline"
+                loading={busy === 'verify'}
+                onPress={async () => {
+                  setBusy('verify');
+                  try {
+                    await api.resendVerification();
+                    setVerifySent(true);
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+              />
+            ) : null}
+          </View>
+        ) : null}
         {user?.isGuest ? (
           <Button label={t('profile.signIn')} icon="log-in-outline" onPress={() => router.push('/auth')} />
         ) : (

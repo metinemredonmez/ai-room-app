@@ -36,7 +36,7 @@ cd apps/mobile &amp;&amp; npm install &amp;&amp; npx expo start # i = iOS simül
 # 4) Testler
 cd apps/ai-service &amp;&amp; uv run pytest          # 8 test
 cd apps/backend &amp;&amp; npm test                  # birim testleri
-node scripts/smoke.mjs                       # 28 uçtan uca kontrol</pre>
+node scripts/smoke.mjs                       # 40 uçtan uca kontrol</pre>
   <p class="small">
     <strong>Gerçek sağlayıcılar:</strong> <code>IMAGE_PROVIDER=gemini</code> + <code>GEMINI_API_KEY</code>, <code>IMAGE_PROVIDER=replicate</code> + <code>REPLICATE_API_TOKEN</code>, <code>ANTHROPIC_API_KEY</code> (Claude). Üretimde <code>mock</code> sağlayıcıyla açılış reddedilir.
     <strong>Docker:</strong> depoda bir <code>docker compose</code> dosyası var; bu makinede Docker olmadığı için çalıştırılarak denenmedi.

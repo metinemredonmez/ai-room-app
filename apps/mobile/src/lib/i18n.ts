@@ -62,6 +62,9 @@ const tr = {
   'profile.privacyText':
     'Fotoğrafların yalnızca tasarım üretmek için işlenir. Yüklediğin görsellerdeki konum ve cihaz (EXIF) bilgileri sunucuda silinir; görseller yalnızca süreli, imzalı bağlantılarla sunulur. Hesabını ve tüm verilerini dilediğin an bu ekrandan silebilirsin. Ayrıntılar için KVKK Aydınlatma Metni’ni inceleyebilirsin.',
   'profile.deleteAccount': 'Hesabımı ve verilerimi sil',
+  'profile.verifyText': 'E-posta adresin doğrulanmadı. Hesabını kurtarabilmek için doğrula.',
+  'profile.verifyResend': 'Doğrulama e-postası gönder',
+  'profile.verifySent': 'Doğrulama e-postası gönderildi.',
   'profile.deleteConfirm': 'Hesabın, tüm tasarımların ve görsellerin kalıcı olarak silinecek. Emin misin?',
   'profile.version': 'Sürüm',
 
@@ -165,6 +168,9 @@ const tr = {
   'auth.name': 'Ad (isteğe bağlı)',
   'auth.guestUpgrade': 'Misafir tasarımların yeni hesabına taşınır.',
   'auth.invalid': 'Geçerli bir e-posta ve en az 10 karakterli parola gir.',
+  'auth.forgot': 'Şifremi unuttum',
+  'auth.forgotNeedEmail': 'Önce e-posta adresini yaz.',
+  'auth.forgotSent': 'Bu adrese kayıtlı bir hesap varsa sıfırlama bağlantısı gönderdik. Bağlantı 30 dakika geçerli.',
 
   'onboarding.s1Title': 'Fotoğrafını çek',
   'onboarding.s1Text': 'Salon, mutfak, bahçe ya da cephe — bir fotoğraf yeterli.',
@@ -258,6 +264,9 @@ const en: Record<MessageKey, string> = {
   'profile.privacyText':
     'Your photos are processed only to create designs. Location and device (EXIF) metadata is stripped on the server, and images are served only through short-lived signed links. You can delete your account and all your data from this screen at any time.',
   'profile.deleteAccount': 'Delete my account and data',
+  'profile.verifyText': "Your email isn't verified yet. Verify it so you can recover your account.",
+  'profile.verifyResend': 'Send verification email',
+  'profile.verifySent': 'Verification email sent.',
   'profile.deleteConfirm': 'Your account, designs and images will be permanently deleted. Are you sure?',
   'profile.version': 'Version',
 
@@ -361,6 +370,9 @@ const en: Record<MessageKey, string> = {
   'auth.name': 'Name (optional)',
   'auth.guestUpgrade': 'Your guest designs move to your new account.',
   'auth.invalid': 'Enter a valid email and a password of at least 10 characters.',
+  'auth.forgot': 'Forgot password?',
+  'auth.forgotNeedEmail': 'Enter your email address first.',
+  'auth.forgotSent': "If an account exists for this address, we've sent a reset link. It's valid for 30 minutes.",
 
   'onboarding.s1Title': 'Snap a photo',
   'onboarding.s1Text': 'Living room, kitchen, garden or facade — one photo is enough.',

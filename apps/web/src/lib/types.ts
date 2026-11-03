@@ -5,6 +5,7 @@ export type Locale = "tr" | "en";
 export type User = {
   id: string;
   email: string | null;
+  emailVerified: boolean;
   name: string | null;
   role: "USER" | "ADMIN";
   isGuest: boolean;

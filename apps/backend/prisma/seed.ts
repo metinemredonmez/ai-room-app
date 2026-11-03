@@ -25,7 +25,7 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD ?? randomBytes(18).toString('base64url');
   const totpSecret = newTotpSecret();
   await prisma.user.create({
-    data: { email, passwordHash: await hashPassword(password), name: 'AI Room Admin', role: 'ADMIN', isGuest: false, totpSecret },
+    data: { email, emailVerifiedAt: new Date(), passwordHash: await hashPassword(password), name: 'AI Room Admin', role: 'ADMIN', isGuest: false, totpSecret },
   });
   const dir = path.resolve(process.env.DATA_DIR ?? './data');
   await mkdir(dir, { recursive: true });

@@ -34,6 +34,7 @@ export class UsersService {
     return {
       id: u.id,
       email: u.email,
+      emailVerified: Boolean(u.emailVerifiedAt),
       name: u.name,
       role: u.role,
       isGuest: u.isGuest,

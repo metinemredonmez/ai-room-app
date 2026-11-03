@@ -46,7 +46,7 @@ Güvenlik ilkeleri (red-team kataloğu kimlikleri):
   { "error": { "code": "insufficient_credits", "message": "İnsan tarafından okunabilir mesaj" } }
   ```
   Kodlar: `bad_request` 400, `validation_failed` 400, `unauthorized` 401, `forbidden` 403, `not_found` 404,
-  `insufficient_credits` 402, `pro_required` 402 (PRO araç/stil), `conflict` 409, `payload_too_large` 413, `unsupported_media_type` 415,
+  `insufficient_credits` 402, `pro_required` 402 (PRO araç/stil), `invalid_token` 400 (e-posta bağlantısı geçersiz/kullanılmış/süresi dolmuş), `conflict` 409, `payload_too_large` 413, `unsupported_media_type` 415,
   `rate_limited` 429 (+ `Retry-After`), `ai_unavailable` 502, `busy` 503, `internal` 500.
 - Sayfalama: `?cursor=<opaque>&limit=20` → `{ "items": [...], "nextCursor": "..." | null }`.
 - `Accept-Language: tr|en` veya `?locale=tr|en` → katalog ve AI metinlerinin dili (varsayılan `tr`).
@@ -55,7 +55,7 @@ Güvenlik ilkeleri (red-team kataloğu kimlikleri):
 
 ```ts
 type User = {
-  id: string; email: string | null; name: string | null;
+  id: string; email: string | null; emailVerified: boolean; name: string | null;
   role: 'USER' | 'ADMIN'; isGuest: boolean;
   plan: 'FREE' | 'PRO'; planExpiresAt: string | null;
   credits: number;            // satın alınan / admin tarafından verilen ek kredi
@@ -97,6 +97,10 @@ Kredi kuralı: her varyant 1 hak. Önce `dailyFreeRemaining`, sonra `credits` d�
 | POST | `/auth/login` | `{ email, password }` | `AuthResponse` (admin rolü burada da USER kapsamında token alır) |
 | POST | `/auth/refresh` | `{ refreshToken }` (rotasyon; yeniden kullanım → aile iptali, SES-05) | `AuthResponse` |
 | POST | `/auth/logout` | `{ refreshToken }` | 204 |
+| POST | `/auth/password/forgot` | `{ email }` | 202 `{ ok: true }` — hesap olsun olmasın aynı yanıt; mail arka planda (AUT-03) |
+| POST | `/auth/password/reset` | `{ token, password (≥10) }` | 204 — tüm oturumlar ve bekleyen e-posta token'ları iptal (SES-04) |
+| POST | `/auth/email/verify` | `{ token }` | `{ ok: true }` |
+| POST | `/auth/email/resend` | — (Bearer, kayıtlı kullanıcı) | 202 `{ ok: true, alreadyVerified }` |
 | GET | `/me` | — | `User` |
 | PATCH | `/me` | `{ name?, locale? }` | `User` |
 | DELETE | `/me` | — | 204 (KVKK: hesap, tasarım ve görseller silinir) |
@@ -140,6 +144,11 @@ type Catalog = {
 };
 type Suggestion = { label: string; tool: ToolId; styleId?: string; roomId?: string; instructions?: string };
 ```
+
+E-posta bağlantıları (MAIL-01): yalnız `WEB_APP_URL` + sabit yol + fragment ile üretilir —
+`{WEB_APP_URL}/sifre-sifirla#token=…` (30 dk) ve `{WEB_APP_URL}/eposta-dogrula#token=…` (48 sa). Token 43 karakter
+base64url, tek kullanımlık; sunucuda yalnız SHA-256'sı tutulur. Geliştirmede postalar `apps/backend/data/outbox/`
+klasörüne yazılır, üretimde SMTP zorunludur.
 
 Sohbet önerileri yalnız öneridir; istemci kullanıcı dokunmadan üretim başlatmaz (AI-01).
 

@@ -42,6 +42,9 @@ Admin ──cookie──> Admin BFF ──────┤
 - **Alışveriş ve bütçe analizi:** ürünler, TL fiyat aralıkları, Trendyol / Hepsiburada / IKEA arama linkleri,
   tadilat kalemleri ve toplam bütçe.
 - **AI tasarım sohbeti:** fotoğraf eklenebilir. Öneriler yalnız "dokun ve uygula" düğmesi olarak gelir; sohbet kendiliğinden üretim başlatmaz (AI-01).
+- **Hesap güvenliği:** e-posta doğrulama ve şifre sıfırlama. Bağlantılar tek kullanımlıktır ve yalnız yapılandırılmış
+  adresten üretilir; şifre sıfırlanınca tüm oturumlar kapanır. Geliştirmede e-postalar `apps/backend/data/outbox/`
+  klasörüne yazılır, üretimde SMTP ile gönderilir.
 - **Misafir modu:** günde 3 ücretsiz tasarım. Misafir hesap kayıtla yükseltilir ve tasarımlar korunur.
   PRO planı haftalık ₺149,99, aylık ₺349,99, yıllık ₺1.299,99 (şimdilik demo yükseltme).
 - **Yapay zekâ etiketi:** ücretsiz plandaki sonuçlarda "Yapay zekâ ile oluşturulmuştur" yazısı bulunur
@@ -100,8 +103,8 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 
 ```bash
 cd apps/ai-service && uv run pytest              # 8 test: iç token, prompt kaçışı, görsel doğrulama, sohbet filtresi, güvensiz ayar
-cd apps/backend && npm test                      # 10 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01 açılış kontrolleri
-node scripts/smoke.mjs                           # 27 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
+cd apps/backend && npm test                      # 11 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01 açılış kontrolleri, MAIL-01 bağlantı üretimi
+node scripts/smoke.mjs                           # 40 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 
 Uçtan uca smoke testi şunları kapsar:
@@ -110,6 +113,8 @@ Uçtan uca smoke testi şunları kapsar:
 - Yetkilendirme ve oturum: başka kullanıcının kaydına erişim (AZ-01) ve refresh token yeniden kullanımı (SES-05).
 - Admin: kullanıcı token'ıyla admin API (TOK-02), admin TOTP ve kod tekrarı (AUT-01), istatistik,
   öne çıkarma, denetim kaydı.
+- Hesap kurtarma: e-posta doğrulama, şifre sıfırlama, tek kullanım, yanlış amaç, sahte Host başlığı (MAIL-01),
+  sıfırlama sonrası oturum iptali (SES-04).
 
 ## Güvenlik
 
@@ -135,6 +140,7 @@ Kontroller red-team kataloğundaki kimliklerle eşleştirildi; ayrıntı PDF rap
 - Mock modda bütün akışlar.
 
 **Henüz yok:**
+- Gerçek SMTP sağlayıcısı ve SPF/DKIM/DMARC ayarı (kod hazır, `MAIL_TRANSPORT=smtp`).
 - Gerçek ödeme (App Store/Play için RevenueCat, web için iyzico/PayTR).
 - Fırça ile maske düzenleme.
 - Çoklu fotoğraf tutarlılığı.

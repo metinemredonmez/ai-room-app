@@ -23,6 +23,7 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -42,6 +43,25 @@ export default function AuthScreen() {
           : await api.login({ email: mail, password });
       await signIn(auth);
       close();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const forgot = async () => {
+    const mail = email.trim().toLowerCase();
+    setNotice(null);
+    if (!EMAIL_RE.test(mail)) {
+      setError(t('auth.forgotNeedEmail'));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api.forgotPassword(mail);
+      setNotice(t('auth.forgotSent'));
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -98,7 +118,13 @@ export default function AuthScreen() {
             onSubmitEditing={submit}
           />
           {error ? <ErrorBanner message={error} /> : null}
+          {notice ? (
+            <AppText variant="small" color={c.primary} style={{ textAlign: 'center' }}>
+              {notice}
+            </AppText>
+          ) : null}
           <Button label={mode === 'register' ? t('auth.register') : t('auth.login')} size="lg" loading={busy} onPress={submit} />
+          {mode === 'login' ? <Button label={t('auth.forgot')} kind="ghost" disabled={busy} onPress={forgot} /> : null}
           {mode === 'register' && user?.isGuest ? (
             <AppText variant="small" muted style={{ textAlign: 'center' }}>
               {t('auth.guestUpgrade')}
