@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     max_image_bytes: int = Field(12 * 1024 * 1024, alias="MAX_IMAGE_BYTES")
     max_concurrent_generations: int = Field(4, alias="MAX_CONCURRENT_GENERATIONS", ge=1, le=64)
 
+    # Error reporting (Sentry). Unset = off. Reports carry no personal data (app/monitoring.py).
+    sentry_dsn: str | None = Field(None, alias="SENTRY_DSN", pattern=r"^https?://")
+    sentry_environment: str | None = Field(None, alias="SENTRY_ENVIRONMENT", max_length=40)
+    sentry_release: str | None = Field(None, alias="SENTRY_RELEASE", max_length=80)
+    sentry_traces_sample_rate: float = Field(0.0, alias="SENTRY_TRACES_SAMPLE_RATE", ge=0, le=1)
+
     @property
     def fallback_list(self) -> list[str]:
         return [p.strip() for p in self.image_fallbacks.split(",") if p.strip()]

@@ -1,3 +1,4 @@
+import './instrument.js';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -36,7 +37,7 @@ export async function createApp() {
   app.enableCors({
     origin: cfg.corsOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'Accept-Language', 'X-Request-Id', 'Prefer', 'Idempotency-Key'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Accept-Language', 'X-Request-Id', 'Prefer', 'Idempotency-Key', 'X-App-Version', 'X-App-Platform'],
     exposedHeaders: ['Retry-After', 'X-Request-Id'],
     credentials: false,
     maxAge: 600,

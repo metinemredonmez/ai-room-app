@@ -494,3 +494,44 @@ sağlayıcı erişim token'ı backend'e gelmez.
 - Apple anahtar üçlüsü birlikte verilir. `APPLE_PRIVATE_KEY` varsa `FIELD_ENC_KEY` (32 bayt, base64) zorunludur.
 - Üretimde `APPLE_CLIENT_IDS` doluysa Apple anahtarı zorunludur. `FIELD_ENC_KEY` diğer sırlardan farklı olmalıdır.
 - Mobil giriş ekranı (Apple/Google butonları, profilde bağlı yöntemler) henüz yapılmadı.
+
+### 7.13 Zorunlu güncelleme (426) ve hata izleme — #8 (backend + AI servisi)
+
+**Zorunlu güncelleme**
+- Mobil uygulama her istekte `X-App-Platform: ios|android` ve `X-App-Version: 1.4.0` başlıklarını gönderir.
+- Sürüm, ayarlardaki en düşük sürümün altındaysa her uç 426 döner:
+  `{ error: { code: "update_required", message, minVersion, storeUrl } }`. Uygulama tam ekran güncelleme ekranı gösterir.
+- Başlıkta platform yoksa kapı uygulanmaz. Bu web sitesini, admin panelini ve webhook'ları kapsar. Bu başlığı göndermeyen eski
+  sürümler zorlanamaz; bu yüzden başlık ilk mağaza sürümünde olmalıdır.
+- Biçimi bozuk sürüm en eski sürüm sayılır.
+- `GET /app/version?platform=ios&version=1.3.0` →
+  `{ platform, minVersion, latestVersion, storeUrl, updateRequired, updateAvailable }`.
+  - Uygulama açılışında çağrılır: `updateAvailable` ise kapatılabilir bir uyarı, `updateRequired` ise zorunlu ekran gösterilir.
+  - Bu uç ve `/health` 426 dönmez; eski sürüm de güncelleme bilgisini alabilir.
+- Ayar: `appVersions: { ios: { min, latest, storeUrl }, android: { ... } }` (`PATCH /admin/settings`, gerekçe zorunlu, denetim kaydına girer).
+  - Sürüm `major.minor.patch` biçimindedir ve `min ≤ latest` olmalıdır.
+  - Mağaza bağlantısı yalnız `https://apps.apple.com/…` ya da `https://play.google.com/…` olabilir. Ele geçirilmiş bir admin hesabı
+    kullanıcıları sahte bir siteye yönlendiremez.
+  - Varsayılan `0.0.0`: kapı kapalı. Admin panelindeki form admin aşamasında eklenecek.
+
+**Hata izleme (Sentry)** — LOG-02, KVKK
+- `SENTRY_DSN` boşsa kapalıdır. Backend `@sentry/node`, AI servisi `sentry-sdk` kullanır.
+- Yalnız beklenmeyen hatalar gönderilir:
+  - Backend: 500 dönen istekler; tasarım işinde AI dışı hatalar; bildirim ve bakım kuyruğunda denemeleri biten işler.
+  - AI servisi: yakalanmamış istisnalar.
+  - 4xx ve sağlayıcı/içerik hataları (ör. güvenlik filtresi) gönderilmez.
+- Raporlar yurt dışına çıktığı için kişisel veri taşımaz:
+  - Kullanıcı kimliği, IP, çerez, istek gövdesi, sorgu dizesi, yerel değişkenler gönderilmez. Başlıklardan yalnız `user-agent`,
+    `content-type`, `accept-language`, `x-request-id` ve uygulama sürümü kalır.
+  - URL'ler sorgusuz ve rota kalıbıyla gider (`GET /v1/designs/:id`).
+  - Bütün metinler maskelenir: e-posta, JWT, Bearer/Key token, imzalı URL parametreleri, push token, IP, data URI ve uzun base64.
+  - Log satırlarından yalnız olay adı breadcrumb olarak gider. Raporu kendi loglarımıza `requestId` bağlar.
+  - AI servisinde otomatik entegrasyonlar kapalıdır (Anthropic/httpx entegrasyonları prompt ve sağlayıcı URL'si kaydederdi).
+- Doğrulama:
+  - Birim testleri.
+  - Gerçek bir 500 hatası yerel sahte Sentry'ye gönderildi. Rapordaki çalışma zamanı verisinde e-posta, token, çerez, IP, imza
+    ve gövde bulunmadı.
+- Üretim önerisi:
+  - Sentry'de AB veri bölgesi seçilir ve "Prevent Storing of IP Addresses" açılır.
+  - `SENTRY_RELEASE` olarak commit SHA verilir.
+  - Mobil Sentry mobil aşamada eklenecek.

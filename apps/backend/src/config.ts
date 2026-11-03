@@ -70,6 +70,11 @@ const Env = z.object({
   WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   // Swagger UI at /docs — on by default only outside production.
   SWAGGER_ENABLED: z.enum(['true', 'false']).optional().transform((v) => (v === undefined ? undefined : v === 'true')),
+  // Error reporting (Sentry). Unset = off. Reports carry no personal data (src/common/monitoring.ts).
+  SENTRY_DSN: z.url().optional(),
+  SENTRY_ENVIRONMENT: z.string().max(40).optional(),
+  SENTRY_RELEASE: z.string().max(80).optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0),
 });
 
 export type Config = z.infer<typeof Env> & { corsOrigins: string[]; isProd: boolean; swaggerEnabled: boolean };

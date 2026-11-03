@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AdminController } from './admin/admin.controller.js';
 import { AuditService } from './admin/audit.service.js';
 import { AdminSecurityService } from './admin/admin-security.service.js';
@@ -14,6 +14,7 @@ import { AdminGuard, TokensService, UserGuard } from './auth/tokens.service.js';
 import { BillingController } from './billing/billing.controller.js';
 import { BillingService } from './billing/billing.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
+import { VersionGate } from './common/app-version.js';
 import { ErrorFilter } from './common/errors.js';
 import { PrismaService, RateLimiter, RedisService } from './common/infra.js';
 import { CONFIG, loadConfig } from './config.js';
@@ -33,6 +34,7 @@ import { UsersService } from './users/users.service.js';
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
+    { provide: APP_GUARD, useClass: VersionGate },
     PrismaService,
     RedisService,
     SettingsService,

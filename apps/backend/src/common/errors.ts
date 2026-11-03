@@ -2,6 +2,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/co
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { log } from './log.js';
+import { reportError } from './monitoring.js';
 
 export class AppError extends Error {
   constructor(
@@ -9,6 +10,8 @@ export class AppError extends Error {
     public code: string,
     message?: string,
     public headers: Record<string, string> = {},
+    /** Extra machine-readable fields for the error body (never internals). */
+    public details: Record<string, unknown> = {},
   ) {
     super(message ?? code.replace(/_/g, ' '));
   }
@@ -26,6 +29,7 @@ const STATUS_CODES: Record<number, string> = {
   405: 'bad_request',
   413: 'payload_too_large',
   415: 'unsupported_media_type',
+  426: 'update_required',
   429: 'rate_limited',
 };
 
@@ -51,9 +55,10 @@ export class ErrorFilter implements ExceptionFilter {
     let code = 'internal';
     let message = 'Beklenmeyen bir hata oluştu';
     let headers: Record<string, string> = {};
+    let details: Record<string, unknown> = {};
 
     if (exception instanceof AppError) {
-      ({ status, code, message, headers } = exception);
+      ({ status, code, message, headers, details } = exception);
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       code = STATUS_CODES[status] ?? (status >= 500 ? 'internal' : 'bad_request');
@@ -76,8 +81,11 @@ export class ErrorFilter implements ExceptionFilter {
         path: req.path,
         error: exception instanceof Error ? `${exception.name}: ${exception.message}` : String(exception),
       });
+      // The route pattern, not the path: ids in URLs stay out of the report.
+      const route = (req as { route?: { path?: string } }).route?.path ?? 'unmatched';
+      reportError(exception, { tags: { route: `${req.method} ${route}` }, requestId: req.id });
     }
     for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
-    res.status(status).json({ error: { code, message } });
+    res.status(status).json({ error: { ...details, code, message } });
   }
 }

@@ -5,12 +5,22 @@ import { AppError } from '../common/errors.js';
 import { PrismaService } from '../common/infra.js';
 import { log } from '../common/log.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { SEMVER_RE, compareVersions } from '../common/semver.js';
 
 // Runtime settings (pattern from maeyja settings.defaults.ts + palemi runtime_settings): typed defaults
 // in code, overrides in the Setting table, editable from the admin API without a deploy.
 
 const variants = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
 const text = (max: number) => z.string().max(max);
+const semver = z.string().regex(SEMVER_RE);
+// The store link is shown to every user of an old build: only the official store hosts, https.
+const storeUrl = (host: string) =>
+  z.union([z.literal(''), z.url().refine((u) => { const x = new URL(u); return x.protocol === 'https:' && x.hostname === host; }, `https://${host}/…`)]);
+const appVersion = (host: string) =>
+  z
+    .object({ min: semver, latest: semver, storeUrl: storeUrl(host) })
+    .strict()
+    .refine((v) => compareVersions(v.min, v.latest) <= 0, 'min ≤ latest');
 
 export const SettingsSchema = z
   .object({
@@ -23,6 +33,7 @@ export const SettingsSchema = z
     maintenance: z.object({ enabled: z.boolean(), messageTr: text(300), messageEn: text(300) }).strict(),
     announcement: z.object({ enabled: z.boolean(), textTr: text(300), textEn: text(300) }).strict(),
     requireAiConsent: z.boolean(),
+    appVersions: z.object({ ios: appVersion('apps.apple.com'), android: appVersion('play.google.com') }).strict(),
   })
   .strict();
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -51,6 +62,10 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
       },
       announcement: { enabled: false, textTr: '', textEn: '' },
       requireAiConsent: false,
+      appVersions: {
+        ios: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
+        android: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
+      },
     };
     this.values = this.defaults;
   }

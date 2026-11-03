@@ -23,6 +23,9 @@ import { UsersService } from './users/users.service.js';
 import { PUSH_TOKEN_RE, PushService, maskToken } from './push/push.service.js';
 import { OAuthService } from './auth/oauth.service.js';
 import { OAUTH_PROVIDERS } from './auth/oidc.js';
+import { APP_PLATFORMS, SkipVersionGate } from './common/app-version.js';
+import { clientVersion, compareVersions } from './common/semver.js';
+import { SettingsService } from './settings/settings.service.js';
 
 export function localeOf(req: AppRequest, fallback?: string): Locale {
   const q = typeof req.query.locale === 'string' ? req.query.locale : '';
@@ -32,6 +35,8 @@ export function localeOf(req: AppRequest, fallback?: string): Locale {
   if (header.startsWith('tr')) return 'tr';
   return fallback === 'en' ? 'en' : 'tr';
 }
+
+const AppVersionQuery = z.object({ platform: z.enum(APP_PLATFORMS), version: z.string().max(20) }).strict();
 
 const PageQuery = z.object({
   cursor: z.string().max(64).optional(),
@@ -49,9 +54,11 @@ export class PublicController {
     private prisma: PrismaService,
     private redis: RedisService,
     private ai: AiClient,
+    private settings: SettingsService,
   ) {}
 
   @Get('health')
+  @SkipVersionGate()
   @Doc('Servis sağlığı (DB, Redis, AI servisi)', { response: { type: 'object', properties: { status: { type: 'string', enum: ['ok', 'degraded'] }, db: { type: 'string' }, redis: { type: 'string' }, ai: { type: 'string' } } } })
   async health() {
     const [db, redis, ai, storage] = await Promise.all([
@@ -62,6 +69,24 @@ export class PublicController {
     ]);
     const ok = db === 'ok' && redis === 'ok' && ai === 'ok' && storage === 'ok';
     return { status: ok ? 'ok' : 'degraded', db, redis, ai, storage };
+  }
+
+  /** Soft and forced update check at app start; reachable by an outdated build (no 426 here). */
+  @Get('app/version')
+  @SkipVersionGate()
+  @Doc('Uygulama sürüm kontrolü: en düşük ve en güncel sürüm, mağaza bağlantısı', {
+    description: '`?platform=ios|android&version=1.2.3`. Mobil istekler `X-App-Platform` + `X-App-Version` gönderir; en düşük sürümün altındaysa her uç 426 `update_required` döner.',
+    response: { type: 'object', properties: { platform: { type: 'string' }, minVersion: { type: 'string' }, latestVersion: { type: 'string' }, storeUrl: { type: 'string', nullable: true }, updateRequired: { type: 'boolean' }, updateAvailable: { type: 'boolean' } } },
+    errors: [400],
+  })
+  appVersion(@Query() query: unknown) {
+    const q = parse(AppVersionQuery, query);
+    const rule = this.settings.current.appVersions[q.platform];
+    const version = clientVersion(q.version);
+    return {
+      platform: q.platform, minVersion: rule.min, latestVersion: rule.latest, storeUrl: rule.storeUrl || null,
+      updateRequired: compareVersions(version, rule.min) < 0, updateAvailable: compareVersions(version, rule.latest) < 0,
+    };
   }
 
   @Get('catalog')

@@ -6,6 +6,7 @@ import { AiError } from '../ai/ai.client.js';
 import { CONFIG, type Config } from '../config.js';
 import { PrismaService } from '../common/infra.js';
 import { log } from '../common/log.js';
+import { reportError } from '../common/monitoring.js';
 import { DesignsService } from '../designs/designs.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { ImagesService } from '../images/images.service.js';
@@ -43,7 +44,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       new Worker('maintenance', (job) => this.runMaintenance(job), { connection, concurrency: 1 }),
       new Worker<NotificationJob>('notifications', (job) => this.runNotification(job), { connection, concurrency: 4 }),
     );
-    for (const w of this.workers) w.on('error', (e) => log.warn('worker_error', { error: e.name }));
+    for (const w of this.workers) {
+      w.on('error', (e) => log.warn('worker_error', { error: e.name }));
+      // Design failures are reported where they are classified (runDesign); the rest once retries are spent.
+      if (w.name !== 'designs') {
+        w.on('failed', (job, e) => {
+          if (job && (e instanceof UnrecoverableError || job.attemptsMade >= (job.opts.attempts ?? 1))) reportError(e, { tags: { queue: w.name, job: job.name } });
+        });
+      }
+    }
     await this.queues.maintenance.upsertJobScheduler('reconcile-designs', { every: 60_000 }, { name: 'reconcile-designs' });
     await this.queues.maintenance.upsertJobScheduler(
       'retention',
@@ -64,6 +73,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     } catch (e) {
       // process() already failed + refunded the design for anything non-retryable or final.
       if (e instanceof AiError && e.retryable && !finalAttempt) throw e;
+      // Provider and content errors are expected outcomes; anything else is a bug worth a report.
+      if (!(e instanceof AiError)) reportError(e, { tags: { queue: 'designs', job: job.name }, requestId: job.data.requestId });
       await this.notify(job.data.designId);
       throw new UnrecoverableError((e as Error).message);
     }

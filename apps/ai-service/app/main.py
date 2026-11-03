@@ -13,6 +13,7 @@ from fastapi.security import APIKeyHeader
 from .assistant import Assistant, AssistantUnavailable, CallUsage
 from .config import Settings, get_settings
 from .images import NO_CHANGE_BELOW, ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
+from .monitoring import init_monitoring
 from .prompts import build_prompt
 from .providers import ImageProvider, ProviderError, create_providers
 from .quality import assess
@@ -81,6 +82,8 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
     segmenter = segmenter or create_segmenter(settings.fal_key, settings.falai_seg_model, settings.falai_seg_cost_usd,
                                               settings.image_provider)
     generation_slots = asyncio.Semaphore(settings.max_concurrent_generations)
+    init_monitoring(settings.sentry_dsn, settings.sentry_environment or settings.env, settings.sentry_release,
+                    settings.sentry_traces_sample_rate)
 
     app = FastAPI(
         title="AI Room AI Service",

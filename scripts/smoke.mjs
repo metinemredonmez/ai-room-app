@@ -272,6 +272,22 @@ if (adminToken) {
   ok(give.status === 201 && withConsent.status === 201, 'after consent the design succeeds');
   await call('PATCH', '/admin/settings', { ...A, body: { values: { requireAiConsent: st.json.values.requireAiConsent }, reason: 'smoke test revert' } });
 
+  // Force update (#8): an iOS build below the minimum gets 426 + store link; web and current builds pass.
+  const versions = st.json.values.appVersions;
+  const ios = (version) => ({ 'x-app-platform': 'ios', 'x-app-version': version });
+  const badStore = await call('PATCH', '/admin/settings', { ...A, body: { values: { appVersions: { ...versions, ios: { min: '1.2.0', latest: '1.3.0', storeUrl: 'https://evil.example.com/app' } } }, reason: 'smoke force update' } });
+  ok(badStore.status === 400, 'store link must be an official store URL');
+  const setMin = await call('PATCH', '/admin/settings', { ...A, body: { values: { appVersions: { ...versions, ios: { min: '1.2.0', latest: '1.3.0', storeUrl: 'https://apps.apple.com/app/id1' } } }, reason: 'smoke force update' } });
+  ok(setMin.status === 200, 'admin sets a minimum iOS version');
+  const old = await call('GET', '/catalog', { token: vt, headers: ios('1.1.9') });
+  ok(old.status === 426 && old.json?.error?.code === 'update_required' && old.json.error.storeUrl === 'https://apps.apple.com/app/id1' && old.json.error.minVersion === '1.2.0', 'outdated iOS build gets 426 update_required');
+  const current = await call('GET', '/catalog', { headers: ios('1.2.0') });
+  const web = await call('GET', '/catalog');
+  ok(current.status === 200 && web.status === 200, 'current build and web are not gated');
+  const check = await call('GET', '/app/version?platform=ios&version=1.1.0', { headers: ios('1.1.0') });
+  ok(check.status === 200 && check.json?.updateRequired === true && check.json.updateAvailable === true && check.json.latestVersion === '1.3.0', 'version check stays reachable for an outdated build');
+  await call('PATCH', '/admin/settings', { ...A, body: { values: { appVersions: versions }, reason: 'smoke test revert' } });
+
   const usage = await call('GET', '/admin/ai/usage?days=7', A);
   ok(usage.status === 200 && usage.json?.budget?.state && usage.json.daily.length === 7 && usage.json.today.calls >= 1, 'AI cost ledger + budget state', `today calls ${usage.json?.today?.calls}, $${usage.json?.today?.costUsd}`);
   const reports = await call('GET', '/admin/reports?status=OPEN', A);
@@ -389,7 +405,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

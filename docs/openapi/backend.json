@@ -41,6 +41,60 @@
         ]
       }
     },
+    "/v1/app/version": {
+      "get": {
+        "description": "`?platform=ios|android&version=1.2.3`. Mobil istekler `X-App-Platform` + `X-App-Version` gönderir; en düşük sürümün altındaysa her uç 426 `update_required` döner.",
+        "operationId": "PublicController_appVersion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "platform": {
+                      "type": "string"
+                    },
+                    "minVersion": {
+                      "type": "string"
+                    },
+                    "latestVersion": {
+                      "type": "string"
+                    },
+                    "storeUrl": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "updateRequired": {
+                      "type": "boolean"
+                    },
+                    "updateAvailable": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Uygulama sürüm kontrolü: en düşük ve en güncel sürüm, mağaza bağlantısı",
+        "tags": [
+          "public"
+        ]
+      }
+    },
     "/v1/catalog": {
       "get": {
         "description": "`?locale=tr|en` ya da Accept-Language",
@@ -3894,6 +3948,82 @@
                       },
                       "requireAiConsent": {
                         "type": "boolean"
+                      },
+                      "appVersions": {
+                        "type": "object",
+                        "properties": {
+                          "ios": {
+                            "type": "object",
+                            "properties": {
+                              "min": {
+                                "type": "string",
+                                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+                              },
+                              "latest": {
+                                "type": "string",
+                                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+                              },
+                              "storeUrl": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      ""
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "format": "uri"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "min",
+                              "latest",
+                              "storeUrl"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "android": {
+                            "type": "object",
+                            "properties": {
+                              "min": {
+                                "type": "string",
+                                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+                              },
+                              "latest": {
+                                "type": "string",
+                                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+                              },
+                              "storeUrl": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      ""
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "format": "uri"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "min",
+                              "latest",
+                              "storeUrl"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "ios",
+                          "android"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "additionalProperties": false
