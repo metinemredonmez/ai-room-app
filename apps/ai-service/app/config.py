@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # KEY-01 / KEY-02: secrets come only from the environment; unsafe settings stop the process at boot.
 
 WEAK_TOKENS = {"change-me", "changeme", "secret", "internal", "dev"}
-IMAGE_PROVIDERS = ("mock", "gemini", "replicate")
-ProviderName = Literal["mock", "gemini", "replicate"]
+IMAGE_PROVIDERS = ("mock", "gemini", "replicate", "falai")
+ProviderName = Literal["mock", "gemini", "replicate", "falai"]
 
 
 class Settings(BaseSettings):
@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     gemini_image_model: str = Field("gemini-2.5-flash-image", alias="GEMINI_IMAGE_MODEL")
     replicate_api_token: str | None = Field(None, alias="REPLICATE_API_TOKEN")
     replicate_model: str = Field("black-forest-labs/flux-kontext-pro", alias="REPLICATE_MODEL")
+
+    # fal.ai: FLUX.2 [klein] edit as an image provider + SAM 3 segmentation for region lock.
+    fal_key: str | None = Field(None, alias="FAL_KEY")
+    falai_edit_model: str = Field("fal-ai/flux-2/klein/4b/edit", alias="FALAI_EDIT_MODEL")
+    falai_seg_model: str = Field("fal-ai/sam-3/image", alias="FALAI_SEG_MODEL")
+    falai_image_cost_usd: float = Field(0.012, alias="FALAI_IMAGE_COST_USD", ge=0)
+    falai_seg_cost_usd: float = Field(0.005, alias="FALAI_SEG_COST_USD", ge=0)
+    # Region lock for local edits (paint, flooring, replace, targeted declutter): auto | off.
+    region_lock: Literal["auto", "off"] = Field("auto", alias="REGION_LOCK")
 
     anthropic_api_key: str | None = Field(None, alias="ANTHROPIC_API_KEY")
     anthropic_model: str = Field("claude-opus-5-5", alias="ANTHROPIC_MODEL")
@@ -56,7 +65,8 @@ class Settings(BaseSettings):
         return self.env != "production"
 
     def _has_key(self, provider: str) -> bool:
-        return {"mock": True, "gemini": bool(self.gemini_api_key), "replicate": bool(self.replicate_api_token)}[provider]
+        return {"mock": True, "gemini": bool(self.gemini_api_key), "replicate": bool(self.replicate_api_token),
+                "falai": bool(self.fal_key)}[provider]
 
     @model_validator(mode="after")
     def check_safe(self) -> "Settings":
@@ -70,7 +80,7 @@ class Settings(BaseSettings):
             if name not in IMAGE_PROVIDERS:
                 problems.append(f"unknown image provider '{name}'")
             elif not self._has_key(name):
-                key = "GEMINI_API_KEY" if name == "gemini" else "REPLICATE_API_TOKEN"
+                key = {"gemini": "GEMINI_API_KEY", "replicate": "REPLICATE_API_TOKEN", "falai": "FAL_KEY"}[name]
                 problems.append(f"{key} is required for provider '{name}'")
         if len(set(chain)) != len(chain):
             problems.append("IMAGE_FALLBACKS must not repeat a provider")
@@ -85,7 +95,8 @@ class Settings(BaseSettings):
         return bool(self.anthropic_api_key)
 
     def image_cost_usd(self, provider: str) -> float:
-        return {"gemini": self.gemini_image_cost_usd, "replicate": self.replicate_image_cost_usd}.get(provider, 0.0)
+        return {"gemini": self.gemini_image_cost_usd, "replicate": self.replicate_image_cost_usd,
+                "falai": self.falai_image_cost_usd}.get(provider, 0.0)
 
     def claude_cost_usd(self, input_tokens: int, output_tokens: int) -> float:
         return (input_tokens * self.anthropic_input_usd_per_mtok + output_tokens * self.anthropic_output_usd_per_mtok) / 1_000_000

@@ -3396,6 +3396,105 @@
         ]
       }
     },
+    "/v1/admin/billing/events": {
+      "get": {
+        "operationId": "AdminController_billingEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Ödeme olayları (RevenueCat webhook kutusu)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/billing/events/{id}/retry": {
+      "post": {
+        "operationId": "AdminController_retryBillingEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Ödeme olayını yeniden işle (eşleşmeyen / başarısız)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/admin/jobs": {
       "get": {
         "operationId": "AdminController_jobRuns",
@@ -3482,6 +3581,119 @@
         "summary": "Sistem durumu (AI, DB, Redis)",
         "tags": [
           "admin"
+        ]
+      }
+    },
+    "/v1/webhooks/revenuecat": {
+      "post": {
+        "description": "Önce kimlik doğrulanır, sonra olay `id` ile bir kez kaydedilir; tekrar gelen olay yeniden işlenmez. İşleme kuyrukta yapılır ve RevenueCat REST ile abone durumu eşitlenir.",
+        "operationId": "BillingController_revenuecat",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "RevenueCat webhook (Authorization ve/veya X-RevenueCat-Webhook-Signature HMAC zorunlu)",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/v1/billing/sync": {
+      "post": {
+        "operationId": "BillingController_sync",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "ai_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user": []
+          }
+        ],
+        "summary": "Satın alma sonrası abonelik durumunu RevenueCat ile eşitle",
+        "tags": [
+          "billing"
         ]
       }
     }
@@ -3850,6 +4062,50 @@
               "RELEASED"
             ]
           },
+          "region": {
+            "nullable": true,
+            "description": "Region lock for paint / flooring / replace / targeted declutter; null otherwise",
+            "type": "object",
+            "properties": {
+              "applied": {
+                "type": "boolean",
+                "description": "true: pixels outside the mask are the input photo (API.md §7.8)"
+              },
+              "target": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "sam3",
+                  "heuristic",
+                  "none"
+                ]
+              },
+              "coverage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "reason": {
+                "nullable": true,
+                "type": "string",
+                "enum": [
+                  "no_segmenter",
+                  "segmentation_failed",
+                  "mask_unusable"
+                ]
+              }
+            },
+            "required": [
+              "applied",
+              "target",
+              "method",
+              "coverage",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
           "queuedAt": {
             "nullable": true,
             "type": "string",
@@ -3879,6 +4135,7 @@
           "favorite",
           "featured",
           "chargeState",
+          "region",
           "queuedAt",
           "startedAt",
           "createdAt"
@@ -4002,6 +4259,50 @@
                     "RELEASED"
                   ]
                 },
+                "region": {
+                  "nullable": true,
+                  "description": "Region lock for paint / flooring / replace / targeted declutter; null otherwise",
+                  "type": "object",
+                  "properties": {
+                    "applied": {
+                      "type": "boolean",
+                      "description": "true: pixels outside the mask are the input photo (API.md §7.8)"
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string",
+                      "enum": [
+                        "sam3",
+                        "heuristic",
+                        "none"
+                      ]
+                    },
+                    "coverage": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "reason": {
+                      "nullable": true,
+                      "type": "string",
+                      "enum": [
+                        "no_segmenter",
+                        "segmentation_failed",
+                        "mask_unusable"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "applied",
+                    "target",
+                    "method",
+                    "coverage",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                },
                 "queuedAt": {
                   "nullable": true,
                   "type": "string",
@@ -4031,6 +4332,7 @@
                 "favorite",
                 "featured",
                 "chargeState",
+                "region",
                 "queuedAt",
                 "startedAt",
                 "createdAt"

@@ -85,6 +85,7 @@ export class DesignsService {
       favorite: d.favorite,
       featured: d.featured,
       chargeState: d.chargeState,
+      region: ((d.params ?? {}) as { region?: unknown }).region ?? null,
       queuedAt: d.queuedAt?.toISOString() ?? null,
       startedAt: d.startedAt?.toISOString() ?? null,
       createdAt: d.createdAt.toISOString(),
@@ -212,11 +213,14 @@ export class DesignsService {
         where: { id: designId },
         data: {
           status: 'SUCCEEDED', prompt: out.prompt, provider: out.provider, finishedAt: new Date(),
+          ...(out.region ? { params: { ...(d.params as Prisma.JsonObject), region: out.region } } : {}),
           creditsUsed: d.creditsUsed - refundCredits, freeUsed: d.freeUsed - refundFree,
         },
       });
       await this.prisma.design.updateMany({ where: { id: designId, chargeState: 'HELD' }, data: { chargeState: 'CAPTURED' } });
-      log.info('design_succeeded', { designId, userId: d.userId, tool: d.tool, provider: out.provider, variants: buffers.length });
+      log.info('design_succeeded', {
+        designId, userId: d.userId, tool: d.tool, provider: out.provider, variants: buffers.length, regionLock: out.region?.applied ?? null,
+      });
     } catch (e) {
       if (e instanceof AiError && e.usage) await this.usage.record(e.usage, { userId: d.userId, designId });
       const retryable = e instanceof AiError ? e.retryable : false;

@@ -335,3 +335,26 @@ Zamanlı işler BullMQ ile tekrarlı çalışır; her çalışma `JobRun` tablos
 - Taşıma: `npm run storage:migrate` yerel dosyaları kovaya kopyalar; tekrar çalıştırmak güvenlidir.
   Yerel test için `npm run s3:dev` (s3rver, port 4569).
 - `/health` ve `/admin/system` yanıtlarına depolama sürücüsü ve durumu (`storage`) eklendi.
+
+### 7.8 Bölge kilidi ve fal.ai (maske tabanlı düzenleme) — #4
+Rakiplerde en sık şikâyet: "boyamak istedim, pencerelerimi de değiştirdi". Yerel düzenlemelerde değişiklik maskeyle sınırlanır.
+- Hedef bölge araca göre belirlenir: `paint` → `wall`, `flooring` → `floor`, `replace` → `target` (yoksa `sofa`),
+  `declutter` → `target` (yalnız hedefli silmede; `remove_all` ve hedefsiz silme tüm sahneyi düzenler).
+  Diğer araçlarda (`redesign`, `furnish`, `exterior`, `garden`, `reference`, `custom`) bölge kilidi yoktur.
+- Maske, görsel üretimiyle **aynı anda** fal.ai SAM 3 ile çıkarılır (`FALAI_SEG_MODEL=fal-ai/sam-3/image`, metin istemli).
+  Puanı 0,5'in altındaki maskeler atılır, kalanların birleşimi kullanılır. Bu yüzden kilit ek gecikme getirmez.
+- Hangi sağlayıcı üretirse üretsin (Gemini, Replicate, fal), çıktı yalnız maske içinde orijinalle birleştirilir
+  (3 px yumuşak kenar). Maske dışında kullanıcının kendi pikselleri kalır; fark yalnız JPEG yeniden kodlama gürültüsüdür.
+- "Değişiklik yok" tespiti kilitli düzenlemede yalnız maske içinde ölçülür. Böylece küçük ama gerçek bir düzenleme atılmaz.
+- Maske çıkarılamazsa (hata, zaman aşımı) ya da kapsamı %0,5'ten az veya %95'ten fazlaysa tasarım **başarısız olmaz**.
+  Düzenleme kilitsiz sürer ve yanıtta nedeni yazar.
+- Yanıt: `region: { applied, target, method: 'sam3'|'heuristic'|'none', coverage: 0..1, reason: null|'no_segmenter'|'segmentation_failed'|'mask_unusable' } | null`.
+  Backend bunu `Design.params.region` içinde saklar ve tasarım DTO'sunda `region` olarak döndürür.
+- Maliyet: SAM 3 çağrısı (`FALAI_SEG_COST_USD`, varsayılan 0,005 $) aynı `generate` kaydına eklenir.
+- `FAL_KEY` yoksa: `mock` sağlayıcıda açıkça etiketli geometrik maske (`method: 'heuristic'`) kullanılır, yalnız demo içindir.
+  Gerçek sağlayıcılarda sahte maske kullanılmaz; kilit uygulanmaz (`reason: 'no_segmenter'`). `REGION_LOCK=off` kilidi kapatır.
+- Yeni görsel sağlayıcısı `falai`: FLUX.2 [klein] 4B edit (`FALAI_EDIT_MODEL`, görsel başına ~0,012 $).
+  `IMAGE_PROVIDER` veya `IMAGE_FALLBACKS` içinde kullanılabilir.
+  - Girdi ve çıktı `sync_mode` ile satır içi data URI olarak taşınır. URL dönerse yalnız `https` + `fal.media`/`fal.run`/`fal.ai`
+    alan adlarından indirilir (EXT-01, SSRF).
+  - Güvenlik denetimi açıktır; `has_nsfw_concepts` yeniden denenmeyen `falai_safety_blocked` hatasına dönüşür.

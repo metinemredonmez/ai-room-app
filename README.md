@@ -17,7 +17,7 @@ bahçe tasarım platformu. Fotoğraf yükle, stil seç, yapay zekâ yeniden tasa
 | Klasör | Ne | Teknoloji | Port |
 |---|---|---|---|
 | [`apps/backend`](apps/backend) | Ana API: kimlik, tasarımlar, kredi, görseller, admin uçları | NestJS 12 · Prisma 7 · PostgreSQL · Redis | 4000 |
-| [`apps/ai-service`](apps/ai-service) | **Ayrı** AI servisi: görsel üretim, tasarım sohbeti, ürün/bütçe analizi | Python 3.13 · FastAPI · Gemini / Replicate (FLUX Kontext) / mock · Claude | 8001 (yalnız iç ağ) |
+| [`apps/ai-service`](apps/ai-service) | **Ayrı** AI servisi: görsel üretim, tasarım sohbeti, ürün/bütçe analizi | Python 3.13 · FastAPI · Gemini / Replicate (FLUX Kontext) / fal.ai (FLUX.2 klein + SAM 3) / mock · Claude | 8001 (yalnız iç ağ) |
 | [`apps/web`](apps/web) | Kullanıcı web sitesi + stüdyo (BFF, httpOnly çerez) | Next.js 16 · Tailwind 4 | 3000 |
 | [`apps/admin`](apps/admin) | Yönetim paneli (parola + TOTP MFA) | Next.js 16 · Tailwind 4 | 3001 |
 | [`apps/mobile`](apps/mobile) | iOS / Android uygulaması (web önizleme dahil) | Expo SDK 58 · React Native 0.88 · Expo Router | 8081 |
@@ -131,14 +131,16 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 | `IMAGE_PROVIDER=mock` | Anahtarsız, çevrimdışı renk dönüşümü. Akışların hepsi çalışır. Üretimde reddedilir. |
 | `IMAGE_PROVIDER=gemini` + `GEMINI_API_KEY` | Gemini görsel düzenleme (`gemini-2.5-flash-image`, değiştirilebilir) |
 | `IMAGE_PROVIDER=replicate` + `REPLICATE_API_TOKEN` | Replicate üzerinde FLUX.1 Kontext Pro |
+| `IMAGE_PROVIDER=falai` + `FAL_KEY` | fal.ai üzerinde FLUX.2 [klein] 4B edit (görsel başına ~0,012 $) |
+| `FAL_KEY` (hangi sağlayıcı olursa olsun) | **Bölge kilidi** (API.md §7.8): boya, zemin, değiştir ve hedefli silmede SAM 3 maskesi çıkarılır, çıktı yalnız maske içinde uygulanır. Pencere ve kapılar kullanıcının kendi pikselleriyle kalır. |
 | `ANTHROPIC_API_KEY` | Claude ile gerçek tasarım sohbeti, alışveriş/bütçe analizi ve referans stil çözümleme. Model `claude-opus-5-5`; sunucu tarafı yedek model (`fallbacks: "default"`) açık. Anahtar yoksa deterministik demo yanıtları döner. |
 
 ## Testler
 
 ```bash
-cd apps/ai-service && uv run pytest              # 27 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change
-cd apps/backend && npm test                      # 12 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici
-node scripts/smoke.mjs                           # 64 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
+cd apps/ai-service && uv run pytest              # 42 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change, bölge kilidi, fal.ai
+cd apps/backend && npm test                      # 16 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici
+node scripts/smoke.mjs                           # 73 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 
 Uçtan uca smoke testi şunları kapsar:

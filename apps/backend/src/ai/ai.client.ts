@@ -39,6 +39,8 @@ export interface GenerateOutput {
   prompt: string;
   provider: string;
   reference_style: string | null;
+  /** Region lock (API.md §7.8); null for whole-scene tools. */
+  region?: { applied: boolean; target: string; method: 'sam3' | 'heuristic' | 'none'; coverage: number; reason: string | null } | null;
   usage?: AiUsageReport;
 }
 

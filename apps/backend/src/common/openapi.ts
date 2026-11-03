@@ -61,7 +61,13 @@ const Design = z.object({
   id: z.uuid(), title: z.string(), tool: z.string(), styleId: z.string().nullable(), roomId: z.string().nullable(),
   params: z.record(z.string(), z.unknown()), status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED']), error: z.string().nullable(),
   input: ImageRef, results: z.array(ImageRef), favorite: z.boolean(), featured: z.boolean(),
-  chargeState: z.enum(['HELD', 'CAPTURED', 'RELEASED']).nullable(), queuedAt: iso.nullable(), startedAt: iso.nullable(), createdAt: iso,
+  chargeState: z.enum(['HELD', 'CAPTURED', 'RELEASED']).nullable(),
+  region: z.object({
+    applied: z.boolean().describe('true: pixels outside the mask are the input photo (API.md §7.8)'),
+    target: z.string(), method: z.enum(['sam3', 'heuristic', 'none']), coverage: z.number().min(0).max(1),
+    reason: z.enum(['no_segmenter', 'segmentation_failed', 'mask_unusable']).nullable(),
+  }).nullable().describe('Region lock for paint / flooring / replace / targeted declutter; null otherwise'),
+  queuedAt: iso.nullable(), startedAt: iso.nullable(), createdAt: iso,
 });
 const Money = z.number().describe('TL');
 const Analysis = z.object({

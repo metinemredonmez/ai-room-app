@@ -199,11 +199,72 @@ class ReplicateProvider:
         return res.content
 
 
+FAL_RESULT_HOSTS = ("fal.media", "fal.run", "fal.ai")
+
+
+class FalProvider:
+    """fal.ai FLUX.2 [klein] instruction edit (input and output inline as data URIs with sync_mode)."""
+
+    name = "falai"
+
+    def __init__(self, key: str, model: str, transport: httpx.AsyncBaseTransport | None = None):
+        self._headers = {"Authorization": f"Key {key}"}
+        self.model = model
+        self._url = f"https://fal.run/{model}"
+        self._transport = transport
+
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, timeout: float) -> bytes:
+        with Image.open(io.BytesIO(image)) as src:
+            w, h = src.size
+        body = {
+            "prompt": prompt,
+            "image_urls": ["data:image/jpeg;base64," + base64.b64encode(image).decode()],
+            "image_size": {"width": max(16, w // 16 * 16), "height": max(16, h // 16 * 16)},
+            "num_images": 1,
+            "seed": 1000 + variant,
+            "output_format": "jpeg",
+            "sync_mode": True,
+            "enable_safety_checker": True,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=_timeout(timeout), transport=self._transport) as client:
+                res = await client.post(self._url, json=body, headers=self._headers)
+                if res.status_code != 200:
+                    raise http_error(self.name, res.status_code)
+                data = res.json()
+                nsfw = data.get("has_nsfw_concepts")
+                if isinstance(nsfw, list) and nsfw and nsfw[0]:
+                    raise ProviderError("falai_safety_blocked", retryable=False)
+                images = data.get("images")
+                if not isinstance(images, list) or not images or not isinstance(images[0], dict):
+                    raise ProviderError("falai_bad_output", retryable=False)
+                url = images[0].get("url")
+                if isinstance(url, str) and url.startswith("data:"):
+                    return base64.b64decode(url.split(",", 1)[1])
+                return await self._download(client, url)
+        except httpx.TransportError as exc:
+            raise transport_error(self.name, exc) from exc
+
+    @staticmethod
+    async def _download(client: httpx.AsyncClient, url: object) -> bytes:
+        # EXT: only https results from fal's own CDN, never an arbitrary URL from the response.
+        parsed = urlparse(url if isinstance(url, str) else "")
+        host = parsed.hostname or ""
+        if parsed.scheme != "https" or not any(host == h or host.endswith("." + h) for h in FAL_RESULT_HOSTS):
+            raise ProviderError("falai_untrusted_output_host", retryable=False)
+        res = await client.get(parsed.geturl(), follow_redirects=False)
+        if res.status_code != 200 or len(res.content) > MAX_RESULT_BYTES:
+            raise ProviderError("falai_download_failed", retryable=True)
+        return res.content
+
+
 def create_provider(name: str, settings: Settings) -> ImageProvider:
     if name == "gemini":
         return GeminiProvider(settings.gemini_api_key or "", settings.gemini_image_model)
     if name == "replicate":
         return ReplicateProvider(settings.replicate_api_token or "", settings.replicate_model)
+    if name == "falai":
+        return FalProvider(settings.fal_key or "", settings.falai_edit_model)
     return MockProvider()
 
 

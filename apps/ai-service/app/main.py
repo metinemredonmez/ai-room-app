@@ -12,14 +12,15 @@ from fastapi.security import APIKeyHeader
 
 from .assistant import Assistant, AssistantUnavailable, CallUsage
 from .config import Settings, get_settings
-from .images import ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
+from .images import NO_CHANGE_BELOW, ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
 from .prompts import build_prompt
 from .providers import ImageProvider, ProviderError, create_providers
 from .quality import assess
+from .region import RegionMask, Segmenter, composite, create_segmenter, masked_mean_abs_diff, region_target, usable
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, ChatRequest, ChatResponse, ErrorResponse, GenerateRequest, GenerateResponse,
-    HealthResponse, QualityRequest, QualityResponse, Usage,
+    HealthResponse, QualityRequest, QualityResponse, RegionInfo, Usage,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -31,6 +32,7 @@ OUTPUT_MAX_BYTES = 25 * 1024 * 1024
 DESCRIPTION = """Internal AI service of AI Room. Only the backend calls it (header `X-Internal-Token`).
 
 * image generation with a provider fallback chain, circuit breakers and a 150 s time budget
+* region lock for paint / flooring / replace / targeted declutter: SAM 3 mask, pixels outside it stay the user's
 * capture-quality gate, no-change detection
 * Claude design chat and shopping/budget analysis
 * every AI answer carries a `usage` cost-ledger entry (API.md §7.2)
@@ -68,7 +70,7 @@ def error(status: int, code: str, message: str, retryable: bool = False, usage: 
 
 
 def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
-               assistant: Assistant | None = None) -> FastAPI:
+               assistant: Assistant | None = None, segmenter: Segmenter | None = None) -> FastAPI:
     chain = ProviderChain(
         providers or create_providers(settings),
         threshold=settings.breaker_failure_threshold,
@@ -76,6 +78,8 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         provider_timeout=settings.provider_timeout_s,
     )
     assistant = assistant or Assistant(settings)
+    segmenter = segmenter or create_segmenter(settings.fal_key, settings.falai_seg_model, settings.falai_seg_cost_usd,
+                                              settings.image_provider)
     generation_slots = asyncio.Semaphore(settings.max_concurrent_generations)
 
     app = FastAPI(
@@ -157,10 +161,11 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             fallbacks=settings.fallback_list, providers=chain.snapshot(),  # type: ignore[arg-type]
         )
 
-    def generation_usage(results: list[ChainResult], describe: CallUsage | None, started: float) -> Usage:
+    def generation_usage(results: list[ChainResult], describe: CallUsage | None, started: float,
+                         extra_cost: float = 0.0) -> Usage:
         counts = Counter((r.provider, r.model) for r in results)
         (provider, model), _ = counts.most_common(1)[0] if counts else ((chain.primary.name, chain.primary.model), 0)
-        cost = sum(settings.image_cost_usd(r.provider) for r in results)
+        cost = extra_cost + sum(settings.image_cost_usd(r.provider) for r in results)
         input_tokens = output_tokens = 0
         if describe is not None and describe.model != "demo":
             input_tokens, output_tokens = describe.input_tokens, describe.output_tokens
@@ -171,6 +176,15 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             latency_ms=int((time.perf_counter() - started) * 1000), cost_usd=round(cost, 6),
             fallback_used=any(r.fallback_used for r in results),
         )
+
+    async def segment(image: bytes, target: str, timeout: float) -> RegionMask | Exception:
+        assert segmenter is not None
+        try:
+            return await asyncio.wait_for(segmenter.segment(image, target, timeout), timeout=timeout)
+        except (ProviderError, TimeoutError, asyncio.TimeoutError, OSError, ValueError) as exc:
+            # A failed mask never fails the design: the edit continues without the lock (and says so).
+            log.warning('{"event":"segmentation_failed","reason":"%s"}', getattr(exc, "code", type(exc).__name__))
+            return exc
 
     @app.post("/internal/v1/generate", tags=["generation"], response_model=GenerateResponse,
               dependencies=[Depends(require_internal)],
@@ -198,6 +212,10 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         prompt = build_prompt(req, reference_style)
         tint = req.color_hex if req.tool == "paint" else None
 
+        target = region_target(req) if settings.region_lock == "auto" else None
+        # The mask is computed while the variants render, so the lock adds no latency of its own.
+        seg_task = asyncio.create_task(segment(image, target, remaining())) if target and segmenter else None
+
         async def one(variant: int) -> ChainResult:
             async with generation_slots:
                 return await chain.generate(image, prompt, variant, tint, deadline)
@@ -206,7 +224,21 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             outcomes = await asyncio.wait_for(
                 asyncio.gather(*(one(i) for i in range(req.variants)), return_exceptions=True), timeout=remaining())
         except (TimeoutError, asyncio.TimeoutError) as exc:
+            if seg_task:
+                seg_task.cancel()
             raise ProviderError("time_budget_exceeded", retryable=True) from exc
+
+        region: RegionInfo | None = None
+        mask: RegionMask | None = None
+        if target:
+            seg = await seg_task if seg_task else None
+            if isinstance(seg, RegionMask):
+                mask = seg if usable(seg) else None
+                region = RegionInfo(applied=mask is not None, target=target, method=seg.method,  # type: ignore[arg-type]
+                                    coverage=round(seg.coverage, 4), reason=None if mask else "mask_unusable")
+            else:
+                region = RegionInfo(applied=False, target=target, method="none", coverage=0.0,
+                                    reason="segmentation_failed" if seg_task else "no_segmenter")
 
         billed = [o for o in outcomes if isinstance(o, ChainResult)]
         failures = [o for o in outcomes if isinstance(o, BaseException)]
@@ -224,16 +256,22 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             except ImageInputError:
                 log.warning('{"event":"corrupt_output","provider":"%s"}', result.provider)
                 continue
-            if is_unchanged(image, output):
+            if mask is not None:
+                output = await asyncio.to_thread(composite, image, output, mask.mask)
+                unchanged = await asyncio.to_thread(masked_mean_abs_diff, image, output, mask.mask) < NO_CHANGE_BELOW
+            else:
+                unchanged = is_unchanged(image, output)
+            if unchanged:
                 log.warning('{"event":"variant_unchanged","provider":"%s"}', result.provider)
                 continue
             images.append(to_b64(output))
 
-        usage = generation_usage(billed, describe, started)
+        seg_cost = seg.cost_usd if target and isinstance(seg, RegionMask) else 0.0
+        usage = generation_usage(billed, describe, started, seg_cost)
         if not images:
             raise NoChangeError(usage)
         return GenerateResponse(images_b64=images, prompt=prompt, provider=usage.provider,
-                                reference_style=reference_style, usage=usage)
+                                reference_style=reference_style, region=region, usage=usage)
 
     @app.post("/internal/v1/quality", tags=["quality"], response_model=QualityResponse,
               dependencies=[Depends(require_internal)], responses=ERRORS,

@@ -58,11 +58,22 @@ class GenerateRequest(Strict):
     reference_image_b64: str | None = Field(None, max_length=17_000_000)
 
 
+class RegionInfo(BaseModel):
+    """Region lock (API.md §7.8): when applied, pixels outside the mask are the input photo's."""
+
+    applied: bool
+    target: str = Field(description="What was segmented: wall, floor or the user's target object")
+    method: Literal["sam3", "heuristic", "none"]
+    coverage: float = Field(ge=0, le=1, description="Share of the image inside the mask")
+    reason: Literal["no_segmenter", "segmentation_failed", "mask_unusable"] | None = None
+
+
 class GenerateResponse(BaseModel):
     images_b64: list[str]
     prompt: str
     provider: str
     reference_style: str | None = None
+    region: RegionInfo | None = Field(None, description="Null for whole-scene tools or when REGION_LOCK=off")
     usage: Usage
 
 

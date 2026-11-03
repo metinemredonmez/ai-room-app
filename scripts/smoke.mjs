@@ -71,6 +71,14 @@ ok(peek.status === 404, "other user can't read the design (AZ-01)", `status ${pe
 const steal = await call('POST', '/designs', { token: other.json.accessToken, body: { tool: 'redesign', inputImageId: sample.json.image.id, variants: 1 } });
 ok(steal.status === 404, "other user can't use the image as input", `status ${steal.status}`);
 
+// API.md §7.8: local edits are region-locked (heuristic mask in mock mode, SAM 3 with FAL_KEY).
+const otherSample = await call('POST', '/uploads/sample', { token: other.json.accessToken, body: { sample: 'living_room' } });
+const painted = await call('POST', '/designs', {
+  token: other.json.accessToken, body: { tool: 'paint', inputImageId: otherSample.json?.image?.id, colorHex: '#9CAF88', variants: 1 },
+});
+ok(painted.status === 201 && painted.json?.region?.applied === true && painted.json.region.target === 'wall',
+  'paint is region-locked (§7.8)', `${painted.json?.region?.method} · coverage ${painted.json?.region?.coverage}`);
+
 // SES-05: refresh rotation with reuse detection.
 const r1 = await call('POST', '/auth/refresh', { body: { refreshToken: guest.json.refreshToken } });
 ok(r1.status === 201, 'refresh rotates');

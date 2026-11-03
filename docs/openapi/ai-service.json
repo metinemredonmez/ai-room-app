@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AI Room AI Service",
-    "description": "Internal AI service of AI Room. Only the backend calls it (header `X-Internal-Token`).\n\n* image generation with a provider fallback chain, circuit breakers and a 150 s time budget\n* capture-quality gate, no-change detection\n* Claude design chat and shopping/budget analysis\n* every AI answer carries a `usage` cost-ledger entry (API.md §7.2)\n\nErrors: `{\"error\": {\"code\", \"message\", \"retryable\"}}` — the backend retries only when `retryable` is true.",
+    "description": "Internal AI service of AI Room. Only the backend calls it (header `X-Internal-Token`).\n\n* image generation with a provider fallback chain, circuit breakers and a 150 s time budget\n* region lock for paint / flooring / replace / targeted declutter: SAM 3 mask, pixels outside it stay the user's\n* capture-quality gate, no-change detection\n* Claude design chat and shopping/budget analysis\n* every AI answer carries a `usage` cost-ledger entry (API.md §7.2)\n\nErrors: `{\"error\": {\"code\", \"message\", \"retryable\"}}` — the backend retries only when `retryable` is true.",
     "version": "1.1.0"
   },
   "paths": {
@@ -971,6 +971,17 @@
             ],
             "title": "Reference Style"
           },
+          "region": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegionInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for whole-scene tools or when REGION_LOCK=off"
+          },
           "usage": {
             "$ref": "#/components/schemas/Usage"
           }
@@ -1152,6 +1163,60 @@
           "metrics"
         ],
         "title": "QualityResponse"
+      },
+      "RegionInfo": {
+        "properties": {
+          "applied": {
+            "type": "boolean",
+            "title": "Applied"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target",
+            "description": "What was segmented: wall, floor or the user's target object"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "sam3",
+              "heuristic",
+              "none"
+            ],
+            "title": "Method"
+          },
+          "coverage": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage",
+            "description": "Share of the image inside the mask"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "no_segmenter",
+                  "segmentation_failed",
+                  "mask_unusable"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "applied",
+          "target",
+          "method",
+          "coverage"
+        ],
+        "title": "RegionInfo",
+        "description": "Region lock (API.md §7.8): when applied, pixels outside the mask are the input photo's."
       },
       "RenovationItem": {
         "properties": {
