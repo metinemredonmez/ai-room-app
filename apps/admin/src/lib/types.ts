@@ -1,0 +1,108 @@
+// Mirrors docs/API.md §2 and §4 (camelCase backend contract).
+
+export type ToolId =
+  | "redesign"
+  | "furnish"
+  | "declutter"
+  | "replace"
+  | "paint"
+  | "flooring"
+  | "exterior"
+  | "garden"
+  | "reference"
+  | "custom";
+
+export type User = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  role: "USER" | "ADMIN";
+  isGuest: boolean;
+  plan: "FREE" | "PRO";
+  planExpiresAt: string | null;
+  credits: number;
+  dailyFreeRemaining: number;
+  locale: "tr" | "en";
+  createdAt: string;
+};
+
+export type AdminUser = User & {
+  status: "ACTIVE" | "BANNED";
+  designsCount: number;
+  lastSeenAt: string | null;
+};
+
+export type ImageRef = { id: string; url: string; width: number; height: number };
+
+export type Design = {
+  id: string;
+  title: string;
+  tool: ToolId;
+  styleId: string | null;
+  roomId: string | null;
+  params: Record<string, unknown>;
+  status: "PENDING" | "SUCCEEDED" | "FAILED";
+  error: string | null;
+  input: ImageRef;
+  results: ImageRef[];
+  favorite: boolean;
+  featured: boolean;
+  createdAt: string;
+};
+
+export type AdminDesign = Design & { userId: string; userEmail: string | null };
+
+export type LedgerEntry = { id: string; delta: number; reason: string; refId: string | null; createdAt: string };
+
+export type AdminUserDetail = AdminUser & { recentDesigns: Design[]; ledger: LedgerEntry[] };
+
+export type Page<T> = { items: T[]; nextCursor: string | null };
+
+export type AdminStats = {
+  totals: {
+    users: number;
+    guests: number;
+    registered: number;
+    pro: number;
+    designs: number;
+    designsToday: number;
+    failedToday: number;
+    creditsSpentToday: number;
+    analyses: number;
+  };
+  daily: { date: string; designs: number; failed: number; newUsers: number }[];
+  byTool: { tool: ToolId; count: number }[];
+  byStyle: { styleId: string; count: number }[];
+};
+
+export type AdminStyleInput = {
+  id: string;
+  nameTr: string;
+  nameEn: string;
+  descriptionTr: string;
+  descriptionEn: string;
+  prompt: string;
+  palette: string[];
+  isPro: boolean;
+  isActive: boolean;
+  sortOrder: number;
+};
+
+export type AdminStyle = AdminStyleInput & { usageCount: number };
+
+export type AuditEntry = {
+  id: string;
+  actorEmail: string | null;
+  action: string;
+  targetType: string;
+  targetId: string | null;
+  meta: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type SystemStatus = {
+  ai: { status: "ok" | "down"; provider: string; chatEnabled: boolean; latencyMs: number | null };
+  db: "ok" | "down";
+  redis: "ok" | "down";
+  version: string;
+};

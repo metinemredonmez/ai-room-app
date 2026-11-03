@@ -1,0 +1,182 @@
+// AI Room — backend data model (PostgreSQL)
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+enum ImageKind {
+  UPLOAD
+  SAMPLE
+  RESULT
+}
+
+enum DesignStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id            String     @id @default(uuid()) @db.Uuid
+  email         String?    @unique
+  passwordHash  String?
+  name          String?
+  role          Role       @default(USER)
+  status        UserStatus @default(ACTIVE)
+  isGuest       Boolean    @default(true)
+  deviceHash    String?    @unique
+  plan          Plan       @default(FREE)
+  planExpiresAt DateTime?
+  credits       Int        @default(0)
+  freeUsedOn    String? // YYYY-MM-DD, Europe/Istanbul
+  freeUsedCount Int        @default(0)
+  locale        String     @default("tr")
+  totpSecret    String?
+  totpLastStep  BigInt?
+  tokenVersion  Int        @default(0) // bumped to revoke every access token (SES-04)
+  lastSeenAt    DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  refreshTokens RefreshToken[]
+  images        Image[]
+  designs       Design[]
+  ledger        CreditLedger[]
+  audits        AuditLog[]     @relation("actor")
+
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  familyId  String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+  @@index([userId])
+}
+
+model Image {
+  id        String    @id @db.Uuid
+  ownerId   String    @db.Uuid
+  kind      ImageKind
+  width     Int
+  height    Int
+  bytes     Int
+  designId  String?   @db.Uuid
+  createdAt DateTime  @default(now())
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  design    Design?   @relation("results", fields: [designId], references: [id], onDelete: Cascade)
+  inputFor  Design[]  @relation("input")
+
+  @@index([ownerId, createdAt])
+  @@index([designId])
+}
+
+model Design {
+  id           String       @id @default(uuid()) @db.Uuid
+  userId       String       @db.Uuid
+  tool         String
+  styleId      String?
+  roomId       String?
+  params       Json         @default("{}")
+  prompt       String?
+  provider     String?
+  status       DesignStatus @default(PENDING)
+  error        String?
+  inputImageId String       @db.Uuid
+  creditsUsed  Int          @default(0)
+  freeUsed     Int          @default(0)
+  favorite     Boolean      @default(false)
+  featured     Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  finishedAt   DateTime?
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputImage   Image        @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
+  results      Image[]      @relation("results")
+  analyses     Analysis[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([featured])
+}
+
+model Analysis {
+  id        String   @id @default(uuid()) @db.Uuid
+  designId  String   @db.Uuid
+  imageId   String   @db.Uuid
+  data      Json
+  createdAt DateTime @default(now())
+  design    Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@unique([designId, imageId])
+}
+
+model Style {
+  id            String   @id
+  nameTr        String
+  nameEn        String
+  descriptionTr String
+  descriptionEn String
+  prompt        String
+  palette       String[]
+  isPro         Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model CreditLedger {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  delta     Int
+  reason    String
+  refId     String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  targetType String
+  targetId   String?
+  meta       Json     @default("{}")
+  ip         String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}

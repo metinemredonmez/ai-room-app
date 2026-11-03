@@ -1,0 +1,139 @@
+// Mirrors docs/API.md §2–3 (backend public contract).
+
+export type Locale = "tr" | "en";
+
+export type User = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  role: "USER" | "ADMIN";
+  isGuest: boolean;
+  plan: "FREE" | "PRO";
+  planExpiresAt: string | null;
+  credits: number;
+  dailyFreeRemaining: number;
+  locale: Locale;
+  createdAt: string;
+};
+
+export type AuthResponse = { accessToken: string; refreshToken: string; expiresIn: number; user: User };
+
+export type ImageRef = { id: string; url: string; width: number; height: number };
+
+export type ToolId =
+  | "redesign"
+  | "furnish"
+  | "declutter"
+  | "replace"
+  | "paint"
+  | "flooring"
+  | "exterior"
+  | "garden"
+  | "reference"
+  | "custom";
+
+export type Design = {
+  id: string;
+  title: string;
+  tool: ToolId;
+  styleId: string | null;
+  roomId: string | null;
+  params: Record<string, unknown>;
+  status: "PENDING" | "SUCCEEDED" | "FAILED";
+  error: string | null;
+  input: ImageRef;
+  results: ImageRef[];
+  favorite: boolean;
+  featured: boolean;
+  createdAt: string;
+};
+
+export type AnalysisItem = {
+  name: string;
+  category: string;
+  material: string;
+  color: string;
+  quantity: number;
+  priceMinTRY: number;
+  priceMaxTRY: number;
+  links: { store: string; url: string }[];
+};
+
+export type Analysis = {
+  id: string;
+  designId: string;
+  imageId: string;
+  summary: string;
+  palette: string[];
+  items: AnalysisItem[];
+  renovation: { task: string; unit: string; quantity: number; costMinTRY: number; costMaxTRY: number }[];
+  totals: {
+    furnitureMinTRY: number;
+    furnitureMaxTRY: number;
+    renovationMinTRY: number;
+    renovationMaxTRY: number;
+    grandMinTRY: number;
+    grandMaxTRY: number;
+  };
+  disclaimer: string;
+  createdAt: string;
+};
+
+export type ToolNeeds = {
+  style: boolean;
+  room: boolean;
+  floor: boolean;
+  color: boolean;
+  target: boolean;
+  replacement: boolean;
+  instructions: boolean;
+  reference: boolean;
+  removeAll: boolean;
+};
+
+export type CatalogTool = {
+  id: ToolId;
+  name: string;
+  description: string;
+  icon: string;
+  category: "interior" | "exterior" | "edit";
+  isPro: boolean;
+  isNew: boolean;
+  needs: ToolNeeds;
+};
+
+export type CatalogStyle = { id: string; name: string; description: string; palette: string[]; isPro: boolean };
+export type Plan = { id: string; name: string; period: "week" | "month" | "year"; priceTRY: number; badge: string | null };
+
+export type Catalog = {
+  tools: CatalogTool[];
+  styles: CatalogStyle[];
+  rooms: { id: string; name: string; icon: string }[];
+  floors: { id: string; name: string }[];
+  colors: { id: string; name: string; hex: string }[];
+  plans: Plan[];
+};
+
+export type CreateDesign = {
+  tool: ToolId;
+  inputImageId: string;
+  variants?: 1 | 2 | 3 | 4;
+  styleId?: string;
+  roomId?: string;
+  floorId?: string;
+  colorHex?: string;
+  colorName?: string;
+  target?: string;
+  replacement?: string;
+  instructions?: string;
+  removeAll?: boolean;
+  referenceImageId?: string;
+};
+
+export type Suggestion = { label: string; tool: ToolId; styleId?: string; roomId?: string; instructions?: string };
+
+export type ChatMessage = { role: "user" | "assistant"; text: string; imageId?: string };
+
+export type Page<T> = { items: T[]; nextCursor: string | null };
+
+export type SampleId = "living_room" | "empty_room" | "bedroom" | "exterior" | "garden";

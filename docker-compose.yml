@@ -1,0 +1,76 @@
+# AI Room — full stack for local/staging use.
+#   cp .env.example .env   # then fill in the secrets (openssl rand -base64 48)
+#   docker compose up --build
+# Only web (3000), admin (3001) and backend (4000) are published; the AI service, Postgres and
+# Redis stay on the internal network (NET-02 / NET-04).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airoom
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: airoom
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airoom"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  ai-service:
+    build: ./apps/ai-service
+    environment:
+      ENV: ${APP_ENV:-development}
+      INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN:?set AI_INTERNAL_TOKEN}
+      IMAGE_PROVIDER: ${IMAGE_PROVIDER:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+  backend:
+    build: ./apps/backend
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+      ai-service: { condition: service_started }
+    environment:
+      NODE_ENV: ${APP_ENV:-development}
+      PORT: 4000
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4000}
+      DATABASE_URL: postgresql://airoom:${POSTGRES_PASSWORD}@postgres:5432/airoom?schema=public
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      IMAGE_URL_SECRET: ${IMAGE_URL_SECRET:?set IMAGE_URL_SECRET}
+      DEVICE_PEPPER: ${DEVICE_PEPPER:?set DEVICE_PEPPER}
+      AI_SERVICE_URL: http://ai-service:8001
+      AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-0}
+      DATA_DIR: /app/data
+    volumes: [images:/app/data]
+    ports: ["4000:4000"]
+
+  web:
+    build: ./apps/web
+    depends_on: [backend]
+    environment:
+      API_BASE_URL: http://backend:4000/v1
+      NEXT_PUBLIC_APP_URL: ${WEB_URL:-http://localhost:3000}
+      IMAGE_ORIGINS: ${PUBLIC_BASE_URL:-http://localhost:4000}
+    ports: ["3000:3000"]
+
+  admin:
+    build: ./apps/admin
+    depends_on: [backend]
+    environment:
+      API_BASE_URL: http://backend:4000/v1
+      IMAGE_ORIGINS: ${PUBLIC_BASE_URL:-http://localhost:4000}
+    ports: ["3001:3001"]
+
+volumes:
+  pgdata:
+  images:

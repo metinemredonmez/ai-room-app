@@ -1,0 +1,23 @@
+# dependencies & builds
+node_modules/
+dist/
+.next/
+.expo/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+coverage/
+
+# secrets & local data
+.env
+.env.*
+!.env.example
+apps/backend/data/
+
+# competitor reference screenshots (kept locally, not redistributed)
+/IMG_*.PNG
+
+.DS_Store
+*.log
+*.tsbuildinfo

@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* Design tokens — docs/API.md §6 */
+:root {
+  --primary: #1f6f5c;
+  --primary-strong: #175545;
+  --primary-soft: #e3efe9;
+  --accent: #e07a4f;
+  --accent-soft: #fbe9df;
+  --bg: #f7f4ef;
+  --surface: #ffffff;
+  --surface-2: #f1ede6;
+  --text: #141414;
+  --muted: #6b6a66;
+  --border: #e6e1d8;
+  --danger: #b4372f;
+  --shadow: 0 1px 2px rgb(20 20 20 / 0.04), 0 8px 24px -12px rgb(20 20 20 / 0.12);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #3fb28f;
+    --primary-strong: #62c7a6;
+    --primary-soft: #16302a;
+    --accent: #f09a72;
+    --accent-soft: #3a261d;
+    --bg: #0e1311;
+    --surface: #18201d;
+    --surface-2: #1f2925;
+    --text: #f2efea;
+    --muted: #a3a8a4;
+    --border: #2a332f;
+    --danger: #f07a70;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--shadow);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@keyframes sweep {
+  0%, 100% { clip-path: inset(0 78% 0 0); }
+  50% { clip-path: inset(0 22% 0 0); }
+}
+@keyframes sweep-handle {
+  0%, 100% { left: 22%; }
+  50% { left: 78%; }
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.animate-sweep { animation: sweep 7s ease-in-out infinite; }
+.animate-sweep-handle { animation: sweep-handle 7s ease-in-out infinite; }
+.animate-shimmer { animation: shimmer 1.8s ease-in-out infinite; }
+.animate-float-in { animation: float-in 0.4s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sweep, .animate-sweep-handle, .animate-shimmer { animation: none; }
+}

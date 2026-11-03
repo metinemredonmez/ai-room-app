@@ -1,0 +1,68 @@
+"use client";
+
+import type { User } from "./types";
+
+// Browser-side client. It only talks to this app's own BFF routes (/api/...), never to the backend.
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public retryAfter?: number,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(url: string, method: string, body?: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(0, "network", "Bağlantı kurulamadı.");
+  }
+  if (res.status === 204) return undefined as T;
+  const data: unknown = await res.json().catch(() => null);
+  if (!res.ok) {
+    const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
+    const retry = Number(res.headers.get("retry-after"));
+    throw new ApiError(res.status, err?.code ?? "internal", err?.message ?? "Beklenmeyen bir hata oluştu.", retry || undefined);
+  }
+  return data as T;
+}
+
+export const api = {
+  get: <T>(path: string) => request<T>(`/api/v1${path}`, "GET"),
+  post: <T>(path: string, body?: unknown) => request<T>(`/api/v1${path}`, "POST", body ?? {}),
+  patch: <T>(path: string, body: unknown) => request<T>(`/api/v1${path}`, "PATCH", body),
+  del: (path: string) => request<void>(`/api/v1${path}`, "DELETE"),
+};
+
+export const authApi = {
+  guest: () => request<{ user: User }>("/api/auth/guest", "POST", {}),
+  login: (email: string, password: string) => request<{ user: User }>("/api/auth/login", "POST", { email, password }),
+  register: (email: string, password: string, name?: string) =>
+    request<{ user: User }>("/api/auth/register", "POST", { email, password, name }),
+  logout: () => request<void>("/api/auth/logout", "POST", {}),
+};
+
+export function downloadUrl(imageUrl: string) {
+  return `/api/download?src=${encodeURIComponent(imageUrl)}`;
+}
+
+/** Only http(s) links from AI output are ever rendered as hrefs (WEB-01). */
+export function safeHref(url: string): string | null {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
