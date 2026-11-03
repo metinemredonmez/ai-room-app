@@ -1,0 +1,80 @@
+<section>
+  <h1><span class="num">16</span>Ekran görüntüleri</h1>
+  <p>Aşağıdaki görüntüler 3 Kasım 2026'da çalışan MVP'den alındı.</p>
+  <ul>
+    <li><strong>Şekil A:</strong> uygulamanın kendi örnek fotoğrafını ve gerçek <strong>Gemini 2.5 Flash Image</strong> sağlayıcısıyla "Modern Türk" stilinde üretilen sonucu gösteriyor. Üretim yaklaşık 9 saniye sürdü; pencere ve perspektif korundu.</li>
+    <li><strong>Diğer ekranlar:</strong> mobil, web ve admin uygulamalarından.</li>
+  </ul>
+  <!--SCREENSHOTS-->
+</section>
+
+<section>
+  <h1><span class="num">17</span>Ekler</h1>
+  <h2>17.1 Çalıştırma talimatları (özet)</h2>
+  <p>Gereksinimler:</p>
+  <ul>
+    <li>Node 22 (mobil için ≥ 22.13; diğer uygulamalar Node 20.9+ ile de çalışır).</li>
+    <li>Python 3.12+ ve uv.</li>
+    <li>PostgreSQL 15+, Redis 7+.</li>
+  </ul>
+  <p>Ayrıntılar depo kökündeki <code>README.md</code> ve her uygulamanın kendi README dosyasında.</p>
+  <pre># 1) Backend (port 4000)
+cd apps/backend &amp;&amp; cp .env.example .env    # DATABASE_URL + 4 sır (openssl rand -base64 48)
+npm install &amp;&amp; createdb ai_room &amp;&amp; npx prisma migrate deploy
+npm run db:seed                            # 15 stil + TOTP'li admin → data/admin-credentials.txt
+npm run build &amp;&amp; npm run start:prod
+
+# 2) AI servisi (port 8001, INTERNAL_TOKEN = backend AI_INTERNAL_TOKEN)
+cd apps/ai-service &amp;&amp; cp .env.example .env &amp;&amp; uv sync
+uv run uvicorn app.main:app --port 8001     # IMAGE_PROVIDER=mock | gemini | replicate
+
+# 3) İstemciler
+cd apps/web    &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3000
+cd apps/admin  &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3001 (TOTP: npm run admin:otp)
+cd apps/mobile &amp;&amp; npm install &amp;&amp; npx expo start # i = iOS simülatör, w = web
+
+# 4) Testler
+cd apps/ai-service &amp;&amp; uv run pytest          # 8 test
+cd apps/backend &amp;&amp; npm test                  # birim testleri
+node scripts/smoke.mjs                       # 28 uçtan uca kontrol</pre>
+  <p class="small">
+    <strong>Gerçek sağlayıcılar:</strong> <code>IMAGE_PROVIDER=gemini</code> + <code>GEMINI_API_KEY</code>, <code>IMAGE_PROVIDER=replicate</code> + <code>REPLICATE_API_TOKEN</code>, <code>ANTHROPIC_API_KEY</code> (Claude). Üretimde <code>mock</code> sağlayıcıyla açılış reddedilir.
+    <strong>Docker:</strong> depoda bir <code>docker compose</code> dosyası var; bu makinede Docker olmadığı için çalıştırılarak denenmedi.
+  </p>
+
+  <h2>17.2 Terimler</h2>
+  <table class="compact">
+    <tbody>
+      <tr><td style="width:18%"><strong>BFF</strong></td><td>Backend-for-Frontend: tarayıcı ile API arasındaki sunucu katmanı; token'ı httpOnly çerezde saklar.</td></tr>
+      <tr><td><strong>IAP</strong></td><td>Uygulama içi satın alma (App Store / Google Play).</td></tr>
+      <tr><td><strong>ASO</strong></td><td>Uygulama mağazası optimizasyonu.</td></tr>
+      <tr><td><strong>MFA / TOTP</strong></td><td>Çok faktörlü kimlik doğrulama / zaman tabanlı tek kullanımlık kod (RFC 6238).</td></tr>
+      <tr><td><strong>Sanal döşeme</strong></td><td>Virtual staging: boş mekân fotoğrafını yapay zekâ ile mobilyalı göstermek.</td></tr>
+      <tr><td><strong>RoomPlan / LiDAR</strong></td><td>Apple'ın oda tarama API'si ve derinlik sensörü; gerçek ölçü sağlar.</td></tr>
+      <tr><td><strong>Yapı koruma</strong></td><td>Yeniden tasarımda pencere, kapı, duvar ve perspektifin aynı kalması.</td></tr>
+      <tr><td><strong>Affiliate</strong></td><td>Yönlendirilen satıştan komisyon alınan ortaklık modeli.</td></tr>
+      <tr><td><strong>YBBO</strong></td><td>Yıllık bileşik büyüme oranı (CAGR).</td></tr>
+      <tr><td><strong>ARPPU / LTV</strong></td><td>Ödeme yapan kullanıcı başına gelir / müşteri yaşam boyu değeri.</td></tr>
+      <tr><td><strong>DHV</strong></td><td>Dijital hizmet vergisi (2026'dan itibaren %5).</td></tr>
+      <tr><td><strong>P0 / P1</strong></td><td>Red-team kataloğu öncelikleri: P0 ilk güvenli yayın öncesi temel bariyer, P1 ilk derinlik dalgası.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>17.3 Yöntem ve sınırlar</h2>
+  <ul>
+    <li><strong>Kapsam ve tarih:</strong> Dünya ve Türkiye taramaları 3 Kasım 2026'da web kaynakları ve App Store uç noktalarıyla yapıldı.</li>
+    <li><strong>Eksik veri:</strong> Google Play Türkiye sıralamaları ve fiyatları alınamadı.</li>
+    <li><strong>Üçüncü taraf ve iddia niteliğindeki rakamlar:</strong> Pazar büyüklüğü tahminleri kaynaklar arasında 10 kattan fazla farklılık gösteriyor. Kullanıcı sayısı iddiaları şirketlerin kendi beyanı. AppGoblin ve benzeri tahminler doğrulanmış değil.</li>
+    <li><strong>Doğrulanamayanlar:</strong>
+      <ul>
+        <li>IKEA Kreativ'in Türkiye'de olup olmadığı, Amazon'un üretken oda özelliği.</li>
+        <li>İstikbal, Doğtaş, Kelebek, Çilek ve Tekzen'in dijital araçları.</li>
+        <li>SahiDeko fiyatı, EXXE'nin bulunduğu şehir.</li>
+        <li>Oda Studio, artlabs ve Boxlin'in güncel durumu.</li>
+        <li>Mobilya iç pazar büyüklüğü, deprem konutlarında 2025 sonu teslim sayısı, Ekim 2026 TÜFE verisi.</li>
+      </ul></li>
+  </ul>
+
+  <h2>17.4 Kaynakça</h2>
+  <!--REFERENCES-->
+</section>

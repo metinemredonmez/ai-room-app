@@ -1,0 +1,193 @@
+<section>
+  <h1><span class="num">9</span>MVP detay dokümanı</h1>
+  <p>Bu bölüm her modülü ayrı ayrı ele alıyor: amacı, gerçek uçları veya ekranları, ana akışları, kabul kriterleri ve MVP kapsamı dışında kalanlar. Uç ve rota adları depodaki koddan alındı.</p>
+  <ul class="small">
+    <li><b class="y">✓</b> Kabul kriteri bu sürümde testle veya derlemeyle doğrulandı.</li>
+    <li><b class="p">◐</b> Uygulandı, ayrı test bekliyor.</li>
+    <li><b class="n">○</b> Kapsam dışı / sonraki faz.</li>
+  </ul>
+
+  <h2>9.1 Backend — NestJS + PostgreSQL + Redis (<code>apps/backend</code>)</h2>
+  <p><strong>Amaç:</strong> Tüm istemcilerin tek API kapısı. Kimlik, yetki, kota/kredi, görsel yaşam döngüsü, tasarım işleri, admin işlemleri ve denetim burada. AI servisine yalnız bu modül bağlanır.</p>
+  <table class="compact" style="font-size:7.5pt">
+    <thead><tr><th style="width:5%">#</th><th style="width:38%">Uç (/v1 öneki)</th><th style="width:14%">Erişim</th><th>Görev</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>GET /health</code></td><td>Genel</td><td>DB, Redis ve AI servisi durumu</td></tr>
+      <tr><td>2</td><td><code>GET /catalog</code></td><td>Genel</td><td>Araçlar, stiller, odalar, zeminler, renkler, planlar (TR/EN)</td></tr>
+      <tr><td>3</td><td><code>GET /styles/:id/preview.jpg</code></td><td>Genel</td><td>Stil paletli örnek oda önizlemesi (kullanıcı verisi içermez)</td></tr>
+      <tr><td>4</td><td><code>GET /images/:id?exp&amp;sig</code></td><td>İmzalı URL</td><td>Görsel teslimi (HMAC, 24 saat)</td></tr>
+      <tr><td>5</td><td><code>GET /inspiration</code></td><td>Genel</td><td>Öne çıkarılan tasarımlar + stil kartları</td></tr>
+      <tr><td>6–10</td><td><code>POST /auth/guest · /register · /login · /refresh · /logout</code></td><td>Genel (limitli)</td><td>Misafir hesap, kayıt (misafir yükseltme), giriş, rotasyonlu refresh, çıkış</td></tr>
+      <tr><td>11–13</td><td><code>GET · PATCH · DELETE /me</code></td><td>Kullanıcı</td><td>Profil, dil, KVKK hesap silme</td></tr>
+      <tr><td>14–15</td><td><code>POST /uploads · /uploads/sample</code></td><td>Kullanıcı</td><td>Fotoğraf yükleme (base64, ≤10 MB) ve yerleşik örnek fotoğraf</td></tr>
+      <tr><td>16</td><td><code>POST /designs</code></td><td>Kullanıcı</td><td>Tasarım üretimi (senkron; kota, PRO kontrolü, iade)</td></tr>
+      <tr><td>17–20</td><td><code>GET /designs · GET/PATCH/DELETE /designs/:id</code></td><td>Kullanıcı</td><td>Listeleme (imleçli), detay, favori, silme</td></tr>
+      <tr><td>21</td><td><code>POST /designs/:id/analysis</code></td><td>Kullanıcı</td><td>Alışveriş listesi + TL bütçe + mağaza linkleri (önbellekli)</td></tr>
+      <tr><td>22</td><td><code>POST /chat</code></td><td>Kullanıcı</td><td>AI tasarım sohbeti (en fazla 20 mesaj, 3 görsel)</td></tr>
+      <tr><td>23</td><td><code>POST /billing/dev-upgrade</code></td><td>Kullanıcı (yalnız geliştirme)</td><td>7 günlük demo PRO; üretimde 404</td></tr>
+      <tr><td>24</td><td><code>POST /admin/auth/login</code></td><td>Genel (limitli)</td><td>Parola + TOTP; admin audience token'ı</td></tr>
+      <tr><td>25</td><td><code>GET /admin/stats</code></td><td>Admin + MFA</td><td>KPI'lar, günlük seri, araç/stil dağılımı</td></tr>
+      <tr><td>26–29</td><td><code>GET /admin/users · GET/PATCH /admin/users/:id · POST /admin/users/:id/credits</code></td><td>Admin + MFA</td><td>Arama, detay (ledger, son tasarımlar), plan/askı, gerekçeli kredi</td></tr>
+      <tr><td>30–32</td><td><code>GET /admin/designs · PATCH/DELETE /admin/designs/:id</code></td><td>Admin + MFA</td><td>Filtreli moderasyon, öne çıkarma, silme</td></tr>
+      <tr><td>33–35</td><td><code>GET/POST /admin/styles · PATCH /admin/styles/:id</code></td><td>Admin + MFA</td><td>Stil kataloğu yönetimi (prompt, palet, PRO, sıra)</td></tr>
+      <tr><td>36–37</td><td><code>GET /admin/audit · GET /admin/system</code></td><td>Admin + MFA</td><td>Denetim kaydı; AI/DB/Redis durumu</td></tr>
+    </tbody>
+  </table>
+  <div class="grid2">
+    <div class="card">
+      <h3>Ana akış: <code>POST /designs</code></h3>
+      <ol>
+        <li>Şema doğrulaması (zod, <code>strict</code>); kullanıcı ve IP hız limitleri.</li>
+        <li>PRO araç veya stil kontrolü (<code>pro_required</code>, 402); referans görsel zorunluluğu.</li>
+        <li>Girdi ve referans görselin sahiplik kontrolü (yoksa 404).</li>
+        <li><code>PENDING</code> kaydı açılır. Hak <code>SELECT … FOR UPDATE</code> ile düşülür: önce günlük ücretsiz, sonra kredi. Yetmezse 402.</li>
+        <li>Semafor sonrası AI servisi çağrılır. Çıktı yeniden kodlanır; ücretsiz planda AI etiketi eklenir; <code>RESULT</code> görseller kaydedilir.</li>
+        <li><code>SUCCEEDED</code> → <code>Design</code> DTO, imzalı URL'lerle. Hata olursa <code>FAILED</code> olur ve hak iade edilir.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Misafir → katalog → örnek → 2 varyant üretimi → kota 3→1 (smoke)</li>
+        <li><b class="y">✓</b> Kota aşımında 402; PRO stilde <code>pro_required</code> (smoke)</li>
+        <li><b class="y">✓</b> Başka kullanıcının tasarımı ve görseli 404 (smoke)</li>
+        <li><b class="y">✓</b> Refresh yeniden kullanımında aile iptali; admin API'de uygulama token'ı 401 (smoke)</li>
+        <li><b class="y">✓</b> Admin MFA, kod tekrarı reddi, öne çıkarma ve denetim kaydı (smoke)</li>
+        <li><b class="y">✓</b> Typecheck, lint ve build temiz</li>
+        <li><b class="p">◐</b> Ban sonrası anında iptal, misafir yükseltmede oturum yenileme</li>
+        <li><b class="n">○</b> Şifre sıfırlama ve e-posta doğrulama (AUT-03) — Faz 1</li>
+        <li><b class="n">○</b> Asenkron kuyruk, S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.2 AI servisi — Python FastAPI (<code>apps/ai-service</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Amaç ve uçlar</h3>
+      <p>Model ve sağlayıcı bağımlılığını üründen ayırır. Görselleri ve modelden gelen çıktıyı güvenilmez sayıp her seferinde doğrular.</p>
+      <ul>
+        <li><code>POST /internal/v1/generate</code>: 10 araç şablonu, 1–4 varyant, referans stil (Claude tarifi).</li>
+        <li><code>POST /internal/v1/analyze</code>: JSON şemalı ürün ve tadilat listesi, Pillow paleti.</li>
+        <li><code>POST /internal/v1/chat</code>: katalog kimlikleriyle süzülen öneriler.</li>
+        <li><code>GET /internal/v1/health</code>: sağlayıcı ve sohbet durumu. <code>GET /healthz</code>: canlılık.</li>
+        <li><strong>Sağlayıcılar:</strong> <code>mock</code> (çevrimdışı), <code>gemini</code> (Gemini 2.5 Flash Image), <code>replicate</code> (FLUX.1 Kontext Pro). Claude için <code>ANTHROPIC_API_KEY</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Token'sız ve yanlış token 401; doğru token 200 (pytest)</li>
+        <li><b class="y">✓</b> 2 varyant üretimi; prompt'ta stil ve oda var (pytest)</li>
+        <li><b class="y">✓</b> Kullanıcı metninde &lt;, {, satır sonu temizleniyor (pytest)</li>
+        <li><b class="y">✓</b> Görsel olmayan girdi ve bilinmeyen alan reddediliyor (pytest)</li>
+        <li><b class="y">✓</b> Referans aracı referans görsel istiyor; analiz demo yanıtında palet ve min ≤ maks (pytest)</li>
+        <li><b class="y">✓</b> Sohbet önerileri katalog dışı kimlikleri düşürüyor; güvensiz ayarla açılış reddediliyor (pytest)</li>
+        <li><b class="y">✓</b> Gerçek Gemini çağrısı ~9 sn'de sonuç döndürdü (tek örnek)</li>
+        <li><b class="n">○</b> Maske ile düzenleme, derinlik/kenar koşullama, yüz maskeleme, NSFW moderasyonu, kendi GPU modeli</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.3 Web — Next.js (<code>apps/web</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Rotalar</h3>
+      <ul>
+        <li><code>/</code>: tanıtım (önce/sonra vitrin, özellikler, nasıl çalışır, fiyat, SSS).</li>
+        <li><code>/giris</code>: giriş, kayıt, "misafir olarak dene".</li>
+        <li><code>/studio</code>: araç → fotoğraf/örnek → seçenekler → üretim → sonuç ve analiz.</li>
+        <li><code>/tasarimlarim</code>, <code>/tasarim/[id]</code>, <code>/sohbet</code>, <code>/fiyatlar</code>.</li>
+        <li><strong>BFF:</strong> <code>/api/auth/guest · login · register · logout</code>, <code>/api/v1/[...path]</code> (Bearer ekleme, tek seferlik refresh, Origin kontrolü), <code>/api/download</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Lint, typecheck ve production build temiz</li>
+        <li><b class="y">✓</b> Stüdyoda bahçe sonucu ve Tasarımlarım ekranı çalışıyor (ekran görüntüsü 21–22)</li>
+        <li><b class="p">◐</b> Token'ın tarayıcıya hiç inmemesi ve mutasyonlarda Origin reddi — web BFF için ayrı test</li>
+        <li><b class="n">○</b> iyzico/PayTR ödemesi, şifre sıfırlama, SEO içerik sayfaları</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.4 Admin — Next.js (<code>apps/admin</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Rotalar</h3>
+      <ul>
+        <li><code>/login</code>: e-posta + parola + 6 haneli TOTP.</li>
+        <li><code>/</code> gösterge paneli: 7/30/90 gün filtresi, 6 KPI kutusu, günlük grafik ve tablo görünümü, araç/stil dağılımı.</li>
+        <li><code>/users</code>, <code>/users/[id]</code>: arama; askıya alma, plan ve bitiş tarihi, gerekçeli kredi, kredi hareketleri.</li>
+        <li><code>/designs</code>: filtreler, önce/sonra kartları, öne çıkarma, onaylı silme.</li>
+        <li><code>/styles</code>, <code>/audit</code>, <code>/system</code>.</li>
+        <li><strong>BFF:</strong> <code>/api/auth/login · logout · me</code>, <code>/api/admin/[...path]</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Lint, typecheck ve build temiz; açık ve koyu temada render hatası yok; 390 px'te taşma yok</li>
+        <li><b class="y">✓</b> Oturumsuz sayfa → <code>/login</code> (307); oturumsuz API → 401</li>
+        <li><b class="y">✓</b> Origin yok veya yanlış → 403; çerez <code>HttpOnly; SameSite=strict; Max-Age=7200</code></li>
+        <li><b class="y">✓</b> Gerçek backend ile MFA girişi, gösterge paneli ve moderasyon (ekran görüntüsü 30–32)</li>
+        <li><b class="n">○</b> Çoklu admin rolleri, passkey, sunucu tarafı çıkış iptali, gelir raporları, CSV dışa aktarma</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.5 Mobil — Expo SDK 58 (<code>apps/mobile</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Rotalar (Expo Router)</h3>
+      <ul>
+        <li><code>_layout</code>: açılış kapısı (yükleniyor, çevrimdışı, ilk açılışta onboarding).</li>
+        <li><code>onboarding</code>: 3 slayt + KVKK metni.</li>
+        <li><code>(tabs)/index</code> (Ana Sayfa), <code>inspire</code> (İlham), <code>designs</code> (Tasarımlarım), <code>profile</code> (Profil).</li>
+        <li><code>create</code>, <code>design/[id]</code>, <code>chat</code>, <code>paywall</code> (modal), <code>auth</code> (modal).</li>
+        <li><strong>Altyapı:</strong> <code>lib/api.ts</code> (tipli istemci, tek uçuşlu refresh), SecureStore, cihaz kimliği, TR/EN, önce/sonra kaydırıcı.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> <code>tsc</code>, <code>expo lint</code>, <code>expo export --platform web</code> temiz; <code>expo-doctor</code> 20/20</li>
+        <li><b class="y">✓</b> Ana sayfa, yeni tasarım, önce/sonra (AI etiketi) ve alışveriş/bütçe ekranları çalışıyor (ekran görüntüsü 10–13)</li>
+        <li><b class="p">◐</b> iOS/Android fiziksel cihaz ve simülatör testi</li>
+        <li><b class="n">○</b> RevenueCat IAP, anlık bildirim, çevrimdışı önbellek, RoomPlan/LiDAR</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.6 MoSCoW önceliklendirmesi (Beta sürümü için)</h2>
+  <table class="compact">
+    <thead><tr><th style="width:13%">Öncelik</th><th>Kapsam</th><th style="width:20%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
+      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; şifre sıfırlama ve e-posta doğrulama; S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Should</strong></td><td>iyzico/PayTR web ödemesi; kredi paketi satışı; anlık bildirim; ürün analitiği ve çökme raporlama; ETBİS/İYS; "Doğrulanacak" güvenlik testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Could</strong></td><td>Maske/fırça düzenleme; sonuç üzerinden yineleme; affiliate ve katalog eşleştirme; usta teklifi; emlakçı paneli; yüz/belge maskeleme</td><td>Faz 2</td></tr>
+      <tr><td><strong>Won't</strong> (bu sürümde değil)</td><td>LiDAR/RoomPlan ölçü, 2D/3D plan, AR, video yürüyüşü, marka SDK'sı, kendi GPU modeli, yeni ülkeler</td><td>Faz 3</td></tr>
+    </tbody>
+  </table>
+
+  <h2>9.7 Özellik → modül izlenebilirliği</h2>
+  <table class="compact" style="font-size:7.4pt">
+    <thead><tr><th style="width:17%">Özellik</th><th style="width:19%">Mobil</th><th style="width:16%">Web</th><th style="width:13%">Admin</th><th style="width:20%">Backend / AI servisi</th><th>Kanıt</th></tr></thead>
+    <tbody>
+      <tr><td>Misafir giriş / kayıt</td><td><code>_layout</code>, <code>auth</code></td><td><code>/giris</code>, <code>/api/auth/*</code></td><td>—</td><td><code>/auth/guest · register</code></td><td>Smoke (misafir)</td></tr>
+      <tr><td>Fotoğraf / örnek yükleme</td><td><code>create</code></td><td><code>/studio</code></td><td>—</td><td><code>/uploads · /uploads/sample</code></td><td>Smoke (örnek, 415 reddi)</td></tr>
+      <tr><td>Tasarım üretimi (10 araç)</td><td><code>create</code></td><td><code>/studio</code></td><td>—</td><td><code>/designs</code> → <code>/internal/v1/generate</code></td><td>Smoke + pytest + Gemini</td></tr>
+      <tr><td>Kota, kredi, PRO</td><td><code>paywall</code></td><td><code>/fiyatlar</code></td><td>Kredi düzenleme</td><td><code>UsersService.charge/refund</code></td><td>Smoke (402, pro_required)</td></tr>
+      <tr><td>Önce/sonra, varyant, favori</td><td><code>design/[id]</code>, <code>designs</code></td><td><code>/tasarim/[id]</code>, <code>/tasarimlarim</code></td><td>—</td><td><code>/designs/:id</code></td><td>Ekran 12, 22; smoke (silme)</td></tr>
+      <tr><td>Analiz + TL bütçe + mağaza</td><td><code>design/[id]</code></td><td><code>/tasarim/[id]</code></td><td>—</td><td><code>/designs/:id/analysis</code> → <code>/analyze</code></td><td>Smoke + ekran 13</td></tr>
+      <tr><td>AI tasarım sohbeti</td><td><code>chat</code></td><td><code>/sohbet</code></td><td>—</td><td><code>/chat</code> → <code>/internal/v1/chat</code></td><td>Smoke + pytest</td></tr>
+      <tr><td>İlham akışı</td><td><code>inspire</code></td><td><code>/</code></td><td>Öne çıkarma</td><td><code>/inspiration</code>, <code>/admin/designs/:id</code></td><td>Smoke</td></tr>
+      <tr><td>KVKK hesap silme</td><td><code>profile</code></td><td>—</td><td>—</td><td><code>DELETE /me</code></td><td>Kod incelemesi</td></tr>
+      <tr><td>Admin MFA ve denetim</td><td>—</td><td>—</td><td><code>/login</code>, <code>/audit</code></td><td><code>/admin/auth/login</code>, <code>/admin/audit</code></td><td>Smoke + ekran 30</td></tr>
+      <tr><td>KPI ve sistem durumu</td><td>—</td><td>—</td><td><code>/</code>, <code>/system</code></td><td><code>/admin/stats · /admin/system · /health</code></td><td>Smoke + ekran 31</td></tr>
+      <tr><td>Stil kataloğu yönetimi</td><td>Katalogdan okur</td><td>Katalogdan okur</td><td><code>/styles</code></td><td><code>/admin/styles</code>, <code>/catalog</code></td><td>Admin build + elle kontrol</td></tr>
+    </tbody>
+  </table>
+</section>

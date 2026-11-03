@@ -1,0 +1,69 @@
+<section>
+  <h1><span class="num">11</span>Güvenlik ve uyum</h1>
+  <p>Güvenlik tasarımı kullanıcının red-team kataloğuna göre yapıldı. Katalog OWASP ASVS 5.0.0 eşlemeli 108 kontrol içeriyor. İlk güvenli yayın için önce <strong>P0</strong> kontrolleri karşılandı: <strong>26 kontrol</strong> uygulandı, <strong>13'ü otomatik testle doğrulandı</strong>.</p>
+  <p class="small">Durum dili kataloğa uygun:</p>
+  <ul class="small">
+    <li><strong>Geçti:</strong> bu sürümde testle kanıtlandı.</li>
+    <li><strong>Doğrulanacak:</strong> uygulandı, testi bekliyor.</li>
+    <li><strong>Uygulanmaz:</strong> kapsam dışında.</li>
+  </ul>
+  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (28/28), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
+  <table class="compact">
+    <thead><tr><th style="width:9%">Kontrol</th><th style="width:47%">Uygulama</th><th style="width:30%">Kanıt</th><th class="c" style="width:14%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td>FIL-01</td><td>MIME izin listesi + içerik imzası + beyan–imza eşleşmesi; sharp ile çözüp yeniden JPEG kodlama (EXIF/GPS silinir); ≤10 MB, ≥256 px; sunucu UUID'si, web kökü dışında, 0600 izinli dosya.</td><td>Smoke: PDF baytları "image/jpeg" diye yüklenince 415</td><td class="c y">Geçti</td></tr>
+      <tr><td>FIL-02</td><td>sharp <code>limitInputPixels</code> 50 MP, <code>failOn:error</code>; AI servisinde Pillow <code>MAX_IMAGE_PIXELS</code>; sağlayıcı çıktısı da yeniden çözülüp kodlanıyor.</td><td>AI testi: görsel olmayan girdi 400/415. Sıkıştırma bombası testi bekliyor.</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>FIL-04</td><td>HMAC-SHA256 imzalı, 24 saatlik görsel URL'si; görsel modele girmeden önce sahiplik kontrolü; görsel ucunda CORP cross-origin, diğer uçlarda same-site.</td><td>Smoke: imza bozulunca 403; başka kullanıcı görseli kullanamıyor (404)</td><td class="c y">Geçti</td></tr>
+      <tr><td>RES-01</td><td>Redis'te IP, kullanıcı ve uç bazında atomik sayaç (INCRBY + PEXPIRE NX); günlük kota <code>SELECT … FOR UPDATE</code> ile; örnek başına üretim semaforu; gövde limitleri (15 MB / 40 MB).</td><td>Smoke: kota 3→1 düştü; kota aşımında 402</td><td class="c y">Geçti</td></tr>
+      <tr><td>NET-03</td><td>Varsayılan olarak soket eşi kullanılıyor; <code>TRUSTED_PROXY_HOPS</code> ile X-Forwarded-For sağdan okunuyor, ilk eleman asla alınmıyor.</td><td>Proxy arkasında staging testi gerekli</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>NET-04</td><td>AI servisi yalnız iç ağda; <code>X-Internal-Token</code> sabit zamanlı karşılaştırılıyor; OpenAPI/docs kapalı.</td><td>AI testi: token'sız ve yanlış token 401</td><td class="c y">Geçti</td></tr>
+      <tr><td>KEY-01</td><td>zod/pydantic ile açılış kontrolü: sırlar ≥32 karakter, varsayılan görünümlü değer reddediliyor. Üretimde https taban URL, CORS'ta * yok, sırlar birbirinden farklı, mock sağlayıcı yasak.</td><td>AI testi: güvensiz ayarla açılış reddedildi</td><td class="c y">Geçti</td></tr>
+      <tr><td>KEY-02</td><td>Sırlar yalnız ortam değişkeninde; <code>.env</code> git dışında; admin bilgileri git dışındaki 0600 dosyaya yazılıyor, stdout'a hiç basılmıyor.</td><td>CI'da sır taraması eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>LOG-01</td><td>JSON istek logu: request-id, kullanıcı, eş IP, süre. Admin işlemleri ve başarısız admin girişleri <code>AuditLog</code> tablosuna yazılıyor.</td><td>Smoke: "design.feature" denetim kaydında</td><td class="c y">Geçti</td></tr>
+      <tr><td>LOG-02</td><td>Logda redaksiyon: authorization, password, token, data, text, prompt, sig ve benzeri. Sorgu dizesi loglanmıyor (imzalı URL içerdiği için).</td><td>İşaretli sır ile log araması yapılacak</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>EXC-01</td><td>Genel hata filtresi iç ayrıntı sızdırmıyor; Redis yoksa hız sınırlayıcı 503 ile kapalı kalıyor; AI servisinde de ara katman yakalama var.</td><td>Hata enjeksiyonu testi gerekli</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AI-01</td><td>Sohbetin durum değiştiren aracı yok; öneriler veri olarak dönüyor ve kullanıcı dokunmadan çalışmıyor. Kimlikler katalogla süzülüyor; görüntü içindeki talimatlar yok sayılıyor; prompt'taki kullanıcı metni çitleniyor.</td><td>AI testleri: katalog dışı stil null'a düşüyor; &lt;, {, satır sonu temizleniyor</td><td class="c y">Geçti</td></tr>
+      <tr><td>AI-02</td><td>RAG yok (tenant sızıntısı yüzeyi yok). LLM çıktısı istemcilerde yalnız düz metin olarak gösteriliyor.</td><td>İstemci kod incelemesi</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AUT-01</td><td>Admin girişi tek adımda parola + TOTP (RFC 6238). Kod tek kullanımlık (son adım saklanıyor). Admin token'ı yalnız <code>amr:[pwd,otp]</code> ile veriliyor.</td><td>Smoke: OTP'siz red; MFA ile giriş; aynı kodun tekrarı reddedildi</td><td class="c y">Geçti</td></tr>
+      <tr><td>AUT-02</td><td>Giriş limitleri: IP başına 30/15 dk, hesap başına 10/15 dk. Genel hata mesajı; olmayan hesapta sahte hash ile zaman eşitleme; kalıcı kilitleme yok.</td><td>Dağıtık deneme testi bekliyor</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>SES-01</td><td>Web ve admin'de token httpOnly çerezde (Lax / Strict), mobilde SecureStore'da; URL'de token yok.</td><td>Admin BFF: HttpOnly, SameSite=strict, Max-Age=7200 doğrulandı</td><td class="c y">Geçti (admin)</td></tr>
+      <tr><td>SES-02</td><td>Misafir → kayıt yükseltmesinde <code>tokenVersion</code> artıyor ve eski oturumlar iptal ediliyor; cihaz bağı kaldırılıyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>SES-04</td><td>Askıya almada tüm access token'lar (<code>tokenVersion</code>) ve refresh aileleri iptal ediliyor; guard'lar durumu her istekte yeniden okuyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>SES-05</td><td>Refresh tek kullanımlık; yeniden kullanım tüm aileyi iptal ediyor; eşzamanlı yarış koşullu güncellemeyle kapatıldı.</td><td>Smoke: yeniden kullanım 401, aile iptal</td><td class="c y">Geçti</td></tr>
+      <tr><td>TOK-01</td><td>jose ile yalnız HS256; iss, aud, exp ve <code>typ=access</code> doğrulanıyor; kid'den anahtar seçimi yok.</td><td><code>alg:none</code> ve süresi dolmuş token testi eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>TOK-02</td><td>Ayrı audience'lar: <code>ai-room-app</code> ve <code>ai-room-admin</code>. Admin token'ı 2 saatlik ve refresh'siz.</td><td>Smoke: uygulama token'ı admin API'de 401</td><td class="c y">Geçti</td></tr>
+      <tr><td>AZ-01</td><td>Her sorgu <code>userId</code> ile kapsamlı; başkasının kaydı 404.</td><td>Smoke: başka kullanıcı tasarımı okuyamıyor, görseli kullanamıyor</td><td class="c y">Geçti</td></tr>
+      <tr><td>AZ-02</td><td>Sorgu düzeyinde ikinci bariyer (<code>findFirst {id, userId}</code>). PostgreSQL RLS yok.</td><td>RLS kararı Faz 2</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AZ-05</td><td>Admin guard rol, durum ve sürümü her istekte yeniden kontrol ediyor; kendini askıya alma engelli; tüm yazma işlemleri denetleniyor.</td><td>Rol düşürme testi eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>WEB-01</td><td>AI ve kullanıcı metni HTML olarak işlenmiyor; CSP var (admin'de nonce'lu).</td><td>CSP başlık denetimi (<code>redteam headers</code>)</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>WEB-03</td><td>BFF, durum değiştiren isteklerde Origin ve Sec-Fetch-Site kontrolü yapıyor.</td><td>Admin BFF: Origin yok veya yanlış → 403</td><td class="c y">Geçti (admin)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>11.1 Açık işler (P1 ve olgunlaştırma)</h2>
+  <ul>
+    <li><strong>Dağıtık üretim kuyruğu:</strong> Redis/BullMQ ile global eşzamanlılık ve maliyet tavanı. Şu an semafor örnek başına.</li>
+    <li><strong>Yüklemelerde güvenlik taraması:</strong> zararlı içerik ve AV taraması; içerik moderasyonu (NSFW).</li>
+    <li><strong>KVKK rehberine uygun maskeleme:</strong> yüz, aile fotoğrafı ve belge bulanıklaştırma.</li>
+    <li><strong>Saklama politikası:</strong> kullanılmayan yüklemeler ve sonuçlar için TTL'li temizlik işi. Bugün hesap silme dosyaları da siliyor; süreli temizlik henüz yok.</li>
+    <li><strong>Admin çıkışı:</strong> sunucu tarafında iptal ucu yok; token 2 saatte kendiliğinden düşüyor. Admin için passkey (PKY) değerlendirilmeli.</li>
+    <li><strong>"Doğrulanacak" kontrollerin testleri:</strong> pozitif ve negatif DVT senaryoları yazılacak. Bağımlılık taraması ve CVE önceliklendirme (<code>redteam prioritize</code>).</li>
+    <li><strong>Gözlem:</strong> Sigma kuralları ve alarm (LOG). Yayından önce bağımsız sızma testi.</li>
+  </ul>
+
+  <h2>11.2 KVKK ve tüketici mevzuatı kontrol listesi</h2>
+  <table class="compact">
+    <thead><tr><th>Madde</th><th style="width:44%">AI Room durumu</th><th class="c" style="width:13%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td>Aydınlatma metni ve onay ekranı</td><td>Mobil onboarding'de KVKK metni var; hukuki metin avukatla son haline getirilecek</td><td class="c p">Kısmi</td></tr>
+      <tr><td>EXIF/GPS konum verisinin silinmesi</td><td>Her yüklemede yeniden kodlama ile siliniyor</td><td class="c y">Var</td></tr>
+      <tr><td>Yurt dışına aktarım (AI sağlayıcıları)</td><td>Standart sözleşme ve 5 iş günü içinde bildirim <sup class="ref">[118][119]</sup>; açık rıza akışı; Türkiye'de işleme seçeneği değerlendirilmeli</td><td class="c n">Faz 1</td></tr>
+      <tr><td>Yüz, aile fotoğrafı ve belge maskeleme</td><td>KVKK üretken AI rehberi önerisi <sup class="ref">[120]</sup></td><td class="c n">Faz 2</td></tr>
+      <tr><td>Eğitimde kullanmama / ayrı rıza</td><td>AI Room görselleri kendi model eğitiminde kullanmıyor; ileride kullanırsa ayrı rıza alınacak. Dış sağlayıcıların API veri kullanım koşulları sözleşmede ayrıca doğrulanmalı.</td><td class="c p">Kısmi</td></tr>
+      <tr><td>Silme hakkı</td><td><code>DELETE /me</code> hesap, tasarım, analiz ve görsel dosyalarını siliyor</td><td class="c y">Var</td></tr>
+      <tr><td>Abonelik: yenileme öncesi bildirim, aynı yöntemle iptal</td><td>Gerçek IAP ve iyzico ile birlikte <sup class="ref">[121][122]</sup></td><td class="c n">Faz 1</td></tr>
+      <tr><td>AI içerik etiketi</td><td>Ücretsiz planda görsel etiket; emlak çıktısına "sanal olarak döşenmiştir" etiketi Faz 2'de <sup class="ref">[123][124]</sup></td><td class="c p">Kısmi</td></tr>
+      <tr><td>ETBİS ve İYS kayıtları</td><td>Web satışı ve pazarlama başlamadan önce <sup class="ref">[116][117]</sup></td><td class="c n">Faz 1</td></tr>
+    </tbody>
+  </table>
+</section>

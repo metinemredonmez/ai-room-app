@@ -1,0 +1,121 @@
+<section>
+  <h1><span class="num">2</span>Referans uygulamaların analizi</h1>
+  <p>Kullanıcının paylaştığı 15 ekran görüntüsü iki farklı ürün tipini gösteriyor:</p>
+  <ul>
+    <li><strong>Live Home 3D:</strong> elle çizilen 2D/3D planlayıcı.</li>
+    <li><strong>AI Remodel:</strong> fotoğraftan yapay zekâ ile yeniden tasarım.</li>
+  </ul>
+  <p>AI Room ikinci kategoride yarışıyor. Birinci kategoriden ölçü ve plan disiplinini yol haritasına alıyor. Ekran görüntüleri telif nedeniyle rapora gömülmedi; akışlar aşağıda metinle anlatılıyor.</p>
+
+  <h2>2.1 AI Remodel — Interior Design (PulseApps Solutions OÜ)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Künye</h3>
+      <ul>
+        <li><strong>Yayıncı:</strong> PulseApps Solutions OÜ (Estonya). Bir arama sonucunda "PRIMA SORTE INC" adı geçiyor, doğrulanamadı.</li>
+        <li><strong>Kimlikler:</strong> iOS id 6477533581; Android <code>pro.airemodel.android</code> <sup class="ref">[1][2]</sup>.</li>
+        <li><strong>Sürüm:</strong> v2.52.0, 22 Ekim 2026. İlk yayın 9 Mayıs 2024. 1–4 haftada bir güncelleniyor <sup class="ref">[3]</sup>.</li>
+        <li><strong>Puanlar:</strong>
+          <ul>
+            <li>ABD iOS: 4,6★ (26 bin puan), Graphics &amp; Design ücretsiz #28.</li>
+            <li>TR iOS: 4,3★ (535 puan), ücretsiz #22, hasılat #14.</li>
+            <li>Android: 4,59 (yaklaşık 184 bin puan), 5 milyonun üzerinde indirme <sup class="ref">[1][2][4][58]</sup>.</li>
+          </ul></li>
+        <li><strong>AppGoblin tahmini:</strong> 2,4 milyon kurulum, 177 bin MAU, aylık "10 bin $+" gelir (%44 uygulama içi satın alma, %56 reklam). Üçüncü taraf tahmini; doğrulanamadı <sup class="ref">[3]</sup>.</li>
+        <li><strong>Diller:</strong> EN, AR, FR, DE, JA, PT, ES. <strong>Türkçe yok.</strong></li>
+        <li><strong>Gizlilik etiketi:</strong> satın alma, konum ve tanımlayıcılar üçüncü taraf reklam takibi için kullanılıyor.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Fiyat ve paywall</h3>
+      <ul>
+        <li><strong>TR ekranındaki planlar:</strong>
+          <ul>
+            <li>1 hafta ₺399,99, "POPULAR" (günlük ₺57,14 gösterimi).</li>
+            <li>1 ay ₺999,99, "SAVE 50%" (üstü çizili ₺1.999,99).</li>
+            <li>1 yıl ₺2.499,99, "BEST VALUE" (haftalık ₺47,95 gösterimi).</li>
+          </ul></li>
+        <li><strong>Test SKU'ları:</strong> listede haftalık ₺229,99–599,99 aralığında, 3 günlük denemeli fiyatlar da var <sup class="ref">[2]</sup>.</li>
+        <li><strong>ABD fiyatları:</strong> $4,99–11,99/hafta, $24,99/ay, $64,99/yıl.</li>
+        <li><strong>Paywall vaatleri:</strong> fotoğraf dışa aktarma, filigran yok, sınırsız kullanım, reklam yok, tüm stiller.</li>
+        <li><strong>Paywall'daki stil şeridi:</strong> Mediterranean, Ikea, Eclectic, Modern, Contemporary, Transitional…</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Ekran akışı (görüntülerden)</h3>
+  <table class="compact">
+    <thead><tr><th style="width:22%">Ekran</th><th>İçerik</th><th style="width:28%">AI Room karşılığı</th></tr></thead>
+    <tbody>
+      <tr><td>Onboarding (3 kart)</td><td>"AI Interior Redesign" (New Flooring, Remove Objects, Your Room, Fill Spaces, Replace), "AI Exterior Redesign", "AI Garden Redesign"; tam ekran önce/sonra bölme; mor "Continue".</td><td>3 slaytlı onboarding + KVKK aydınlatma metni.</td></tr>
+      <tr><td>Paywall</td><td>Stil şeridi, kilitli avantaj rozetleri, 3 plan kartı, "Secured with Apple Store. Cancel anytime", Restore/Terms/Privacy.</td><td>TL planlar katalogdan gelir; demo yükseltme (gerçek IAP Faz 1).</td></tr>
+      <tr><td>Home</td><td>PRO düğmesi; hikâye halkaları (Under Stairs, Nooks, Basement, Patio, Balcony); "Instant Remodel" kartı; <em>AI Renovation Kit</em>: Replace, Furniture Finder, Furnish Empty Room, Floor Plan (NEW), New Flooring, Rearrange Furniture, Exterior Redesign, Garden Redesign, Reference Style, Remove Objects; "You Might Like", "Beyond Ordinary" karuselleri; yüzen AI sohbet düğmesi.</td><td>Hero "Anında Yenile", araç ızgarası (PRO/YENİ rozetli), oda çipleri, stil karuseli, kredi rozeti, yüzen sohbet düğmesi.</td></tr>
+      <tr><td>AI sohbet</td><td>"Your AI-powered design chat": tasarım rehberliği, yeni görünümleri görselleştirme, tasarımı iyileştirme; "Upload Photo", "Ask AI".</td><td>Claude tabanlı Türkçe sohbet; görsel ekleme; dokununca uygulanan öneriler.</td></tr>
+      <tr><td>Inspire</td><td>İki sütunlu görsel ızgara.</td><td>İlham: admin'in öne çıkardığı tasarımlar + stil önizlemeleri.</td></tr>
+      <tr><td>Archive</td><td>Boş durum: "You have no designs yet", "Instant Remodel" çağrısı.</td><td>Tasarımlarım: favori filtresi, silme.</td></tr>
+      <tr><td>Settings</td><td>"Get AI Remodel Pro", Subscription: Free, Contact, FAQ, Terms, Privacy, v2.52.0.</td><td>Profil: misafir → kayıt, dil, plan, KVKK, hesabı sil.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Güçlü yanlar</h3>
+      <ul>
+        <li>Geniş araç seti: iç mekân, dış cephe, bahçe, zemin, boya, nesne silme ve değiştirme, referans stil.</li>
+        <li>Hızlı ürün döngüsü ve agresif fiyat testleri (yaklaşık 10 SKU).</li>
+        <li>Sohbet, "Furniture Finder" ve "Floor Plan" gibi yeni modüller mağaza açıklamasında henüz yok; yeni eklendikleri düşünülüyor.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kullanıcı şikâyetleri <sup class="ref">[1]</sup></h3>
+      <ul>
+        <li>Haftalık $10 çok pahalı.</li>
+        <li>AI pencere, kapı ve duvarları "neredeyse yarı yarıya" değiştiriyor.</li>
+        <li>Mobilyalar orantısız büyük.</li>
+        <li>Yatak odası oturma odasına dönüşüyor (oda tipi yanlış sınıflanıyor).</li>
+        <li>Sonuç düzenlenemiyor; stil değiştirmek için yeniden yükleme gerekiyor.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>2.2 Live Home 3D (BeLight Software)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Künye ve özellikler <sup class="ref">[27]</sup></h3>
+      <ul>
+        <li><strong>Yayıncı:</strong> BeLight Software (Ukrayna, Odesa), 2016.</li>
+        <li><strong>Platformlar:</strong> iOS, macOS, Windows, visionOS.</li>
+        <li><strong>Özellikler:</strong> 2D/3D plan, LiDAR oda tarayıcı, AR'da görüntüleme, 360° ve stereo video, USDZ/glTF/FBX dışa aktarma.</li>
+        <li><strong>AI:</strong> v5.0 ile "Render with AI" geldi; 260'tan fazla stil ön ayarı var. Fotoğrafı değil, kullanıcının kurduğu 3D modeli render ediyor.</li>
+        <li><strong>Fiyat:</strong>
+          <ul>
+            <li>Standard: $6,99/ay, $24,99/yıl, $59,99 ömür boyu.</li>
+            <li>Pro: $14,99/ay, $49,99/yıl, $129,99 ömür boyu.</li>
+            <li>İçerik paketleri: $6,99.</li>
+          </ul></li>
+        <li><strong>Puanlar:</strong> ABD 4,6★ (19 bin); TR 4,6★ (314). Türkçe yok <sup class="ref">[58]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ekran akışı ve dersler</h3>
+      <ul>
+        <li><strong>Ana ekran:</strong> "Create New"; altında iOS belge tarayıcısı (Son Kullanılanlar, Paylaşılanlar, Göz At).</li>
+        <li><strong>Gallery:</strong> izometrik oda şablonları ("Lounge Design", "Bathroom Design"). Sekmeler: Gallery, Projects, Learn, Settings.</li>
+        <li><strong>Learn:</strong> Tutorial/Manual, "Draw Room Layouts" eğitimi (duvar çizimi, ölçü etiketi, 2D↔3D).</li>
+        <li><strong>Şikâyetler:</strong> çökme ve kayıp kayıtlar, nesnelerin duvar nişlerine yapışması, ağır modellerde yavaşlama.</li>
+        <li><strong>Ders:</strong> Planlayıcılar ölçüyü biliyor ama üretken AI'ları zayıf. Foto-AI ürünlerinde ise ölçek yok. Yol haritasındaki "RoomPlan/LiDAR + ölçek farkındalıklı mobilya" maddesi bu iki dünyayı birleştirmek için.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>Referanslardan çıkan ürün gereksinimleri:</strong></p>
+    <ol>
+      <li><strong>Yapı koruma:</strong> pencere, kapı ve tavan sabit kalmalı. MVP'de her prompt'ta zorunlu kalıp cümle var; Faz 2'de derinlik ve kenar koşullama gelecek.</li>
+      <li><strong>Doğru oda tipi:</strong> kullanıcı odayı açıkça seçer; prompt'a İngilizce oda tanımı yazılır.</li>
+      <li><strong>Yeniden yüklemeden yineleme:</strong> MVP'de aynı girdi görseliyle yeni tasarım üretilebiliyor. Sonuç üzerinde düzenleme Faz 2'de.</li>
+      <li><strong>Adil fiyat ve reklamsız deneyim:</strong> MVP'ye reklam veya üçüncü taraf takip SDK'sı eklenmedi.</li>
+      <li><strong>Türkçe ve yerel stil kataloğu.</strong></li>
+    </ol>
+  </div>
+</section>

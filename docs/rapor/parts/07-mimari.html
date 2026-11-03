@@ -1,0 +1,170 @@
+<section>
+  <h1><span class="num">10</span>Teknik mimari</h1>
+  <p>Mimari üç ilkeye dayanıyor:</p>
+  <ol>
+    <li><strong>İstemciler AI servisini hiç görmez.</strong></li>
+    <li><strong>Tarayıcı token tutmaz.</strong> Token'lar Next.js BFF tarafında, httpOnly çerezde durur.</li>
+    <li><strong>Tüm yetki kararları backend'de verilir.</strong></li>
+  </ol>
+  <p>AI servisi ayrı bir Python sürecidir. Model ve sağlayıcı değişiklikleri ürünün geri kalanını etkilemez.</p>
+
+  <figure>
+    <svg viewBox="0 0 830 430" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3D4A45"/></marker>
+      </defs>
+      <!-- sunucu sınırı -->
+      <rect x="8" y="198" width="814" height="224" rx="10" fill="#F4F8F6" stroke="#1F6F5C" stroke-dasharray="6 4"/>
+      <text x="132" y="214" font-size="10" fill="#1F6F5C" font-weight="700">Sunucu tarafı (TLS arkasında)</text>
+      <rect x="648" y="206" width="168" height="98" rx="8" fill="#FFF6F1" stroke="#E07A4F" stroke-dasharray="4 3"/>
+      <text x="656" y="300" font-size="8.5" fill="#9A4A26">İç ağ · dışarı kapalı (NET-04)</text>
+
+      <!-- istemciler -->
+      <rect x="20" y="18" width="190" height="58" rx="9" fill="#fff" stroke="#1F6F5C" stroke-width="1.4"/>
+      <text x="115" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#141414">Mobil uygulama</text>
+      <text x="115" y="60" text-anchor="middle" font-size="9.5" fill="#5F5E5A">Expo · iOS / Android / Web</text>
+
+      <rect x="260" y="18" width="150" height="58" rx="9" fill="#fff" stroke="#1F6F5C" stroke-width="1.4"/>
+      <text x="335" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#141414">Web tarayıcı</text>
+      <text x="335" y="60" text-anchor="middle" font-size="9.5" fill="#5F5E5A">son kullanıcı</text>
+
+      <rect x="450" y="18" width="150" height="58" rx="9" fill="#fff" stroke="#1F6F5C" stroke-width="1.4"/>
+      <text x="525" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#141414">Admin tarayıcı</text>
+      <text x="525" y="60" text-anchor="middle" font-size="9.5" fill="#5F5E5A">yöneticiler (MFA)</text>
+
+      <!-- BFF -->
+      <rect x="250" y="118" width="170" height="54" rx="9" fill="#E3F0EC" stroke="#1F6F5C"/>
+      <text x="335" y="140" text-anchor="middle" font-size="11.5" font-weight="700">Web BFF</text>
+      <text x="335" y="157" text-anchor="middle" font-size="9" fill="#3D4A45">Next.js :3000 · CSP · Origin</text>
+
+      <rect x="440" y="118" width="170" height="54" rx="9" fill="#E3F0EC" stroke="#1F6F5C"/>
+      <text x="525" y="140" text-anchor="middle" font-size="11.5" font-weight="700">Admin BFF</text>
+      <text x="525" y="157" text-anchor="middle" font-size="9" fill="#3D4A45">Next.js :3001 · nonce CSP</text>
+
+      <!-- backend -->
+      <rect x="20" y="224" width="600" height="72" rx="10" fill="#1F6F5C"/>
+      <text x="320" y="252" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">Backend API — NestJS :4000 /v1</text>
+      <text x="320" y="272" text-anchor="middle" font-size="9.5" fill="#E3F0EC">Kimlik · JWT/refresh · Kota (Redis) · Yükleme &amp; EXIF temizleme · İmzalı URL · Tasarımlar · Analiz · Sohbet · Admin · Denetim</text>
+      <text x="320" y="287" text-anchor="middle" font-size="9" fill="#BFE0D6">her sorgu userId ile kapsamlı (AZ-01) · hata → genel JSON (EXC-01)</text>
+
+      <!-- AI servisi -->
+      <rect x="660" y="224" width="146" height="64" rx="9" fill="#E07A4F"/>
+      <text x="733" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">AI servisi</text>
+      <text x="733" y="264" text-anchor="middle" font-size="9" fill="#FFF1EA">FastAPI :8001</text>
+      <text x="733" y="278" text-anchor="middle" font-size="8.5" fill="#FFF1EA">prompt · doğrulama · sağlayıcı</text>
+
+      <!-- sağlayıcılar -->
+      <rect x="652" y="330" width="162" height="84" rx="9" fill="#fff" stroke="#E07A4F" stroke-width="1.3"/>
+      <text x="733" y="350" text-anchor="middle" font-size="10.5" font-weight="700">Dış AI sağlayıcıları</text>
+      <text x="733" y="366" text-anchor="middle" font-size="9" fill="#3D4A45">Gemini 2.5 Flash Image</text>
+      <text x="733" y="379" text-anchor="middle" font-size="9" fill="#3D4A45">Replicate · FLUX.1 Kontext Pro</text>
+      <text x="733" y="392" text-anchor="middle" font-size="9" fill="#3D4A45">Claude (sohbet · analiz)</text>
+      <text x="733" y="405" text-anchor="middle" font-size="8.5" fill="#7A7A7A">mock (anahtarsız demo)</text>
+
+      <!-- veri katmanı -->
+      <rect x="40" y="340" width="150" height="54" rx="8" fill="#fff" stroke="#3D4A45"/>
+      <text x="115" y="362" text-anchor="middle" font-size="11" font-weight="700">PostgreSQL 15</text>
+      <text x="115" y="379" text-anchor="middle" font-size="9" fill="#5F5E5A">Prisma 7 · 8 tablo</text>
+      <rect x="230" y="340" width="150" height="54" rx="8" fill="#fff" stroke="#3D4A45"/>
+      <text x="305" y="362" text-anchor="middle" font-size="11" font-weight="700">Redis</text>
+      <text x="305" y="379" text-anchor="middle" font-size="9" fill="#5F5E5A">atomik hız/kota sayaçları</text>
+      <rect x="420" y="340" width="180" height="54" rx="8" fill="#fff" stroke="#3D4A45"/>
+      <text x="510" y="362" text-anchor="middle" font-size="11" font-weight="700">Görsel deposu</text>
+      <text x="510" y="379" text-anchor="middle" font-size="9" fill="#5F5E5A">UUID · 0600 · (S3/R2 Faz 1)</text>
+
+      <!-- oklar -->
+      <g stroke="#3D4A45" stroke-width="1.4" fill="none" marker-end="url(#ah)">
+        <path d="M115 76 V222"/>
+        <path d="M335 76 V116"/>
+        <path d="M525 76 V116"/>
+        <path d="M335 172 V222"/>
+        <path d="M525 172 V222"/>
+        <path d="M620 256 H658"/>
+        <path d="M733 288 V328"/>
+        <path d="M115 296 V338"/>
+        <path d="M305 296 V338"/>
+        <path d="M510 296 V338"/>
+      </g>
+      <g font-size="8.8" fill="#3D4A45">
+        <text x="122" y="140">HTTPS · Bearer</text>
+        <text x="122" y="152">(SecureStore)</text>
+        <text x="342" y="98">httpOnly çerez · Lax</text>
+        <text x="532" y="98">httpOnly çerez · Strict</text>
+        <text x="342" y="196">Bearer</text>
+        <text x="532" y="196">Bearer (aud=admin)</text>
+        <text x="622" y="248" font-size="8">X-Internal-</text>
+        <text x="622" y="270" font-size="8">Token</text>
+        <text x="740" y="314">HTTPS</text>
+      </g>
+      <path d="M598 294 C 640 330, 640 190, 612 76" stroke="#E07A4F" stroke-width="1.2" fill="none" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+      <text x="626" y="150" font-size="8.5" fill="#9A4A26">imzalı görsel</text>
+      <text x="626" y="161" font-size="8.5" fill="#9A4A26">URL (24 sa)</text>
+    </svg>
+    <figcaption>Şekil 1 — AI Room bileşenleri ve güven sınırları. Görseller istemcilere yalnız süreli, HMAC imzalı URL ile verilir (FIL-04).</figcaption>
+  </figure>
+
+  <h2>10.1 Veri modeli (PostgreSQL, Prisma)</h2>
+  <table class="compact">
+    <thead><tr><th style="width:16%">Tablo</th><th>Önemli alanlar</th><th style="width:30%">Not</th></tr></thead>
+    <tbody>
+      <tr><td><strong>User</strong></td><td>email?, passwordHash?, role (USER/ADMIN), status (ACTIVE/BANNED), isGuest, deviceHash?, plan, planExpiresAt, credits, freeUsedOn/freeUsedCount, locale, totpSecret?, totpLastStep?, tokenVersion, lastSeenAt</td><td>Misafir → kayıt yükseltmesi; günlük kota İstanbul saatiyle; <code>tokenVersion</code> toplu iptal için</td></tr>
+      <tr><td>RefreshToken</td><td>userId, familyId, tokenHash (SHA-256), expiresAt, usedAt, revokedAt</td><td>Tek kullanımlık rotasyon; yeniden kullanımda aile iptali</td></tr>
+      <tr><td>Image</td><td>id (UUID), ownerId, kind (UPLOAD/SAMPLE/RESULT), width, height, bytes, designId?</td><td>Dosya diskte <code>{id}.jpg</code>; sahiplik kontrolü</td></tr>
+      <tr><td><strong>Design</strong></td><td>userId, tool, styleId?, roomId?, params (JSON), prompt, provider, status, error, inputImageId, creditsUsed, freeUsed, favorite, featured, finishedAt</td><td>Başarısızlıkta iade için harcanan hak tutulur</td></tr>
+      <tr><td>Analysis</td><td>designId, imageId, data (JSON)</td><td>(designId, imageId) benzersiz → önbellek</td></tr>
+      <tr><td>Style</td><td>id, nameTr/En, descriptionTr/En, prompt, palette[], isPro, isActive, sortOrder</td><td>Admin yönetir; prompt sunucuda kalır</td></tr>
+      <tr><td>CreditLedger</td><td>userId, delta, reason (daily_free, generation, refund, admin: …), refId</td><td>Her hak hareketi izlenebilir</td></tr>
+      <tr><td>AuditLog</td><td>actorId?, action, targetType, targetId, meta (JSON), ip</td><td>Admin işlemleri ve başarısız admin girişleri</td></tr>
+    </tbody>
+  </table>
+
+  <h2>10.2 API özeti</h2>
+  <table class="compact">
+    <thead><tr><th style="width:18%">Grup</th><th>Uçlar (<code>/v1</code>)</th></tr></thead>
+    <tbody>
+      <tr><td>Kimlik</td><td><code>POST /auth/guest · /auth/register · /auth/login · /auth/refresh · /auth/logout</code></td></tr>
+      <tr><td>Hesap</td><td><code>GET/PATCH/DELETE /me</code> (DELETE: KVKK hesap ve veri silme)</td></tr>
+      <tr><td>Katalog ve içerik</td><td><code>GET /catalog · /inspiration · /styles/:id/preview.jpg · /health</code></td></tr>
+      <tr><td>Görseller</td><td><code>POST /uploads</code> (base64 JSON, ≤10 MB) · <code>POST /uploads/sample</code> · <code>GET /images/:id?exp&amp;sig</code></td></tr>
+      <tr><td>Tasarımlar</td><td><code>POST /designs</code> (senkron, 5–60 sn) · <code>GET /designs</code> · <code>GET/PATCH/DELETE /designs/:id</code> · <code>POST /designs/:id/analysis</code></td></tr>
+      <tr><td>Sohbet ve ödeme</td><td><code>POST /chat</code> · <code>POST /billing/dev-upgrade</code> (yalnız geliştirme ortamında)</td></tr>
+      <tr><td>Admin (aud=admin + MFA)</td><td><code>POST /admin/auth/login</code> · <code>GET /admin/stats</code> · <code>GET/PATCH /admin/users[/:id]</code> · <code>POST /admin/users/:id/credits</code> · <code>GET/PATCH/DELETE /admin/designs[/:id]</code> · <code>GET/POST/PATCH /admin/styles[/:id]</code> · <code>GET /admin/audit</code> · <code>GET /admin/system</code></td></tr>
+      <tr><td>AI servisi (iç)</td><td><code>POST /internal/v1/generate · /analyze · /chat</code> · <code>GET /internal/v1/health</code> (hepsi <code>X-Internal-Token</code> ister)</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Hata biçimi her yerde <code>{"error":{"code","message"}}</code>. Kodlar: <code>insufficient_credits</code> / <code>pro_required</code> 402, <code>rate_limited</code> 429 (+Retry-After), <code>ai_unavailable</code> 502, <code>busy</code> 503.</p>
+
+  <h2>10.3 AI hattı</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Görsel üretimi</h3>
+      <ol>
+        <li>Backend girdinin sahipliğini doğrular, hakkı satır kilidiyle düşer ve <code>PENDING</code> kaydı açar.</li>
+        <li>Stil prompt'u veritabanından, oda ve zemin tanımları katalogdan İngilizce olarak AI servisine gider.</li>
+        <li>AI servisi araç şablonunu kurar. Tüm şablonlarda şu sabit cümle var: <em>"Keep the exact same camera angle, perspective, room geometry, walls, windows, doors and ceiling…"</em></li>
+        <li>Kullanıcı metni NFKC'ye normalize edilir; kontrol karakterleri, &lt;&gt;{}` ve tırnaklar temizlenir; metin kısaltılıp tırnak içinde <em>veri</em> olarak yerleştirilir.</li>
+        <li>Varyantlar sağlayıcıda paralel ve semaforla üretilir: mock, Gemini veya Replicate.</li>
+        <li>Çıktı Pillow ve sharp ile yeniden çözülüp kodlanır. Ücretsiz planda <em>"AI Room · Yapay zekâ ile oluşturulmuştur"</em> etiketi eklenir.</li>
+        <li>Hata olursa tasarım <code>FAILED</code> olur ve hak iade edilir.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Analiz, sohbet, referans</h3>
+      <ul>
+        <li><strong>Analiz:</strong> Claude, JSON şemalı yapılandırılmış çıktıyla ürünler (TL min/maks, arama ifadesi) ve tadilat kalemlerini döndürür. Palet Pillow kuantizasyonuyla görselden hesaplanır. Mağaza linkleri ve toplamlar backend'de kurulur.</li>
+        <li><strong>Sohbet:</strong> sistem talimatı görselleri ve metni <em>veri</em> sayar. Öneriler yalnız katalogdaki kimliklerle dönebilir; AI servisi geçersiz kimlikleri ayıklar.</li>
+        <li><strong>Referans stil:</strong> Claude referans fotoğrafı tek cümlelik İngilizce stil tarifine çevirir; tarif görsel modelin prompt'una eklenir.</li>
+        <li><strong>Model:</strong> varsayılan <code>claude-opus-5-5</code>; sohbet <code>effort: low</code>, analiz <code>medium</code>. Sunucu tarafı <code>fallbacks: "default"</code> açık. <code>ANTHROPIC_MODEL</code> ile değiştirilebilir.</li>
+        <li><strong>Anahtar yoksa:</strong> deterministik Türkçe demo yanıtları döner ("[Demo]").</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>10.4 Ölçekleme notları</h2>
+  <ul>
+    <li><strong>Backend durumsuz:</strong> yük dengeleyici arkasında yatay ölçeklenir. Kota sayaçları zaten Redis'te ortak. Üretim eşzamanlılığı şu an örnek başına bir semafor; Faz 1'de Redis tabanlı iş kuyruğuna (ör. BullMQ) ve anlık bildirime taşınacak.</li>
+    <li><strong>Görsel deposu:</strong> yerel diskten S3 uyumlu nesne depolamaya (S3/R2) geçecek. İmzalı URL mantığı aynı kalır; CDN eklenebilir.</li>
+    <li><strong>AI servisi:</strong> bağımsız ölçeklenir. Maliyet büyüdüğünde kendi GPU modeli (ControlNet/derinlik + açık ağırlıklı modeller) eklenebilir; sağlayıcı arayüzü buna hazır.</li>
+    <li><strong>Veritabanı:</strong> listeler <code>(userId, createdAt)</code> indeksli ve imleç tabanlı sayfalanıyor. Admin günlük istatistikleri tek SQL ile İstanbul saat dilimine göre hesaplanıyor.</li>
+  </ul>
+</section>

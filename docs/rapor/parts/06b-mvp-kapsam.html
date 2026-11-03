@@ -1,0 +1,120 @@
+<section>
+  <h1><span class="num">8</span>MVP kapsamı</h1>
+  <p>MVP beş ayrı uygulamadan oluşuyor. Hepsi <code>docs/API.md</code>'deki tek sözleşmeye uyuyor.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="v">28/28</div><div class="l">Uçtan uca smoke testi (<code>scripts/smoke.mjs</code>)</div></div>
+    <div class="kpi"><div class="v">8/8</div><div class="l">AI servisi birim testleri (pytest)</div></div>
+    <div class="kpi"><div class="v">5/5</div><div class="l">Uygulamada typecheck, lint ve build temiz</div></div>
+    <div class="kpi"><div class="v">~9 sn</div><div class="l">Gerçek Gemini 2.5 Flash Image üretim süresi (tek örnek, Modern Türk)</div></div>
+  </div>
+
+  <h2>8.1 Bileşenler</h2>
+  <table class="compact">
+    <thead><tr><th style="width:15%">Bileşen</th><th style="width:27%">Teknoloji</th><th>Sorumluluk</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Backend</strong><br><code>apps/backend</code></td><td>NestJS 12, Prisma 7.10 (pg adaptörü), PostgreSQL 15, Redis (ioredis), jose (JWT), Argon2id, sharp, zod</td><td>Kimlik (misafir, kayıt, giriş, refresh), görsel yükleme ve imzalı URL, kredi/kota, tasarım işleri, analiz, sohbet proxy'si, ilham, katalog, admin API, denetim kaydı, seed (15 stil + TOTP'li admin).</td></tr>
+      <tr><td><strong>AI servisi</strong><br><code>apps/ai-service</code></td><td>Python 3.13, FastAPI, Pillow, httpx, Anthropic SDK; uv ile paketleme</td><td>Görsel üretimi: <code>mock</code> / <code>gemini</code> (Gemini 2.5 Flash Image) / <code>replicate</code> (FLUX.1 Kontext Pro). Claude ile tasarım sohbeti, alışveriş/bütçe analizi ve referans stil tarifi. Yalnız iç ağdan, <code>X-Internal-Token</code> ile.</td></tr>
+      <tr><td><strong>Web</strong><br><code>apps/web</code></td><td>Next.js 16 (App Router), React 19, Tailwind</td><td>Tanıtım sayfası, giriş/kayıt/misafir, Stüdyo, Tasarımlarım, tasarım detayı, Sohbet, Fiyatlar. BFF: token'lar httpOnly çerezde, Origin kontrolü, CSP.</td></tr>
+      <tr><td><strong>Admin</strong><br><code>apps/admin</code></td><td>Next.js 16.4.4, Tailwind v4, lucide-react</td><td>Parola + TOTP ile giriş. Gösterge paneli (KPI, günlük grafik, araç/stil dağılımı), kullanıcılar (plan, askıya alma, kredi), tasarım moderasyonu ve öne çıkarma, stil kataloğu, denetim kaydı, sistem durumu.</td></tr>
+      <tr><td><strong>Mobil</strong><br><code>apps/mobile</code></td><td>Expo SDK 58, React Native 0.88 (Node 22), Expo Router, SecureStore, ImagePicker</td><td>Onboarding, Ana Sayfa, İlham, Tasarımlarım, Profil, oluşturma akışı, sonuç (önce/sonra, analiz), sohbet, paywall (TL), giriş/kayıt. TR/EN.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>8.2 Kullanıcı akışları</h2>
+  <ol>
+    <li><strong>İlk açılış.</strong> Cihaz kimliği üretilir, misafir hesap otomatik açılır (<code>/auth/guest</code>). Onboarding'de KVKK metni gösterilir, ardından Ana Sayfa açılır.</li>
+    <li><strong>Tasarım oluşturma.</strong>
+      <ol>
+        <li>Araç seçilir: Anında Yenile, Boş Odayı Döşe, Nesne Sil, Değiştir, Duvar Boyası, Yeni Zemin, Dış Cephe, Bahçe &amp; Teras, Referans Stil, Kendi Tarifin.</li>
+        <li>Fotoğraf seçilir: galeri, kamera ya da örnek fotoğraf.</li>
+        <li>Araca göre alanlar dolar: stil, oda, zemin, renk, hedef/yerine, ek istek, referans görsel, "odayı tamamen boşalt".</li>
+        <li>1–4 varyant seçilir ve üretim başlatılır.</li>
+      </ol></li>
+    <li><strong>Sonuç.</strong> Önce/sonra kaydırıcı, varyantlar, favori ve paylaşım. "Analiz et" düğmesi TL ürün listesini, tadilat kalemlerini, toplamları ve mağaza linklerini gösterir. "Sohbette sor" düğmesi sohbete geçer.</li>
+    <li><strong>Sohbet.</strong> Kullanıcı görsel ekleyip soru sorar. Claude Türkçe öneri verir. Öneri çipine dokunulunca oluşturma ekranı önceden doldurulmuş açılır; üretim kullanıcı onayı olmadan başlamaz.</li>
+    <li><strong>Kota ve paywall.</strong>
+      <ul>
+        <li>Ücretsiz plan günde 3 üretim hakkı verir; her varyant 1 hak.</li>
+        <li>Hak bitince 402 döner ve paywall açılır.</li>
+        <li>PRO stil ve araçlar <code>pro_required</code> hatası döndürür.</li>
+        <li>Başarısız üretimde hak iade edilir.</li>
+      </ul></li>
+    <li><strong>Admin döngüsü.</strong> Admin MFA ile girer. Başarılı bir tasarımı öne çıkarır ve tasarım İlham akışında görünür. Bu işlem denetim kaydına yazılır.</li>
+  </ol>
+
+  <h2>8.3 Katalog (backend <code>catalog.data.ts</code>)</h2>
+  <div class="grid2">
+    <table class="compact">
+      <caption>Araçlar (10)</caption>
+      <thead><tr><th>Araç</th><th>Girdiler</th><th class="c">PRO</th></tr></thead>
+      <tbody>
+        <tr><td>Anında Yenile</td><td>stil, oda, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Boş Odayı Döşe</td><td>stil, oda, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Nesne Sil</td><td>oda, hedef, tümünü boşalt</td><td class="c">—</td></tr>
+        <tr><td>Değiştir</td><td>oda, hedef, yerine</td><td class="c">—</td></tr>
+        <tr><td>Duvar Boyası</td><td>oda, renk (10 palet)</td><td class="c">—</td></tr>
+        <tr><td>Yeni Zemin</td><td>oda, zemin (8 tür)</td><td class="c">—</td></tr>
+        <tr><td>Dış Cephe</td><td>stil, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Bahçe &amp; Teras</td><td>stil, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Referans Stil <span class="pill acc">YENİ</span></td><td>oda, referans görsel, ek istek</td><td class="c y">✓</td></tr>
+        <tr><td>Kendi Tarifin <span class="pill acc">YENİ</span></td><td>oda, serbest metin (≤300)</td><td class="c y">✓</td></tr>
+      </tbody>
+    </table>
+    <div>
+      <table class="compact">
+        <caption>Stiller (15; admin panelinden düzenlenebilir)</caption>
+        <tbody>
+          <tr><td>Modern · Modern Türk · Japandi · İskandinav · Ege · Minimalist · Akdeniz · Endüstriyel · Bohem · Rustik Köy Evi · Yazlık/Sahil</td><td class="c">Ücretsiz</td></tr>
+          <tr><td>Osmanlı Klasik · Kapadokya Taş Ev · Mid-Century · Art Deco Lüks</td><td class="c">PRO</td></tr>
+        </tbody>
+      </table>
+      <table class="compact">
+        <caption>Odalar (12), zeminler (8), renkler (10)</caption>
+        <tbody>
+          <tr><td><strong>Oda</strong></td><td>Oturma Odası, Salon (Misafir), Yatak Odası, Mutfak, Banyo, Yemek Odası, Çocuk Odası, Çalışma Odası, Antre, Balkon, Stüdyo Daire, Ofis</td></tr>
+          <tr><td><strong>Zemin</strong></td><td>Meşe Parke, Balıksırtı, Beyaz Mermer, Traverten, Cilalı Beton, Terrakota, Mat Seramik, Halıfleks</td></tr>
+          <tr><td><strong>Renk</strong></td><td>Kırık Beyaz, Kum Beji, Adaçayı, Zeytin, Ege Mavisi, Gece Mavisi, Terrakota, Gül Kurusu, Hardal, Antrasit</td></tr>
+          <tr><td><strong>Plan</strong></td><td>Haftalık ₺149,99 · Aylık ₺349,99 (POPÜLER) · Yıllık ₺1.299,99 (EN AVANTAJLI)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2>8.4 Uygulama bazında ekranlar</h2>
+  <table class="compact">
+    <thead><tr><th style="width:14%">Uygulama</th><th>Ekranlar / modüller</th></tr></thead>
+    <tbody>
+      <tr><td>Mobil</td><td>
+        <ul>
+          <li>Açılış kapısı (yükleniyor ve çevrimdışı durumları).</li>
+          <li>Onboarding (3 slayt + KVKK).</li>
+          <li>Sekmeler: Ana Sayfa, İlham, Tasarımlarım, Profil. iOS/Android'de NativeTabs, web'de özel üst çubuk.</li>
+          <li><code>create</code>, <code>design/[id]</code>, <code>chat</code>, <code>paywall</code> (modal), <code>auth</code> (modal).</li>
+          <li>Önce/sonra kaydırıcı (PanResponder ile, web'de de çalışır), analiz görünümü, ilerleme katmanı.</li>
+        </ul></td></tr>
+      <tr><td>Web</td><td>
+        <ul>
+          <li>Tanıtım sayfası: önce/sonra vitrin, özellikler, nasıl çalışır, fiyat, SSS.</li>
+          <li><code>/giris</code>, <code>/studio</code>, <code>/tasarimlarim</code>, <code>/tasarim/[id]</code>, <code>/sohbet</code>, <code>/fiyatlar</code>.</li>
+          <li>BFF uçları: <code>/api/auth/*</code> ve <code>/api/v1/[...path]</code>.</li>
+        </ul></td></tr>
+      <tr><td>Admin</td><td>
+        <ul>
+          <li><code>/login</code> (e-posta + parola + TOTP).</li>
+          <li>Gösterge paneli: 7/30/90 gün filtresi, 6 KPI kutusu, günlük grafikler ve tablo görünümü.</li>
+          <li>Kullanıcılar ve kullanıcı detayı, Tasarımlar, Stiller (yan panel düzenleyici), Denetim kaydı, Sistem.</li>
+          <li>Proxy ile oturum yönlendirmesi, nonce'lu CSP.</li>
+        </ul></td></tr>
+      <tr><td>Backend</td><td>
+        <ul>
+          <li>37 uç: 23 kullanıcı ve genel uç (sağlık, katalog, imzalı görsel, stil önizleme ve ilham dahil), 14 admin ucu (MFA girişi dahil).</li>
+          <li>Seed betiği ve <code>admin:otp</code> yardımcı betiği (yalnız geliştirme ortamında).</li>
+        </ul></td></tr>
+      <tr><td>AI servisi</td><td>
+        <ul>
+          <li><code>/internal/v1/generate</code>, <code>/analyze</code>, <code>/chat</code>, <code>/health</code>; canlılık için <code>/healthz</code>.</li>
+          <li>Sağlayıcı soyutlaması, prompt şablonları, deterministik demo yanıtları.</li>
+        </ul></td></tr>
+    </tbody>
+  </table>
+</section>

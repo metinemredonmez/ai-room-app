@@ -1,0 +1,31 @@
+<section>
+  <h1><span class="num">6</span>Boşluklar, fırsatlar ve konumlandırma</h1>
+  <table class="compact">
+    <thead><tr><th style="width:4%">#</th><th style="width:36%">Boşluk (kanıt)</th><th style="width:34%">AI Room yanıtı</th><th class="c" style="width:12%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Yapı korunmuyor:</strong> pencere, kapı ve duvar değişiyor; oda tipi yanlış sınıflanıyor (AI Remodel, Remodel AI yorumları) <sup class="ref">[1][10]</sup>.</td><td>Her prompt'ta zorunlu "kamera açısı, geometri, pencere, kapı ve tavan aynı kalsın" kalıbı; oda tipi kullanıcı seçimiyle İngilizce tanımla gönderiliyor. Faz 2'de derinlik/kenar koşullama ve kalite değerlendirme seti.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>2</td><td><strong>Gerçek ölçü yok:</strong> orantısız büyük mobilya. Tarama + fotogerçekçi restyle + sığma kontrolünü birleştiren yok.</td><td>RoomPlan/LiDAR ile ölçü ve ölçek farkındalıklı yerleştirme.</td><td class="c"><span class="pill acc">Faz 3</span></td></tr>
+      <tr><td>3</td><td><strong>Yerel ve satın alınabilir ürün yok:</strong> alışveriş linkleri ABD kataloglarına bağlı; Türk mağazası yok <sup class="ref">[37][38][39]</sup>.</td><td>Analizde TL fiyat aralıklı ürün listesi ve Trendyol / Hepsiburada / IKEA TR arama linkleri. Faz 2'de affiliate ve katalog eşleştirme.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>4</td><td><strong>Yineleme zor:</strong> sonucu düzenleyememe, çoklu fotoğraf tutarlılığı yok.</td><td>Aynı girdiyle yeni araç/stil, varyant seçimi, "Sohbette sor". Faz 2'de maske/fırça, sonuç üzerinden düzenleme, oda içi tutarlılık.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>5</td><td><strong>Tasarım → bütçe → usta yolu kopuk:</strong> Arch ve HomeDesigns yalnız kaba tahmin veriyor; Armut ve Ustabilir ayrı uygulamalar <sup class="ref">[90]</sup>.</td><td>TL tadilat kalemleri ve toplam bütçe. Faz 2'de Armut/Ustabilir'den teklif alma.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>6</td><td><strong>Türkçe ve yerel stil zayıf:</strong> AI Remodel, Home AI, Live Home 3D Türkçe değil. Yerel stil yalnız GenRoom'da var <sup class="ref">[68]</sup>.</td><td>TR öncelikli arayüz (EN seçenekli). 5 yerel stil: Modern Türk, Osmanlı Klasik, Kapadokya Taş Ev, Ege, Rustik Köy Evi. Salon/oturma odası ayrımı, balkon. Türkçe sohbet.</td><td class="c"><span class="pill">MVP</span></td></tr>
+      <tr><td>7</td><td><strong>Güven sorunu:</strong> $10/hafta, paywall döngüleri, reklam takibi.</td><td>Haftalık ₺149,99, günde 3 ücretsiz, reklamsız. Paywall yalnız 402 ve PRO özelliklerinde açılıyor. "Aynı yöntemle iptal" ilkesi Faz 1'de.</td><td class="c"><span class="pill">MVP</span></td></tr>
+      <tr><td>8</td><td><strong>Emlakta sanal döşeme dar:</strong> SahiDeko'da 4 Batı stili var; Hepsiemlak ve Emlakjet'te sanal döşeme yok <sup class="ref">[84][87][88]</sup>.</td><td>"Boş odayı döşe" ve "Nesne sil (tüm odayı boşalt)" MVP'de. Faz 2'de toplu işlem, portal boyutları, "sanal olarak döşenmiştir" etiketi.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>9</td><td><strong>Android payı %74 ama rakipler iOS odaklı</strong> (Arch, Ruma yalnız iOS) <sup class="ref">[109]</sup>.</td><td>Expo ile iOS, Android ve web tek kod tabanında; ayrıca Next.js web uygulaması.</td><td class="c"><span class="pill">MVP</span></td></tr>
+      <tr><td>10</td><td><strong>Uyum sıkılaşıyor:</strong> KVKK, abonelik, AI reklam etiketi.</td><td>EXIF/GPS silme, hesap silme, ücretsiz planda "Yapay zekâ ile oluşturulmuştur" etiketi, admin MFA ve denetim kaydı. Faz 1'de standart sözleşme ve bildirim, yüz maskeleme.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 1</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>6.1 Konumlandırma</h2>
+  <div class="callout">
+    <p><strong>"Odanı saniyeler içinde yeniden tasarla; neye mal olacağını ve nereden alacağını hemen gör."</strong></p>
+    <p>AI Room, Türkiye'de ev sahibi, kiracı, yeni evlenen ve kentsel dönüşümle yeni daireye geçen kullanıcıya hizmet eder. İkinci aşamada emlakçı ve müteahhide de hizmet eder.</p>
+    <p>Hedef, yapay zekâ ile oluşturulan tasarımı <strong>Türkçe, TL ve yerel ticaret</strong> ile somut bir alışveriş ve tadilat planına dönüştüren ilk uygulama olmak.</p>
+  </div>
+  <div class="grid3">
+    <div class="card"><h3>Yerel zevk</h3><ul><li>Anadolu ve Ege stilleri</li><li>Osmanlı Klasik, Kapadokya</li><li>Salon/oturma odası ayrımı</li><li>10 renkli Türkçe adlandırılmış boya paleti</li></ul></div>
+    <div class="card"><h3>Ticaret ve bütçe</h3><ul><li>TL ürün fiyat aralıkları</li><li>Tadilat kalemleri (m², adet)</li><li>Türk mağaza linkleri</li><li>Gelecekte affiliate ve usta teklifi</li></ul></div>
+    <div class="card"><h3>Güven</h3><ul><li>Reklamsız</li><li>Adil fiyat</li><li>Açık AI etiketi</li><li>EXIF temizliği, hesap silme</li><li>Önerileri yalnız kullanıcı onayıyla uygulayan sohbet</li></ul></div>
+  </div>
+</section>
+

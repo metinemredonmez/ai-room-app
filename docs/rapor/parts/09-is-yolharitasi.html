@@ -1,0 +1,237 @@
+<section>
+  <h1><span class="num">12</span>İş modeli ve fiyatlandırma</h1>
+  <h2>12.1 Gelir hatları</h2>
+  <table class="compact">
+    <thead><tr><th style="width:20%">Hat</th><th>Model</th><th style="width:22%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Freemium → PRO</strong></td><td>
+        <ul>
+          <li>Ücretsiz plan günde 3 üretim hakkı (her varyant 1 hak) ve görünür AI etiketi içerir.</li>
+          <li>PRO etiketsizdir; 4 PRO stil (Osmanlı Klasik, Kapadokya, Mid-Century, Art Deco) ve 2 PRO araç (Referans Stil, Kendi Tarifin) açar.</li>
+          <li>PRO'da günde 100 üretimlik adil kullanım sınırı var.</li>
+          <li>Fiyatlar: haftalık ₺149,99, aylık ₺349,99, yıllık ₺1.299,99.</li>
+        </ul></td><td>MVP'de katalog ve kota hazır; ödeme demo. Gerçek IAP Faz 1.</td></tr>
+      <tr><td>Kredi paketleri</td><td>Ek üretim hakkı; ledger ve admin kredi düzenleme mevcut.</td><td>Satış Faz 1</td></tr>
+      <tr><td>Ticaret (affiliate)</td><td>"Bu görünümü satın al": Türk perakendecilerin ürünlerine yönlendirme komisyonu. Abonelik havuzunun darlığına (%89,2 yurt dışı geliri <sup class="ref">[112]</sup>) karşı ikinci gelir hattı.</td><td>MVP'de arama linki; anlaşmalar Faz 2</td></tr>
+      <tr><td>B2B emlak</td><td>Fotoğraf başı veya paket fiyatla sanal döşeme ve boşaltma; portal boyutları ve etiket. GenRoom'un emlakçıya "fotoğraf başı ₺15" iddiası bir referans noktası <sup class="ref">[69]</sup>.</td><td>Faz 2</td></tr>
+      <tr><td>Marka ortaklıkları</td><td>Boya kodu (Marshall, Filli Boya, Dyo) ve seramik SKU'su (Kale, VitrA, NG, Ege) ile beyaz etiket görselleştirici veya SDK.</td><td>Faz 3</td></tr>
+      <tr><td>Müteahhit / GYO</td><td>Kentsel dönüşüm ve yeni konut projeleri için "boş daireyi döşe + bütçe" teslim paketi.</td><td>Faz 2–3</td></tr>
+      <tr><td>Usta / iç mimar lead'i</td><td>Armut veya Ustabilir ortaklığı ya da lead başına ücret (İstanbul'da 3.314 iç mimar <sup class="ref">[90]</sup>).</td><td>Faz 2</td></tr>
+    </tbody>
+  </table>
+
+  <h2>12.2 Birim ekonomi — örnek hesap (varsayımlar)</h2>
+  <div class="callout warn"><p><strong>Uyarı:</strong> Bu bölümdeki KDV, mağaza komisyonu ve görsel başı AI maliyeti <strong>varsayımdır</strong>. Gerçek sağlayıcı fiyat listeleri, kur ve mağaza programlarıyla doğrulanmalıdır. Yalnız dijital hizmet vergisi oranı (%5) kaynaktan alındı <sup class="ref">[113]</sup>.</p></div>
+  <div class="grid2">
+    <table class="compact">
+      <caption>Abone başına net gelir (KDV %20 ve mağaza komisyonu %15 varsayımı; DHV %5)</caption>
+      <thead><tr><th>Plan</th><th class="r">Fiyat</th><th class="r">KDV hariç</th><th class="r">Komisyon sonrası</th><th class="r">Net (DHV sonrası)</th></tr></thead>
+      <tbody>
+        <tr><td>Haftalık</td><td class="r">₺149,99</td><td class="r">₺124,99</td><td class="r">₺106,24</td><td class="r"><strong>₺100,93</strong></td></tr>
+        <tr><td>Aylık</td><td class="r">₺349,99</td><td class="r">₺291,66</td><td class="r">₺247,91</td><td class="r"><strong>₺235,51</strong></td></tr>
+        <tr><td>Yıllık</td><td class="r">₺1.299,99</td><td class="r">₺1.083,33</td><td class="r">₺920,83</td><td class="r"><strong>₺874,79</strong></td></tr>
+        <tr><td colspan="4">Yıllık, komisyon %30 senaryosu</td><td class="r">₺720,41</td></tr>
+      </tbody>
+    </table>
+    <table class="compact">
+      <caption>Yıllık PRO abonenin karşılayabileceği görsel sayısı (net gelirin %40'ı AI maliyetine ayrılırsa)</caption>
+      <thead><tr><th>Görsel başı AI maliyeti (varsayım)</th><th class="r">Komisyon %15</th><th class="r">Komisyon %30</th></tr></thead>
+      <tbody>
+        <tr><td>₺1</td><td class="r">349 görsel/yıl</td><td class="r">288</td></tr>
+        <tr><td>₺2</td><td class="r">174</td><td class="r">144</td></tr>
+        <tr><td>₺4</td><td class="r">87</td><td class="r">72</td></tr>
+        <tr><td>₺8</td><td class="r">43</td><td class="r">36</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Sonuç ve öneriler:</strong></p>
+  <ul>
+    <li>MVP'deki PRO adil kullanım sınırı (günde 100) ekonomik olarak fazla cömert. Lansmanda aylık bir üst sınır ya da kredi tabanlı PRO düşünülmeli.</li>
+    <li>Ücretsiz katmanda düşük maliyetli model ve tek varyant varsayılanı, maliyet maruziyetini azaltır.</li>
+    <li>Analiz önbellekleniyor; aynı görsel için Claude bir kez çağrılıyor.</li>
+    <li>Kendi GPU modeli, ölçek ekonomisine ulaşıldığında maliyeti düşürmenin ana kaldıracı.</li>
+  </ul>
+</section>
+
+<section>
+  <h1><span class="num">13</span>Türkiye'de pazara giriş</h1>
+  <div class="grid2">
+    <div class="card">
+      <h3>Kanallar</h3>
+      <ul>
+        <li><strong>ASO:</strong> Türkçe anahtar kelimeler ("oda tasarımı", "yapay zeka dekorasyon", "ev tasarım", "boyama", "parke"). Önce/sonra mağaza görselleri. Rakiplerin Türkçe olmayan listelerine karşı yerel açıklama.</li>
+        <li><strong>Android öncelikli kampanyalar:</strong> Android payı %74 <sup class="ref">[109]</sup>. Web'de SEO'lu tanıtım sayfası ve web'den ödeme (iyzico/PayTR, taksit).</li>
+        <li><strong>İçerik:</strong> Instagram, TikTok ve Pinterest'te önce/sonra videoları (Pinterest Yaşam Tarzı ücretsiz #1). "Kentsel dönüşüm sonrası yeni dairem", "çeyiz ve yeni ev" temaları <sup class="ref">[125]</sup>.</li>
+        <li><strong>Referans döngüsü:</strong> paylaşılan sonuçta AI Room etiketi ve indirme bağlantısı.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ortaklıklar</h3>
+      <ul>
+        <li><strong>Usta ve iç mimar:</strong> Armut (4,78★, 157 bin puan), Ustabilir (Koçtaş) <sup class="ref">[90][75]</sup>.</li>
+        <li><strong>Emlak:</strong> Hepsiemlak ve Emlakjet/Endeksa'da sanal döşeme yok, kanal fırsatı. sahibinden ile rekabet SahiDeko üzerinden <sup class="ref">[84][87][88]</sup>.</li>
+        <li><strong>Perakende:</strong> Vivense, Bellona, İstikbal, Koçtaş, IKEA, Trendyol, Hepsiburada affiliate programları. Fotoğraftan AI restyle sunan bir perakendeci yok.</li>
+        <li><strong>Boya ve seramik:</strong> Marshall, Filli Boya, Dyo, Kalekim, VitrA, NG Kütahya. Görselleştiricileri eski veya dağınık <sup class="ref">[77]–[82]</sup>.</li>
+        <li><strong>Müteahhit ve GYO:</strong> İstanbul'da 291 bin bölümde dönüşüm sürüyor <sup class="ref">[101]</sup>.</li>
+      </ul>
+    </div>
+  </div>
+  <h2>13.1 KPI'lar</h2>
+  <table class="compact">
+    <thead><tr><th style="width:24%">KPI</th><th>Tanım</th><th style="width:26%">Ölçüm kaynağı</th></tr></thead>
+    <tbody>
+      <tr><td>Aktivasyon</td><td>İlk 24 saatte en az 1 başarılı tasarım üreten yeni kullanıcı oranı</td><td><code>Design</code> + <code>User.createdAt</code></td></tr>
+      <tr><td>Üretim başarı oranı</td><td>SUCCEEDED / (SUCCEEDED + FAILED); sağlayıcı bazında</td><td>Admin gösterge paneli (<code>failedToday</code>)</td></tr>
+      <tr><td>D1 / D7 / D30 tutma</td><td>Kayıttan 1, 7 ve 30 gün sonra tekrar üretim yapan kullanıcı oranı</td><td><code>lastSeenAt</code>, tasarım kayıtları</td></tr>
+      <tr><td>Paywall dönüşümü</td><td>402 / <code>pro_required</code> görüntüleme → abonelik</td><td>IAP olayları (Faz 1)</td></tr>
+      <tr><td>ARPPU / LTV</td><td>Ödeme yapan kullanıcı başına gelir, plan karışımı</td><td>RevenueCat / iyzico</td></tr>
+      <tr><td>Analizden tıklama</td><td>Analiz → mağaza linki tıklama oranı (ticaret hattı)</td><td>Link yönlendirme ölçümü (Faz 2)</td></tr>
+      <tr><td>Görsel başı maliyet</td><td>Sağlayıcı faturası / başarılı görsel</td><td>AI servisi logları + fatura</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Hedef değerler ilk 90 günlük beta ölçümüyle belirlenmeli; bu rapor sayısal hedef öngörmüyor.</p>
+</section>
+
+<section>
+  <h1><span class="num">14</span>Yol haritası</h1>
+  <table class="compact">
+    <thead><tr><th style="width:17%">Faz</th><th>Kapsam</th><th style="width:18%">Çıkış ölçütü</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Faz 0 — MVP</strong><br><small>Tamamlandı, Kasım 2026</small></td><td>
+        <ul>
+          <li>5 bileşen, 10 araç, 15 stil.</li>
+          <li>Analiz ve TL bütçe, sohbet, admin MFA, imzalı URL'ler, kota/kredi.</li>
+          <li>Mock + Gemini + Replicate + Claude sağlayıcıları.</li>
+          <li>Smoke 28/28, AI testleri 8/8, 5 uygulamada typecheck/lint/build temiz.</li>
+        </ul></td><td>Gerçek Gemini çağrısıyla örnek çıktı üretildi (~9 sn)</td></tr>
+      <tr><td><strong>Faz 1 — Beta</strong><br><small>0–6 hafta</small></td><td>
+        <ul>
+          <li>Sağlayıcı kalite değerlendirme seti: yapı koruma, oda tipi, ölçek.</li>
+          <li>Altyapı: S3/R2 depolama, Redis/BullMQ asenkron üretim kuyruğu ve anlık bildirim.</li>
+          <li>Ödeme: RevenueCat IAP (iOS/Android), iyzico/PayTR web ödemesi, yenileme bildirimi ve kolay iptal.</li>
+          <li>Uyum: KVKK aydınlatma/rıza ve yurt dışı aktarım bildirimi, ETBİS/İYS.</li>
+          <li>Ürün izleme: analitik ve çökme raporlama.</li>
+          <li>Dağıtım: TestFlight ve Play kapalı beta, fiziksel cihaz testleri.</li>
+        </ul></td><td>Ödeme yapan ilk kullanıcılar; üretim başarı oranı ölçülüyor</td></tr>
+      <tr><td><strong>Faz 2 — Ürün-pazar uyumu</strong><br><small>6–16 hafta</small></td><td>
+        <ul>
+          <li>Düzenleme: maske/fırça ile bölge düzenleme, sonuç üzerinden yineleme, aynı odanın birden çok fotoğrafında tutarlılık.</li>
+          <li>Ticaret: gerçek katalog eşleştirme ve affiliate.</li>
+          <li>Usta teklifi: Armut/Ustabilir.</li>
+          <li>Emlakçı paneli: toplu sanal döşeme ve boşaltma, portal boyutları, "sanal olarak döşenmiştir" etiketi.</li>
+          <li>Güvenlik ve uyum: yüz/belge maskeleme, RLS kararı, sızma testi.</li>
+        </ul></td><td>Ticaret ve B2B gelir hatları açık</td></tr>
+      <tr><td><strong>Faz 3 — Derinlik</strong><br><small>4–9 ay</small></td><td>
+        <ul>
+          <li>Ölçü: RoomPlan/LiDAR ile ölçü, ölçek farkındalıklı mobilya ve sığma kontrolü, 2D plan.</li>
+          <li>İçerik: video yürüyüşü.</li>
+          <li>Markalar: boya ve seramik SDK'sı (B2B2C), müteahhit/GYO paketleri.</li>
+          <li>Maliyet: kendi GPU modeli.</li>
+          <li>Yeni pazarlar: Azerbaycan, Körfez, Balkanlar, Almanya'daki Türk diasporası.</li>
+        </ul></td><td>Görsel başı maliyet düşer, B2B payı artar</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><p><strong>Varsayım uyarısı:</strong> 14.1–14.3'teki takvim, ekip ve bütçe tahminleri <strong>planlama varsayımıdır</strong>; pazar verisi değildir. Gerçek ücretler, kur, sağlayıcı fiyatları ve ekip hızı ile güncellenmelidir.</p></div>
+
+  <h2>14.1 Takvim (MVP → Beta → v1 → v2)</h2>
+  <figure>
+    <svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif">
+      <g font-size="8.5" fill="#5F5E5A">
+        <text x="190" y="14">Kas '26</text><text x="240" y="14">Ara</text><text x="290" y="14">Oca '27</text><text x="340" y="14">Şub</text><text x="390" y="14">Mar</text>
+        <text x="440" y="14">Nis</text><text x="490" y="14">May</text><text x="540" y="14">Haz</text><text x="590" y="14">Tem</text><text x="640" y="14">Ağu</text>
+      </g>
+      <g stroke="#ECE7DE">
+        <line x1="185" y1="20" x2="185" y2="300"/><line x1="235" y1="20" x2="235" y2="300"/><line x1="285" y1="20" x2="285" y2="300"/><line x1="335" y1="20" x2="335" y2="300"/>
+        <line x1="385" y1="20" x2="385" y2="300"/><line x1="435" y1="20" x2="435" y2="300"/><line x1="485" y1="20" x2="485" y2="300"/><line x1="535" y1="20" x2="535" y2="300"/>
+        <line x1="585" y1="20" x2="585" y2="300"/><line x1="635" y1="20" x2="635" y2="300"/><line x1="685" y1="20" x2="685" y2="300"/>
+      </g>
+      <g font-size="9" fill="#141414">
+        <text x="4" y="38">Altyapı: S3/R2, kuyruk, bildirim</text>
+        <text x="4" y="58">Ödeme: RevenueCat + iyzico/PayTR</text>
+        <text x="4" y="78">Uyum: KVKK, şifre sıfırlama, ETBİS/İYS</text>
+        <text x="4" y="98">Kalite seti + sağlayıcı seçimi</text>
+        <text x="4" y="118">Kapalı beta (TestFlight / Play)</text>
+        <text x="4" y="138">Maske/fırça + yineleme</text>
+        <text x="4" y="158">Ticaret: affiliate + katalog</text>
+        <text x="4" y="178">Emlakçı paneli</text>
+        <text x="4" y="198">Usta teklifi (Armut / Ustabilir)</text>
+        <text x="4" y="218">RoomPlan/LiDAR + plan</text>
+        <text x="4" y="238">Video, marka SDK'sı</text>
+        <text x="4" y="258">Kendi GPU modeli</text>
+        <text x="4" y="278">Yeni pazarlar</text>
+      </g>
+      <g>
+        <rect x="189" y="29" width="71" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="200" y="49" width="60" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="190" y="69" width="70" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="190" y="89" width="55" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="245" y="109" width="70" height="12" rx="3" fill="#3FB28F"/>
+        <rect x="260" y="129" width="120" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="260" y="149" width="120" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="285" y="169" width="95" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="310" y="189" width="70" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="385" y="209" width="200" height="12" rx="3" fill="#8A6BB8"/>
+        <rect x="435" y="229" width="200" height="12" rx="3" fill="#8A6BB8"/>
+        <rect x="460" y="249" width="175" height="12" rx="3" fill="#8A6BB8"/>
+        <rect x="535" y="269" width="150" height="12" rx="3" fill="#8A6BB8"/>
+      </g>
+      <g font-size="8.5" font-weight="700">
+        <line x1="260" y1="22" x2="260" y2="300" stroke="#1F6F5C" stroke-dasharray="3 3"/><text x="232" y="314" fill="#1F6F5C">Beta (~6. hafta)</text>
+        <line x1="380" y1="22" x2="380" y2="300" stroke="#E07A4F" stroke-dasharray="3 3"/><text x="352" y="314" fill="#9A4A26">v1 (~16. hafta)</text>
+        <line x1="635" y1="22" x2="635" y2="300" stroke="#8A6BB8" stroke-dasharray="3 3"/><text x="608" y="314" fill="#6A4E99">v2 (~9. ay)</text>
+        <line x1="190" y1="22" x2="190" y2="300" stroke="#141414"/><text x="150" y="326" fill="#141414">MVP (3 Kas 2026)</text>
+      </g>
+    </svg>
+    <figcaption>Şekil 2 — Varsayımsal takvim. Faz 1: yeşil, Faz 2: turuncu, Faz 3: mor. Faz 1 ve Faz 2 iş akışları kısmen paralel yürür.</figcaption>
+  </figure>
+
+  <h2>14.2 Ekip ve efor tahmini (adam-hafta, varsayım)</h2>
+  <table class="compact">
+    <thead><tr><th>Rol</th><th class="r">Faz 1 (6 hf)</th><th class="r">Faz 2 (10 hf)</th><th class="r">Faz 3 (~22 hf)</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td>Ürün yöneticisi / kurucu</td><td class="r">6</td><td class="r">10</td><td class="r">22</td><td>Önceliklendirme, ortaklıklar, KPI</td></tr>
+      <tr><td>Backend (NestJS)</td><td class="r">6</td><td class="r">10</td><td class="r">22</td><td>Kuyruk, ödeme webhook'ları, katalog eşleştirme</td></tr>
+      <tr><td>Web + Admin (Next.js)</td><td class="r">4</td><td class="r">8</td><td class="r">11</td><td>Web ödemesi, emlakçı paneli</td></tr>
+      <tr><td>Mobil (Expo / RN)</td><td class="r">6</td><td class="r">10</td><td class="r">22</td><td>IAP, bildirim, maske düzenleyici, RoomPlan</td></tr>
+      <tr><td>AI / ML mühendisi</td><td class="r">4</td><td class="r">10</td><td class="r">22</td><td>Kalite seti, koşullama, kendi model</td></tr>
+      <tr><td>Ürün tasarımcısı (UI/UX)</td><td class="r">3</td><td class="r">6</td><td class="r">11</td><td>Yarı zamanlı</td></tr>
+      <tr><td>QA / test</td><td class="r">3</td><td class="r">6</td><td class="r">11</td><td>Cihaz matrisi, güvenlik testleri</td></tr>
+      <tr><td>İş geliştirme</td><td class="r">2</td><td class="r">8</td><td class="r">22</td><td>Perakende, emlak, usta ortaklıkları</td></tr>
+      <tr style="font-weight:650"><td>Toplam</td><td class="r">34</td><td class="r">68</td><td class="r">143</td><td>Toplam yaklaşık 245 adam-hafta</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Dış danışmanlık (KVKK, abonelik ve reklam hukuku, sızma testi) bu tabloya dahil değil; ayrı kalem olarak bütçelenmeli.</p>
+
+  <h2>14.3 Bütçe kalemleri (formül, varsayım)</h2>
+  <table class="compact">
+    <thead><tr><th style="width:22%">Kalem</th><th>Hesap yöntemi</th></tr></thead>
+    <tbody>
+      <tr><td>Personel</td><td>Σ (adam-hafta × <em>R</em>). <em>R</em>, şirketin kendi harmanlanmış haftalık ekip maliyeti varsayımıdır. Örnek: Faz 1 = 34 × <em>R</em>, Faz 2 = 68 × <em>R</em>.</td></tr>
+      <tr><td>AI sağlayıcıları</td><td>(başarılı + başarısız görsel sayısı) × <em>C</em> (görsel başı maliyet, 12.2'deki senaryolar) + Claude analiz ve sohbet çağrıları. Analiz önbelleği ve ücretsiz katmanda tek varyant bu kalemi düşürür.</td></tr>
+      <tr><td>Altyapı</td><td>Yönetilen PostgreSQL, Redis, nesne depolama + CDN, gözlem ve log; ortam başına aylık sabit + trafikle değişken.</td></tr>
+      <tr><td>Mağaza ve ödeme</td><td>Geliştirici hesapları; IAP komisyonu (12.2'de %15/%30 senaryoları); web için sanal POS komisyonu (PayTR %2,19'dan başlıyor; iyzico için yazılı teklif <sup class="ref">[115]</sup>).</td></tr>
+      <tr><td>Hukuk ve güvenlik</td><td>KVKK aydınlatma, rıza ve standart sözleşme; abonelik ve reklam uyumu; bağımsız sızma testi.</td></tr>
+      <tr><td>Pazarlama</td><td>ASO, içerik üretimi (önce/sonra videoları), kullanıcı edinimi; aktivasyon ve dönüşüm ölçümüne göre kademeli artırılır.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">15</span>Riskler ve önlemler</h1>
+  <table class="compact">
+    <thead><tr><th style="width:26%">Risk</th><th class="c" style="width:9%">Etki</th><th>Önlem</th></tr></thead>
+    <tbody>
+      <tr><td>Gemini, ChatGPT ve Pinterest ile restyle'ın ücretsizleşmesi <sup class="ref">[38][42]</sup></td><td class="c">Yüksek</td><td>İş akışı, yerel ticaret, TL bütçe, usta ve B2B ile farklılaşma; model değil ürün.</td></tr>
+      <tr><td>Model kalitesi: geometri bozulması, ölçek hatası</td><td class="c">Yüksek</td><td>Yapı koruma şablonu, sağlayıcı seçimi, değerlendirme seti; Faz 2'de derinlik/kenar koşullama; Faz 3'te ölçü.</td></tr>
+      <tr><td>TL fiyat ile AI maliyeti arasındaki makas (TÜFE %29,73) <sup class="ref">[111]</sup></td><td class="c">Yüksek</td><td>Adil kullanım sınırı, kredi, önbellek, ücretsiz katmanda ucuz model, kendi GPU modeli, yıllık plan.</td></tr>
+      <tr><td>Rakiplerin reklam ve ASO bütçesi (HubX, AppNation)</td><td class="c">Orta</td><td>Niş konum (yerel ticaret, Türkçe), ortaklık kanalları, organik önce/sonra içerik.</td></tr>
+      <tr><td>Mağaza bağımlılığı ve komisyon</td><td class="c">Orta</td><td>Web ödemesi (iyzico/PayTR). Rekabet Kurulu soruşturmasının sonucu doğrulanamadı <sup class="ref">[114]</sup>.</td></tr>
+      <tr><td>KVKK yurt dışı aktarım yaptırımı (₺90.308–1.806.377) <sup class="ref">[119]</sup></td><td class="c">Orta</td><td>Standart sözleşme ve 5 iş günü bildirim, açık rıza, EXIF silme, yüz maskeleme, Türkiye'de işleme seçeneği.</td></tr>
+      <tr><td>Abonelik ve reklam mevzuatı</td><td class="c">Orta</td><td>Yenileme bildirimi, aynı yöntemle iptal, AI ve "sanal olarak döşenmiştir" etiketleri <sup class="ref">[121][123][124]</sup>.</td></tr>
+      <tr><td>Perakendeci verisine erişim (API yok)</td><td class="c">Orta</td><td>Affiliate ağları, doğrudan ortaklık; o zamana kadar arama linki.</td></tr>
+      <tr><td>Güvenlik olayı (veri sızıntısı, kötüye kullanım, maliyet saldırısı)</td><td class="c">Orta</td><td>26 kontrol, kota ve hız limiti, imzalı URL, MFA; "Doğrulanacak" testleri ve sızma testi.</td></tr>
+      <tr><td>Sağlayıcı kesintisi veya fiyat değişikliği</td><td class="c">Düşük–Orta</td><td>Sağlayıcı soyutlaması (Gemini ↔ Replicate ↔ kendi model); başarısızlıkta otomatik iade.</td></tr>
+    </tbody>
+  </table>
+</section>

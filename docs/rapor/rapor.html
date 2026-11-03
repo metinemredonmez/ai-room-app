@@ -1,0 +1,1753 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<title>AI Room — Pazar Araştırması, Rakip Analizi ve MVP Raporu</title>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<section class="cover">
+  <div class="blob1"></div><div class="blob2"></div>
+  <div class="brand">AI <span>ROOM</span></div>
+  <h1 class="title">Pazar Araştırması,<br>Rakip Analizi ve<br>MVP Raporu</h1>
+  <div class="subtitle">Yapay zekâ destekli ev ve oda yeniden tasarım uygulaması: dünya ve Türkiye pazarlarının karşılaştırması, MVP kapsamı, teknik mimari, güvenlik, iş modeli ve yol haritası.</div>
+  <div class="tags">
+    <span>Backend · NestJS</span><span>AI Servisi · FastAPI</span><span>Web · Next.js</span><span>Admin · Next.js</span><span>Mobil · Expo</span>
+  </div>
+  <div class="meta">
+    <div><b>Tarih:</b> 3 Kasım 2026</div>
+    <div><b>Sürüm:</b> 0.1 (MVP)</div>
+    <div><b>Depo:</b> github.com/metinemredonmez/ai-room-app</div>
+    <div><b>Kapsam:</b> 25+ küresel ürün, 30+ Türkiye oyuncusu, 5 bileşenli MVP</div>
+  </div>
+</section>
+
+<section class="toc">
+  <h1>İçindekiler</h1>
+  <ol>
+    <li><span class="n">1</span>Yönetici özeti<span class="d">Temel bulgular, fırsat, MVP durumu, öneri</span></li>
+    <li><span class="n">2</span>Referans uygulamaların analizi<span class="d">Live Home 3D ve AI Remodel ekran akışları</span></li>
+    <li><span class="n">3</span>Dünya pazarı<span class="d">Segmentler, 12 ürün profili, 24 ürünlük özellik matrisi, fiyatlar, pazar büyüklüğü</span></li>
+    <li><span class="n">4</span>Türkiye pazarı<span class="d">App Store verisi, yerli oyuncular, perakendeciler, makro, ödeme, hukuk</span></li>
+    <li><span class="n">5</span>Dünya – Türkiye – AI Room karşılaştırması<span class="d">27 satırlık özellik matrisi ve TL fiyat kıyası</span></li>
+    <li><span class="n">6</span>Boşluklar, fırsatlar ve konumlandırma<span class="d">10 boşluk ve AI Room yanıtı</span></li>
+    <li><span class="n">7</span>Dünya örnekleri → AI Room yaklaşımı<span class="d">16 temel özellik: örnekler, şikâyetler, MVP ve yol haritası</span></li>
+    <li><span class="n">8</span>MVP kapsamı<span class="d">Bileşenler, akışlar, katalog, ekranlar</span></li>
+    <li><span class="n">9</span>MVP detay dokümanı<span class="d">Modül bazında uçlar ve rotalar, kabul kriterleri, MoSCoW, izlenebilirlik</span></li>
+    <li><span class="n">10</span>Teknik mimari<span class="d">Diyagram, veri modeli, API, AI hattı, ölçekleme</span></li>
+    <li><span class="n">11</span>Güvenlik ve uyum<span class="d">26 red-team kontrolü, test kanıtı, KVKK listesi</span></li>
+    <li><span class="n">12</span>İş modeli ve fiyatlandırma<span class="d">Gelir hatları, birim ekonomi (varsayımlı)</span></li>
+    <li><span class="n">13</span>Türkiye'de pazara giriş<span class="d">Kanallar, ortaklıklar, KPI tanımları</span></li>
+    <li><span class="n">14</span>Yol haritası, ekip ve bütçe<span class="d">Faz 1–3, takvim, adam-hafta, bütçe kalemleri (varsayım)</span></li>
+    <li><span class="n">15</span>Riskler ve önlemler</li>
+    <li><span class="n">16</span>Ekran görüntüleri<span class="d">Gerçek Gemini çıktısı; mobil, web ve admin ekranları</span></li>
+    <li><span class="n">17</span>Ekler<span class="d">Çalıştırma, terimler, yöntem, kaynakça</span></li>
+  </ol>
+  <div class="callout" style="margin-top:14pt">
+    <p><strong>Okuma notu.</strong> Rakamlar iki ayrı araştırmadan (dünya ve Türkiye taraması, 3 Kasım 2026) alınmıştır; her biri kaynakçadaki numaralı kaynaklara bağlanır <sup class="ref">[n]</sup>. Doğrulanamayan veriler metinde açıkça <em>"doğrulanamadı"</em> olarak işaretlidir. Üçüncü taraf tahminleri (ör. AppGoblin, pazar raporları) tahmin olarak sunulmuştur. Birim ekonomi bölümündeki maliyetler <strong>varsayımdır</strong>, ölçülmüş değer değildir.</p>
+  </div>
+</section>
+
+<section>
+  <h1><span class="num">1</span>Yönetici özeti</h1>
+  <p class="lead">Fotoğraftan yapay zekâ ile oda, cephe ve bahçe yeniden tasarımı hem dünyada hem Türkiye'de para kazandıran, kalabalık bir kategori. Ancak ürünler birbirine çok benziyor: aynı jenerik "fotoğraf yükle, stil seç, sonucu al" akışını haftalık abonelikle satıyorlar. Tasarımı <strong>satın alınabilir ürüne, TL bütçeye ve ustaya</strong> bağlayan, Türkçe ve Türkiye'ye özgü bir ürün yok.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">15 / 100</div><div class="l">TR App Store "Grafik ve Tasarım" hasılat ilk 100'deki AI ev tasarım uygulaması <sup class="ref">[58]</sup></div></div>
+    <div class="kpi"><div class="v">₺399,99</div><div class="l">Referans AI Remodel'in TR haftalık fiyatı; Türkçe arayüzü yok <sup class="ref">[2]</sup></div></div>
+    <div class="kpi"><div class="v">%74,18</div><div class="l">Türkiye mobil web trafiğinde Android payı (StatCounter, Temmuz 2026) <sup class="ref">[109]</sup></div></div>
+    <div class="kpi"><div class="v">28 / 28</div><div class="l">AI Room MVP uçtan uca test kontrolü geçti (güvenlik negatif testleri dahil)</div></div>
+  </div>
+
+  <h2>Temel bulgular</h2>
+  <ul>
+    <li><strong>Talep kanıtlandı.</strong> 3 Kasım 2026 itibarıyla TR App Store Grafik ve Tasarım en çok hasılat listesinde 15 AI oda/ev tasarım uygulaması var. Homely AI #3, ReRoom AI #4, DecAI #8, referans aldığımız AI Remodel #14 sırada. Türk kullanıcı haftalık ₺200–600, yıllık ₺900–3.500 bandında ödüyor <sup class="ref">[58]</sup>.</li>
+    <li><strong>Referans uygulama Türkçe değil.</strong> AI Remodel (PulseApps Solutions OÜ, Estonya): ABD'de 4,6★ (26 bin puan), Türkiye'de 4,3★ (535 puan), Android'de 5 milyonun üzerinde indirme. Türkçe dil desteği yok; gizlilik etiketinde üçüncü taraf reklam takibi var <sup class="ref">[1][2][4]</sup>.</li>
+    <li><strong>Kategori liderleri Türk stüdyoları.</strong>
+      <ul>
+        <li>HubX (Home AI): Ağustos 2026'da Point72'den 50 milyon $ + 25 milyon $ opsiyon yatırım aldı; para girişi öncesi değerleme yaklaşık 1,2 milyar $ <sup class="ref">[7][59]</sup>.</li>
+        <li>AppNation (Arch).</li>
+      </ul>
+      Her ikisi de global ürün olarak konumlanmış. Home AI'ın Türkçe arayüzü yok <sup class="ref">[6]</sup>.</li>
+    <li><strong>Ortak şikâyetler:</strong> pencere, kapı ve duvarların değişmesi; orantısız büyük mobilya; sonucu yeniden yüklemeden düzenleyememe; ₺/$ haftalık fiyatın yüksekliği; paywall döngüleri <sup class="ref">[1][5][9][10]</sup>.</li>
+    <li><strong>Kimsenin çözmediği boşluk:</strong> yerel ürün kataloğu, TL tadilat maliyeti ve usta eşleştirme. Bunu bir arada sunan bir örnek bulunamadı. Emlakta sahibinden'in SahiDeko'su yalnız 4 Batı stiliyle çalışıyor <sup class="ref">[84]</sup>.</li>
+    <li><strong>Yapısal talep.</strong>
+      <ul>
+        <li>2025'te rekor 1.688.910 konut satışı <sup class="ref">[97]</sup>.</li>
+        <li>İstanbul'da 1,298 milyon bağımsız bölüm kentsel dönüşüme alındı <sup class="ref">[101]</sup>.</li>
+        <li>Deprem bölgesinde 452.983 birimlik teslim hedefi var; hedefin tamamen gerçekleştiği doğrulanamadı <sup class="ref">[104]</sup>.</li>
+      </ul>
+      Bunların hepsi boş daire döşeme ve tadilat ihtiyacı demek.</li>
+    <li><strong>Riskler:</strong>
+      <ul>
+        <li>Gemini, ChatGPT ve Pinterest temel restyle'ı ücretsizleştiriyor <sup class="ref">[38][42][44]</sup>.</li>
+        <li>Türk geliştiricilerin abonelik gelirinin %89,2'si yurt dışından geliyor <sup class="ref">[112]</sup>.</li>
+        <li>Yıllık TÜFE %29,73 <sup class="ref">[111]</sup>.</li>
+        <li>KVKK ve abonelik mevzuatı sıkılaşıyor <sup class="ref">[118][121]</sup>.</li>
+      </ul></li>
+  </ul>
+
+  <h2>AI Room MVP'sinin bugün yaptıkları</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Ürün</h3>
+      <ul>
+        <li><strong>10 AI aracı:</strong> anında yenile, boş odayı döşe, nesne sil, değiştir, duvar boyası, zemin, dış cephe, bahçe/teras, referans stil, kendi tarifin.</li>
+        <li><strong>15 stil:</strong> 5'i Türkiye'ye özgü (Modern Türk, Osmanlı Klasik, Kapadokya Taş Ev, Ege, Rustik Köy Evi).</li>
+        <li><strong>Katalog:</strong> 12 oda tipi (salon/oturma odası ayrımı dahil), 8 zemin, 10 boya rengi.</li>
+        <li><strong>Sonuç ekranı:</strong> önce/sonra karşılaştırma, varyantlar, favori.</li>
+        <li><strong>Analiz:</strong> TL fiyat aralıklı alışveriş listesi, tadilat bütçesi, Trendyol / Hepsiburada / IKEA TR arama linkleri.</li>
+        <li><strong>AI tasarım sohbeti:</strong> dokununca uygulanan öneriler; kendi kendine üretim yapmaz.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Platform</h3>
+      <ul>
+        <li><strong>5 bileşen:</strong> NestJS backend (PostgreSQL + Redis), ayrı Python FastAPI AI servisi, Next.js web, Next.js admin, Expo mobil (iOS/Android/Web).</li>
+        <li><strong>Sağlayıcılar:</strong> mock sağlayıcı sayesinde API anahtarı olmadan uçtan uca çalışır. Gemini, Replicate (FLUX Kontext) ve Claude'a ortam değişkeniyle geçilir.</li>
+        <li><strong>Admin:</strong> TOTP ile MFA zorunlu; istatistik, kullanıcı, kredi, moderasyon, stil kataloğu ve denetim kaydı.</li>
+        <li><strong>Güvenlik ve uyum:</strong> 26 red-team kontrolü uygulandı (13'ü testle doğrulandı); EXIF/GPS silme, imzalı görsel URL'leri, ücretsiz planda "yapay zekâ ile oluşturulmuştur" etiketi.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p><strong>Öneri.</strong> AI Room "Türkiye öncelikli, ticarete bağlı" bir ürün olarak konumlanmalı. Yol şöyle:</p>
+    <ol>
+      <li><strong>Fiyat:</strong> rakiplerin altında; ₺149,99/hafta, ₺349,99/ay, ₺1.299,99/yıl ve günde 3 ücretsiz üretim.</li>
+      <li><strong>Platform:</strong> Android ve web, iOS ile eşit kalitede.</li>
+      <li><strong>Ürün çekirdeği:</strong> "tasarla → bütçele → satın al → usta bul" akışı.</li>
+      <li><strong>B2B gelir hattı:</strong> emlakçı ve müteahhitlere sanal döşeme. Abonelik havuzunun darlığına karşı ikinci gelir kaynağı olur.</li>
+    </ol>
+    <p>Faz 1 (6 hafta) önceliği şunlar:</p>
+    <ul>
+      <li>Gerçek görsel sağlayıcıyla kalite değerlendirmesi.</li>
+      <li>RevenueCat ile mağaza içi satın alma.</li>
+      <li>iyzico/PayTR ile web ödemesi.</li>
+      <li>Nesne depolama ve asenkron üretim kuyruğu.</li>
+      <li>KVKK dokümantasyonu ve kapalı beta.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h1><span class="num">2</span>Referans uygulamaların analizi</h1>
+  <p>Kullanıcının paylaştığı 15 ekran görüntüsü iki farklı ürün tipini gösteriyor:</p>
+  <ul>
+    <li><strong>Live Home 3D:</strong> elle çizilen 2D/3D planlayıcı.</li>
+    <li><strong>AI Remodel:</strong> fotoğraftan yapay zekâ ile yeniden tasarım.</li>
+  </ul>
+  <p>AI Room ikinci kategoride yarışıyor. Birinci kategoriden ölçü ve plan disiplinini yol haritasına alıyor. Ekran görüntüleri telif nedeniyle rapora gömülmedi; akışlar aşağıda metinle anlatılıyor.</p>
+
+  <h2>2.1 AI Remodel — Interior Design (PulseApps Solutions OÜ)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Künye</h3>
+      <ul>
+        <li><strong>Yayıncı:</strong> PulseApps Solutions OÜ (Estonya). Bir arama sonucunda "PRIMA SORTE INC" adı geçiyor, doğrulanamadı.</li>
+        <li><strong>Kimlikler:</strong> iOS id 6477533581; Android <code>pro.airemodel.android</code> <sup class="ref">[1][2]</sup>.</li>
+        <li><strong>Sürüm:</strong> v2.52.0, 22 Ekim 2026. İlk yayın 9 Mayıs 2024. 1–4 haftada bir güncelleniyor <sup class="ref">[3]</sup>.</li>
+        <li><strong>Puanlar:</strong>
+          <ul>
+            <li>ABD iOS: 4,6★ (26 bin puan), Graphics &amp; Design ücretsiz #28.</li>
+            <li>TR iOS: 4,3★ (535 puan), ücretsiz #22, hasılat #14.</li>
+            <li>Android: 4,59 (yaklaşık 184 bin puan), 5 milyonun üzerinde indirme <sup class="ref">[1][2][4][58]</sup>.</li>
+          </ul></li>
+        <li><strong>AppGoblin tahmini:</strong> 2,4 milyon kurulum, 177 bin MAU, aylık "10 bin $+" gelir (%44 uygulama içi satın alma, %56 reklam). Üçüncü taraf tahmini; doğrulanamadı <sup class="ref">[3]</sup>.</li>
+        <li><strong>Diller:</strong> EN, AR, FR, DE, JA, PT, ES. <strong>Türkçe yok.</strong></li>
+        <li><strong>Gizlilik etiketi:</strong> satın alma, konum ve tanımlayıcılar üçüncü taraf reklam takibi için kullanılıyor.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Fiyat ve paywall</h3>
+      <ul>
+        <li><strong>TR ekranındaki planlar:</strong>
+          <ul>
+            <li>1 hafta ₺399,99, "POPULAR" (günlük ₺57,14 gösterimi).</li>
+            <li>1 ay ₺999,99, "SAVE 50%" (üstü çizili ₺1.999,99).</li>
+            <li>1 yıl ₺2.499,99, "BEST VALUE" (haftalık ₺47,95 gösterimi).</li>
+          </ul></li>
+        <li><strong>Test SKU'ları:</strong> listede haftalık ₺229,99–599,99 aralığında, 3 günlük denemeli fiyatlar da var <sup class="ref">[2]</sup>.</li>
+        <li><strong>ABD fiyatları:</strong> $4,99–11,99/hafta, $24,99/ay, $64,99/yıl.</li>
+        <li><strong>Paywall vaatleri:</strong> fotoğraf dışa aktarma, filigran yok, sınırsız kullanım, reklam yok, tüm stiller.</li>
+        <li><strong>Paywall'daki stil şeridi:</strong> Mediterranean, Ikea, Eclectic, Modern, Contemporary, Transitional…</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Ekran akışı (görüntülerden)</h3>
+  <table class="compact">
+    <thead><tr><th style="width:22%">Ekran</th><th>İçerik</th><th style="width:28%">AI Room karşılığı</th></tr></thead>
+    <tbody>
+      <tr><td>Onboarding (3 kart)</td><td>"AI Interior Redesign" (New Flooring, Remove Objects, Your Room, Fill Spaces, Replace), "AI Exterior Redesign", "AI Garden Redesign"; tam ekran önce/sonra bölme; mor "Continue".</td><td>3 slaytlı onboarding + KVKK aydınlatma metni.</td></tr>
+      <tr><td>Paywall</td><td>Stil şeridi, kilitli avantaj rozetleri, 3 plan kartı, "Secured with Apple Store. Cancel anytime", Restore/Terms/Privacy.</td><td>TL planlar katalogdan gelir; demo yükseltme (gerçek IAP Faz 1).</td></tr>
+      <tr><td>Home</td><td>PRO düğmesi; hikâye halkaları (Under Stairs, Nooks, Basement, Patio, Balcony); "Instant Remodel" kartı; <em>AI Renovation Kit</em>: Replace, Furniture Finder, Furnish Empty Room, Floor Plan (NEW), New Flooring, Rearrange Furniture, Exterior Redesign, Garden Redesign, Reference Style, Remove Objects; "You Might Like", "Beyond Ordinary" karuselleri; yüzen AI sohbet düğmesi.</td><td>Hero "Anında Yenile", araç ızgarası (PRO/YENİ rozetli), oda çipleri, stil karuseli, kredi rozeti, yüzen sohbet düğmesi.</td></tr>
+      <tr><td>AI sohbet</td><td>"Your AI-powered design chat": tasarım rehberliği, yeni görünümleri görselleştirme, tasarımı iyileştirme; "Upload Photo", "Ask AI".</td><td>Claude tabanlı Türkçe sohbet; görsel ekleme; dokununca uygulanan öneriler.</td></tr>
+      <tr><td>Inspire</td><td>İki sütunlu görsel ızgara.</td><td>İlham: admin'in öne çıkardığı tasarımlar + stil önizlemeleri.</td></tr>
+      <tr><td>Archive</td><td>Boş durum: "You have no designs yet", "Instant Remodel" çağrısı.</td><td>Tasarımlarım: favori filtresi, silme.</td></tr>
+      <tr><td>Settings</td><td>"Get AI Remodel Pro", Subscription: Free, Contact, FAQ, Terms, Privacy, v2.52.0.</td><td>Profil: misafir → kayıt, dil, plan, KVKK, hesabı sil.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Güçlü yanlar</h3>
+      <ul>
+        <li>Geniş araç seti: iç mekân, dış cephe, bahçe, zemin, boya, nesne silme ve değiştirme, referans stil.</li>
+        <li>Hızlı ürün döngüsü ve agresif fiyat testleri (yaklaşık 10 SKU).</li>
+        <li>Sohbet, "Furniture Finder" ve "Floor Plan" gibi yeni modüller mağaza açıklamasında henüz yok; yeni eklendikleri düşünülüyor.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kullanıcı şikâyetleri <sup class="ref">[1]</sup></h3>
+      <ul>
+        <li>Haftalık $10 çok pahalı.</li>
+        <li>AI pencere, kapı ve duvarları "neredeyse yarı yarıya" değiştiriyor.</li>
+        <li>Mobilyalar orantısız büyük.</li>
+        <li>Yatak odası oturma odasına dönüşüyor (oda tipi yanlış sınıflanıyor).</li>
+        <li>Sonuç düzenlenemiyor; stil değiştirmek için yeniden yükleme gerekiyor.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>2.2 Live Home 3D (BeLight Software)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Künye ve özellikler <sup class="ref">[27]</sup></h3>
+      <ul>
+        <li><strong>Yayıncı:</strong> BeLight Software (Ukrayna, Odesa), 2016.</li>
+        <li><strong>Platformlar:</strong> iOS, macOS, Windows, visionOS.</li>
+        <li><strong>Özellikler:</strong> 2D/3D plan, LiDAR oda tarayıcı, AR'da görüntüleme, 360° ve stereo video, USDZ/glTF/FBX dışa aktarma.</li>
+        <li><strong>AI:</strong> v5.0 ile "Render with AI" geldi; 260'tan fazla stil ön ayarı var. Fotoğrafı değil, kullanıcının kurduğu 3D modeli render ediyor.</li>
+        <li><strong>Fiyat:</strong>
+          <ul>
+            <li>Standard: $6,99/ay, $24,99/yıl, $59,99 ömür boyu.</li>
+            <li>Pro: $14,99/ay, $49,99/yıl, $129,99 ömür boyu.</li>
+            <li>İçerik paketleri: $6,99.</li>
+          </ul></li>
+        <li><strong>Puanlar:</strong> ABD 4,6★ (19 bin); TR 4,6★ (314). Türkçe yok <sup class="ref">[58]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ekran akışı ve dersler</h3>
+      <ul>
+        <li><strong>Ana ekran:</strong> "Create New"; altında iOS belge tarayıcısı (Son Kullanılanlar, Paylaşılanlar, Göz At).</li>
+        <li><strong>Gallery:</strong> izometrik oda şablonları ("Lounge Design", "Bathroom Design"). Sekmeler: Gallery, Projects, Learn, Settings.</li>
+        <li><strong>Learn:</strong> Tutorial/Manual, "Draw Room Layouts" eğitimi (duvar çizimi, ölçü etiketi, 2D↔3D).</li>
+        <li><strong>Şikâyetler:</strong> çökme ve kayıp kayıtlar, nesnelerin duvar nişlerine yapışması, ağır modellerde yavaşlama.</li>
+        <li><strong>Ders:</strong> Planlayıcılar ölçüyü biliyor ama üretken AI'ları zayıf. Foto-AI ürünlerinde ise ölçek yok. Yol haritasındaki "RoomPlan/LiDAR + ölçek farkındalıklı mobilya" maddesi bu iki dünyayı birleştirmek için.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>Referanslardan çıkan ürün gereksinimleri:</strong></p>
+    <ol>
+      <li><strong>Yapı koruma:</strong> pencere, kapı ve tavan sabit kalmalı. MVP'de her prompt'ta zorunlu kalıp cümle var; Faz 2'de derinlik ve kenar koşullama gelecek.</li>
+      <li><strong>Doğru oda tipi:</strong> kullanıcı odayı açıkça seçer; prompt'a İngilizce oda tanımı yazılır.</li>
+      <li><strong>Yeniden yüklemeden yineleme:</strong> MVP'de aynı girdi görseliyle yeni tasarım üretilebiliyor. Sonuç üzerinde düzenleme Faz 2'de.</li>
+      <li><strong>Adil fiyat ve reklamsız deneyim:</strong> MVP'ye reklam veya üçüncü taraf takip SDK'sı eklenmedi.</li>
+      <li><strong>Türkçe ve yerel stil kataloğu.</strong></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <h1><span class="num">3</span>Dünya pazarı</h1>
+  <p>Tarama 25'ten fazla ürünü 6 segmentte kapsadı. Fiyatlar ve puanlar mağaza sayfaları, şirket siteleri ve haberlerden alındı. Yalnız üçüncü taraf kaynakta görülen değerler öyle belirtildi.</p>
+
+  <h2>3.1 Segmentler</h2>
+  <table class="compact">
+    <thead><tr><th style="width:24%">Segment</th><th>Örnekler</th><th style="width:34%">Konum</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tüketici mobil AI yeniden tasarım</strong></td><td>AI Remodel, Home AI (HubX), Arch (AppNation), Remodel AI, RoomGPT</td><td>Fotoğraf → stil; haftalık abonelik; en yüksek indirme hacmi. <strong>AI Room'un doğrudan rakipleri.</strong></td></tr>
+      <tr><td><strong>Web prosumer / emlakçı</strong></td><td>Interior AI, HomeDesigns AI, REimagineHome, Spacely AI, Collov AI, Virtual Staging AI (Zillow)</td><td>Kredi tabanlı; sanal döşeme, toplu işlem, ticari lisans, video.</td></tr>
+      <tr><td><strong>2D/3D planlayıcılar</strong></td><td>Live Home 3D, Planner 5D, Homestyler, Coohom, RoomSketcher, Floorplanner, Sweet Home 3D</td><td>Ölçü ve plan; AI render sonradan eklendi; ömür boyu lisans ve render başı ücret.</td></tr>
+      <tr><td><strong>Tarama ve AR</strong></td><td>Apple RoomPlan tabanlı uygulamalar, Polycam, Twindo (eski Canvas), magicplan</td><td>Gerçek ölçü, CAD çıktısı; üretken AI zayıf.</td></tr>
+      <tr><td><strong>Perakende ve büyük teknoloji</strong></td><td>IKEA Kreativ, Wayfair Muse, Pinterest Restyle, Amazon Room Decorator, Google Gemini "Nano Banana", ChatGPT</td><td>Satışa ya da reklama bağlı, kullanıcıya ücretsiz; temel restyle metalaşıyor.</td></tr>
+      <tr><td><strong>İnsan tasarımcı pazarları</strong></td><td>Houzz (Pro), Havenly, Decorilla</td><td>Oda başı $159–499 (Havenly) ile ~$2.200 (Decorilla) arası; AI daha çok profesyonel katmanda.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3.2 Öne çıkan 12 ürün</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Home AI <span class="pill acc">TR yapımı</span></h3>
+      <div class="who">HubX Yazılım A.Ş. · İzmir/İstanbul · iOS, Android</div>
+      <ul>
+        <li><strong>Hacim:</strong> ABD 4,5★ (161 bin); TR 4,6★ (3,3 bin); Android 4,29 (yaklaşık 993 bin puan), 10 milyonun üzerinde indirme <sup class="ref">[5][6][8]</sup>.</li>
+        <li><strong>TR fiyatı:</strong> haftalık ₺199,99–799,99; yıllık ₺899,99–1.499,99.</li>
+        <li><strong>Şirket:</strong> HubX, 40'tan fazla uygulama ve 600 milyondan fazla indirmeye sahip. Point72'den 50 milyon $ (+25 milyon $ opsiyon) aldı, yaklaşık 1,2 milyar $ değerleme <sup class="ref">[7]</sup>.</li>
+        <li><strong>Fark:</strong> dağıtım ve paywall optimizasyonu; Türkçe arayüz yok.</li>
+        <li><strong>Şikâyetler:</strong> ücretsiz kullanım yaklaşık 5 dakika sürüyor, paywall tekrar tekrar açılıyor, fotoğraf kırpılıyor.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Arch – AI Home Design <span class="pill acc">TR yapımı</span></h3>
+      <div class="who">AppNation Yazılım A.Ş. · İstanbul · iOS</div>
+      <ul>
+        <li><strong>Puan:</strong> ABD 4,6★ (24 bin); TR 4,3★ (301), hasılat #87 <sup class="ref">[9][58]</sup>.</li>
+        <li><strong>Fark:</strong> mobilya, malzeme ve işçilik için <strong>AI maliyet tahmini</strong>; <strong>Türkçe arayüz</strong> var.</li>
+        <li><strong>Fiyat:</strong> $6,99–9,99/hafta; TR'de haftalık ₺299,99–499,99, yıllık ₺1.299,99–2.999,99.</li>
+        <li><strong>Şikâyetler:</strong> günlük limitler, düzenlenemeyen sonuçlar, stok görsel hissi.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Remodel AI</h3>
+      <div class="who">REIMAGE AI INC. · iOS, Android, web</div>
+      <ul>
+        <li><strong>Hacim:</strong> 4,7★ (15 bin); 2 milyondan fazla kullanıcı iddiası <sup class="ref">[10]</sup>.</li>
+        <li><strong>Kapsam:</strong> 40'tan fazla stil, kementle maskeleme, çatı görselleştirici.</li>
+        <li><strong>Eksik (kendi beyanı):</strong> alışveriş ve kat planı yok <sup class="ref">[11]</sup>.</li>
+        <li><strong>Şikâyetler:</strong> otomatik maske hatalı, düzenleme seçilen alanın dışına taşıyor, çökme, "Not a $10 a month app".</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Interior AI</h3>
+      <div class="who">Pieter Levels (bireysel, NL) · web</div>
+      <ul>
+        <li><strong>Kapsam:</strong> 56 stil, 68 oda tipi. Flux ile "Hyper Realism"; Stable Video Diffusion ile yürüyüş videosu, World Labs ile 3D yürüyüş.</li>
+        <li><strong>Fiyat:</strong> aylık $49 / $99 / $199; yıllık $349 / $599 / $1.199 <sup class="ref">[15]</sup>.</li>
+        <li><strong>Gelir:</strong> aylık yaklaşık 40–50 bin $ (ikincil kaynak, doğrulanamadı).</li>
+        <li><strong>Güçlü yan:</strong> emlakçı açısı (sanal döşeme, ticari lisans).</li>
+        <li><strong>Zayıf yan:</strong> yerel uygulama yok.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>HomeDesigns AI</h3>
+      <div class="who">Web</div>
+      <ul>
+        <li><strong>Araç seti en geniş:</strong> 200'den fazla stil, "Structure-Lock", malzeme değiştirme, 2D→3D plan, 10–30 sn video, "Shop the exact furniture", bütçe tahmini.</li>
+        <li><strong>Ölçek:</strong> 2,8 milyon kullanıcı iddiası; Trustpilot 4,8 (2.400'den fazla yorum).</li>
+        <li><strong>Fiyat:</strong> aylık $27–37, yalnız üçüncü taraf kaynakta görüldü <sup class="ref">[16]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>REimagineHome</h3>
+      <div class="who">Styldod Inc. · ABD · web</div>
+      <ul>
+        <li><strong>Fark:</strong> <strong>sohbetle tasarım</strong>; <strong>gerçek ürün keşfi</strong> (görselleştirme başına 2 kredi); ilan toplu işleme, ajans planları.</li>
+        <li><strong>Fiyat:</strong> aylık $14–99; 5 ücretsiz tasarım <sup class="ref">[17]</sup>.</li>
+        <li><strong>Finansman:</strong> son kayıtlı yatırım 2022'de 1 milyon $ <sup class="ref">[18]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Collov AI / Virtual Staging AI</h3>
+      <div class="who">Collov Labs · Silikon Vadisi · web</div>
+      <ul>
+        <li><strong>Collov:</strong> çok açılı ve tutarlı sanal döşeme, alacakaranlık ve mevsim değişimi, 360° turlar. Nisan 2026'da 23 milyon $ A serisi <sup class="ref">[20]</sup>.</li>
+        <li><strong>Zillow:</strong> Ekim 2024'te Virtual Staging AI'ı satın aldı <sup class="ref">[21]</sup>. Eylül 2025'ten beri Showcase ilanlarında tek dokunuşla restyle sunuyor <sup class="ref">[22]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Homestyler</h3>
+      <div class="who">Easyhome Design · Şanghay (Alibaba bağlantılı) · web, iOS, Android</div>
+      <ul>
+        <li><strong>AI paketi:</strong> AI Stager, AI Planner, AI Modeler, AI Animator ve <strong>Spark</strong> (sohbet tabanlı tasarım ajanı).</li>
+        <li><strong>Fiyat:</strong> Pro $4,9/ay, Master $9,9/ay, render başı $0,99–3,99 <sup class="ref">[23]</sup>.</li>
+        <li><strong>TR'de:</strong> haftalık ₺99,99, aylık ₺189,99; AI üyeliği aylık ₺999,99, yıllık ₺9.999,99. Türkçe yok <sup class="ref">[96]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Planner 5D</h3>
+      <div class="who">Planner5D UAB · Litvanya · iOS, Android, web, Vision Pro</div>
+      <ul>
+        <li><strong>AI:</strong> 2023'te Stable Diffusion tabanlı AI tasarım üretici <sup class="ref">[26]</sup>; AI kat planı tanıma; "AI Studio" Canvas Agent.</li>
+        <li><strong>Diğer:</strong> kamerayla oda yakalama; <strong>Türkçe arayüz</strong> var.</li>
+        <li><strong>Fiyat:</strong> Premium $19,99/ay veya $59,99/yıl <sup class="ref">[24]</sup>.</li>
+        <li><strong>TR'de:</strong> 4,4★ (2.771). Haftalık ₺174,99; "PRO" paketleri yıllık ₺14.999,99'a kadar <sup class="ref">[94]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>IKEA Kreativ</h3>
+      <div class="who">IKEA · 29 pazar</div>
+      <ul>
+        <li><strong>Ne yapıyor:</strong> fotoğraftan oda tarıyor, <strong>mevcut mobilyayı siliyor</strong>, IKEA ürünlerini sahneye yerleştiriyor <sup class="ref">[37]</sup>.</li>
+        <li><strong>Türkiye:</strong> Kreativ'in Türkiye'de olduğu doğrulanamadı. IKEA TR'de AR ve 39 web planlayıcı var <sup class="ref">[70]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Pinterest Restyle</h3>
+      <div class="who">Pinterest · ABD/Kanada beta</div>
+      <ul>
+        <li><strong>Duyuru:</strong> 17 Eylül 2026.</li>
+        <li><strong>Ne yapıyor:</strong> oda fotoğrafına Pin'lerden dekor ekleme, boya/ışık/bitki değişimi, dokunarak öğe değiştirme veya silme, tüm odayı restyle etme <sup class="ref">[38]</sup>.</li>
+        <li><strong>Anlamı:</strong> ilham trafiğinin sahibi, dönüşüm aracını kendi içine alıyor.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Gemini "Nano Banana" / ChatGPT</h3>
+      <div class="who">Google, OpenAI · genel amaçlı</div>
+      <ul>
+        <li><strong>Etkisi:</strong> Gemini 2.5 Flash Image, prompt ile ücretsiz restyle'ı ana akım yaptı <sup class="ref">[42]</sup>.</li>
+        <li><strong>Google:</strong> Ağustos 2026 rehberinde AI Mode'a oda fotoğrafı yüklemeyi öneriyor <sup class="ref">[43]</sup>.</li>
+        <li><strong>Yeni klonlar:</strong> mağazalarda "Nano-Banana" ibareli çok sayıda uygulama var <sup class="ref">[46]</sup>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wide">
+  <h1>Dünya pazarı — ana özellik matrisi</h1>
+  <div class="legend"><span><b class="y">✓</b> var / doğrulandı</span><span><b class="p">~</b> kısmi</span><span><b class="n">✗</b> kaynaklarda yok</span><span><b class="u">?</b> belirsiz / doğrulanamadı</span><span><b class="m">M</b> manuel (AI değil)</span><span>ᵃ yalnız kullanıcının ekran görüntülerinde görüldü</span></div>
+  <table class="matrix"><thead><tr><th>Ürün</th><th class="">Restyle</th><th class="">Stil</th><th class="">Maske</th><th class="">Silme</th><th class="">Değiştir</th><th class="">Boş oda</th><th class="">Dış cephe</th><th class="">Bahçe</th><th class="">Boya</th><th class="">Zemin</th><th class="">Ref. görsel</th><th class="">2D plan</th><th class="">3D</th><th class="">Tarama</th><th class="">AR</th><th class="">Alışveriş</th><th class="">Maliyet</th><th class="">Sohbet</th><th class="">Video / 360</th><th class="">Pro / emlak</th><th class="">Türkçe</th></tr></thead><tbody><tr><td><b>AI Remodel</b> (PulseApps)</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~<sup>ᵃ</sup></td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~<sup>ᵃ</sup></td><td class="n">✗</td><td class="y">✓<sup>ᵃ</sup></td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td></tr>
+<tr><td>Home AI (HubX)</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="p">~</td><td class="p">~</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td></tr>
+<tr><td>Arch (AppNation)</td><td class="y">✓</td><td class="">10+</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td></tr>
+<tr><td>Remodel AI (ReImage AI)</td><td class="y">✓</td><td class="">40+</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td></tr>
+<tr><td>RoomGPT</td><td class="y">✓</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="u">?</td></tr>
+<tr><td>Interior AI</td><td class="y">✓</td><td class="">56</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>HomeDesigns AI</td><td class="y">✓</td><td class="">200+</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>REimagineHome</td><td class="y">✓</td><td class="u">?</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Spacely AI</td><td class="y">✓</td><td class="u">?</td><td class="p">~</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Collov AI</td><td class="y">✓</td><td class="u">?</td><td class="n">✗</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Homestyler</td><td class="y">✓</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="m">M</td><td class="m">M</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="u">?</td><td class="p">~</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Planner 5D</td><td class="y">✓</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="p">~</td><td class="p">~</td><td class="m">M</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td></tr>
+<tr><td><b>Live Home 3D</b></td><td class="p">~</td><td class="">260+</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="m">M</td><td class="m">M</td><td class="m">M</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td></tr>
+<tr><td>Coohom</td><td class="p">~</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="u">?</td><td class="m">M</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>magicplan</td><td class="n">✗</td><td class="">–</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="u">?</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td></tr>
+<tr><td>RoomSketcher</td><td class="p">~</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="m">M</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Floorplanner / Roomstyler</td><td class="n">✗</td><td class="">–</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="m">M</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Sweet Home 3D</td><td class="n">✗</td><td class="">–</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="m">M</td><td class="m">M</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td></tr>
+<tr><td>Polycam</td><td class="n">✗</td><td class="">–</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>Twindo (eski Canvas)</td><td class="n">✗</td><td class="">–</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td></tr>
+<tr><td>IKEA Kreativ</td><td class="n">✗</td><td class="">–</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td></tr>
+<tr><td>Pinterest Restyle (beta, ABD/CA)</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td></tr>
+<tr><td>Wayfair Muse</td><td class="p">~</td><td class="u">?</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td></tr>
+<tr><td>Gemini "Nano Banana" / ChatGPT</td><td class="y">✓</td><td class="">prompt</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td></tr></tbody></table>
+  <p class="small">İşbirliği: Gerçek çok kullanıcılı projeler yalnız profesyonel ve planlayıcı katmanlarında var (Homestyler Team, Coohom Elite, RoomSketcher Team, Spacely Studio/Agency). Tüketici AI uygulamaları yalnız paylaşma ve dışa aktarma sunuyor. Kaynak: dünya taraması <sup class="ref">[1]–[57]</sup>.</p>
+</section>
+
+<section>
+  <h2>3.3 Ticari künye ve fiyatlar</h2>
+  <table class="compact">
+    <thead><tr><th>Ürün</th><th>Şirket · ülke</th><th>Platform</th><th>Fiyat</th><th>Puan (adet) / ölçek</th></tr></thead>
+    <tbody>
+      <tr><td>Home AI</td><td>HubX · Türkiye</td><td>iOS, Android</td><td>ABD: haftalık $4,99–14,99, yıllık $19,99–39,99. TR: haftalık ₺199,99–799,99, yıllık ₺899,99–1.499,99</td><td>ABD 4,5 (161 bin); Android 10 milyon+ indirme</td></tr>
+      <tr><td>Arch</td><td>AppNation · Türkiye</td><td>iOS</td><td>Haftalık $6,99–9,99, yıllık $39,99–89,99</td><td>4,6 (24 bin)</td></tr>
+      <tr><td>Remodel AI</td><td>REIMAGE AI INC.</td><td>iOS, Android, web</td><td>Haftalık $4,99–9,99, aylık $6,99–9,99, yıllık $39,99–89,99</td><td>4,7 (15 bin)</td></tr>
+      <tr><td>RoomGPT</td><td>? (açık kaynak kökenli)</td><td>web</td><td>Tek seferlik kredi: $9 / $29 (üçüncü taraf)</td><td>4 milyon+ kullanıcı iddiası</td></tr>
+      <tr><td>Interior AI</td><td>Pieter Levels · NL</td><td>web</td><td>Aylık $49–199; yıllık $349–1.199</td><td>Gelir ~40–50 bin $/ay (doğrulanamadı)</td></tr>
+      <tr><td>HomeDesigns AI</td><td>?</td><td>web</td><td>Aylık $27–37 (üçüncü taraf); 24 saatte 3 ücretsiz kredi</td><td>2,8 milyon kullanıcı iddiası</td></tr>
+      <tr><td>REimagineHome</td><td>Styldod · ABD</td><td>web</td><td>Aylık $14–99</td><td>?</td></tr>
+      <tr><td>Spacely AI</td><td>GD Asya (doğrulanamadı)</td><td>web + CAD eklentileri</td><td>40 ücretsiz kredi; 200 kredi $9 … 5.000 kredi $150</td><td>440 bin kullanıcı iddiası</td></tr>
+      <tr><td>Collov AI</td><td>Collov Labs · ABD</td><td>web</td><td>Aylık $27–170 (üçüncü taraf)</td><td>1 milyon+ kullanıcı, 300+ şirket</td></tr>
+      <tr><td>Homestyler</td><td>Easyhome · Çin</td><td>web, iOS, Android</td><td>Pro $4,9/ay; Master $9,9/ay; Team $19,6/koltuk; render $0,99–3,99</td><td>?</td></tr>
+      <tr><td>Planner 5D</td><td>Planner5D UAB · Litvanya</td><td>iOS, Android, web</td><td>Premium $19,99/ay veya $59,99/yıl; Professional $49,99/ay veya $399,99/yıl</td><td>4,4 (43 bin); 64M / "120M+" kullanıcı (çelişkili)</td></tr>
+      <tr><td>Live Home 3D</td><td>BeLight · Ukrayna</td><td>iOS, macOS, Windows, visionOS</td><td>Std $6,99/ay, $24,99/yıl, $59,99 ömür boyu; Pro $14,99/ay, $49,99/yıl, $129,99</td><td>4,6 (19 bin)</td></tr>
+      <tr><td>Coohom</td><td>Manycore · Çin</td><td>web</td><td>Pro $29, Elite $69</td><td>G2 4,4 (132)</td></tr>
+      <tr><td>magicplan</td><td>Kanada?</td><td>iOS, Android</td><td>Aylık $12,99–89,99; yıllık $129,99–899,99</td><td>4,7 (41 bin)</td></tr>
+      <tr><td>RoomSketcher</td><td>RoomSketcher AS · Norveç</td><td>web, masaüstü</td><td>Pro $24/ay; Team $70/ay; 3D foto $4</td><td>?</td></tr>
+      <tr><td>Polycam</td><td>Polycam Inc.</td><td>iOS, Android, web</td><td>Pro $26,99/ay veya $199,99/yıl</td><td>4,6 (44 bin)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3.4 Pazar büyüklüğü ve yatırımlar</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Pazar tahminleri</h3>
+      <ul>
+        <li><strong>AI in interior design:</strong> 1,39 milyar $ (2025) → 1,76 milyar $ (2026) → <strong>4,55 milyar $ (2030)</strong>, yıllık bileşik büyüme %26,8 (TBRC / Research and Markets, Şubat 2026) <sup class="ref">[50]</sup>.</li>
+        <li><strong>SNS Insider:</strong> 1,79 milyar $ (2025) → 12,35 milyar $ (2035) <sup class="ref">[51]</sup>.</li>
+        <li><strong>Dar "AI iç tasarım araçları" tanımı:</strong> 91 milyon $ (2025) → 184 milyon $ (2031) <sup class="ref">[52]</sup>. Tanımlar arasında 10 kattan fazla fark var; rakamlar yalnız yön gösterir.</li>
+        <li><strong>Emlak sanal döşeme:</strong> 526 milyon $ (2025) → 2,93 milyar $ (2032), %27,8 <sup class="ref">[53]</sup>.</li>
+        <li><strong>Üretken AI uygulamaları:</strong> 2025 ilk yarısında yaklaşık 1,7 milyar indirme ve 1,9 milyar $ uygulama içi gelir. Bu gelirin %63'ü ChatGPT'nin <sup class="ref">[54]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Yatırım ve satın almalar</h3>
+      <ul>
+        <li>HubX: 50 milyon $ + 25 milyon $ opsiyon, yaklaşık 1,2 milyar $ değerleme (Ağustos 2026) <sup class="ref">[7]</sup>.</li>
+        <li>Collov: 23 milyon $ A serisi (Nisan 2026) <sup class="ref">[20]</sup>.</li>
+        <li>Manycore (Coohom): Hong Kong halka arzı, yaklaşık 160 milyon $ (Nisan 2026) <sup class="ref">[28]</sup>. 2023 geliri 664 milyon RMB <sup class="ref">[29]</sup>.</li>
+        <li>Zillow, Virtual Staging AI'ı satın aldı (Ekim 2024) <sup class="ref">[21]</sup>.</li>
+        <li>Drafted: 16 milyon $ tohum yatırımı <sup class="ref">[56]</sup>.</li>
+        <li>Rayon: 10 milyon € A serisi (Eylül 2026) <sup class="ref">[57]</sup>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>3.5 Eğilimler</h2>
+  <ol>
+    <li><strong>Metalaşma:</strong> Gemini, ChatGPT ve Pinterest temel restyle'ı ücretsiz veriyor. Savunulabilir ürün modelde değil; iş akışında, veride ve ticarette kazanır.</li>
+    <li><strong>Platformların içine gömülme:</strong>
+      <ul>
+        <li>Zillow (ilan içi restyle).</li>
+        <li>Wayfair Muse (katalog bağlı sahne üretimi) <sup class="ref">[39]</sup>.</li>
+        <li>IKEA Kreativ.</li>
+      </ul>
+      Satıcı kendi kataloğunu görselleştiriyor.</li>
+    <li><strong>Türk mobil stüdyolarının indirme liderliği:</strong> HubX ve AppNation. Rekabet ASO ve reklam bütçesiyle yürüyor.</li>
+    <li><strong>Yeni modeller:</strong> Nano Banana, Flux Kontext, Seedream ve video (Kling 2.5). Yeni girenler bu modellerle hızla çıkıyor <sup class="ref">[45]</sup>.</li>
+    <li><strong>Profesyonel katmanda derinleşme:</strong>
+      <ul>
+        <li>Houzz Pro: AI 3D kat planı (2025), AI özel kaplamalar (Mayıs 2026) <sup class="ref">[48]</sup>.</li>
+        <li>Spacely: CAD eklentileri.</li>
+        <li>Collov: çok açılı tutarlılık.</li>
+      </ul></li>
+  </ol>
+</section>
+
+<section>
+  <h1><span class="num">4</span>Türkiye pazarı</h1>
+  <p>App Store verileri 3 Kasım 2026'da Apple iTunes TR uç noktalarından çekildi: Grafik ve Tasarım hasılat listesi RSS'i ve lookup API <sup class="ref">[58]</sup>. Google Play Türkiye sıralamaları ve fiyatları doğrulanamadı.</p>
+
+  <h2>4.1 TR App Store'da AI ev tasarım uygulamaları</h2>
+  <table class="compact">
+    <thead><tr><th>Uygulama</th><th>Satıcı</th><th class="c">TR puanı (adet)</th><th class="c">Türkçe</th><th>TR fiyat örnekleri</th><th class="c">TR sırası</th></tr></thead>
+    <tbody>
+      <tr><td>Homely AI</td><td>Kmaster Ltd</td><td class="c">3,7 (138)</td><td class="c y">✓</td><td>₺399,99–2.499,99 (paket adı yok)</td><td class="c">G&amp;T hasılat #3</td></tr>
+      <tr><td>ReRoom AI</td><td>GM UniverseApps</td><td class="c">4,1 (1.796)</td><td class="c y">✓</td><td>₺249,99–3.999,99</td><td class="c">#4</td></tr>
+      <tr><td>DecAI</td><td>Cool Summer Ltd</td><td class="c">4,4 (694)</td><td class="c y">✓</td><td>Haftalık ₺229,99–499,99; yıllık ₺599,99–2.499,99</td><td class="c">#8</td></tr>
+      <tr><td><strong>AI Remodel</strong></td><td>PulseApps Solutions OÜ</td><td class="c">4,3 (535)</td><td class="c n">✗</td><td>Haftalık ₺229,99–599,99; aylık ₺999,99; yıllık ₺2.499,99</td><td class="c">#14 (ücretsiz #22)</td></tr>
+      <tr><td>CamPlan</td><td>CamPlan AI</td><td class="c">4,6 (843)</td><td class="c y">✓</td><td>—</td><td class="c">#23</td></tr>
+      <tr><td>Home AI</td><td>HubX</td><td class="c">4,6 (3.340)</td><td class="c n">✗</td><td>Haftalık ₺199,99–799,99; yıllık ₺899,99–1.499,99</td><td class="c">#33</td></tr>
+      <tr><td>Arch</td><td>AppNation</td><td class="c">4,3 (301)</td><td class="c y">✓</td><td>Haftalık ₺299,99–499,99; yıllık ₺1.299,99–2.999,99</td><td class="c">#87</td></tr>
+      <tr><td>Ruma</td><td>EXXE Dijital Teknoloji A.Ş.</td><td class="c">4,4 (66)</td><td class="c y">✓</td><td>Haftalık ₺399,99–499,99; yıllık ₺1.299,99–3.499,99; ömür boyu ₺4.999,99</td><td class="c">#99</td></tr>
+      <tr><td>Planner 5D</td><td>Planner5D UAB</td><td class="c">4,4 (2.771)</td><td class="c y">✓</td><td>Haftalık ₺174,99; yıllık ₺1.299,99–4.999,99; PRO paketleri yıllık ₺14.999,99</td><td class="c">Yaşam Tarzı hasılat #54</td></tr>
+      <tr><td>Home Planner AI</td><td>Room Planner Ltd</td><td class="c">4,6 (4.299)</td><td class="c y">✓</td><td>Haftalık ₺199,99; yıllık ₺1.399,99; işletme ₺4.999,99</td><td class="c">Yaşam Tarzı #67</td></tr>
+      <tr><td>Homestyler</td><td>Homestyler (Şanghay)</td><td class="c">4,4 (264)</td><td class="c n">✗</td><td>Haftalık ₺99,99; aylık ₺189,99; AI üyeliği ₺999,99/ay, ₺9.999,99/yıl</td><td class="c">İlk 100'de yok</td></tr>
+      <tr><td>Live Home 3D</td><td>BeLight</td><td class="c">4,6 (314)</td><td class="c n">✗</td><td>doğrulanamadı</td><td class="c">—</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <p><strong>Çıkarımlar</strong></p>
+    <ul>
+      <li>İlk 100'deki 15 AI ev uygulamasından kontrol edilen 14'ünün 10'unda Türkçe var.</li>
+      <li>Türkçesi olmayan AI Remodel ve Home AI'ın üst sıralarda olması, yerelleştirmenin henüz tek başına belirleyici olmadığını gösteriyor. Rekabet ASO ve reklam bütçesiyle yürüyor.</li>
+      <li>Haftalık abonelik baskın model.</li>
+      <li>Yaşam Tarzı ücretsiz listesinde Pinterest #1; ilham trafiği orada.</li>
+    </ul>
+  </div>
+
+  <h2>4.2 Türk yapımı ürünler ve girişimler</h2>
+  <table class="compact">
+    <thead><tr><th style="width:17%">Şirket / ürün</th><th style="width:14%">Şehir · platform</th><th>Özellikler ve fiyat</th><th style="width:28%">Durum ve finansman</th></tr></thead>
+    <tbody>
+      <tr><td><strong>HubX – Home AI</strong></td><td>İzmir merkez, İstanbul ofisi · iOS</td><td>AI iç tasarım ve oda planı. Haftalık ₺199,99–799,99; yıllık ₺899,99–1.499,99. Türkçe dil listesinde yok.</td><td>Point72'den 75 milyon $'a kadar yatırım, 1,2 milyar $ değerleme; 40'tan fazla uygulama, 600 milyondan fazla kullanıcı <sup class="ref">[59]</sup></td></tr>
+      <tr><td><strong>AppNation – Arch</strong></td><td>İstanbul (Şişli) · iOS</td><td>AI ev tasarımı ve maliyet tahmini; Türkçe var.</td><td>Kendi beyanıyla yaklaşık 150 milyon $ değerleme, 90 milyon indirme, yaklaşık 500 bin abone <sup class="ref">[60][61]</sup></td></tr>
+      <tr><td><strong>EXXE – Ruma</strong></td><td>doğrulanamadı · iOS</td><td>İç mekân, dış cephe, bahçe; ömür boyu ₺4.999,99 dahil.</td><td>Mart 2025'te yayınlandı; finansman doğrulanamadı <sup class="ref">[62]</sup></td></tr>
+      <tr><td>Syntina</td><td>doğrulanamadı · iOS</td><td>Eskiz, foto ve plandan render; tek görselden 3D; video; kredi sistemi.</td><td>Bağımsız geliştirici, Haziran 2026; 5,0 (6 puan) <sup class="ref">[63]</sup></td></tr>
+      <tr><td>Oda Studio</td><td>San Francisco (YC) · web/B2B</td><td>Emlak fotoğraflarına sanal döşeme, kapak fotoğrafı seçimi.</td><td>2,8 milyon $ (2021). Alan adı satılık; güncel durumu doğrulanamadı <sup class="ref">[64]</sup></td></tr>
+      <tr><td>artlabs</td><td>doğrulanamadı · B2B SaaS</td><td>E-ticaret için 3D/AR modeller.</td><td>700 bin $ tohum (2022); güncel durum doğrulanamadı <sup class="ref">[65]</sup></td></tr>
+      <tr><td>Boxlin · QuickStaging</td><td>web</td><td>3D ev planlama (2018) · boş ilan fotoğrafını döşeme (2026).</td><td>Durumları doğrulanamadı <sup class="ref">[66][67]</sup></td></tr>
+      <tr><td><strong>GenRoom</strong> (Türk değil)</td><td>Londra LLP · web</td><td>Türkçe; <strong>"Osmanlı ilhamlı" ve "modern Türk" stilleri</strong>; sahibinden/hepsiemlak boyutlarında çıktı. 9,99–39,99 $ kredi paketi, tasarım başı 0,27–0,56 $; emlakçıya foto başı "₺15" iddiası.</td><td>Kendi beyanı 66.184 kullanıcı; kökeni Rusya pazarındaki RoomAI <sup class="ref">[68][69]</sup></td></tr>
+    </tbody>
+  </table>
+
+  <h2>4.3 Perakendeci ve üreticilerin dijital araçları</h2>
+  <p class="small">Yöntem: TR App Store açıklamaları ve web sayfaları. "✗", özelliğin <em>açıklamada geçmediğini</em> gösterir; özelliğin olmadığını kanıtlamaz.</p>
+  <table class="compact">
+    <thead><tr><th style="width:24%">Marka</th><th class="c">AR</th><th class="c">3D / planlayıcı</th><th class="c">AI</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td>IKEA Türkiye</td><td class="c y">✓</td><td class="c y">✓</td><td class="c n">✗</td><td>Seçili ürünlerde AR; web'de 39 planlayıcı (PAX, BESTÅ, mutfak, banyo, dış mekân). Kreativ TR'de görülmedi <sup class="ref">[70][71]</sup></td></tr>
+      <tr><td>Karaca</td><td class="c y">✓</td><td class="c">—</td><td class="c p">~</td><td>"Evinde nasıl duracağını gör" AR; ChatGPT içinde AIDA alışveriş asistanı (16 Temmuz 2026). Oda görselleştirmesi yok <sup class="ref">[72][73]</sup></td></tr>
+      <tr><td>Koçtaş</td><td class="c n">✗</td><td class="c p">~</td><td class="c n">✗</td><td>Ücretli mutfak keşfi (₺175–320, sayfa eski); <strong>Ustabilir</strong> usta pazarının sahibi <sup class="ref">[74][75]</sup></td></tr>
+      <tr><td>Vivense, Evidea, Bellona, Mudo, English Home, Madame Coco</td><td class="c n">✗</td><td class="c n">✗</td><td class="c n">✗</td><td>Açıklamalarda yok; Bellona yalnız renk/model karşılaştırması</td></tr>
+      <tr><td>Alfemo · Enza Home</td><td class="c n">✗</td><td class="c p">~</td><td class="c n">✗</td><td>"Alfemo Designer" konfigüratörü (2024) · katalog uygulaması (2022) <sup class="ref">[76]</sup></td></tr>
+      <tr><td>İstikbal, Doğtaş, Kelebek, Çilek, Bauhaus TR, Tekzen</td><td class="c u">?</td><td class="c u">?</td><td class="c u">?</td><td>doğrulanamadı; Bauhaus uygulaması 2,6★ (2024)</td></tr>
+      <tr><td>Marshall (AkzoNobel)</td><td class="c y">✓</td><td class="c">—</td><td class="c n">✗</td><td>Gör&amp;Boya: duvarı sanal boyama (695 puan, Eylül 2026'da güncellendi) <sup class="ref">[77]</sup></td></tr>
+      <tr><td>Filli Boya · Dyo</td><td class="c p">~</td><td class="c">—</td><td class="c n">✗</td><td>i-Colour ile fotoğrafta boyama · Dyo'da görselleştirici yok <sup class="ref">[78][79]</sup></td></tr>
+      <tr><td>Kalekim · NG Kütahya · Ege · VitrA</td><td class="c p">~</td><td class="c y">✓</td><td class="c n">✗</td><td>KaleCore 2D/3D/AR/VR banyo; NG 3D kartela ve sanal showroom; Ege "Room Scene" (2020); VitrA VitreAlity AR (2015) <sup class="ref">[80][81][82]</sup></td></tr>
+      <tr><td>Hepsiburada · Trendyol</td><td class="c u">?</td><td class="c">—</td><td class="c p">~</td><td>Hepsiburada'da "Üzerinde Gör" var; mobilyada çalıştığı doğrulanamadı <sup class="ref">[83]</sup></td></tr>
+    </tbody>
+  </table>
+
+  <h2>4.4 Bitişik platformlar</h2>
+  <table class="compact">
+    <thead><tr><th style="width:16%">Platform</th><th>AI / görsel özellikler</th><th style="width:26%">Rol</th></tr></thead>
+    <tbody>
+      <tr><td><strong>sahibinden</strong></td><td><strong>SahiDeko</strong> (Haziran 2025): Profesyonel Emlak Ofisi kullanıcılarına Modern, İskandinav, Rustik ve Klasik stillerle sanal döşeme. sahiAI çatısı altında Fotobot, Sanal Tur ve sohbetle arama da var (Şubat 2026). Fiyatı doğrulanamadı <sup class="ref">[84][86]</sup></td><td>Emlakta doğrudan rakip; talebin kanıtı</td></tr>
+      <tr><td>Hepsiemlak</td><td>İlanları AI ile İngilizce ve Rusçaya çeviriyor; sanal döşeme yok <sup class="ref">[87]</sup></td><td>Ortak / kanal adayı</td></tr>
+      <tr><td>Emlakjet + Endeksa</td><td>AR ile ilan keşfi, drone görünümü, güneş-gölge analizi; Endeksa'da AI değerleme ve "Atlas" asistanı <sup class="ref">[88][89]</sup></td><td>Ortak adayı (değerleme + yeniden tasarım)</td></tr>
+      <tr><td><strong>Armut</strong></td><td>4,78★ (157 bin). İstanbul'da 3.314 iç mimar; iç mimar talepleri ₺52.000–1.000.000. AI doğrulanamadı <sup class="ref">[90]</sup></td><td>Usta ve iç mimar eşleştirme kanalı</td></tr>
+      <tr><td>Ustabilir (Koçtaş)</td><td>Komisyonsuz usta pazarı; ürünlerde Koçtaş indirimi <sup class="ref">[75]</sup></td><td>Malzeme + usta paketi ortağı</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4.5 Makro göstergeler</h2>
+  <table class="compact">
+    <thead><tr><th style="width:34%">Gösterge</th><th>Değer</th><th style="width:12%">Kaynak</th></tr></thead>
+    <tbody>
+      <tr><td>2025 konut satışı</td><td><strong>1.688.910</strong> (+%14,3, rekor); ikinci el 1.148.124; ipotekli 236.668</td><td><sup class="ref">[97]</sup></td></tr>
+      <tr><td>Ocak–Eylül 2026 konut satışı</td><td>1.092.919 (−%7,2); ipotekli satış +%24,7</td><td><sup class="ref">[98]</sup></td></tr>
+      <tr><td>2025 yapı ruhsatı / iskân</td><td>1.111.852 / 673.575 daire (ikincil kaynak, TÜİK bülteniyle doğrulanmadı)</td><td><sup class="ref">[99]</sup></td></tr>
+      <tr><td>Hanehalkı (2025)</td><td>26.977.795 hane; ortalama 3,08 kişi; tek kişilik hane %20,5</td><td><sup class="ref">[100]</sup></td></tr>
+      <tr><td>İstanbul kentsel dönüşüm (2012'den beri)</td><td>1,298 milyon bağımsız bölüm: 1,007 milyonu tamamlandı, 291 bini sürüyor (Ağustos 2026)</td><td><sup class="ref">[101]</sup></td></tr>
+      <tr><td>Ülke geneli dönüşüm</td><td>2,51 milyon bağımsız bölüm (Mart 2026)</td><td><sup class="ref">[102]</sup></td></tr>
+      <tr><td>"Yarısı Bizden" kampanyası</td><td>İstanbul'da 384.553 bölüm; son tarih 31.12.2026</td><td><sup class="ref">[103]</sup></td></tr>
+      <tr><td>Deprem bölgesi konutları</td><td>2025 sonu hedefi 452.983 birim. 15 Kasım 2025'te 350 bininci teslim yapıldı. Hedefin tamamen gerçekleştiği doğrulanamadı.</td><td><sup class="ref">[104][105]</sup></td></tr>
+      <tr><td>Mobilya dış ticareti (2025)</td><td>İhracat 4,6 milyar $; ithalat +%25 ile 1,4 milyar $'ın üzerinde. İç pazar büyüklüğü doğrulanamadı.</td><td><sup class="ref">[106]</sup></td></tr>
+      <tr><td>E-ticaret (ETBİS, 2025)</td><td>4,567 trilyon TL (+%52,2); perakende 2,5 trilyon TL</td><td><sup class="ref">[107]</sup></td></tr>
+      <tr><td>İnternet / online sipariş (2026)</td><td>Bireylerin %92,3'ü internet kullanıyor; %60,0'ı internetten sipariş veriyor</td><td><sup class="ref">[108]</sup></td></tr>
+      <tr><td>Mobil işletim sistemi payı</td><td>Android %74,18 · iOS %25,81 (StatCounter, Temmuz 2026, web trafiği)</td><td><sup class="ref">[109]</sup></td></tr>
+      <tr><td>Ödeme gücü</td><td>Net asgari ücret ₺28.075,50; TÜFE yıllık %29,73 (Eylül 2026). Ekim verisi doğrulanamadı.</td><td><sup class="ref">[110][111]</sup></td></tr>
+      <tr><td>Abonelik gelirinin kaynağı</td><td>Türk geliştiricilerin abonelik gelirinin %89,2'si yurt dışından; ABD %35,6 (RevenueCat, Eylül 2025–Ağustos 2026)</td><td><sup class="ref">[112]</sup></td></tr>
+    </tbody>
+  </table>
+  <p class="small">AI Remodel fiyatının ödeme gücüne oranı (araştırmanın kendi hesabı): yıllık plan net asgari ücretin yaklaşık %8,9'u. Haftalık plan aylık yaklaşık ₺1.733'e denk geliyor, bu da yaklaşık %6,2.</p>
+
+  <h2>4.6 Ödeme altyapısı ve hukuk</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Ödeme</h3>
+      <ul>
+        <li><strong>Dijital hizmet vergisi:</strong> 1 Ocak 2026'dan itibaren %7,5'ten %5'e indi; Apple bunu 30 Ocak 2026'da geliştirici gelirlerine yansıttı <sup class="ref">[113]</sup>. 2027'de %2,5 planı doğrulanamadı.</li>
+        <li><strong>Apple'a rekabet soruşturması:</strong> Rekabet Kurulu, yönlendirme yasağı ve alternatif ödeme engeli nedeniyle 21.05.2024'te soruşturma açtı; sonucu doğrulanamadı <sup class="ref">[114]</sup>.</li>
+        <li><strong>Web için sanal POS:</strong> PayTR %2,19'dan başlıyor. iyzico için kaynaklar tutarsız (%2,49 + ₺0,25 ve üstü); yazılı teklif alınmalı <sup class="ref">[115]</sup>.</li>
+        <li><strong>Kayıtlar:</strong> web satışı için ETBİS, pazarlama mesajları için İYS kaydı gerekiyor <sup class="ref">[116][117]</sup>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Hukuk</h3>
+      <ul>
+        <li><strong>KVKK – yurt dışına aktarım:</strong>
+          <ul>
+            <li>md. 9 değişikliği ve aktarım yönetmeliği 10.07.2024'te yürürlüğe girdi.</li>
+            <li>Standart sözleşme imzalandıktan sonra <strong>5 iş günü içinde</strong> Kurum'a bildirilmeli <sup class="ref">[118]</sup>.</li>
+            <li>Bildirim yapmamanın 2026 cezası ₺90.308–1.806.377 (ikincil kaynak) <sup class="ref">[119]</sup>.</li>
+          </ul></li>
+        <li><strong>KVKK – üretken AI rehberi (Kasım 2025):</strong> Oda fotoğraflarındaki yüz, aile fotoğrafı, belge ve EXIF konumu kişisel veri sayılabilir. Bunlar maskelenmeli veya silinmeli; eğitimde kullanım için ayrıca rıza alınmalı <sup class="ref">[120]</sup>.</li>
+        <li><strong>Abonelik mevzuatı:</strong>
+          <ul>
+            <li>Dayanak: TKHK md. 52 ve Abonelik Sözleşmeleri Yönetmeliği.</li>
+            <li>Bakanlık 20 Ekim 2026'da inceleme başlattı.</li>
+            <li>Dijital aboneliklerle ilgili 1.459 başvuru var (2025–26).</li>
+            <li>2022'de onaysız yenileme nedeniyle bir sağlayıcıya ₺5,95 milyon ceza verildi <sup class="ref">[121]</sup>.</li>
+            <li>Uygulama ilkesi: yenileme öncesi bildirim ve aboneliğin "aynı yöntemle iptal" edilebilmesi <sup class="ref">[122]</sup>.</li>
+          </ul></li>
+        <li><strong>Reklam:</strong>
+          <ul>
+            <li>1 Temmuz 2026 tarihli yönetmelik değişikliği: insandan ayırt edilemeyen AI karakterleri reklamda belirtilmeli <sup class="ref">[123]</sup>.</li>
+            <li>Gerçeğe aykırı ilan fotoğrafı kullanan 5 emlak firmasına toplam ₺575 bin ceza verildi (2023) <sup class="ref">[124]</sup>.</li>
+          </ul>
+          Sonuç: sanal döşenmiş görsellerde <strong>"sanal olarak döşenmiştir"</strong> etiketi kullanılmalı.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wide">
+  <h1><span class="num">5</span>Dünya – Türkiye – AI Room karşılaştırması</h1>
+  <div class="legend"><span><b class="y">✓</b> var</span><span><b class="p">~</b> kısmi</span><span><b class="n">✗</b> kaynaklarda yok</span><span><b class="u">?</b> doğrulanamadı</span><span><b class="m">M</b> manuel (AI değil)</span><span>ᵃ yalnız ekran görüntülerinde</span><span style="color:#9A4A26"><b>AI Room</b> sütunları vurgulu</span></div>
+  <table class="matrix"><thead><tr><th>Özellik</th><th class="">AI Remodel</th><th class="">Home AI</th><th class="">Arch</th><th class="">Interior AI</th><th class="">HomeDesigns AI</th><th class="">Planner 5D</th><th class="">Live Home 3D</th><th class="">SahiDeko</th><th class="">GenRoom</th><th class="us">AI Room MVP</th><th class="us">AI Room yol haritası</th></tr></thead><tbody><tr><td>Fotoğraftan yeniden tasarım</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="p">~</td><td class="y">✓</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Stil sayısı</td><td class="u">?</td><td class="u">?</td><td class="">10+</td><td class="">56</td><td class="">200+</td><td class="u">?</td><td class="">260+</td><td class="">4</td><td class="u">?</td><td class="us">15</td><td class="us">15+</td></tr>
+<tr><td>Türk / Anadolu stilleri</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Maske / bölge düzenleme</td><td class="u">?</td><td class="u">?</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="n us">✗</td><td class="y us">✓</td></tr>
+<tr><td>Nesne silme / odayı boşaltma</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Eşya değiştirme</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Boş odayı döşeme (sanal döşeme)</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Dış cephe</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="m">M</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Bahçe / peyzaj</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="m">M</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Duvar boyası</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="p">~</td><td class="m">M</td><td class="m">M</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Zemin</td><td class="y">✓</td><td class="p">~</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="m">M</td><td class="m">M</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Referans görselden stil</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>2D kat planı</td><td class="p">~<sup>ᵃ</sup></td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="n us">✗</td><td class="y us">✓</td></tr>
+<tr><td>3D görünüm</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="n us">✗</td><td class="p us">~</td></tr>
+<tr><td>LiDAR / oda tarama (ölçü)</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="n us">✗</td><td class="y us">✓</td></tr>
+<tr><td>AR yerleştirme</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="n us">✗</td><td class="p us">~</td></tr>
+<tr><td>Alışveriş (gerçek ürün)</td><td class="p">~<sup>ᵃ</sup></td><td class="n">✗</td><td class="p">~</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="p us">~</td><td class="y us">✓</td></tr>
+<tr><td>Maliyet / bütçe tahmini</td><td class="n">✗</td><td class="p">~</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>TL fiyat + Türk mağaza linki</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>AI tasarım sohbeti</td><td class="y">✓<sup>ᵃ</sup></td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="p">~</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Video / 360</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="n us">✗</td><td class="y us">✓</td></tr>
+<tr><td>Pro / emlakçı özellikleri</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="p">~</td><td class="y">✓</td><td class="y">✓</td><td class="n us">✗</td><td class="y us">✓</td></tr>
+<tr><td>Türkçe arayüz</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="u">?</td><td class="u">?</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Android uygulaması</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="n">✗</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td><td class="u">?</td><td class="n">✗</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Web sürümü</td><td class="u">?</td><td class="u">?</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="y">✓</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Reklamsız / reklam takibi yok</td><td class="n">✗</td><td class="u">?</td><td class="u">?</td><td class="u">?</td><td class="u">?</td><td class="u">?</td><td class="u">?</td><td class="u">?</td><td class="u">?</td><td class="y us">✓</td><td class="y us">✓</td></tr>
+<tr><td>Giriş fiyatı</td><td class="">₺229,99+/hf</td><td class="">₺199,99+/hf</td><td class="">₺299,99+/hf</td><td class="">$49+/ay</td><td class="">~$27/ay</td><td class="">₺174,99/hf</td><td class="">$6,99/ay</td><td class="u">?</td><td class="">$9,99+ paket</td><td class="us">₺149,99/hf</td><td class="us">₺149,99/hf</td></tr></tbody></table>
+  <div class="small">
+    <p class="small">Rakip değerleri dünya ve Türkiye taramalarından alındı <sup class="ref">[1]–[124]</sup>.</p>
+    <ul class="small">
+      <li>AI Room MVP sütunu bu depodaki çalışan kodu gösterir; uçtan uca test 28/28 geçti.</li>
+      <li>Android ve iOS sütunlarında AI Room uygulaması Expo ile tek kod tabanından derleniyor. Web dışa aktarımı ve typecheck doğrulandı; fiziksel cihaz testi Faz 1'de.</li>
+      <li>"Mağaza linki" MVP'de ürün eşleştirme değil, Türk mağazalarında arama linki. Gerçek katalog eşleştirme yol haritasında.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>5.1 TL fiyat karşılaştırması (TR App Store, 3 Kasım 2026)</h2>
+  <table class="compact">
+    <thead><tr><th>Uygulama</th><th class="r">Haftalık</th><th class="r">Aylık</th><th class="r">Yıllık</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td>AI Remodel</td><td class="r">₺229,99–599,99<br><small>(ekranda ₺399,99)</small></td><td class="r">₺999,99</td><td class="r">₺2.499,99</td><td>Türkçe yok; reklam + IAP</td></tr>
+      <tr><td>Home AI (HubX)</td><td class="r">₺199,99–799,99</td><td class="r">—</td><td class="r">₺899,99–1.499,99</td><td>Türkçe yok</td></tr>
+      <tr><td>Arch (AppNation)</td><td class="r">₺299,99–499,99</td><td class="r">—</td><td class="r">₺1.299,99–2.999,99</td><td>Türkçe; maliyet tahmini</td></tr>
+      <tr><td>Ruma (EXXE)</td><td class="r">₺399,99–499,99</td><td class="r">—</td><td class="r">₺1.299,99–3.499,99</td><td>Ömür boyu ₺4.999,99</td></tr>
+      <tr><td>DecAI</td><td class="r">₺229,99–499,99</td><td class="r">—</td><td class="r">₺599,99–2.499,99</td><td>Türkçe</td></tr>
+      <tr><td>ReRoom AI · Homely AI</td><td class="r" colspan="3" style="text-align:center">₺249,99–3.999,99 · ₺399,99–2.499,99 (paket adları yayınlanmamış)</td><td>Hasılat #4 · #3</td></tr>
+      <tr><td>Planner 5D</td><td class="r">₺174,99</td><td class="r">—</td><td class="r">₺1.299,99–4.999,99</td><td>PRO paketleri ₺14.999,99/yıl</td></tr>
+      <tr><td>Home Planner AI</td><td class="r">₺199,99</td><td class="r">—</td><td class="r">₺1.399,99</td><td>İşletme ₺4.999,99</td></tr>
+      <tr><td>Homestyler</td><td class="r">₺99,99</td><td class="r">₺189,99</td><td class="r">AI: ₺9.999,99</td><td>AI üyeliği ₺999,99/ay</td></tr>
+      <tr style="font-weight:650"><td style="background:#E9F4F0">AI Room (öneri, MVP kataloğu)</td><td class="r" style="background:#E9F4F0">₺149,99</td><td class="r" style="background:#E9F4F0">₺349,99</td><td class="r" style="background:#E9F4F0">₺1.299,99</td><td style="background:#E9F4F0">Günde 3 ücretsiz üretim; reklamsız</td></tr>
+    </tbody>
+  </table>
+  <p class="small">
+    Ödeme gücü (kendi hesabımız; net asgari ücret ₺28.075,50 <sup class="ref">[110]</sup>):
+  </p>
+  <ul class="small">
+    <li>AI Room yıllık planı asgari ücretin yaklaşık %4,6'sı. Haftalık plan aylık yaklaşık ₺650'ye denk gelir (×52/12), yani yaklaşık %2,3.</li>
+    <li>AI Remodel'de bu oranlar sırasıyla yaklaşık %8,9 ve %6,2.</li>
+    <li>Fiyatlar KDV dahil mağaza fiyatıdır; AI Room fiyatları lansman öncesi A/B testiyle doğrulanmalıdır.</li>
+  </ul>
+</section>
+
+<section>
+  <h1><span class="num">6</span>Boşluklar, fırsatlar ve konumlandırma</h1>
+  <table class="compact">
+    <thead><tr><th style="width:4%">#</th><th style="width:36%">Boşluk (kanıt)</th><th style="width:34%">AI Room yanıtı</th><th class="c" style="width:12%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Yapı korunmuyor:</strong> pencere, kapı ve duvar değişiyor; oda tipi yanlış sınıflanıyor (AI Remodel, Remodel AI yorumları) <sup class="ref">[1][10]</sup>.</td><td>Her prompt'ta zorunlu "kamera açısı, geometri, pencere, kapı ve tavan aynı kalsın" kalıbı; oda tipi kullanıcı seçimiyle İngilizce tanımla gönderiliyor. Faz 2'de derinlik/kenar koşullama ve kalite değerlendirme seti.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>2</td><td><strong>Gerçek ölçü yok:</strong> orantısız büyük mobilya. Tarama + fotogerçekçi restyle + sığma kontrolünü birleştiren yok.</td><td>RoomPlan/LiDAR ile ölçü ve ölçek farkındalıklı yerleştirme.</td><td class="c"><span class="pill acc">Faz 3</span></td></tr>
+      <tr><td>3</td><td><strong>Yerel ve satın alınabilir ürün yok:</strong> alışveriş linkleri ABD kataloglarına bağlı; Türk mağazası yok <sup class="ref">[37][38][39]</sup>.</td><td>Analizde TL fiyat aralıklı ürün listesi ve Trendyol / Hepsiburada / IKEA TR arama linkleri. Faz 2'de affiliate ve katalog eşleştirme.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>4</td><td><strong>Yineleme zor:</strong> sonucu düzenleyememe, çoklu fotoğraf tutarlılığı yok.</td><td>Aynı girdiyle yeni araç/stil, varyant seçimi, "Sohbette sor". Faz 2'de maske/fırça, sonuç üzerinden düzenleme, oda içi tutarlılık.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>5</td><td><strong>Tasarım → bütçe → usta yolu kopuk:</strong> Arch ve HomeDesigns yalnız kaba tahmin veriyor; Armut ve Ustabilir ayrı uygulamalar <sup class="ref">[90]</sup>.</td><td>TL tadilat kalemleri ve toplam bütçe. Faz 2'de Armut/Ustabilir'den teklif alma.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>6</td><td><strong>Türkçe ve yerel stil zayıf:</strong> AI Remodel, Home AI, Live Home 3D Türkçe değil. Yerel stil yalnız GenRoom'da var <sup class="ref">[68]</sup>.</td><td>TR öncelikli arayüz (EN seçenekli). 5 yerel stil: Modern Türk, Osmanlı Klasik, Kapadokya Taş Ev, Ege, Rustik Köy Evi. Salon/oturma odası ayrımı, balkon. Türkçe sohbet.</td><td class="c"><span class="pill">MVP</span></td></tr>
+      <tr><td>7</td><td><strong>Güven sorunu:</strong> $10/hafta, paywall döngüleri, reklam takibi.</td><td>Haftalık ₺149,99, günde 3 ücretsiz, reklamsız. Paywall yalnız 402 ve PRO özelliklerinde açılıyor. "Aynı yöntemle iptal" ilkesi Faz 1'de.</td><td class="c"><span class="pill">MVP</span></td></tr>
+      <tr><td>8</td><td><strong>Emlakta sanal döşeme dar:</strong> SahiDeko'da 4 Batı stili var; Hepsiemlak ve Emlakjet'te sanal döşeme yok <sup class="ref">[84][87][88]</sup>.</td><td>"Boş odayı döşe" ve "Nesne sil (tüm odayı boşalt)" MVP'de. Faz 2'de toplu işlem, portal boyutları, "sanal olarak döşenmiştir" etiketi.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 2</span></td></tr>
+      <tr><td>9</td><td><strong>Android payı %74 ama rakipler iOS odaklı</strong> (Arch, Ruma yalnız iOS) <sup class="ref">[109]</sup>.</td><td>Expo ile iOS, Android ve web tek kod tabanında; ayrıca Next.js web uygulaması.</td><td class="c"><span class="pill">MVP</span></td></tr>
+      <tr><td>10</td><td><strong>Uyum sıkılaşıyor:</strong> KVKK, abonelik, AI reklam etiketi.</td><td>EXIF/GPS silme, hesap silme, ücretsiz planda "Yapay zekâ ile oluşturulmuştur" etiketi, admin MFA ve denetim kaydı. Faz 1'de standart sözleşme ve bildirim, yüz maskeleme.</td><td class="c"><span class="pill">MVP</span> <span class="pill acc">Faz 1</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>6.1 Konumlandırma</h2>
+  <div class="callout">
+    <p><strong>"Odanı saniyeler içinde yeniden tasarla; neye mal olacağını ve nereden alacağını hemen gör."</strong></p>
+    <p>AI Room, Türkiye'de ev sahibi, kiracı, yeni evlenen ve kentsel dönüşümle yeni daireye geçen kullanıcıya hizmet eder. İkinci aşamada emlakçı ve müteahhide de hizmet eder.</p>
+    <p>Hedef, yapay zekâ ile oluşturulan tasarımı <strong>Türkçe, TL ve yerel ticaret</strong> ile somut bir alışveriş ve tadilat planına dönüştüren ilk uygulama olmak.</p>
+  </div>
+  <div class="grid3">
+    <div class="card"><h3>Yerel zevk</h3><ul><li>Anadolu ve Ege stilleri</li><li>Osmanlı Klasik, Kapadokya</li><li>Salon/oturma odası ayrımı</li><li>10 renkli Türkçe adlandırılmış boya paleti</li></ul></div>
+    <div class="card"><h3>Ticaret ve bütçe</h3><ul><li>TL ürün fiyat aralıkları</li><li>Tadilat kalemleri (m², adet)</li><li>Türk mağaza linkleri</li><li>Gelecekte affiliate ve usta teklifi</li></ul></div>
+    <div class="card"><h3>Güven</h3><ul><li>Reklamsız</li><li>Adil fiyat</li><li>Açık AI etiketi</li><li>EXIF temizliği, hesap silme</li><li>Önerileri yalnız kullanıcı onayıyla uygulayan sohbet</li></ul></div>
+  </div>
+</section>
+
+
+<section class="wide">
+  <h1><span class="num">7</span>Dünya örnekleri → AI Room yaklaşımı</h1>
+  <p class="small">Her temel özellik için tablo dört şeyi gösteriyor: bu özelliği hangi dünya ürünlerinin sunduğu, araştırmada görülen kullanıcı şikâyetleri ve sınırlar, AI Room'un MVP'deki karşılığı, yol haritasındaki adım. Kaynakta bulunmayan bilgi "doğrulanamadı" diye işaretlendi. ᵃ yalnız kullanıcının ekran görüntülerinde görüldü.</p>
+  <table class="compact" style="font-size:7.4pt">
+    <thead><tr><th style="width:11%">Özellik</th><th style="width:27%">Dünya örnekleri</th><th style="width:23%">Kullanıcı şikâyetleri / sınırlar</th><th style="width:22%">AI Room — MVP'de</th><th style="width:17%">AI Room — yol haritası</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Fotoğraftan yeniden tasarım</strong></td><td>AI Remodel ("Instant Remodel"), Home AI, Arch (10+ stil), Remodel AI (40+), Interior AI (56 stil, 68 oda), HomeDesigns AI (200+ stil, "Structure-Lock"), Gemini/ChatGPT (prompt ile, ücretsiz) <sup class="ref">[1][5][9][10][15][16][42]</sup></td><td>Pencere, kapı ve duvarlar "yarı yarıya" değişiyor; yatak odası oturma odasına dönüşüyor (AI Remodel). Stok görsel hissi (Arch). Fotoğraf kırpılıyor (Home AI).</td><td>15 stil, 5'i yerel. Her prompt'ta yapı koruma cümlesi; oda tipi kullanıcı seçimi; 1–4 varyant; gerçek Gemini çıktısında pencere ve perspektif korundu (Şekil A).</td><td>Faz 1 kalite değerlendirme seti; Faz 2 derinlik/kenar koşullama; stil kataloğu admin ile büyür.</td></tr>
+      <tr><td><strong>Boş odayı döşeme (sanal döşeme)</strong></td><td>AI Remodel ("Furnish Empty Room"), Interior AI, HomeDesigns, REimagineHome, Spacely, Collov (çok açılı tutarlı döşeme), Zillow / Virtual Staging AI, SahiDeko (4 stil), GenRoom <sup class="ref">[15]–[22][68][84]</sup></td><td>Orantısız büyük mobilya (AI Remodel). SahiDeko yalnız Profesyonel Emlak Ofislerine açık. Gerçeğe aykırı ilan fotoğrafına ceza riski <sup class="ref">[124]</sup>.</td><td>"Boş Odayı Döşe" aracı + yerel stiller; ücretsiz planda AI etiketi.</td><td>Faz 2: toplu emlakçı işleme, portal boyutları, "sanal olarak döşenmiştir" etiketi. Faz 3: ölçek farkındalığı.</td></tr>
+      <tr><td><strong>Nesne silme / odayı boşaltma</strong></td><td>AI Remodel ("Remove Objects"), Interior AI, HomeDesigns, REimagineHome, Spacely, Collov, IKEA Kreativ (mevcut mobilyayı siler), Pinterest Restyle (dokunarak sil), Remodel AI (kement maske) <sup class="ref">[10][37][38]</sup></td><td>Remodel AI: otomatik maske hatalı, düzenleme seçilen alanın dışına taşıyor, maskelemede çökme.</td><td>"Nesne Sil": hedefi metinle tarif etme veya "odayı tamamen boşalt" anahtarı.</td><td>Faz 2: fırça/maske ile bölge düzenleme.</td></tr>
+      <tr><td><strong>Eşya değiştirme</strong></td><td>AI Remodel ("Replace"), Remodel AI, HomeDesigns, REimagineHome, IKEA Kreativ (IKEA ürününü yerleştirme), Pinterest (dokunarak değiştir)</td><td>Home AI'da değiştirme kısmi. Ürünler ABD kataloglarına bağlı.</td><td>"Değiştir": hedef → yerine metin alanları.</td><td>Faz 2: Türk perakende kataloğundan gerçek ürünle değiştirme.</td></tr>
+      <tr><td><strong>Duvar boyası</strong></td><td>AI Remodel, Home AI, Remodel AI, Interior AI, REimagineHome, Pinterest Restyle. TR: Marshall Gör&amp;Boya (AR), Filli Boya i-Colour (fotoğrafla boyama); ikisi de AI değil <sup class="ref">[77][78]</sup></td><td>Boya markalarının görselleştiricileri eski veya dağınık; Dyo'da yok <sup class="ref">[79]</sup>.</td><td>10 Türkçe adlı renk + hex; yalnız duvarlar değişir, gerisi korunur.</td><td>Faz 3: marka renk kodu eşleştirme (B2B2C SDK).</td></tr>
+      <tr><td><strong>Zemin</strong></td><td>AI Remodel ("New Flooring"), Remodel AI, HomeDesigns. TR: NG Kütahya 3D kartela, Ege "Room Scene", KaleCore <sup class="ref">[80][81]</sup></td><td>Home AI'da mevcut zemini koruyamama şikâyeti.</td><td>8 zemin malzemesi; perspektif ve yansıma talimatı.</td><td>Faz 3: seramik/parke SKU eşleştirme ve m² bütçesi.</td></tr>
+      <tr><td><strong>Dış cephe</strong></td><td>AI Remodel, Home AI, Remodel AI (çatı görselleştirici), Interior AI, HomeDesigns, REimagineHome, Spacely, Collov</td><td>Arch'ta dış cephe desteği doğrulanamadı. Özelliğe özgü şikâyet araştırmada görülmedi.</td><td>"Dış Cephe" aracı; stil kataloğundan mimari uyarlama, bina formu korunur.</td><td>Faz 2: malzeme bazlı cephe bütçesi.</td></tr>
+      <tr><td><strong>Bahçe / teras</strong></td><td>AI Remodel, Home AI, Arch, Remodel AI, Interior AI, HomeDesigns, REimagineHome, Spacely, Collov (havuz ve çim düzeltme)</td><td>Bahçe için alışveriş listesi veya bütçe sunan ürün araştırmada görülmedi.</td><td>"Bahçe &amp; Teras" (Türkiye'de balkon ve teras vurgusu); Ege ve Akdeniz stilleri.</td><td>Faz 2: bitki ve dış mekân mobilyası alışveriş listesi.</td></tr>
+      <tr><td><strong>Referans görselden stil</strong></td><td>AI Remodel ("Reference Style"), Interior AI, REimagineHome, Spacely, Homestyler, Pinterest Restyle, Gemini</td><td>Bu özelliğe özgü kullanıcı şikâyeti araştırmada görülmedi.</td><td>Claude referansı tek cümlelik stil tarifine çeviriyor; bu sayede her görsel sağlayıcıyla çalışıyor (PRO).</td><td>Faz 2: çoklu görsel destekleyen modellerde doğrudan referans.</td></tr>
+      <tr><td><strong>AI tasarım sohbeti</strong></td><td>AI Remodelᵃ (yeni), REimagineHome (sohbetle tasarım), Homestyler Spark, Planner 5D AI Studio (~), Karaca AIDA (alışveriş asistanı, ChatGPT içinde), Gemini/ChatGPT <sup class="ref">[17][23][73]</sup></td><td>Türkçe tasarım sohbeti sunan bir rakip doğrulanamadı. Karaca AIDA oda görselleştirmesi yapmıyor.</td><td>Türkçe Claude sohbeti; görsel ekleme; öneriler yalnız katalog kimlikleriyle dönüyor ve kullanıcı dokunmadan çalışmıyor (AI-01).</td><td>Faz 2: sohbetten bütçe ve usta teklifine geçiş.</td></tr>
+      <tr><td><strong>Alışveriş (bu görünümü satın al)</strong></td><td>HomeDesigns ("Shop the exact furniture"), REimagineHome (ürün keşfi), IKEA Kreativ, Wayfair Muse, Pinterest, AI Remodel "Furniture Finder"ᵃ <sup class="ref">[16][17][37][39]</sup></td><td>Hepsi ABD veya global kataloglara bağlı; Türk perakendeci kataloğu sunan yok.</td><td>Analizde TL fiyat aralıklı ürün listesi; Trendyol, Hepsiburada ve IKEA TR arama linkleri.</td><td>Faz 2: affiliate ve gerçek katalog eşleştirme (stok + fiyat).</td></tr>
+      <tr><td><strong>Bütçe / maliyet tahmini</strong></td><td>Arch (mobilya + malzeme + işçilik), HomeDesigns (bütçe tahmincisi), magicplan ve Houzz Pro (profesyonel tahmin) <sup class="ref">[9][48]</sup></td><td>Tüketici tarafında yalnız kaba tahmin var. Türkiye'de TL tadilat maliyeti tahmin eden araç bulunamadı.</td><td>Ürün ve tadilat kalemleri (m², adet), TL min–maks, toplamlar ve uyarı metni; analiz önbellekli.</td><td>Faz 2: dinamik fiyat kaynakları; Armut/Ustabilir teklifi.</td></tr>
+      <tr><td><strong>2D / 3D plan</strong></td><td>Live Home 3D, Planner 5D, Homestyler, Coohom, RoomSketcher, Floorplanner, Sweet Home 3D, HomeDesigns (2D→3D), AI Remodel "Floor Plan"ᵃ</td><td>Live Home 3D: çökme, kayıp kayıt, yavaşlama. Planner 5D: 2D/3D uyumsuzluğu (2021–22 yorumları).</td><td>MVP kapsamında değil.</td><td>Faz 3: RoomPlan tabanlı plan + AI restyle birleşimi.</td></tr>
+      <tr><td><strong>Tarama / AR</strong></td><td>Live Home 3D (LiDAR, AR), Planner 5D (kamera yakalama), Polycam, Twindo, magicplan, IKEA Kreativ; TR'de IKEA ve Karaca AR <sup class="ref">[36][71][72]</sup></td><td>Tarayıcılarda üretken AI zayıf; Polycam'de dışa aktarma ve ölçüm paywall arkasında.</td><td>MVP kapsamında değil.</td><td>Faz 3: ölçü + ölçek farkındalıklı mobilya + sığma kontrolü.</td></tr>
+      <tr><td><strong>Emlakçı sanal döşeme</strong></td><td>Interior AI, REimagineHome (toplu işlem, ajans), Spacely, Collov, Zillow, SahiDeko, GenRoom (portal boyutları, "₺15/foto" iddiası), QuickStaging, Oda Studio (durumu doğrulanamadı)</td><td>SahiDeko'da 4 Batı stili var; Hepsiemlak ve Emlakjet'te yok. Etiketsiz görsellere Reklam Kurulu cezası riski.</td><td>Döşe ve boşalt araçları hazır; B2B paneli yok.</td><td>Faz 2: emlakçı paneli, toplu işlem, otomatik etiket, fotoğraf başı fiyat.</td></tr>
+      <tr><td><strong>Fiyat / paywall</strong></td><td>AI Remodel (₺399,99/hafta, sert paywall, reklam + IAP), Home AI (yaklaşık 5 dk ücretsiz, tekrarlayan paywall), Arch (günlük limit), Interior AI ($49+/ay), HomeDesigns (24 saatte 3 ücretsiz), Live Home 3D (ömür boyu lisans)</td><td>"$10/hafta çok pahalı"; paywall döngüleri; reklam takibi.</td><td>Günde 3 ücretsiz; ₺149,99/hafta, ₺349,99/ay, ₺1.299,99/yıl; reklamsız; paywall yalnız 402 ve PRO'da.</td><td>Faz 1: RevenueCat + iyzico/PayTR, yenileme bildirimi, kolay iptal.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">8</span>MVP kapsamı</h1>
+  <p>MVP beş ayrı uygulamadan oluşuyor. Hepsi <code>docs/API.md</code>'deki tek sözleşmeye uyuyor.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="v">28/28</div><div class="l">Uçtan uca smoke testi (<code>scripts/smoke.mjs</code>)</div></div>
+    <div class="kpi"><div class="v">8/8</div><div class="l">AI servisi birim testleri (pytest)</div></div>
+    <div class="kpi"><div class="v">5/5</div><div class="l">Uygulamada typecheck, lint ve build temiz</div></div>
+    <div class="kpi"><div class="v">~9 sn</div><div class="l">Gerçek Gemini 2.5 Flash Image üretim süresi (tek örnek, Modern Türk)</div></div>
+  </div>
+
+  <h2>8.1 Bileşenler</h2>
+  <table class="compact">
+    <thead><tr><th style="width:15%">Bileşen</th><th style="width:27%">Teknoloji</th><th>Sorumluluk</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Backend</strong><br><code>apps/backend</code></td><td>NestJS 12, Prisma 7.10 (pg adaptörü), PostgreSQL 15, Redis (ioredis), jose (JWT), Argon2id, sharp, zod</td><td>Kimlik (misafir, kayıt, giriş, refresh), görsel yükleme ve imzalı URL, kredi/kota, tasarım işleri, analiz, sohbet proxy'si, ilham, katalog, admin API, denetim kaydı, seed (15 stil + TOTP'li admin).</td></tr>
+      <tr><td><strong>AI servisi</strong><br><code>apps/ai-service</code></td><td>Python 3.13, FastAPI, Pillow, httpx, Anthropic SDK; uv ile paketleme</td><td>Görsel üretimi: <code>mock</code> / <code>gemini</code> (Gemini 2.5 Flash Image) / <code>replicate</code> (FLUX.1 Kontext Pro). Claude ile tasarım sohbeti, alışveriş/bütçe analizi ve referans stil tarifi. Yalnız iç ağdan, <code>X-Internal-Token</code> ile.</td></tr>
+      <tr><td><strong>Web</strong><br><code>apps/web</code></td><td>Next.js 16 (App Router), React 19, Tailwind</td><td>Tanıtım sayfası, giriş/kayıt/misafir, Stüdyo, Tasarımlarım, tasarım detayı, Sohbet, Fiyatlar. BFF: token'lar httpOnly çerezde, Origin kontrolü, CSP.</td></tr>
+      <tr><td><strong>Admin</strong><br><code>apps/admin</code></td><td>Next.js 16.4.4, Tailwind v4, lucide-react</td><td>Parola + TOTP ile giriş. Gösterge paneli (KPI, günlük grafik, araç/stil dağılımı), kullanıcılar (plan, askıya alma, kredi), tasarım moderasyonu ve öne çıkarma, stil kataloğu, denetim kaydı, sistem durumu.</td></tr>
+      <tr><td><strong>Mobil</strong><br><code>apps/mobile</code></td><td>Expo SDK 58, React Native 0.88 (Node 22), Expo Router, SecureStore, ImagePicker</td><td>Onboarding, Ana Sayfa, İlham, Tasarımlarım, Profil, oluşturma akışı, sonuç (önce/sonra, analiz), sohbet, paywall (TL), giriş/kayıt. TR/EN.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>8.2 Kullanıcı akışları</h2>
+  <ol>
+    <li><strong>İlk açılış.</strong> Cihaz kimliği üretilir, misafir hesap otomatik açılır (<code>/auth/guest</code>). Onboarding'de KVKK metni gösterilir, ardından Ana Sayfa açılır.</li>
+    <li><strong>Tasarım oluşturma.</strong>
+      <ol>
+        <li>Araç seçilir: Anında Yenile, Boş Odayı Döşe, Nesne Sil, Değiştir, Duvar Boyası, Yeni Zemin, Dış Cephe, Bahçe &amp; Teras, Referans Stil, Kendi Tarifin.</li>
+        <li>Fotoğraf seçilir: galeri, kamera ya da örnek fotoğraf.</li>
+        <li>Araca göre alanlar dolar: stil, oda, zemin, renk, hedef/yerine, ek istek, referans görsel, "odayı tamamen boşalt".</li>
+        <li>1–4 varyant seçilir ve üretim başlatılır.</li>
+      </ol></li>
+    <li><strong>Sonuç.</strong> Önce/sonra kaydırıcı, varyantlar, favori ve paylaşım. "Analiz et" düğmesi TL ürün listesini, tadilat kalemlerini, toplamları ve mağaza linklerini gösterir. "Sohbette sor" düğmesi sohbete geçer.</li>
+    <li><strong>Sohbet.</strong> Kullanıcı görsel ekleyip soru sorar. Claude Türkçe öneri verir. Öneri çipine dokunulunca oluşturma ekranı önceden doldurulmuş açılır; üretim kullanıcı onayı olmadan başlamaz.</li>
+    <li><strong>Kota ve paywall.</strong>
+      <ul>
+        <li>Ücretsiz plan günde 3 üretim hakkı verir; her varyant 1 hak.</li>
+        <li>Hak bitince 402 döner ve paywall açılır.</li>
+        <li>PRO stil ve araçlar <code>pro_required</code> hatası döndürür.</li>
+        <li>Başarısız üretimde hak iade edilir.</li>
+      </ul></li>
+    <li><strong>Admin döngüsü.</strong> Admin MFA ile girer. Başarılı bir tasarımı öne çıkarır ve tasarım İlham akışında görünür. Bu işlem denetim kaydına yazılır.</li>
+  </ol>
+
+  <h2>8.3 Katalog (backend <code>catalog.data.ts</code>)</h2>
+  <div class="grid2">
+    <table class="compact">
+      <caption>Araçlar (10)</caption>
+      <thead><tr><th>Araç</th><th>Girdiler</th><th class="c">PRO</th></tr></thead>
+      <tbody>
+        <tr><td>Anında Yenile</td><td>stil, oda, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Boş Odayı Döşe</td><td>stil, oda, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Nesne Sil</td><td>oda, hedef, tümünü boşalt</td><td class="c">—</td></tr>
+        <tr><td>Değiştir</td><td>oda, hedef, yerine</td><td class="c">—</td></tr>
+        <tr><td>Duvar Boyası</td><td>oda, renk (10 palet)</td><td class="c">—</td></tr>
+        <tr><td>Yeni Zemin</td><td>oda, zemin (8 tür)</td><td class="c">—</td></tr>
+        <tr><td>Dış Cephe</td><td>stil, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Bahçe &amp; Teras</td><td>stil, ek istek</td><td class="c">—</td></tr>
+        <tr><td>Referans Stil <span class="pill acc">YENİ</span></td><td>oda, referans görsel, ek istek</td><td class="c y">✓</td></tr>
+        <tr><td>Kendi Tarifin <span class="pill acc">YENİ</span></td><td>oda, serbest metin (≤300)</td><td class="c y">✓</td></tr>
+      </tbody>
+    </table>
+    <div>
+      <table class="compact">
+        <caption>Stiller (15; admin panelinden düzenlenebilir)</caption>
+        <tbody>
+          <tr><td>Modern · Modern Türk · Japandi · İskandinav · Ege · Minimalist · Akdeniz · Endüstriyel · Bohem · Rustik Köy Evi · Yazlık/Sahil</td><td class="c">Ücretsiz</td></tr>
+          <tr><td>Osmanlı Klasik · Kapadokya Taş Ev · Mid-Century · Art Deco Lüks</td><td class="c">PRO</td></tr>
+        </tbody>
+      </table>
+      <table class="compact">
+        <caption>Odalar (12), zeminler (8), renkler (10)</caption>
+        <tbody>
+          <tr><td><strong>Oda</strong></td><td>Oturma Odası, Salon (Misafir), Yatak Odası, Mutfak, Banyo, Yemek Odası, Çocuk Odası, Çalışma Odası, Antre, Balkon, Stüdyo Daire, Ofis</td></tr>
+          <tr><td><strong>Zemin</strong></td><td>Meşe Parke, Balıksırtı, Beyaz Mermer, Traverten, Cilalı Beton, Terrakota, Mat Seramik, Halıfleks</td></tr>
+          <tr><td><strong>Renk</strong></td><td>Kırık Beyaz, Kum Beji, Adaçayı, Zeytin, Ege Mavisi, Gece Mavisi, Terrakota, Gül Kurusu, Hardal, Antrasit</td></tr>
+          <tr><td><strong>Plan</strong></td><td>Haftalık ₺149,99 · Aylık ₺349,99 (POPÜLER) · Yıllık ₺1.299,99 (EN AVANTAJLI)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2>8.4 Uygulama bazında ekranlar</h2>
+  <table class="compact">
+    <thead><tr><th style="width:14%">Uygulama</th><th>Ekranlar / modüller</th></tr></thead>
+    <tbody>
+      <tr><td>Mobil</td><td>
+        <ul>
+          <li>Açılış kapısı (yükleniyor ve çevrimdışı durumları).</li>
+          <li>Onboarding (3 slayt + KVKK).</li>
+          <li>Sekmeler: Ana Sayfa, İlham, Tasarımlarım, Profil. iOS/Android'de NativeTabs, web'de özel üst çubuk.</li>
+          <li><code>create</code>, <code>design/[id]</code>, <code>chat</code>, <code>paywall</code> (modal), <code>auth</code> (modal).</li>
+          <li>Önce/sonra kaydırıcı (PanResponder ile, web'de de çalışır), analiz görünümü, ilerleme katmanı.</li>
+        </ul></td></tr>
+      <tr><td>Web</td><td>
+        <ul>
+          <li>Tanıtım sayfası: önce/sonra vitrin, özellikler, nasıl çalışır, fiyat, SSS.</li>
+          <li><code>/giris</code>, <code>/studio</code>, <code>/tasarimlarim</code>, <code>/tasarim/[id]</code>, <code>/sohbet</code>, <code>/fiyatlar</code>.</li>
+          <li>BFF uçları: <code>/api/auth/*</code> ve <code>/api/v1/[...path]</code>.</li>
+        </ul></td></tr>
+      <tr><td>Admin</td><td>
+        <ul>
+          <li><code>/login</code> (e-posta + parola + TOTP).</li>
+          <li>Gösterge paneli: 7/30/90 gün filtresi, 6 KPI kutusu, günlük grafikler ve tablo görünümü.</li>
+          <li>Kullanıcılar ve kullanıcı detayı, Tasarımlar, Stiller (yan panel düzenleyici), Denetim kaydı, Sistem.</li>
+          <li>Proxy ile oturum yönlendirmesi, nonce'lu CSP.</li>
+        </ul></td></tr>
+      <tr><td>Backend</td><td>
+        <ul>
+          <li>37 uç: 23 kullanıcı ve genel uç (sağlık, katalog, imzalı görsel, stil önizleme ve ilham dahil), 14 admin ucu (MFA girişi dahil).</li>
+          <li>Seed betiği ve <code>admin:otp</code> yardımcı betiği (yalnız geliştirme ortamında).</li>
+        </ul></td></tr>
+      <tr><td>AI servisi</td><td>
+        <ul>
+          <li><code>/internal/v1/generate</code>, <code>/analyze</code>, <code>/chat</code>, <code>/health</code>; canlılık için <code>/healthz</code>.</li>
+          <li>Sağlayıcı soyutlaması, prompt şablonları, deterministik demo yanıtları.</li>
+        </ul></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">9</span>MVP detay dokümanı</h1>
+  <p>Bu bölüm her modülü ayrı ayrı ele alıyor: amacı, gerçek uçları veya ekranları, ana akışları, kabul kriterleri ve MVP kapsamı dışında kalanlar. Uç ve rota adları depodaki koddan alındı.</p>
+  <ul class="small">
+    <li><b class="y">✓</b> Kabul kriteri bu sürümde testle veya derlemeyle doğrulandı.</li>
+    <li><b class="p">◐</b> Uygulandı, ayrı test bekliyor.</li>
+    <li><b class="n">○</b> Kapsam dışı / sonraki faz.</li>
+  </ul>
+
+  <h2>9.1 Backend — NestJS + PostgreSQL + Redis (<code>apps/backend</code>)</h2>
+  <p><strong>Amaç:</strong> Tüm istemcilerin tek API kapısı. Kimlik, yetki, kota/kredi, görsel yaşam döngüsü, tasarım işleri, admin işlemleri ve denetim burada. AI servisine yalnız bu modül bağlanır.</p>
+  <table class="compact" style="font-size:7.5pt">
+    <thead><tr><th style="width:5%">#</th><th style="width:38%">Uç (/v1 öneki)</th><th style="width:14%">Erişim</th><th>Görev</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>GET /health</code></td><td>Genel</td><td>DB, Redis ve AI servisi durumu</td></tr>
+      <tr><td>2</td><td><code>GET /catalog</code></td><td>Genel</td><td>Araçlar, stiller, odalar, zeminler, renkler, planlar (TR/EN)</td></tr>
+      <tr><td>3</td><td><code>GET /styles/:id/preview.jpg</code></td><td>Genel</td><td>Stil paletli örnek oda önizlemesi (kullanıcı verisi içermez)</td></tr>
+      <tr><td>4</td><td><code>GET /images/:id?exp&amp;sig</code></td><td>İmzalı URL</td><td>Görsel teslimi (HMAC, 24 saat)</td></tr>
+      <tr><td>5</td><td><code>GET /inspiration</code></td><td>Genel</td><td>Öne çıkarılan tasarımlar + stil kartları</td></tr>
+      <tr><td>6–10</td><td><code>POST /auth/guest · /register · /login · /refresh · /logout</code></td><td>Genel (limitli)</td><td>Misafir hesap, kayıt (misafir yükseltme), giriş, rotasyonlu refresh, çıkış</td></tr>
+      <tr><td>11–13</td><td><code>GET · PATCH · DELETE /me</code></td><td>Kullanıcı</td><td>Profil, dil, KVKK hesap silme</td></tr>
+      <tr><td>14–15</td><td><code>POST /uploads · /uploads/sample</code></td><td>Kullanıcı</td><td>Fotoğraf yükleme (base64, ≤10 MB) ve yerleşik örnek fotoğraf</td></tr>
+      <tr><td>16</td><td><code>POST /designs</code></td><td>Kullanıcı</td><td>Tasarım üretimi (senkron; kota, PRO kontrolü, iade)</td></tr>
+      <tr><td>17–20</td><td><code>GET /designs · GET/PATCH/DELETE /designs/:id</code></td><td>Kullanıcı</td><td>Listeleme (imleçli), detay, favori, silme</td></tr>
+      <tr><td>21</td><td><code>POST /designs/:id/analysis</code></td><td>Kullanıcı</td><td>Alışveriş listesi + TL bütçe + mağaza linkleri (önbellekli)</td></tr>
+      <tr><td>22</td><td><code>POST /chat</code></td><td>Kullanıcı</td><td>AI tasarım sohbeti (en fazla 20 mesaj, 3 görsel)</td></tr>
+      <tr><td>23</td><td><code>POST /billing/dev-upgrade</code></td><td>Kullanıcı (yalnız geliştirme)</td><td>7 günlük demo PRO; üretimde 404</td></tr>
+      <tr><td>24</td><td><code>POST /admin/auth/login</code></td><td>Genel (limitli)</td><td>Parola + TOTP; admin audience token'ı</td></tr>
+      <tr><td>25</td><td><code>GET /admin/stats</code></td><td>Admin + MFA</td><td>KPI'lar, günlük seri, araç/stil dağılımı</td></tr>
+      <tr><td>26–29</td><td><code>GET /admin/users · GET/PATCH /admin/users/:id · POST /admin/users/:id/credits</code></td><td>Admin + MFA</td><td>Arama, detay (ledger, son tasarımlar), plan/askı, gerekçeli kredi</td></tr>
+      <tr><td>30–32</td><td><code>GET /admin/designs · PATCH/DELETE /admin/designs/:id</code></td><td>Admin + MFA</td><td>Filtreli moderasyon, öne çıkarma, silme</td></tr>
+      <tr><td>33–35</td><td><code>GET/POST /admin/styles · PATCH /admin/styles/:id</code></td><td>Admin + MFA</td><td>Stil kataloğu yönetimi (prompt, palet, PRO, sıra)</td></tr>
+      <tr><td>36–37</td><td><code>GET /admin/audit · GET /admin/system</code></td><td>Admin + MFA</td><td>Denetim kaydı; AI/DB/Redis durumu</td></tr>
+    </tbody>
+  </table>
+  <div class="grid2">
+    <div class="card">
+      <h3>Ana akış: <code>POST /designs</code></h3>
+      <ol>
+        <li>Şema doğrulaması (zod, <code>strict</code>); kullanıcı ve IP hız limitleri.</li>
+        <li>PRO araç veya stil kontrolü (<code>pro_required</code>, 402); referans görsel zorunluluğu.</li>
+        <li>Girdi ve referans görselin sahiplik kontrolü (yoksa 404).</li>
+        <li><code>PENDING</code> kaydı açılır. Hak <code>SELECT … FOR UPDATE</code> ile düşülür: önce günlük ücretsiz, sonra kredi. Yetmezse 402.</li>
+        <li>Semafor sonrası AI servisi çağrılır. Çıktı yeniden kodlanır; ücretsiz planda AI etiketi eklenir; <code>RESULT</code> görseller kaydedilir.</li>
+        <li><code>SUCCEEDED</code> → <code>Design</code> DTO, imzalı URL'lerle. Hata olursa <code>FAILED</code> olur ve hak iade edilir.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Misafir → katalog → örnek → 2 varyant üretimi → kota 3→1 (smoke)</li>
+        <li><b class="y">✓</b> Kota aşımında 402; PRO stilde <code>pro_required</code> (smoke)</li>
+        <li><b class="y">✓</b> Başka kullanıcının tasarımı ve görseli 404 (smoke)</li>
+        <li><b class="y">✓</b> Refresh yeniden kullanımında aile iptali; admin API'de uygulama token'ı 401 (smoke)</li>
+        <li><b class="y">✓</b> Admin MFA, kod tekrarı reddi, öne çıkarma ve denetim kaydı (smoke)</li>
+        <li><b class="y">✓</b> Typecheck, lint ve build temiz</li>
+        <li><b class="p">◐</b> Ban sonrası anında iptal, misafir yükseltmede oturum yenileme</li>
+        <li><b class="n">○</b> Şifre sıfırlama ve e-posta doğrulama (AUT-03) — Faz 1</li>
+        <li><b class="n">○</b> Asenkron kuyruk, S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.2 AI servisi — Python FastAPI (<code>apps/ai-service</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Amaç ve uçlar</h3>
+      <p>Model ve sağlayıcı bağımlılığını üründen ayırır. Görselleri ve modelden gelen çıktıyı güvenilmez sayıp her seferinde doğrular.</p>
+      <ul>
+        <li><code>POST /internal/v1/generate</code>: 10 araç şablonu, 1–4 varyant, referans stil (Claude tarifi).</li>
+        <li><code>POST /internal/v1/analyze</code>: JSON şemalı ürün ve tadilat listesi, Pillow paleti.</li>
+        <li><code>POST /internal/v1/chat</code>: katalog kimlikleriyle süzülen öneriler.</li>
+        <li><code>GET /internal/v1/health</code>: sağlayıcı ve sohbet durumu. <code>GET /healthz</code>: canlılık.</li>
+        <li><strong>Sağlayıcılar:</strong> <code>mock</code> (çevrimdışı), <code>gemini</code> (Gemini 2.5 Flash Image), <code>replicate</code> (FLUX.1 Kontext Pro). Claude için <code>ANTHROPIC_API_KEY</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Token'sız ve yanlış token 401; doğru token 200 (pytest)</li>
+        <li><b class="y">✓</b> 2 varyant üretimi; prompt'ta stil ve oda var (pytest)</li>
+        <li><b class="y">✓</b> Kullanıcı metninde &lt;, {, satır sonu temizleniyor (pytest)</li>
+        <li><b class="y">✓</b> Görsel olmayan girdi ve bilinmeyen alan reddediliyor (pytest)</li>
+        <li><b class="y">✓</b> Referans aracı referans görsel istiyor; analiz demo yanıtında palet ve min ≤ maks (pytest)</li>
+        <li><b class="y">✓</b> Sohbet önerileri katalog dışı kimlikleri düşürüyor; güvensiz ayarla açılış reddediliyor (pytest)</li>
+        <li><b class="y">✓</b> Gerçek Gemini çağrısı ~9 sn'de sonuç döndürdü (tek örnek)</li>
+        <li><b class="n">○</b> Maske ile düzenleme, derinlik/kenar koşullama, yüz maskeleme, NSFW moderasyonu, kendi GPU modeli</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.3 Web — Next.js (<code>apps/web</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Rotalar</h3>
+      <ul>
+        <li><code>/</code>: tanıtım (önce/sonra vitrin, özellikler, nasıl çalışır, fiyat, SSS).</li>
+        <li><code>/giris</code>: giriş, kayıt, "misafir olarak dene".</li>
+        <li><code>/studio</code>: araç → fotoğraf/örnek → seçenekler → üretim → sonuç ve analiz.</li>
+        <li><code>/tasarimlarim</code>, <code>/tasarim/[id]</code>, <code>/sohbet</code>, <code>/fiyatlar</code>.</li>
+        <li><strong>BFF:</strong> <code>/api/auth/guest · login · register · logout</code>, <code>/api/v1/[...path]</code> (Bearer ekleme, tek seferlik refresh, Origin kontrolü), <code>/api/download</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Lint, typecheck ve production build temiz</li>
+        <li><b class="y">✓</b> Stüdyoda bahçe sonucu ve Tasarımlarım ekranı çalışıyor (ekran görüntüsü 21–22)</li>
+        <li><b class="p">◐</b> Token'ın tarayıcıya hiç inmemesi ve mutasyonlarda Origin reddi — web BFF için ayrı test</li>
+        <li><b class="n">○</b> iyzico/PayTR ödemesi, şifre sıfırlama, SEO içerik sayfaları</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.4 Admin — Next.js (<code>apps/admin</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Rotalar</h3>
+      <ul>
+        <li><code>/login</code>: e-posta + parola + 6 haneli TOTP.</li>
+        <li><code>/</code> gösterge paneli: 7/30/90 gün filtresi, 6 KPI kutusu, günlük grafik ve tablo görünümü, araç/stil dağılımı.</li>
+        <li><code>/users</code>, <code>/users/[id]</code>: arama; askıya alma, plan ve bitiş tarihi, gerekçeli kredi, kredi hareketleri.</li>
+        <li><code>/designs</code>: filtreler, önce/sonra kartları, öne çıkarma, onaylı silme.</li>
+        <li><code>/styles</code>, <code>/audit</code>, <code>/system</code>.</li>
+        <li><strong>BFF:</strong> <code>/api/auth/login · logout · me</code>, <code>/api/admin/[...path]</code>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> Lint, typecheck ve build temiz; açık ve koyu temada render hatası yok; 390 px'te taşma yok</li>
+        <li><b class="y">✓</b> Oturumsuz sayfa → <code>/login</code> (307); oturumsuz API → 401</li>
+        <li><b class="y">✓</b> Origin yok veya yanlış → 403; çerez <code>HttpOnly; SameSite=strict; Max-Age=7200</code></li>
+        <li><b class="y">✓</b> Gerçek backend ile MFA girişi, gösterge paneli ve moderasyon (ekran görüntüsü 30–32)</li>
+        <li><b class="n">○</b> Çoklu admin rolleri, passkey, sunucu tarafı çıkış iptali, gelir raporları, CSV dışa aktarma</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.5 Mobil — Expo SDK 58 (<code>apps/mobile</code>)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Rotalar (Expo Router)</h3>
+      <ul>
+        <li><code>_layout</code>: açılış kapısı (yükleniyor, çevrimdışı, ilk açılışta onboarding).</li>
+        <li><code>onboarding</code>: 3 slayt + KVKK metni.</li>
+        <li><code>(tabs)/index</code> (Ana Sayfa), <code>inspire</code> (İlham), <code>designs</code> (Tasarımlarım), <code>profile</code> (Profil).</li>
+        <li><code>create</code>, <code>design/[id]</code>, <code>chat</code>, <code>paywall</code> (modal), <code>auth</code> (modal).</li>
+        <li><strong>Altyapı:</strong> <code>lib/api.ts</code> (tipli istemci, tek uçuşlu refresh), SecureStore, cihaz kimliği, TR/EN, önce/sonra kaydırıcı.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Kabul kriterleri</h3>
+      <ul style="list-style:none;padding-left:0">
+        <li><b class="y">✓</b> <code>tsc</code>, <code>expo lint</code>, <code>expo export --platform web</code> temiz; <code>expo-doctor</code> 20/20</li>
+        <li><b class="y">✓</b> Ana sayfa, yeni tasarım, önce/sonra (AI etiketi) ve alışveriş/bütçe ekranları çalışıyor (ekran görüntüsü 10–13)</li>
+        <li><b class="p">◐</b> iOS/Android fiziksel cihaz ve simülatör testi</li>
+        <li><b class="n">○</b> RevenueCat IAP, anlık bildirim, çevrimdışı önbellek, RoomPlan/LiDAR</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>9.6 MoSCoW önceliklendirmesi (Beta sürümü için)</h2>
+  <table class="compact">
+    <thead><tr><th style="width:13%">Öncelik</th><th>Kapsam</th><th style="width:20%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
+      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; şifre sıfırlama ve e-posta doğrulama; S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Should</strong></td><td>iyzico/PayTR web ödemesi; kredi paketi satışı; anlık bildirim; ürün analitiği ve çökme raporlama; ETBİS/İYS; "Doğrulanacak" güvenlik testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Could</strong></td><td>Maske/fırça düzenleme; sonuç üzerinden yineleme; affiliate ve katalog eşleştirme; usta teklifi; emlakçı paneli; yüz/belge maskeleme</td><td>Faz 2</td></tr>
+      <tr><td><strong>Won't</strong> (bu sürümde değil)</td><td>LiDAR/RoomPlan ölçü, 2D/3D plan, AR, video yürüyüşü, marka SDK'sı, kendi GPU modeli, yeni ülkeler</td><td>Faz 3</td></tr>
+    </tbody>
+  </table>
+
+  <h2>9.7 Özellik → modül izlenebilirliği</h2>
+  <table class="compact" style="font-size:7.4pt">
+    <thead><tr><th style="width:17%">Özellik</th><th style="width:19%">Mobil</th><th style="width:16%">Web</th><th style="width:13%">Admin</th><th style="width:20%">Backend / AI servisi</th><th>Kanıt</th></tr></thead>
+    <tbody>
+      <tr><td>Misafir giriş / kayıt</td><td><code>_layout</code>, <code>auth</code></td><td><code>/giris</code>, <code>/api/auth/*</code></td><td>—</td><td><code>/auth/guest · register</code></td><td>Smoke (misafir)</td></tr>
+      <tr><td>Fotoğraf / örnek yükleme</td><td><code>create</code></td><td><code>/studio</code></td><td>—</td><td><code>/uploads · /uploads/sample</code></td><td>Smoke (örnek, 415 reddi)</td></tr>
+      <tr><td>Tasarım üretimi (10 araç)</td><td><code>create</code></td><td><code>/studio</code></td><td>—</td><td><code>/designs</code> → <code>/internal/v1/generate</code></td><td>Smoke + pytest + Gemini</td></tr>
+      <tr><td>Kota, kredi, PRO</td><td><code>paywall</code></td><td><code>/fiyatlar</code></td><td>Kredi düzenleme</td><td><code>UsersService.charge/refund</code></td><td>Smoke (402, pro_required)</td></tr>
+      <tr><td>Önce/sonra, varyant, favori</td><td><code>design/[id]</code>, <code>designs</code></td><td><code>/tasarim/[id]</code>, <code>/tasarimlarim</code></td><td>—</td><td><code>/designs/:id</code></td><td>Ekran 12, 22; smoke (silme)</td></tr>
+      <tr><td>Analiz + TL bütçe + mağaza</td><td><code>design/[id]</code></td><td><code>/tasarim/[id]</code></td><td>—</td><td><code>/designs/:id/analysis</code> → <code>/analyze</code></td><td>Smoke + ekran 13</td></tr>
+      <tr><td>AI tasarım sohbeti</td><td><code>chat</code></td><td><code>/sohbet</code></td><td>—</td><td><code>/chat</code> → <code>/internal/v1/chat</code></td><td>Smoke + pytest</td></tr>
+      <tr><td>İlham akışı</td><td><code>inspire</code></td><td><code>/</code></td><td>Öne çıkarma</td><td><code>/inspiration</code>, <code>/admin/designs/:id</code></td><td>Smoke</td></tr>
+      <tr><td>KVKK hesap silme</td><td><code>profile</code></td><td>—</td><td>—</td><td><code>DELETE /me</code></td><td>Kod incelemesi</td></tr>
+      <tr><td>Admin MFA ve denetim</td><td>—</td><td>—</td><td><code>/login</code>, <code>/audit</code></td><td><code>/admin/auth/login</code>, <code>/admin/audit</code></td><td>Smoke + ekran 30</td></tr>
+      <tr><td>KPI ve sistem durumu</td><td>—</td><td>—</td><td><code>/</code>, <code>/system</code></td><td><code>/admin/stats · /admin/system · /health</code></td><td>Smoke + ekran 31</td></tr>
+      <tr><td>Stil kataloğu yönetimi</td><td>Katalogdan okur</td><td>Katalogdan okur</td><td><code>/styles</code></td><td><code>/admin/styles</code>, <code>/catalog</code></td><td>Admin build + elle kontrol</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">10</span>Teknik mimari</h1>
+  <p>Mimari üç ilkeye dayanıyor:</p>
+  <ol>
+    <li><strong>İstemciler AI servisini hiç görmez.</strong></li>
+    <li><strong>Tarayıcı token tutmaz.</strong> Token'lar Next.js BFF tarafında, httpOnly çerezde durur.</li>
+    <li><strong>Tüm yetki kararları backend'de verilir.</strong></li>
+  </ol>
+  <p>AI servisi ayrı bir Python sürecidir. Model ve sağlayıcı değişiklikleri ürünün geri kalanını etkilemez.</p>
+
+  <figure>
+    <svg viewBox="0 0 830 430" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3D4A45"/></marker>
+      </defs>
+      <!-- sunucu sınırı -->
+      <rect x="8" y="198" width="814" height="224" rx="10" fill="#F4F8F6" stroke="#1F6F5C" stroke-dasharray="6 4"/>
+      <text x="132" y="214" font-size="10" fill="#1F6F5C" font-weight="700">Sunucu tarafı (TLS arkasında)</text>
+      <rect x="648" y="206" width="168" height="98" rx="8" fill="#FFF6F1" stroke="#E07A4F" stroke-dasharray="4 3"/>
+      <text x="656" y="300" font-size="8.5" fill="#9A4A26">İç ağ · dışarı kapalı (NET-04)</text>
+
+      <!-- istemciler -->
+      <rect x="20" y="18" width="190" height="58" rx="9" fill="#fff" stroke="#1F6F5C" stroke-width="1.4"/>
+      <text x="115" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#141414">Mobil uygulama</text>
+      <text x="115" y="60" text-anchor="middle" font-size="9.5" fill="#5F5E5A">Expo · iOS / Android / Web</text>
+
+      <rect x="260" y="18" width="150" height="58" rx="9" fill="#fff" stroke="#1F6F5C" stroke-width="1.4"/>
+      <text x="335" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#141414">Web tarayıcı</text>
+      <text x="335" y="60" text-anchor="middle" font-size="9.5" fill="#5F5E5A">son kullanıcı</text>
+
+      <rect x="450" y="18" width="150" height="58" rx="9" fill="#fff" stroke="#1F6F5C" stroke-width="1.4"/>
+      <text x="525" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#141414">Admin tarayıcı</text>
+      <text x="525" y="60" text-anchor="middle" font-size="9.5" fill="#5F5E5A">yöneticiler (MFA)</text>
+
+      <!-- BFF -->
+      <rect x="250" y="118" width="170" height="54" rx="9" fill="#E3F0EC" stroke="#1F6F5C"/>
+      <text x="335" y="140" text-anchor="middle" font-size="11.5" font-weight="700">Web BFF</text>
+      <text x="335" y="157" text-anchor="middle" font-size="9" fill="#3D4A45">Next.js :3000 · CSP · Origin</text>
+
+      <rect x="440" y="118" width="170" height="54" rx="9" fill="#E3F0EC" stroke="#1F6F5C"/>
+      <text x="525" y="140" text-anchor="middle" font-size="11.5" font-weight="700">Admin BFF</text>
+      <text x="525" y="157" text-anchor="middle" font-size="9" fill="#3D4A45">Next.js :3001 · nonce CSP</text>
+
+      <!-- backend -->
+      <rect x="20" y="224" width="600" height="72" rx="10" fill="#1F6F5C"/>
+      <text x="320" y="252" text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff">Backend API — NestJS :4000 /v1</text>
+      <text x="320" y="272" text-anchor="middle" font-size="9.5" fill="#E3F0EC">Kimlik · JWT/refresh · Kota (Redis) · Yükleme &amp; EXIF temizleme · İmzalı URL · Tasarımlar · Analiz · Sohbet · Admin · Denetim</text>
+      <text x="320" y="287" text-anchor="middle" font-size="9" fill="#BFE0D6">her sorgu userId ile kapsamlı (AZ-01) · hata → genel JSON (EXC-01)</text>
+
+      <!-- AI servisi -->
+      <rect x="660" y="224" width="146" height="64" rx="9" fill="#E07A4F"/>
+      <text x="733" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">AI servisi</text>
+      <text x="733" y="264" text-anchor="middle" font-size="9" fill="#FFF1EA">FastAPI :8001</text>
+      <text x="733" y="278" text-anchor="middle" font-size="8.5" fill="#FFF1EA">prompt · doğrulama · sağlayıcı</text>
+
+      <!-- sağlayıcılar -->
+      <rect x="652" y="330" width="162" height="84" rx="9" fill="#fff" stroke="#E07A4F" stroke-width="1.3"/>
+      <text x="733" y="350" text-anchor="middle" font-size="10.5" font-weight="700">Dış AI sağlayıcıları</text>
+      <text x="733" y="366" text-anchor="middle" font-size="9" fill="#3D4A45">Gemini 2.5 Flash Image</text>
+      <text x="733" y="379" text-anchor="middle" font-size="9" fill="#3D4A45">Replicate · FLUX.1 Kontext Pro</text>
+      <text x="733" y="392" text-anchor="middle" font-size="9" fill="#3D4A45">Claude (sohbet · analiz)</text>
+      <text x="733" y="405" text-anchor="middle" font-size="8.5" fill="#7A7A7A">mock (anahtarsız demo)</text>
+
+      <!-- veri katmanı -->
+      <rect x="40" y="340" width="150" height="54" rx="8" fill="#fff" stroke="#3D4A45"/>
+      <text x="115" y="362" text-anchor="middle" font-size="11" font-weight="700">PostgreSQL 15</text>
+      <text x="115" y="379" text-anchor="middle" font-size="9" fill="#5F5E5A">Prisma 7 · 8 tablo</text>
+      <rect x="230" y="340" width="150" height="54" rx="8" fill="#fff" stroke="#3D4A45"/>
+      <text x="305" y="362" text-anchor="middle" font-size="11" font-weight="700">Redis</text>
+      <text x="305" y="379" text-anchor="middle" font-size="9" fill="#5F5E5A">atomik hız/kota sayaçları</text>
+      <rect x="420" y="340" width="180" height="54" rx="8" fill="#fff" stroke="#3D4A45"/>
+      <text x="510" y="362" text-anchor="middle" font-size="11" font-weight="700">Görsel deposu</text>
+      <text x="510" y="379" text-anchor="middle" font-size="9" fill="#5F5E5A">UUID · 0600 · (S3/R2 Faz 1)</text>
+
+      <!-- oklar -->
+      <g stroke="#3D4A45" stroke-width="1.4" fill="none" marker-end="url(#ah)">
+        <path d="M115 76 V222"/>
+        <path d="M335 76 V116"/>
+        <path d="M525 76 V116"/>
+        <path d="M335 172 V222"/>
+        <path d="M525 172 V222"/>
+        <path d="M620 256 H658"/>
+        <path d="M733 288 V328"/>
+        <path d="M115 296 V338"/>
+        <path d="M305 296 V338"/>
+        <path d="M510 296 V338"/>
+      </g>
+      <g font-size="8.8" fill="#3D4A45">
+        <text x="122" y="140">HTTPS · Bearer</text>
+        <text x="122" y="152">(SecureStore)</text>
+        <text x="342" y="98">httpOnly çerez · Lax</text>
+        <text x="532" y="98">httpOnly çerez · Strict</text>
+        <text x="342" y="196">Bearer</text>
+        <text x="532" y="196">Bearer (aud=admin)</text>
+        <text x="622" y="248" font-size="8">X-Internal-</text>
+        <text x="622" y="270" font-size="8">Token</text>
+        <text x="740" y="314">HTTPS</text>
+      </g>
+      <path d="M598 294 C 640 330, 640 190, 612 76" stroke="#E07A4F" stroke-width="1.2" fill="none" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+      <text x="626" y="150" font-size="8.5" fill="#9A4A26">imzalı görsel</text>
+      <text x="626" y="161" font-size="8.5" fill="#9A4A26">URL (24 sa)</text>
+    </svg>
+    <figcaption>Şekil 1 — AI Room bileşenleri ve güven sınırları. Görseller istemcilere yalnız süreli, HMAC imzalı URL ile verilir (FIL-04).</figcaption>
+  </figure>
+
+  <h2>10.1 Veri modeli (PostgreSQL, Prisma)</h2>
+  <table class="compact">
+    <thead><tr><th style="width:16%">Tablo</th><th>Önemli alanlar</th><th style="width:30%">Not</th></tr></thead>
+    <tbody>
+      <tr><td><strong>User</strong></td><td>email?, passwordHash?, role (USER/ADMIN), status (ACTIVE/BANNED), isGuest, deviceHash?, plan, planExpiresAt, credits, freeUsedOn/freeUsedCount, locale, totpSecret?, totpLastStep?, tokenVersion, lastSeenAt</td><td>Misafir → kayıt yükseltmesi; günlük kota İstanbul saatiyle; <code>tokenVersion</code> toplu iptal için</td></tr>
+      <tr><td>RefreshToken</td><td>userId, familyId, tokenHash (SHA-256), expiresAt, usedAt, revokedAt</td><td>Tek kullanımlık rotasyon; yeniden kullanımda aile iptali</td></tr>
+      <tr><td>Image</td><td>id (UUID), ownerId, kind (UPLOAD/SAMPLE/RESULT), width, height, bytes, designId?</td><td>Dosya diskte <code>{id}.jpg</code>; sahiplik kontrolü</td></tr>
+      <tr><td><strong>Design</strong></td><td>userId, tool, styleId?, roomId?, params (JSON), prompt, provider, status, error, inputImageId, creditsUsed, freeUsed, favorite, featured, finishedAt</td><td>Başarısızlıkta iade için harcanan hak tutulur</td></tr>
+      <tr><td>Analysis</td><td>designId, imageId, data (JSON)</td><td>(designId, imageId) benzersiz → önbellek</td></tr>
+      <tr><td>Style</td><td>id, nameTr/En, descriptionTr/En, prompt, palette[], isPro, isActive, sortOrder</td><td>Admin yönetir; prompt sunucuda kalır</td></tr>
+      <tr><td>CreditLedger</td><td>userId, delta, reason (daily_free, generation, refund, admin: …), refId</td><td>Her hak hareketi izlenebilir</td></tr>
+      <tr><td>AuditLog</td><td>actorId?, action, targetType, targetId, meta (JSON), ip</td><td>Admin işlemleri ve başarısız admin girişleri</td></tr>
+    </tbody>
+  </table>
+
+  <h2>10.2 API özeti</h2>
+  <table class="compact">
+    <thead><tr><th style="width:18%">Grup</th><th>Uçlar (<code>/v1</code>)</th></tr></thead>
+    <tbody>
+      <tr><td>Kimlik</td><td><code>POST /auth/guest · /auth/register · /auth/login · /auth/refresh · /auth/logout</code></td></tr>
+      <tr><td>Hesap</td><td><code>GET/PATCH/DELETE /me</code> (DELETE: KVKK hesap ve veri silme)</td></tr>
+      <tr><td>Katalog ve içerik</td><td><code>GET /catalog · /inspiration · /styles/:id/preview.jpg · /health</code></td></tr>
+      <tr><td>Görseller</td><td><code>POST /uploads</code> (base64 JSON, ≤10 MB) · <code>POST /uploads/sample</code> · <code>GET /images/:id?exp&amp;sig</code></td></tr>
+      <tr><td>Tasarımlar</td><td><code>POST /designs</code> (senkron, 5–60 sn) · <code>GET /designs</code> · <code>GET/PATCH/DELETE /designs/:id</code> · <code>POST /designs/:id/analysis</code></td></tr>
+      <tr><td>Sohbet ve ödeme</td><td><code>POST /chat</code> · <code>POST /billing/dev-upgrade</code> (yalnız geliştirme ortamında)</td></tr>
+      <tr><td>Admin (aud=admin + MFA)</td><td><code>POST /admin/auth/login</code> · <code>GET /admin/stats</code> · <code>GET/PATCH /admin/users[/:id]</code> · <code>POST /admin/users/:id/credits</code> · <code>GET/PATCH/DELETE /admin/designs[/:id]</code> · <code>GET/POST/PATCH /admin/styles[/:id]</code> · <code>GET /admin/audit</code> · <code>GET /admin/system</code></td></tr>
+      <tr><td>AI servisi (iç)</td><td><code>POST /internal/v1/generate · /analyze · /chat</code> · <code>GET /internal/v1/health</code> (hepsi <code>X-Internal-Token</code> ister)</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Hata biçimi her yerde <code>{"error":{"code","message"}}</code>. Kodlar: <code>insufficient_credits</code> / <code>pro_required</code> 402, <code>rate_limited</code> 429 (+Retry-After), <code>ai_unavailable</code> 502, <code>busy</code> 503.</p>
+
+  <h2>10.3 AI hattı</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Görsel üretimi</h3>
+      <ol>
+        <li>Backend girdinin sahipliğini doğrular, hakkı satır kilidiyle düşer ve <code>PENDING</code> kaydı açar.</li>
+        <li>Stil prompt'u veritabanından, oda ve zemin tanımları katalogdan İngilizce olarak AI servisine gider.</li>
+        <li>AI servisi araç şablonunu kurar. Tüm şablonlarda şu sabit cümle var: <em>"Keep the exact same camera angle, perspective, room geometry, walls, windows, doors and ceiling…"</em></li>
+        <li>Kullanıcı metni NFKC'ye normalize edilir; kontrol karakterleri, &lt;&gt;{}` ve tırnaklar temizlenir; metin kısaltılıp tırnak içinde <em>veri</em> olarak yerleştirilir.</li>
+        <li>Varyantlar sağlayıcıda paralel ve semaforla üretilir: mock, Gemini veya Replicate.</li>
+        <li>Çıktı Pillow ve sharp ile yeniden çözülüp kodlanır. Ücretsiz planda <em>"AI Room · Yapay zekâ ile oluşturulmuştur"</em> etiketi eklenir.</li>
+        <li>Hata olursa tasarım <code>FAILED</code> olur ve hak iade edilir.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Analiz, sohbet, referans</h3>
+      <ul>
+        <li><strong>Analiz:</strong> Claude, JSON şemalı yapılandırılmış çıktıyla ürünler (TL min/maks, arama ifadesi) ve tadilat kalemlerini döndürür. Palet Pillow kuantizasyonuyla görselden hesaplanır. Mağaza linkleri ve toplamlar backend'de kurulur.</li>
+        <li><strong>Sohbet:</strong> sistem talimatı görselleri ve metni <em>veri</em> sayar. Öneriler yalnız katalogdaki kimliklerle dönebilir; AI servisi geçersiz kimlikleri ayıklar.</li>
+        <li><strong>Referans stil:</strong> Claude referans fotoğrafı tek cümlelik İngilizce stil tarifine çevirir; tarif görsel modelin prompt'una eklenir.</li>
+        <li><strong>Model:</strong> varsayılan <code>claude-opus-5-5</code>; sohbet <code>effort: low</code>, analiz <code>medium</code>. Sunucu tarafı <code>fallbacks: "default"</code> açık. <code>ANTHROPIC_MODEL</code> ile değiştirilebilir.</li>
+        <li><strong>Anahtar yoksa:</strong> deterministik Türkçe demo yanıtları döner ("[Demo]").</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>10.4 Ölçekleme notları</h2>
+  <ul>
+    <li><strong>Backend durumsuz:</strong> yük dengeleyici arkasında yatay ölçeklenir. Kota sayaçları zaten Redis'te ortak. Üretim eşzamanlılığı şu an örnek başına bir semafor; Faz 1'de Redis tabanlı iş kuyruğuna (ör. BullMQ) ve anlık bildirime taşınacak.</li>
+    <li><strong>Görsel deposu:</strong> yerel diskten S3 uyumlu nesne depolamaya (S3/R2) geçecek. İmzalı URL mantığı aynı kalır; CDN eklenebilir.</li>
+    <li><strong>AI servisi:</strong> bağımsız ölçeklenir. Maliyet büyüdüğünde kendi GPU modeli (ControlNet/derinlik + açık ağırlıklı modeller) eklenebilir; sağlayıcı arayüzü buna hazır.</li>
+    <li><strong>Veritabanı:</strong> listeler <code>(userId, createdAt)</code> indeksli ve imleç tabanlı sayfalanıyor. Admin günlük istatistikleri tek SQL ile İstanbul saat dilimine göre hesaplanıyor.</li>
+  </ul>
+</section>
+
+<section>
+  <h1><span class="num">11</span>Güvenlik ve uyum</h1>
+  <p>Güvenlik tasarımı kullanıcının red-team kataloğuna göre yapıldı. Katalog OWASP ASVS 5.0.0 eşlemeli 108 kontrol içeriyor. İlk güvenli yayın için önce <strong>P0</strong> kontrolleri karşılandı: <strong>26 kontrol</strong> uygulandı, <strong>13'ü otomatik testle doğrulandı</strong>.</p>
+  <p class="small">Durum dili kataloğa uygun:</p>
+  <ul class="small">
+    <li><strong>Geçti:</strong> bu sürümde testle kanıtlandı.</li>
+    <li><strong>Doğrulanacak:</strong> uygulandı, testi bekliyor.</li>
+    <li><strong>Uygulanmaz:</strong> kapsam dışında.</li>
+  </ul>
+  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (28/28), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
+  <table class="compact">
+    <thead><tr><th style="width:9%">Kontrol</th><th style="width:47%">Uygulama</th><th style="width:30%">Kanıt</th><th class="c" style="width:14%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td>FIL-01</td><td>MIME izin listesi + içerik imzası + beyan–imza eşleşmesi; sharp ile çözüp yeniden JPEG kodlama (EXIF/GPS silinir); ≤10 MB, ≥256 px; sunucu UUID'si, web kökü dışında, 0600 izinli dosya.</td><td>Smoke: PDF baytları "image/jpeg" diye yüklenince 415</td><td class="c y">Geçti</td></tr>
+      <tr><td>FIL-02</td><td>sharp <code>limitInputPixels</code> 50 MP, <code>failOn:error</code>; AI servisinde Pillow <code>MAX_IMAGE_PIXELS</code>; sağlayıcı çıktısı da yeniden çözülüp kodlanıyor.</td><td>AI testi: görsel olmayan girdi 400/415. Sıkıştırma bombası testi bekliyor.</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>FIL-04</td><td>HMAC-SHA256 imzalı, 24 saatlik görsel URL'si; görsel modele girmeden önce sahiplik kontrolü; görsel ucunda CORP cross-origin, diğer uçlarda same-site.</td><td>Smoke: imza bozulunca 403; başka kullanıcı görseli kullanamıyor (404)</td><td class="c y">Geçti</td></tr>
+      <tr><td>RES-01</td><td>Redis'te IP, kullanıcı ve uç bazında atomik sayaç (INCRBY + PEXPIRE NX); günlük kota <code>SELECT … FOR UPDATE</code> ile; örnek başına üretim semaforu; gövde limitleri (15 MB / 40 MB).</td><td>Smoke: kota 3→1 düştü; kota aşımında 402</td><td class="c y">Geçti</td></tr>
+      <tr><td>NET-03</td><td>Varsayılan olarak soket eşi kullanılıyor; <code>TRUSTED_PROXY_HOPS</code> ile X-Forwarded-For sağdan okunuyor, ilk eleman asla alınmıyor.</td><td>Proxy arkasında staging testi gerekli</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>NET-04</td><td>AI servisi yalnız iç ağda; <code>X-Internal-Token</code> sabit zamanlı karşılaştırılıyor; OpenAPI/docs kapalı.</td><td>AI testi: token'sız ve yanlış token 401</td><td class="c y">Geçti</td></tr>
+      <tr><td>KEY-01</td><td>zod/pydantic ile açılış kontrolü: sırlar ≥32 karakter, varsayılan görünümlü değer reddediliyor. Üretimde https taban URL, CORS'ta * yok, sırlar birbirinden farklı, mock sağlayıcı yasak.</td><td>AI testi: güvensiz ayarla açılış reddedildi</td><td class="c y">Geçti</td></tr>
+      <tr><td>KEY-02</td><td>Sırlar yalnız ortam değişkeninde; <code>.env</code> git dışında; admin bilgileri git dışındaki 0600 dosyaya yazılıyor, stdout'a hiç basılmıyor.</td><td>CI'da sır taraması eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>LOG-01</td><td>JSON istek logu: request-id, kullanıcı, eş IP, süre. Admin işlemleri ve başarısız admin girişleri <code>AuditLog</code> tablosuna yazılıyor.</td><td>Smoke: "design.feature" denetim kaydında</td><td class="c y">Geçti</td></tr>
+      <tr><td>LOG-02</td><td>Logda redaksiyon: authorization, password, token, data, text, prompt, sig ve benzeri. Sorgu dizesi loglanmıyor (imzalı URL içerdiği için).</td><td>İşaretli sır ile log araması yapılacak</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>EXC-01</td><td>Genel hata filtresi iç ayrıntı sızdırmıyor; Redis yoksa hız sınırlayıcı 503 ile kapalı kalıyor; AI servisinde de ara katman yakalama var.</td><td>Hata enjeksiyonu testi gerekli</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AI-01</td><td>Sohbetin durum değiştiren aracı yok; öneriler veri olarak dönüyor ve kullanıcı dokunmadan çalışmıyor. Kimlikler katalogla süzülüyor; görüntü içindeki talimatlar yok sayılıyor; prompt'taki kullanıcı metni çitleniyor.</td><td>AI testleri: katalog dışı stil null'a düşüyor; &lt;, {, satır sonu temizleniyor</td><td class="c y">Geçti</td></tr>
+      <tr><td>AI-02</td><td>RAG yok (tenant sızıntısı yüzeyi yok). LLM çıktısı istemcilerde yalnız düz metin olarak gösteriliyor.</td><td>İstemci kod incelemesi</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AUT-01</td><td>Admin girişi tek adımda parola + TOTP (RFC 6238). Kod tek kullanımlık (son adım saklanıyor). Admin token'ı yalnız <code>amr:[pwd,otp]</code> ile veriliyor.</td><td>Smoke: OTP'siz red; MFA ile giriş; aynı kodun tekrarı reddedildi</td><td class="c y">Geçti</td></tr>
+      <tr><td>AUT-02</td><td>Giriş limitleri: IP başına 30/15 dk, hesap başına 10/15 dk. Genel hata mesajı; olmayan hesapta sahte hash ile zaman eşitleme; kalıcı kilitleme yok.</td><td>Dağıtık deneme testi bekliyor</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>SES-01</td><td>Web ve admin'de token httpOnly çerezde (Lax / Strict), mobilde SecureStore'da; URL'de token yok.</td><td>Admin BFF: HttpOnly, SameSite=strict, Max-Age=7200 doğrulandı</td><td class="c y">Geçti (admin)</td></tr>
+      <tr><td>SES-02</td><td>Misafir → kayıt yükseltmesinde <code>tokenVersion</code> artıyor ve eski oturumlar iptal ediliyor; cihaz bağı kaldırılıyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>SES-04</td><td>Askıya almada tüm access token'lar (<code>tokenVersion</code>) ve refresh aileleri iptal ediliyor; guard'lar durumu her istekte yeniden okuyor.</td><td>Ayrı test eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>SES-05</td><td>Refresh tek kullanımlık; yeniden kullanım tüm aileyi iptal ediyor; eşzamanlı yarış koşullu güncellemeyle kapatıldı.</td><td>Smoke: yeniden kullanım 401, aile iptal</td><td class="c y">Geçti</td></tr>
+      <tr><td>TOK-01</td><td>jose ile yalnız HS256; iss, aud, exp ve <code>typ=access</code> doğrulanıyor; kid'den anahtar seçimi yok.</td><td><code>alg:none</code> ve süresi dolmuş token testi eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>TOK-02</td><td>Ayrı audience'lar: <code>ai-room-app</code> ve <code>ai-room-admin</code>. Admin token'ı 2 saatlik ve refresh'siz.</td><td>Smoke: uygulama token'ı admin API'de 401</td><td class="c y">Geçti</td></tr>
+      <tr><td>AZ-01</td><td>Her sorgu <code>userId</code> ile kapsamlı; başkasının kaydı 404.</td><td>Smoke: başka kullanıcı tasarımı okuyamıyor, görseli kullanamıyor</td><td class="c y">Geçti</td></tr>
+      <tr><td>AZ-02</td><td>Sorgu düzeyinde ikinci bariyer (<code>findFirst {id, userId}</code>). PostgreSQL RLS yok.</td><td>RLS kararı Faz 2</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>AZ-05</td><td>Admin guard rol, durum ve sürümü her istekte yeniden kontrol ediyor; kendini askıya alma engelli; tüm yazma işlemleri denetleniyor.</td><td>Rol düşürme testi eklenecek</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>WEB-01</td><td>AI ve kullanıcı metni HTML olarak işlenmiyor; CSP var (admin'de nonce'lu).</td><td>CSP başlık denetimi (<code>redteam headers</code>)</td><td class="c p">Doğrulanacak</td></tr>
+      <tr><td>WEB-03</td><td>BFF, durum değiştiren isteklerde Origin ve Sec-Fetch-Site kontrolü yapıyor.</td><td>Admin BFF: Origin yok veya yanlış → 403</td><td class="c y">Geçti (admin)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>11.1 Açık işler (P1 ve olgunlaştırma)</h2>
+  <ul>
+    <li><strong>Dağıtık üretim kuyruğu:</strong> Redis/BullMQ ile global eşzamanlılık ve maliyet tavanı. Şu an semafor örnek başına.</li>
+    <li><strong>Yüklemelerde güvenlik taraması:</strong> zararlı içerik ve AV taraması; içerik moderasyonu (NSFW).</li>
+    <li><strong>KVKK rehberine uygun maskeleme:</strong> yüz, aile fotoğrafı ve belge bulanıklaştırma.</li>
+    <li><strong>Saklama politikası:</strong> kullanılmayan yüklemeler ve sonuçlar için TTL'li temizlik işi. Bugün hesap silme dosyaları da siliyor; süreli temizlik henüz yok.</li>
+    <li><strong>Admin çıkışı:</strong> sunucu tarafında iptal ucu yok; token 2 saatte kendiliğinden düşüyor. Admin için passkey (PKY) değerlendirilmeli.</li>
+    <li><strong>"Doğrulanacak" kontrollerin testleri:</strong> pozitif ve negatif DVT senaryoları yazılacak. Bağımlılık taraması ve CVE önceliklendirme (<code>redteam prioritize</code>).</li>
+    <li><strong>Gözlem:</strong> Sigma kuralları ve alarm (LOG). Yayından önce bağımsız sızma testi.</li>
+  </ul>
+
+  <h2>11.2 KVKK ve tüketici mevzuatı kontrol listesi</h2>
+  <table class="compact">
+    <thead><tr><th>Madde</th><th style="width:44%">AI Room durumu</th><th class="c" style="width:13%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td>Aydınlatma metni ve onay ekranı</td><td>Mobil onboarding'de KVKK metni var; hukuki metin avukatla son haline getirilecek</td><td class="c p">Kısmi</td></tr>
+      <tr><td>EXIF/GPS konum verisinin silinmesi</td><td>Her yüklemede yeniden kodlama ile siliniyor</td><td class="c y">Var</td></tr>
+      <tr><td>Yurt dışına aktarım (AI sağlayıcıları)</td><td>Standart sözleşme ve 5 iş günü içinde bildirim <sup class="ref">[118][119]</sup>; açık rıza akışı; Türkiye'de işleme seçeneği değerlendirilmeli</td><td class="c n">Faz 1</td></tr>
+      <tr><td>Yüz, aile fotoğrafı ve belge maskeleme</td><td>KVKK üretken AI rehberi önerisi <sup class="ref">[120]</sup></td><td class="c n">Faz 2</td></tr>
+      <tr><td>Eğitimde kullanmama / ayrı rıza</td><td>AI Room görselleri kendi model eğitiminde kullanmıyor; ileride kullanırsa ayrı rıza alınacak. Dış sağlayıcıların API veri kullanım koşulları sözleşmede ayrıca doğrulanmalı.</td><td class="c p">Kısmi</td></tr>
+      <tr><td>Silme hakkı</td><td><code>DELETE /me</code> hesap, tasarım, analiz ve görsel dosyalarını siliyor</td><td class="c y">Var</td></tr>
+      <tr><td>Abonelik: yenileme öncesi bildirim, aynı yöntemle iptal</td><td>Gerçek IAP ve iyzico ile birlikte <sup class="ref">[121][122]</sup></td><td class="c n">Faz 1</td></tr>
+      <tr><td>AI içerik etiketi</td><td>Ücretsiz planda görsel etiket; emlak çıktısına "sanal olarak döşenmiştir" etiketi Faz 2'de <sup class="ref">[123][124]</sup></td><td class="c p">Kısmi</td></tr>
+      <tr><td>ETBİS ve İYS kayıtları</td><td>Web satışı ve pazarlama başlamadan önce <sup class="ref">[116][117]</sup></td><td class="c n">Faz 1</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">12</span>İş modeli ve fiyatlandırma</h1>
+  <h2>12.1 Gelir hatları</h2>
+  <table class="compact">
+    <thead><tr><th style="width:20%">Hat</th><th>Model</th><th style="width:22%">Durum</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Freemium → PRO</strong></td><td>
+        <ul>
+          <li>Ücretsiz plan günde 3 üretim hakkı (her varyant 1 hak) ve görünür AI etiketi içerir.</li>
+          <li>PRO etiketsizdir; 4 PRO stil (Osmanlı Klasik, Kapadokya, Mid-Century, Art Deco) ve 2 PRO araç (Referans Stil, Kendi Tarifin) açar.</li>
+          <li>PRO'da günde 100 üretimlik adil kullanım sınırı var.</li>
+          <li>Fiyatlar: haftalık ₺149,99, aylık ₺349,99, yıllık ₺1.299,99.</li>
+        </ul></td><td>MVP'de katalog ve kota hazır; ödeme demo. Gerçek IAP Faz 1.</td></tr>
+      <tr><td>Kredi paketleri</td><td>Ek üretim hakkı; ledger ve admin kredi düzenleme mevcut.</td><td>Satış Faz 1</td></tr>
+      <tr><td>Ticaret (affiliate)</td><td>"Bu görünümü satın al": Türk perakendecilerin ürünlerine yönlendirme komisyonu. Abonelik havuzunun darlığına (%89,2 yurt dışı geliri <sup class="ref">[112]</sup>) karşı ikinci gelir hattı.</td><td>MVP'de arama linki; anlaşmalar Faz 2</td></tr>
+      <tr><td>B2B emlak</td><td>Fotoğraf başı veya paket fiyatla sanal döşeme ve boşaltma; portal boyutları ve etiket. GenRoom'un emlakçıya "fotoğraf başı ₺15" iddiası bir referans noktası <sup class="ref">[69]</sup>.</td><td>Faz 2</td></tr>
+      <tr><td>Marka ortaklıkları</td><td>Boya kodu (Marshall, Filli Boya, Dyo) ve seramik SKU'su (Kale, VitrA, NG, Ege) ile beyaz etiket görselleştirici veya SDK.</td><td>Faz 3</td></tr>
+      <tr><td>Müteahhit / GYO</td><td>Kentsel dönüşüm ve yeni konut projeleri için "boş daireyi döşe + bütçe" teslim paketi.</td><td>Faz 2–3</td></tr>
+      <tr><td>Usta / iç mimar lead'i</td><td>Armut veya Ustabilir ortaklığı ya da lead başına ücret (İstanbul'da 3.314 iç mimar <sup class="ref">[90]</sup>).</td><td>Faz 2</td></tr>
+    </tbody>
+  </table>
+
+  <h2>12.2 Birim ekonomi — örnek hesap (varsayımlar)</h2>
+  <div class="callout warn"><p><strong>Uyarı:</strong> Bu bölümdeki KDV, mağaza komisyonu ve görsel başı AI maliyeti <strong>varsayımdır</strong>. Gerçek sağlayıcı fiyat listeleri, kur ve mağaza programlarıyla doğrulanmalıdır. Yalnız dijital hizmet vergisi oranı (%5) kaynaktan alındı <sup class="ref">[113]</sup>.</p></div>
+  <div class="grid2">
+    <table class="compact">
+      <caption>Abone başına net gelir (KDV %20 ve mağaza komisyonu %15 varsayımı; DHV %5)</caption>
+      <thead><tr><th>Plan</th><th class="r">Fiyat</th><th class="r">KDV hariç</th><th class="r">Komisyon sonrası</th><th class="r">Net (DHV sonrası)</th></tr></thead>
+      <tbody>
+        <tr><td>Haftalık</td><td class="r">₺149,99</td><td class="r">₺124,99</td><td class="r">₺106,24</td><td class="r"><strong>₺100,93</strong></td></tr>
+        <tr><td>Aylık</td><td class="r">₺349,99</td><td class="r">₺291,66</td><td class="r">₺247,91</td><td class="r"><strong>₺235,51</strong></td></tr>
+        <tr><td>Yıllık</td><td class="r">₺1.299,99</td><td class="r">₺1.083,33</td><td class="r">₺920,83</td><td class="r"><strong>₺874,79</strong></td></tr>
+        <tr><td colspan="4">Yıllık, komisyon %30 senaryosu</td><td class="r">₺720,41</td></tr>
+      </tbody>
+    </table>
+    <table class="compact">
+      <caption>Yıllık PRO abonenin karşılayabileceği görsel sayısı (net gelirin %40'ı AI maliyetine ayrılırsa)</caption>
+      <thead><tr><th>Görsel başı AI maliyeti (varsayım)</th><th class="r">Komisyon %15</th><th class="r">Komisyon %30</th></tr></thead>
+      <tbody>
+        <tr><td>₺1</td><td class="r">349 görsel/yıl</td><td class="r">288</td></tr>
+        <tr><td>₺2</td><td class="r">174</td><td class="r">144</td></tr>
+        <tr><td>₺4</td><td class="r">87</td><td class="r">72</td></tr>
+        <tr><td>₺8</td><td class="r">43</td><td class="r">36</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Sonuç ve öneriler:</strong></p>
+  <ul>
+    <li>MVP'deki PRO adil kullanım sınırı (günde 100) ekonomik olarak fazla cömert. Lansmanda aylık bir üst sınır ya da kredi tabanlı PRO düşünülmeli.</li>
+    <li>Ücretsiz katmanda düşük maliyetli model ve tek varyant varsayılanı, maliyet maruziyetini azaltır.</li>
+    <li>Analiz önbellekleniyor; aynı görsel için Claude bir kez çağrılıyor.</li>
+    <li>Kendi GPU modeli, ölçek ekonomisine ulaşıldığında maliyeti düşürmenin ana kaldıracı.</li>
+  </ul>
+</section>
+
+<section>
+  <h1><span class="num">13</span>Türkiye'de pazara giriş</h1>
+  <div class="grid2">
+    <div class="card">
+      <h3>Kanallar</h3>
+      <ul>
+        <li><strong>ASO:</strong> Türkçe anahtar kelimeler ("oda tasarımı", "yapay zeka dekorasyon", "ev tasarım", "boyama", "parke"). Önce/sonra mağaza görselleri. Rakiplerin Türkçe olmayan listelerine karşı yerel açıklama.</li>
+        <li><strong>Android öncelikli kampanyalar:</strong> Android payı %74 <sup class="ref">[109]</sup>. Web'de SEO'lu tanıtım sayfası ve web'den ödeme (iyzico/PayTR, taksit).</li>
+        <li><strong>İçerik:</strong> Instagram, TikTok ve Pinterest'te önce/sonra videoları (Pinterest Yaşam Tarzı ücretsiz #1). "Kentsel dönüşüm sonrası yeni dairem", "çeyiz ve yeni ev" temaları <sup class="ref">[125]</sup>.</li>
+        <li><strong>Referans döngüsü:</strong> paylaşılan sonuçta AI Room etiketi ve indirme bağlantısı.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ortaklıklar</h3>
+      <ul>
+        <li><strong>Usta ve iç mimar:</strong> Armut (4,78★, 157 bin puan), Ustabilir (Koçtaş) <sup class="ref">[90][75]</sup>.</li>
+        <li><strong>Emlak:</strong> Hepsiemlak ve Emlakjet/Endeksa'da sanal döşeme yok, kanal fırsatı. sahibinden ile rekabet SahiDeko üzerinden <sup class="ref">[84][87][88]</sup>.</li>
+        <li><strong>Perakende:</strong> Vivense, Bellona, İstikbal, Koçtaş, IKEA, Trendyol, Hepsiburada affiliate programları. Fotoğraftan AI restyle sunan bir perakendeci yok.</li>
+        <li><strong>Boya ve seramik:</strong> Marshall, Filli Boya, Dyo, Kalekim, VitrA, NG Kütahya. Görselleştiricileri eski veya dağınık <sup class="ref">[77]–[82]</sup>.</li>
+        <li><strong>Müteahhit ve GYO:</strong> İstanbul'da 291 bin bölümde dönüşüm sürüyor <sup class="ref">[101]</sup>.</li>
+      </ul>
+    </div>
+  </div>
+  <h2>13.1 KPI'lar</h2>
+  <table class="compact">
+    <thead><tr><th style="width:24%">KPI</th><th>Tanım</th><th style="width:26%">Ölçüm kaynağı</th></tr></thead>
+    <tbody>
+      <tr><td>Aktivasyon</td><td>İlk 24 saatte en az 1 başarılı tasarım üreten yeni kullanıcı oranı</td><td><code>Design</code> + <code>User.createdAt</code></td></tr>
+      <tr><td>Üretim başarı oranı</td><td>SUCCEEDED / (SUCCEEDED + FAILED); sağlayıcı bazında</td><td>Admin gösterge paneli (<code>failedToday</code>)</td></tr>
+      <tr><td>D1 / D7 / D30 tutma</td><td>Kayıttan 1, 7 ve 30 gün sonra tekrar üretim yapan kullanıcı oranı</td><td><code>lastSeenAt</code>, tasarım kayıtları</td></tr>
+      <tr><td>Paywall dönüşümü</td><td>402 / <code>pro_required</code> görüntüleme → abonelik</td><td>IAP olayları (Faz 1)</td></tr>
+      <tr><td>ARPPU / LTV</td><td>Ödeme yapan kullanıcı başına gelir, plan karışımı</td><td>RevenueCat / iyzico</td></tr>
+      <tr><td>Analizden tıklama</td><td>Analiz → mağaza linki tıklama oranı (ticaret hattı)</td><td>Link yönlendirme ölçümü (Faz 2)</td></tr>
+      <tr><td>Görsel başı maliyet</td><td>Sağlayıcı faturası / başarılı görsel</td><td>AI servisi logları + fatura</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Hedef değerler ilk 90 günlük beta ölçümüyle belirlenmeli; bu rapor sayısal hedef öngörmüyor.</p>
+</section>
+
+<section>
+  <h1><span class="num">14</span>Yol haritası</h1>
+  <table class="compact">
+    <thead><tr><th style="width:17%">Faz</th><th>Kapsam</th><th style="width:18%">Çıkış ölçütü</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Faz 0 — MVP</strong><br><small>Tamamlandı, Kasım 2026</small></td><td>
+        <ul>
+          <li>5 bileşen, 10 araç, 15 stil.</li>
+          <li>Analiz ve TL bütçe, sohbet, admin MFA, imzalı URL'ler, kota/kredi.</li>
+          <li>Mock + Gemini + Replicate + Claude sağlayıcıları.</li>
+          <li>Smoke 28/28, AI testleri 8/8, 5 uygulamada typecheck/lint/build temiz.</li>
+        </ul></td><td>Gerçek Gemini çağrısıyla örnek çıktı üretildi (~9 sn)</td></tr>
+      <tr><td><strong>Faz 1 — Beta</strong><br><small>0–6 hafta</small></td><td>
+        <ul>
+          <li>Sağlayıcı kalite değerlendirme seti: yapı koruma, oda tipi, ölçek.</li>
+          <li>Altyapı: S3/R2 depolama, Redis/BullMQ asenkron üretim kuyruğu ve anlık bildirim.</li>
+          <li>Ödeme: RevenueCat IAP (iOS/Android), iyzico/PayTR web ödemesi, yenileme bildirimi ve kolay iptal.</li>
+          <li>Uyum: KVKK aydınlatma/rıza ve yurt dışı aktarım bildirimi, ETBİS/İYS.</li>
+          <li>Ürün izleme: analitik ve çökme raporlama.</li>
+          <li>Dağıtım: TestFlight ve Play kapalı beta, fiziksel cihaz testleri.</li>
+        </ul></td><td>Ödeme yapan ilk kullanıcılar; üretim başarı oranı ölçülüyor</td></tr>
+      <tr><td><strong>Faz 2 — Ürün-pazar uyumu</strong><br><small>6–16 hafta</small></td><td>
+        <ul>
+          <li>Düzenleme: maske/fırça ile bölge düzenleme, sonuç üzerinden yineleme, aynı odanın birden çok fotoğrafında tutarlılık.</li>
+          <li>Ticaret: gerçek katalog eşleştirme ve affiliate.</li>
+          <li>Usta teklifi: Armut/Ustabilir.</li>
+          <li>Emlakçı paneli: toplu sanal döşeme ve boşaltma, portal boyutları, "sanal olarak döşenmiştir" etiketi.</li>
+          <li>Güvenlik ve uyum: yüz/belge maskeleme, RLS kararı, sızma testi.</li>
+        </ul></td><td>Ticaret ve B2B gelir hatları açık</td></tr>
+      <tr><td><strong>Faz 3 — Derinlik</strong><br><small>4–9 ay</small></td><td>
+        <ul>
+          <li>Ölçü: RoomPlan/LiDAR ile ölçü, ölçek farkındalıklı mobilya ve sığma kontrolü, 2D plan.</li>
+          <li>İçerik: video yürüyüşü.</li>
+          <li>Markalar: boya ve seramik SDK'sı (B2B2C), müteahhit/GYO paketleri.</li>
+          <li>Maliyet: kendi GPU modeli.</li>
+          <li>Yeni pazarlar: Azerbaycan, Körfez, Balkanlar, Almanya'daki Türk diasporası.</li>
+        </ul></td><td>Görsel başı maliyet düşer, B2B payı artar</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><p><strong>Varsayım uyarısı:</strong> 14.1–14.3'teki takvim, ekip ve bütçe tahminleri <strong>planlama varsayımıdır</strong>; pazar verisi değildir. Gerçek ücretler, kur, sağlayıcı fiyatları ve ekip hızı ile güncellenmelidir.</p></div>
+
+  <h2>14.1 Takvim (MVP → Beta → v1 → v2)</h2>
+  <figure>
+    <svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif">
+      <g font-size="8.5" fill="#5F5E5A">
+        <text x="190" y="14">Kas '26</text><text x="240" y="14">Ara</text><text x="290" y="14">Oca '27</text><text x="340" y="14">Şub</text><text x="390" y="14">Mar</text>
+        <text x="440" y="14">Nis</text><text x="490" y="14">May</text><text x="540" y="14">Haz</text><text x="590" y="14">Tem</text><text x="640" y="14">Ağu</text>
+      </g>
+      <g stroke="#ECE7DE">
+        <line x1="185" y1="20" x2="185" y2="300"/><line x1="235" y1="20" x2="235" y2="300"/><line x1="285" y1="20" x2="285" y2="300"/><line x1="335" y1="20" x2="335" y2="300"/>
+        <line x1="385" y1="20" x2="385" y2="300"/><line x1="435" y1="20" x2="435" y2="300"/><line x1="485" y1="20" x2="485" y2="300"/><line x1="535" y1="20" x2="535" y2="300"/>
+        <line x1="585" y1="20" x2="585" y2="300"/><line x1="635" y1="20" x2="635" y2="300"/><line x1="685" y1="20" x2="685" y2="300"/>
+      </g>
+      <g font-size="9" fill="#141414">
+        <text x="4" y="38">Altyapı: S3/R2, kuyruk, bildirim</text>
+        <text x="4" y="58">Ödeme: RevenueCat + iyzico/PayTR</text>
+        <text x="4" y="78">Uyum: KVKK, şifre sıfırlama, ETBİS/İYS</text>
+        <text x="4" y="98">Kalite seti + sağlayıcı seçimi</text>
+        <text x="4" y="118">Kapalı beta (TestFlight / Play)</text>
+        <text x="4" y="138">Maske/fırça + yineleme</text>
+        <text x="4" y="158">Ticaret: affiliate + katalog</text>
+        <text x="4" y="178">Emlakçı paneli</text>
+        <text x="4" y="198">Usta teklifi (Armut / Ustabilir)</text>
+        <text x="4" y="218">RoomPlan/LiDAR + plan</text>
+        <text x="4" y="238">Video, marka SDK'sı</text>
+        <text x="4" y="258">Kendi GPU modeli</text>
+        <text x="4" y="278">Yeni pazarlar</text>
+      </g>
+      <g>
+        <rect x="189" y="29" width="71" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="200" y="49" width="60" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="190" y="69" width="70" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="190" y="89" width="55" height="12" rx="3" fill="#1F6F5C"/>
+        <rect x="245" y="109" width="70" height="12" rx="3" fill="#3FB28F"/>
+        <rect x="260" y="129" width="120" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="260" y="149" width="120" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="285" y="169" width="95" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="310" y="189" width="70" height="12" rx="3" fill="#E07A4F"/>
+        <rect x="385" y="209" width="200" height="12" rx="3" fill="#8A6BB8"/>
+        <rect x="435" y="229" width="200" height="12" rx="3" fill="#8A6BB8"/>
+        <rect x="460" y="249" width="175" height="12" rx="3" fill="#8A6BB8"/>
+        <rect x="535" y="269" width="150" height="12" rx="3" fill="#8A6BB8"/>
+      </g>
+      <g font-size="8.5" font-weight="700">
+        <line x1="260" y1="22" x2="260" y2="300" stroke="#1F6F5C" stroke-dasharray="3 3"/><text x="232" y="314" fill="#1F6F5C">Beta (~6. hafta)</text>
+        <line x1="380" y1="22" x2="380" y2="300" stroke="#E07A4F" stroke-dasharray="3 3"/><text x="352" y="314" fill="#9A4A26">v1 (~16. hafta)</text>
+        <line x1="635" y1="22" x2="635" y2="300" stroke="#8A6BB8" stroke-dasharray="3 3"/><text x="608" y="314" fill="#6A4E99">v2 (~9. ay)</text>
+        <line x1="190" y1="22" x2="190" y2="300" stroke="#141414"/><text x="150" y="326" fill="#141414">MVP (3 Kas 2026)</text>
+      </g>
+    </svg>
+    <figcaption>Şekil 2 — Varsayımsal takvim. Faz 1: yeşil, Faz 2: turuncu, Faz 3: mor. Faz 1 ve Faz 2 iş akışları kısmen paralel yürür.</figcaption>
+  </figure>
+
+  <h2>14.2 Ekip ve efor tahmini (adam-hafta, varsayım)</h2>
+  <table class="compact">
+    <thead><tr><th>Rol</th><th class="r">Faz 1 (6 hf)</th><th class="r">Faz 2 (10 hf)</th><th class="r">Faz 3 (~22 hf)</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td>Ürün yöneticisi / kurucu</td><td class="r">6</td><td class="r">10</td><td class="r">22</td><td>Önceliklendirme, ortaklıklar, KPI</td></tr>
+      <tr><td>Backend (NestJS)</td><td class="r">6</td><td class="r">10</td><td class="r">22</td><td>Kuyruk, ödeme webhook'ları, katalog eşleştirme</td></tr>
+      <tr><td>Web + Admin (Next.js)</td><td class="r">4</td><td class="r">8</td><td class="r">11</td><td>Web ödemesi, emlakçı paneli</td></tr>
+      <tr><td>Mobil (Expo / RN)</td><td class="r">6</td><td class="r">10</td><td class="r">22</td><td>IAP, bildirim, maske düzenleyici, RoomPlan</td></tr>
+      <tr><td>AI / ML mühendisi</td><td class="r">4</td><td class="r">10</td><td class="r">22</td><td>Kalite seti, koşullama, kendi model</td></tr>
+      <tr><td>Ürün tasarımcısı (UI/UX)</td><td class="r">3</td><td class="r">6</td><td class="r">11</td><td>Yarı zamanlı</td></tr>
+      <tr><td>QA / test</td><td class="r">3</td><td class="r">6</td><td class="r">11</td><td>Cihaz matrisi, güvenlik testleri</td></tr>
+      <tr><td>İş geliştirme</td><td class="r">2</td><td class="r">8</td><td class="r">22</td><td>Perakende, emlak, usta ortaklıkları</td></tr>
+      <tr style="font-weight:650"><td>Toplam</td><td class="r">34</td><td class="r">68</td><td class="r">143</td><td>Toplam yaklaşık 245 adam-hafta</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Dış danışmanlık (KVKK, abonelik ve reklam hukuku, sızma testi) bu tabloya dahil değil; ayrı kalem olarak bütçelenmeli.</p>
+
+  <h2>14.3 Bütçe kalemleri (formül, varsayım)</h2>
+  <table class="compact">
+    <thead><tr><th style="width:22%">Kalem</th><th>Hesap yöntemi</th></tr></thead>
+    <tbody>
+      <tr><td>Personel</td><td>Σ (adam-hafta × <em>R</em>). <em>R</em>, şirketin kendi harmanlanmış haftalık ekip maliyeti varsayımıdır. Örnek: Faz 1 = 34 × <em>R</em>, Faz 2 = 68 × <em>R</em>.</td></tr>
+      <tr><td>AI sağlayıcıları</td><td>(başarılı + başarısız görsel sayısı) × <em>C</em> (görsel başı maliyet, 12.2'deki senaryolar) + Claude analiz ve sohbet çağrıları. Analiz önbelleği ve ücretsiz katmanda tek varyant bu kalemi düşürür.</td></tr>
+      <tr><td>Altyapı</td><td>Yönetilen PostgreSQL, Redis, nesne depolama + CDN, gözlem ve log; ortam başına aylık sabit + trafikle değişken.</td></tr>
+      <tr><td>Mağaza ve ödeme</td><td>Geliştirici hesapları; IAP komisyonu (12.2'de %15/%30 senaryoları); web için sanal POS komisyonu (PayTR %2,19'dan başlıyor; iyzico için yazılı teklif <sup class="ref">[115]</sup>).</td></tr>
+      <tr><td>Hukuk ve güvenlik</td><td>KVKK aydınlatma, rıza ve standart sözleşme; abonelik ve reklam uyumu; bağımsız sızma testi.</td></tr>
+      <tr><td>Pazarlama</td><td>ASO, içerik üretimi (önce/sonra videoları), kullanıcı edinimi; aktivasyon ve dönüşüm ölçümüne göre kademeli artırılır.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">15</span>Riskler ve önlemler</h1>
+  <table class="compact">
+    <thead><tr><th style="width:26%">Risk</th><th class="c" style="width:9%">Etki</th><th>Önlem</th></tr></thead>
+    <tbody>
+      <tr><td>Gemini, ChatGPT ve Pinterest ile restyle'ın ücretsizleşmesi <sup class="ref">[38][42]</sup></td><td class="c">Yüksek</td><td>İş akışı, yerel ticaret, TL bütçe, usta ve B2B ile farklılaşma; model değil ürün.</td></tr>
+      <tr><td>Model kalitesi: geometri bozulması, ölçek hatası</td><td class="c">Yüksek</td><td>Yapı koruma şablonu, sağlayıcı seçimi, değerlendirme seti; Faz 2'de derinlik/kenar koşullama; Faz 3'te ölçü.</td></tr>
+      <tr><td>TL fiyat ile AI maliyeti arasındaki makas (TÜFE %29,73) <sup class="ref">[111]</sup></td><td class="c">Yüksek</td><td>Adil kullanım sınırı, kredi, önbellek, ücretsiz katmanda ucuz model, kendi GPU modeli, yıllık plan.</td></tr>
+      <tr><td>Rakiplerin reklam ve ASO bütçesi (HubX, AppNation)</td><td class="c">Orta</td><td>Niş konum (yerel ticaret, Türkçe), ortaklık kanalları, organik önce/sonra içerik.</td></tr>
+      <tr><td>Mağaza bağımlılığı ve komisyon</td><td class="c">Orta</td><td>Web ödemesi (iyzico/PayTR). Rekabet Kurulu soruşturmasının sonucu doğrulanamadı <sup class="ref">[114]</sup>.</td></tr>
+      <tr><td>KVKK yurt dışı aktarım yaptırımı (₺90.308–1.806.377) <sup class="ref">[119]</sup></td><td class="c">Orta</td><td>Standart sözleşme ve 5 iş günü bildirim, açık rıza, EXIF silme, yüz maskeleme, Türkiye'de işleme seçeneği.</td></tr>
+      <tr><td>Abonelik ve reklam mevzuatı</td><td class="c">Orta</td><td>Yenileme bildirimi, aynı yöntemle iptal, AI ve "sanal olarak döşenmiştir" etiketleri <sup class="ref">[121][123][124]</sup>.</td></tr>
+      <tr><td>Perakendeci verisine erişim (API yok)</td><td class="c">Orta</td><td>Affiliate ağları, doğrudan ortaklık; o zamana kadar arama linki.</td></tr>
+      <tr><td>Güvenlik olayı (veri sızıntısı, kötüye kullanım, maliyet saldırısı)</td><td class="c">Orta</td><td>26 kontrol, kota ve hız limiti, imzalı URL, MFA; "Doğrulanacak" testleri ve sızma testi.</td></tr>
+      <tr><td>Sağlayıcı kesintisi veya fiyat değişikliği</td><td class="c">Düşük–Orta</td><td>Sağlayıcı soyutlaması (Gemini ↔ Replicate ↔ kendi model); başarısızlıkta otomatik iade.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h1><span class="num">16</span>Ekran görüntüleri</h1>
+  <p>Aşağıdaki görüntüler 3 Kasım 2026'da çalışan MVP'den alındı.</p>
+  <ul>
+    <li><strong>Şekil A:</strong> uygulamanın kendi örnek fotoğrafını ve gerçek <strong>Gemini 2.5 Flash Image</strong> sağlayıcısıyla "Modern Türk" stilinde üretilen sonucu gösteriyor. Üretim yaklaşık 9 saniye sürdü; pencere ve perspektif korundu.</li>
+    <li><strong>Diğer ekranlar:</strong> mobil, web ve admin uygulamalarından.</li>
+  </ul>
+  <h2>Şekil A — Önce / sonra (gerçek sağlayıcı)</h2><div class="shots"><figure class=""><img src="../screenshots/01-ornek-girdi-oturma-odasi.png" alt="Önce: uygulamanın yerleşik örnek fotoğrafı (oturma odası)"><figcaption>Önce: uygulamanın yerleşik örnek fotoğrafı (oturma odası)</figcaption></figure><figure class=""><img src="../screenshots/02-gemini-modern-turk-sonucu.png" alt="Sonra: gerçek Gemini 2.5 Flash Image çıktısı · "Modern Türk" stili (~9 sn)"><figcaption>Sonra: gerçek Gemini 2.5 Flash Image çıktısı · "Modern Türk" stili (~9 sn)</figcaption></figure></div>
+<h2>Mobil uygulama (Expo)</h2><div class="shots4"><figure class=""><img src="../screenshots/10-mobil-ana-sayfa.png" alt="Mobil · Ana Sayfa"><figcaption>Mobil · Ana Sayfa</figcaption></figure><figure class=""><img src="../screenshots/11-mobil-yeni-tasarim.png" alt="Mobil · Yeni tasarım (araç, fotoğraf, seçenekler)"><figcaption>Mobil · Yeni tasarım (araç, fotoğraf, seçenekler)</figcaption></figure><figure class=""><img src="../screenshots/12-mobil-once-sonra.png" alt="Mobil · Önce/sonra ve "Yapay zekâ ile oluşturulmuştur" etiketi"><figcaption>Mobil · Önce/sonra ve "Yapay zekâ ile oluşturulmuştur" etiketi</figcaption></figure><figure class=""><img src="../screenshots/13-mobil-alisveris-butce.png" alt="Mobil · Alışveriş listesi ve TL bütçe"><figcaption>Mobil · Alışveriş listesi ve TL bütçe</figcaption></figure></div>
+<h2>Web uygulaması (Next.js)</h2><div class="shots"><figure class=""><img src="../screenshots/20-web-tanitim.png" alt="Web · Tanıtım sayfası"><figcaption>Web · Tanıtım sayfası</figcaption></figure><figure class=""><img src="../screenshots/21-web-studyo-bahce-sonucu.png" alt="Web · Stüdyo, bahçe yeniden tasarım sonucu"><figcaption>Web · Stüdyo, bahçe yeniden tasarım sonucu</figcaption></figure><figure class=""><img src="../screenshots/22-web-tasarimlarim.png" alt="Web · Tasarımlarım"><figcaption>Web · Tasarımlarım</figcaption></figure></div>
+<h2>Admin paneli (Next.js)</h2><div class="shots"><figure class=""><img src="../screenshots/30-admin-mfa-giris.png" alt="Admin · Parola + TOTP ile MFA girişi"><figcaption>Admin · Parola + TOTP ile MFA girişi</figcaption></figure><figure class=""><img src="../screenshots/31-admin-gosterge-paneli.png" alt="Admin · Gösterge paneli"><figcaption>Admin · Gösterge paneli</figcaption></figure><figure class=""><img src="../screenshots/32-admin-tasarim-moderasyonu.png" alt="Admin · Tasarım moderasyonu"><figcaption>Admin · Tasarım moderasyonu</figcaption></figure></div>
+</section>
+
+<section>
+  <h1><span class="num">17</span>Ekler</h1>
+  <h2>17.1 Çalıştırma talimatları (özet)</h2>
+  <p>Gereksinimler:</p>
+  <ul>
+    <li>Node 22 (mobil için ≥ 22.13; diğer uygulamalar Node 20.9+ ile de çalışır).</li>
+    <li>Python 3.12+ ve uv.</li>
+    <li>PostgreSQL 15+, Redis 7+.</li>
+  </ul>
+  <p>Ayrıntılar depo kökündeki <code>README.md</code> ve her uygulamanın kendi README dosyasında.</p>
+  <pre># 1) Backend (port 4000)
+cd apps/backend &amp;&amp; cp .env.example .env    # DATABASE_URL + 4 sır (openssl rand -base64 48)
+npm install &amp;&amp; createdb ai_room &amp;&amp; npx prisma migrate deploy
+npm run db:seed                            # 15 stil + TOTP'li admin → data/admin-credentials.txt
+npm run build &amp;&amp; npm run start:prod
+
+# 2) AI servisi (port 8001, INTERNAL_TOKEN = backend AI_INTERNAL_TOKEN)
+cd apps/ai-service &amp;&amp; cp .env.example .env &amp;&amp; uv sync
+uv run uvicorn app.main:app --port 8001     # IMAGE_PROVIDER=mock | gemini | replicate
+
+# 3) İstemciler
+cd apps/web    &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3000
+cd apps/admin  &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3001 (TOTP: npm run admin:otp)
+cd apps/mobile &amp;&amp; npm install &amp;&amp; npx expo start # i = iOS simülatör, w = web
+
+# 4) Testler
+cd apps/ai-service &amp;&amp; uv run pytest          # 8 test
+cd apps/backend &amp;&amp; npm test                  # birim testleri
+node scripts/smoke.mjs                       # 28 uçtan uca kontrol</pre>
+  <p class="small">
+    <strong>Gerçek sağlayıcılar:</strong> <code>IMAGE_PROVIDER=gemini</code> + <code>GEMINI_API_KEY</code>, <code>IMAGE_PROVIDER=replicate</code> + <code>REPLICATE_API_TOKEN</code>, <code>ANTHROPIC_API_KEY</code> (Claude). Üretimde <code>mock</code> sağlayıcıyla açılış reddedilir.
+    <strong>Docker:</strong> depoda bir <code>docker compose</code> dosyası var; bu makinede Docker olmadığı için çalıştırılarak denenmedi.
+  </p>
+
+  <h2>17.2 Terimler</h2>
+  <table class="compact">
+    <tbody>
+      <tr><td style="width:18%"><strong>BFF</strong></td><td>Backend-for-Frontend: tarayıcı ile API arasındaki sunucu katmanı; token'ı httpOnly çerezde saklar.</td></tr>
+      <tr><td><strong>IAP</strong></td><td>Uygulama içi satın alma (App Store / Google Play).</td></tr>
+      <tr><td><strong>ASO</strong></td><td>Uygulama mağazası optimizasyonu.</td></tr>
+      <tr><td><strong>MFA / TOTP</strong></td><td>Çok faktörlü kimlik doğrulama / zaman tabanlı tek kullanımlık kod (RFC 6238).</td></tr>
+      <tr><td><strong>Sanal döşeme</strong></td><td>Virtual staging: boş mekân fotoğrafını yapay zekâ ile mobilyalı göstermek.</td></tr>
+      <tr><td><strong>RoomPlan / LiDAR</strong></td><td>Apple'ın oda tarama API'si ve derinlik sensörü; gerçek ölçü sağlar.</td></tr>
+      <tr><td><strong>Yapı koruma</strong></td><td>Yeniden tasarımda pencere, kapı, duvar ve perspektifin aynı kalması.</td></tr>
+      <tr><td><strong>Affiliate</strong></td><td>Yönlendirilen satıştan komisyon alınan ortaklık modeli.</td></tr>
+      <tr><td><strong>YBBO</strong></td><td>Yıllık bileşik büyüme oranı (CAGR).</td></tr>
+      <tr><td><strong>ARPPU / LTV</strong></td><td>Ödeme yapan kullanıcı başına gelir / müşteri yaşam boyu değeri.</td></tr>
+      <tr><td><strong>DHV</strong></td><td>Dijital hizmet vergisi (2026'dan itibaren %5).</td></tr>
+      <tr><td><strong>P0 / P1</strong></td><td>Red-team kataloğu öncelikleri: P0 ilk güvenli yayın öncesi temel bariyer, P1 ilk derinlik dalgası.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>17.3 Yöntem ve sınırlar</h2>
+  <ul>
+    <li><strong>Kapsam ve tarih:</strong> Dünya ve Türkiye taramaları 3 Kasım 2026'da web kaynakları ve App Store uç noktalarıyla yapıldı.</li>
+    <li><strong>Eksik veri:</strong> Google Play Türkiye sıralamaları ve fiyatları alınamadı.</li>
+    <li><strong>Üçüncü taraf ve iddia niteliğindeki rakamlar:</strong> Pazar büyüklüğü tahminleri kaynaklar arasında 10 kattan fazla farklılık gösteriyor. Kullanıcı sayısı iddiaları şirketlerin kendi beyanı. AppGoblin ve benzeri tahminler doğrulanmış değil.</li>
+    <li><strong>Doğrulanamayanlar:</strong>
+      <ul>
+        <li>IKEA Kreativ'in Türkiye'de olup olmadığı, Amazon'un üretken oda özelliği.</li>
+        <li>İstikbal, Doğtaş, Kelebek, Çilek ve Tekzen'in dijital araçları.</li>
+        <li>SahiDeko fiyatı, EXXE'nin bulunduğu şehir.</li>
+        <li>Oda Studio, artlabs ve Boxlin'in güncel durumu.</li>
+        <li>Mobilya iç pazar büyüklüğü, deprem konutlarında 2025 sonu teslim sayısı, Ekim 2026 TÜFE verisi.</li>
+      </ul></li>
+  </ul>
+
+  <h2>17.4 Kaynakça</h2>
+  <ol class="refs"><li>AI Remodel — App Store (ABD) — <a href="https://apps.apple.com/us/app/-/id6477533581">https://apps.apple.com/us/app/-/id6477533581</a></li>
+<li>AI Remodel — App Store (TR) — <a href="https://apps.apple.com/tr/app/id6477533581">https://apps.apple.com/tr/app/id6477533581</a></li>
+<li>AppGoblin — AI Remodel — <a href="https://appgoblin.info/apps/6477533581">https://appgoblin.info/apps/6477533581</a></li>
+<li>androidrank — AI Remodel — <a href="https://www.androidrank.org/application/ai_remodel_interior_design/pro.airemodel.android">https://www.androidrank.org/application/ai_remodel_interior_design/pro.airemodel.android</a></li>
+<li>Home AI — App Store (ABD) — <a href="https://apps.apple.com/us/app/id6464476667">https://apps.apple.com/us/app/id6464476667</a></li>
+<li>Home AI — App Store (TR) — <a href="https://apps.apple.com/tr/app/id6464476667">https://apps.apple.com/tr/app/id6464476667</a></li>
+<li>Pulse2 — HubX, Point72 yatırımı — <a href="https://pulse2.com/hubx-raises-50-million-from-point72-at-1-2-billion-pre-money-valuation-with-option-for-another-25-million">https://pulse2.com/hubx-raises-50-million-from-point72-at-1-2-billion-pre-money-valuation-with-option-for-another-25-million</a></li>
+<li>androidrank — Home AI — <a href="https://www.androidrank.org/application/home_ai_ai_interior_design/interior.home.design.ai">https://www.androidrank.org/application/home_ai_ai_interior_design/interior.home.design.ai</a></li>
+<li>Arch — App Store — <a href="https://apps.apple.com/us/app/id6446172225">https://apps.apple.com/us/app/id6446172225</a></li>
+<li>Remodel AI — App Store — <a href="https://apps.apple.com/us/app/id6446040791">https://apps.apple.com/us/app/id6446040791</a></li>
+<li>Remodel AI — blog — <a href="https://www.remodelai.io/blog/best-ai-remodel-apps">https://www.remodelai.io/blog/best-ai-remodel-apps</a></li>
+<li>RoomGPT — <a href="https://www.roomgpt.io/">https://www.roomgpt.io/</a></li>
+<li>RoomGPT — GitHub — <a href="https://github.com/Nutlope/roomGPT">https://github.com/Nutlope/roomGPT</a></li>
+<li>DecorAI — karşılaştırma yazısı — <a href="https://decorai.io/blog/best-ai-interior-design-tools.md">https://decorai.io/blog/best-ai-interior-design-tools.md</a></li>
+<li>Interior AI — <a href="https://interiorai.com/">https://interiorai.com/</a></li>
+<li>HomeDesigns AI — fiyatlar — <a href="https://homedesigns.ai/pricing">https://homedesigns.ai/pricing</a></li>
+<li>REimagineHome — fiyatlar — <a href="https://www.reimaginehome.ai/pricing">https://www.reimaginehome.ai/pricing</a></li>
+<li>CB Insights — Styldod — <a href="https://www.cbinsights.com/compare/styledod-vs-virtual-staging-ai">https://www.cbinsights.com/compare/styledod-vs-virtual-staging-ai</a></li>
+<li>Spacely AI — fiyatlar — <a href="https://www.spacely.ai/pricing">https://www.spacely.ai/pricing</a></li>
+<li>raising.fi — Collov A serisi — <a href="https://raising.fi/news/collov-labs-series-a-april-2026">https://raising.fi/news/collov-labs-series-a-april-2026</a></li>
+<li>Zillow — Virtual Staging AI satın alımı — <a href="https://www.zillowgroup.com/news/zillow-group-acquires-ai-company-offering-virtual-staging">https://www.zillowgroup.com/news/zillow-group-acquires-ai-company-offering-virtual-staging</a></li>
+<li>RealEstateNews — Zillow Showcase — <a href="https://www.realestatenews.com/2025/09/10/zillow-adds-ai-powered-virtual-staging-to-showcase">https://www.realestatenews.com/2025/09/10/zillow-adds-ai-powered-virtual-staging-to-showcase</a></li>
+<li>Homestyler — fiyatlar — <a href="https://www.homestyler.com/pricing">https://www.homestyler.com/pricing</a></li>
+<li>Planner 5D — fiyatlar — <a href="https://www.planner5d.com/pricing">https://www.planner5d.com/pricing</a></li>
+<li>Planner 5D — hakkında — <a href="https://planner5d.com/pages/about">https://planner5d.com/pages/about</a></li>
+<li>tech.eu — Planner 5D AI — <a href="https://tech.eu/2023/03/23/planner-5d-inveils-ai-design-generator-to-transform-your-space-in-seconds/">https://tech.eu/2023/03/23/planner-5d-inveils-ai-design-generator-to-transform-your-space-in-seconds/</a></li>
+<li>TidBITS — Live Home 3D 5 — <a href="https://tidbits.com/?p=76077">https://tidbits.com/?p=76077</a></li>
+<li>SCMP — Manycore halka arzı — <a href="https://www.scmp.com/business/banking-finance/article/3350387/manycore-one-hangzhous-six-little-dragons-surges-hong-kong-ipo-debut">https://www.scmp.com/business/banking-finance/article/3350387/manycore-one-hangzhous-six-little-dragons-surges-hong-kong-ipo-debut</a></li>
+<li>Pandaily — Manycore — <a href="https://pandaily.com/?p=168549">https://pandaily.com/?p=168549</a></li>
+<li>Coohom — fiyatlar — <a href="https://www.coohom.com/pricing">https://www.coohom.com/pricing</a></li>
+<li>RoomSketcher — fiyatlar — <a href="https://www.roomsketcher.com/pricing/">https://www.roomsketcher.com/pricing/</a></li>
+<li>Floorplanner — fiyatlar — <a href="https://floorplanner.com/pricing">https://floorplanner.com/pricing</a></li>
+<li>Sweet Home 3D — SourceForge — <a href="https://sourceforge.net/app/sweet-home-3d/">https://sourceforge.net/app/sweet-home-3d/</a></li>
+<li>Twindo — App Store — <a href="https://apps.apple.com/us/app/id1169235377">https://apps.apple.com/us/app/id1169235377</a></li>
+<li>illustrarch — Twindo — <a href="https://illustrarch.com/?p=110335">https://illustrarch.com/?p=110335</a></li>
+<li>Apple RoomPlan — <a href="https://developer.apple.com/augmented-reality/roomplan">https://developer.apple.com/augmented-reality/roomplan</a></li>
+<li>IKEA Kreativ — <a href="https://www.ikea.com/ca/en/newsroom/corporate-news/ikea-canada-launches-new-ai-powered-digital-experience-called-ikea-kreativ-pubf6d0f5d0">https://www.ikea.com/ca/en/newsroom/corporate-news/ikea-canada-launches-new-ai-powered-digital-experience-called-ikea-kreativ-pubf6d0f5d0</a></li>
+<li>TechCrunch — Pinterest Restyle — <a href="https://techcrunch.com/2026/09/17/pinterest-teases-a-new-restyle-feature-that-lets-you-redesign-your-room-with-ai/">https://techcrunch.com/2026/09/17/pinterest-teases-a-new-restyle-feature-that-lets-you-redesign-your-room-with-ai/</a></li>
+<li>Wayfair — Muse — <a href="https://www.aboutwayfair.com/category/company-news/wayfair-introduces-new-ai-powered-tool-muse-to-inspire-and-personalize-the-home-shopping-experience">https://www.aboutwayfair.com/category/company-news/wayfair-introduces-new-ai-powered-tool-muse-to-inspire-and-personalize-the-home-shopping-experience</a></li>
+<li>Business of Home — Wayfair Muse — <a href="https://businessofhome.com/articles/wayfair-s-new-tool-shows-ai-s-strengths-and-limitations">https://businessofhome.com/articles/wayfair-s-new-tool-shows-ai-s-strengths-and-limitations</a></li>
+<li>Engadget — Amazon AR — <a href="https://www.engadget.com/amazon-ar-shopping-furniture-home-decor-171005257.html">https://www.engadget.com/amazon-ar-shopping-furniture-home-decor-171005257.html</a></li>
+<li>Business of Home — Google AI — <a href="https://businessofhome.com/articles/should-designers-worry-about-google-s-new-ai-tool">https://businessofhome.com/articles/should-designers-worry-about-google-s-new-ai-tool</a></li>
+<li>Google — ev dekorasyonu rehberi — <a href="https://blog.google/products-and-platforms/products/search/home-decor-tips/">https://blog.google/products-and-platforms/products/search/home-decor-tips/</a></li>
+<li>Tom's Guide — ChatGPT ile oda tasarımı — <a href="https://www.tomsguide.com/ai/how-to-use-chatgpt-to-redesign-any-room-see-smarter-layouts-and-picks-for-any-space">https://www.tomsguide.com/ai/how-to-use-chatgpt-to-redesign-any-room-see-smarter-layouts-and-picks-for-any-space</a></li>
+<li>Product Hunt — Interiores AI — <a href="https://www.producthunt.com/products/interiores-ai/launches">https://www.producthunt.com/products/interiores-ai/launches</a></li>
+<li>App Store — "Nano-Banana" klon örneği — <a href="https://apps.apple.com/us/app/-/id6744328873">https://apps.apple.com/us/app/-/id6744328873</a></li>
+<li>Houzz — App Store — <a href="https://apps.apple.com/us/app/houzz-home-design-remodel/id399563465">https://apps.apple.com/us/app/houzz-home-design-remodel/id399563465</a></li>
+<li>Houzz — basın — <a href="https://www.houzz.com/press">https://www.houzz.com/press</a></li>
+<li>Havenly — tasarım ücretleri — <a href="https://havenly.com/interior-design-cost">https://havenly.com/interior-design-cost</a></li>
+<li>Research and Markets — AI in Interior Design — <a href="https://www.researchandmarkets.com/reports/6226842/ai-in-interior-design-market-report">https://www.researchandmarkets.com/reports/6226842/ai-in-interior-design-market-report</a></li>
+<li>SNS Insider — AI interior design — <a href="https://www.snsinsider.com/reports/ai-interior-design-market-8400">https://www.snsinsider.com/reports/ai-interior-design-market-8400</a></li>
+<li>MarketResearch — AI interior design tools — <a href="https://www.marketresearch.com/LP-Information-Inc-v4134/Global-AI-Interior-Design-Tools-39677115">https://www.marketresearch.com/LP-Information-Inc-v4134/Global-AI-Interior-Design-Tools-39677115</a></li>
+<li>DIResearch — virtual staging — <a href="https://www.marketresearch.com/Deep-Insights-Research-Co-DIR-v4285/Global-Virtual-Staging-Real-Estate-41706804">https://www.marketresearch.com/Deep-Insights-Research-Co-DIR-v4285/Global-Virtual-Staging-Real-Estate-41706804</a></li>
+<li>Sensor Tower — AI apps 2025 — <a href="https://sensortower.com/blog/state-of-ai-apps-market-overview-2025">https://sensortower.com/blog/state-of-ai-apps-market-overview-2025</a></li>
+<li>Eastmoney — Sensor Tower 2026 — <a href="https://finance.eastmoney.com/a/202605143737102961.html">https://finance.eastmoney.com/a/202605143737102961.html</a></li>
+<li>Fundraise Insider — Drafted — <a href="https://fundraiseinsider.com/blog/drafted-raises-16m-seed-for-ai-home-design-models/">https://fundraiseinsider.com/blog/drafted-raises-16m-seed-for-ai-home-design-models/</a></li>
+<li>EU-Startups — Rayon — <a href="https://www.eu-startups.com/2026/09/paris-based-rayon-raises-e10-million-to-build-the-drawing-layer-for-interior-designs-ai-era">https://www.eu-startups.com/2026/09/paris-based-rayon-raises-e10-million-to-build-the-drawing-layer-for-interior-designs-ai-era</a></li>
+<li>Apple — TR Grafik ve Tasarım hasılat listesi RSS — <a href="https://itunes.apple.com/tr/rss/topgrossingapplications/limit=100/genre=6027/json">https://itunes.apple.com/tr/rss/topgrossingapplications/limit=100/genre=6027/json</a></li>
+<li>Forbes TR — HubX — <a href="https://www.forbes.com.tr/yapay-zeka/hubx-75-milyon-dolar-yatirimla-turkiye-nin-yeni-unicorn-u-oldu">https://www.forbes.com.tr/yapay-zeka/hubx-75-milyon-dolar-yatirimla-turkiye-nin-yeni-unicorn-u-oldu</a></li>
+<li>Builtin — AppNation — <a href="https://builtin.com/company/appnation">https://builtin.com/company/appnation</a></li>
+<li>Forbes TR — AppNation — <a href="https://www.forbes.com.tr/yapay-zeka/appnation-kuresel-mobil-uygulama-pazarinda-sessizce-buyuyor">https://www.forbes.com.tr/yapay-zeka/appnation-kuresel-mobil-uygulama-pazarinda-sessizce-buyuyor</a></li>
+<li>Ruma — App Store — <a href="https://apps.apple.com/tr/app/id6742654523">https://apps.apple.com/tr/app/id6742654523</a></li>
+<li>mwm.ai — Syntina — <a href="https://mwm.ai/apps/syntina-ai/6776306022">https://mwm.ai/apps/syntina-ai/6776306022</a></li>
+<li>Webrazzi — Oda Studio — <a href="https://webrazzi.com/2021/12/08/yapay-zeka-destekli-fotograf-gelistirme-cozumleri-sunan-oda-studio-navitas-capital-liderliginde-28-milyon-dolar-yatirim-aldi/">https://webrazzi.com/2021/12/08/yapay-zeka-destekli-fotograf-gelistirme-cozumleri-sunan-oda-studio-navitas-capital-liderliginde-28-milyon-dolar-yatirim-aldi/</a></li>
+<li>Webrazzi — artlabs — <a href="https://webrazzi.com/2022/05/26/metaverse-odakli-3d-ve-ar-platformu-art-labs-700-bin-dolar-yatirim-aldi/">https://webrazzi.com/2022/05/26/metaverse-odakli-3d-ve-ar-platformu-art-labs-700-bin-dolar-yatirim-aldi/</a></li>
+<li>Webrazzi — Boxlin — <a href="https://webrazzi.com/2018/06/20/kullanicilarin-evlerini-3d-olarak-planlamasini-saglayan-yerli-dekorasyon-girisimi-boxlin/">https://webrazzi.com/2018/06/20/kullanicilarin-evlerini-3d-olarak-planlamasini-saglayan-yerli-dekorasyon-girisimi-boxlin/</a></li>
+<li>Product Hunt — QuickStaging — <a href="https://www.producthunt.com/p/quickstaging">https://www.producthunt.com/p/quickstaging</a></li>
+<li>GenRoom — hakkımızda — <a href="https://genroom.io/tr/hakkimizda">https://genroom.io/tr/hakkimizda</a></li>
+<li>GenRoom — fiyatlar — <a href="https://genroom.io/tr/fiyatlar">https://genroom.io/tr/fiyatlar</a></li>
+<li>IKEA TR — planlayıcılar — <a href="https://www.ikea.com.tr/planlayicilar">https://www.ikea.com.tr/planlayicilar</a></li>
+<li>IKEA TR — App Store — <a href="https://apps.apple.com/tr/app/id1147147196">https://apps.apple.com/tr/app/id1147147196</a></li>
+<li>Karaca — App Store — <a href="https://apps.apple.com/tr/app/id1547965580">https://apps.apple.com/tr/app/id1547965580</a></li>
+<li>İnternethaber — Karaca AIDA — <a href="https://www.internethaber.com/karaca-yapay-zeka-asistani-aidayi-chatgptde-kullanima-sundu-2451184h.htm">https://www.internethaber.com/karaca-yapay-zeka-asistani-aidayi-chatgptde-kullanima-sundu-2451184h.htm</a></li>
+<li>Koçtaş — mutfak hizmeti — <a href="https://www.koctas.com.tr/nakliye-ve-montaj-hizmetleri/mutfak">https://www.koctas.com.tr/nakliye-ve-montaj-hizmetleri/mutfak</a></li>
+<li>Ustabilir — App Store — <a href="https://apps.apple.com/tr/app/id1267241540">https://apps.apple.com/tr/app/id1267241540</a></li>
+<li>Alfemo — App Store — <a href="https://apps.apple.com/tr/app/id1054806822">https://apps.apple.com/tr/app/id1054806822</a></li>
+<li>Marshall Gör&amp;Boya — App Store — <a href="https://apps.apple.com/tr/app/id526432420">https://apps.apple.com/tr/app/id526432420</a></li>
+<li>Filli Boya i-Colour — App Store — <a href="https://apps.apple.com/tr/app/id6753799237">https://apps.apple.com/tr/app/id6753799237</a></li>
+<li>Dyo — App Store — <a href="https://apps.apple.com/tr/app/id1589747591">https://apps.apple.com/tr/app/id1589747591</a></li>
+<li>Kalekim KaleCore — App Store — <a href="https://apps.apple.com/tr/app/id1546990426">https://apps.apple.com/tr/app/id1546990426</a></li>
+<li>NG Kütahya — App Store — <a href="https://apps.apple.com/tr/app/id1480551987">https://apps.apple.com/tr/app/id1480551987</a></li>
+<li>Webrazzi — VitrA VitreAlity — <a href="https://webrazzi.com/2015/11/03/vitranin-artirilmis-gerceklik-uygulamasi-vitreality-yayinlandi/">https://webrazzi.com/2015/11/03/vitranin-artirilmis-gerceklik-uygulamasi-vitreality-yayinlandi/</a></li>
+<li>Webrazzi — Hepsiburada AI — <a href="https://webrazzi.com/2023/09/26/hepsiburadadan-devrim-yaratan-yapay-zeka-entegrasyonlari/">https://webrazzi.com/2023/09/26/hepsiburadadan-devrim-yaratan-yapay-zeka-entegrasyonlari/</a></li>
+<li>LOG — SahiDeko — <a href="https://www.log.com.tr/?p=957550">https://www.log.com.tr/?p=957550</a></li>
+<li>CB Insights — Emlakjet — <a href="https://www.cbinsights.com/company/emlakjetcom">https://www.cbinsights.com/company/emlakjetcom</a></li>
+<li>Teknoblog — sahiAI — <a href="https://www.teknoblog.com/sahibinden-com-sahiai-yapay-zeka-ilan-arama/">https://www.teknoblog.com/sahibinden-com-sahiai-yapay-zeka-ilan-arama/</a></li>
+<li>Hepsiemlak — App Store — <a href="https://apps.apple.com/tr/app/id496855282">https://apps.apple.com/tr/app/id496855282</a></li>
+<li>Emlakjet — App Store — <a href="https://apps.apple.com/tr/app/id1194656334">https://apps.apple.com/tr/app/id1194656334</a></li>
+<li>Endeksa — App Store — <a href="https://apps.apple.com/tr/app/id1272606231">https://apps.apple.com/tr/app/id1272606231</a></li>
+<li>Armut — İstanbul iç mimar fiyatları — <a href="https://armut.com/fiyatlari/istanbul-ic-mimar_100_34">https://armut.com/fiyatlari/istanbul-ic-mimar_100_34</a></li>
+<li>Homely AI — App Store — <a href="https://apps.apple.com/tr/app/id6757994164">https://apps.apple.com/tr/app/id6757994164</a></li>
+<li>ReRoom AI — App Store — <a href="https://apps.apple.com/tr/app/id6749894179">https://apps.apple.com/tr/app/id6749894179</a></li>
+<li>DecAI — App Store — <a href="https://apps.apple.com/tr/app/id6502747597">https://apps.apple.com/tr/app/id6502747597</a></li>
+<li>Planner 5D — App Store (TR) — <a href="https://apps.apple.com/tr/app/id606173978">https://apps.apple.com/tr/app/id606173978</a></li>
+<li>Home Planner AI — App Store — <a href="https://apps.apple.com/tr/app/id1076159017">https://apps.apple.com/tr/app/id1076159017</a></li>
+<li>Homestyler — App Store (TR) — <a href="https://apps.apple.com/tr/app/id601137449">https://apps.apple.com/tr/app/id601137449</a></li>
+<li>Alomaliye — 2025 konut satışları — <a href="https://www.alomaliye.com/2026/01/20/2025-yilinda-1-milyon-688-bin-910-konut-satildi/">https://www.alomaliye.com/2026/01/20/2025-yilinda-1-milyon-688-bin-910-konut-satildi/</a></li>
+<li>Alomaliye — Eylül 2026 konut satışları — <a href="https://www.alomaliye.com/2026/10/16/konut-satislari-eylulde-yuzde-93-geriledi/amp/">https://www.alomaliye.com/2026/10/16/konut-satislari-eylulde-yuzde-93-geriledi/amp/</a></li>
+<li>Posta — yapı ruhsatı — <a href="https://www.posta.com.tr/galeri/-ev-sahibi-olmak-isteyenler-dikkat-piyasada-dengeleri-degistirecek-1-1-milyon-detayi-2975865">https://www.posta.com.tr/galeri/-ev-sahibi-olmak-isteyenler-dikkat-piyasada-dengeleri-degistirecek-1-1-milyon-detayi-2975865</a></li>
+<li>Dünya — hanehalkı — <a href="https://www.dunya.com/ekonomik-veriler/tuik-hanehalki-kuculuyor-tek-kisilik-yasam-artiyor-haberi-824831">https://www.dunya.com/ekonomik-veriler/tuik-hanehalki-kuculuyor-tek-kisilik-yasam-artiyor-haberi-824831</a></li>
+<li>Alomaliye — İstanbul dönüşüm — <a href="https://www.alomaliye.com/2026/08/17/istanbulda-donusum-1-milyonu-asti/">https://www.alomaliye.com/2026/08/17/istanbulda-donusum-1-milyonu-asti/</a></li>
+<li>Para — dönüşüm hedefi — <a href="https://www.paradergi.com.tr/is-dunyasi-kulis/2026/03/02/hedefimiz-afetlere-direncli-sehirler">https://www.paradergi.com.tr/is-dunyasi-kulis/2026/03/02/hedefimiz-afetlere-direncli-sehirler</a></li>
+<li>Bigpara — Yarısı Bizden — <a href="https://bigpara.hurriyet.com.tr/haberler/konut-haberleri/istanbulda-kampanyali-donusum-385-bine-ulasti-son-tarih-31-aralik_ID102235567/">https://bigpara.hurriyet.com.tr/haberler/konut-haberleri/istanbulda-kampanyali-donusum-385-bine-ulasti-son-tarih-31-aralik_ID102235567/</a></li>
+<li>Türkgün — deprem konutları — <a href="https://www.turkgun.com/gundem/yil-sonuna-kadar-453-bin-konut-ve-is-yeri-teslim-edilecek/301541">https://www.turkgun.com/gundem/yil-sonuna-kadar-453-bin-konut-ve-is-yeri-teslim-edilecek/301541</a></li>
+<li>NTV — 350 bininci konut — <a href="https://www.ntv.com.tr/turkiye/bakan-kurumdan-deprem-bolgesinde-350-bininci-konut-paylasimi-1696356">https://www.ntv.com.tr/turkiye/bakan-kurumdan-deprem-bolgesinde-350-bininci-konut-paylasimi-1696356</a></li>
+<li>Dünya — mobilya ihracatı — <a href="https://www.dunya.com/ihracat/turk-mobilya-sektoru-dunyada-ilk-7de-ihracatta-yeni-hedef-10-milyar-dolar-haberi-826338">https://www.dunya.com/ihracat/turk-mobilya-sektoru-dunyada-ilk-7de-ihracatta-yeni-hedef-10-milyar-dolar-haberi-826338</a></li>
+<li>Dünya — e-ticaret hacmi — <a href="https://www.dunya.com/ekonomik-veriler/e-ticarette-dev-buyume-hacim-45-trilyon-lirayi-gecti-haberi-840243">https://www.dunya.com/ekonomik-veriler/e-ticarette-dev-buyume-hacim-45-trilyon-lirayi-gecti-haberi-840243</a></li>
+<li>24 Saat — TÜİK bilişim 2026 — <a href="https://www.24saatgazetesi.com/tuik-2026-bilisim-raporu-aciklandi-internet-kullanimi-yuzde-923e-yukseldi-whatsapp-kullanimi-zirvede">https://www.24saatgazetesi.com/tuik-2026-bilisim-raporu-aciklandi-internet-kullanimi-yuzde-923e-yukseldi-whatsapp-kullanimi-zirvede</a></li>
+<li>StatCounter — Türkiye mobil OS — <a href="https://gs.statcounter.com/os-market-share/mobile/turkey">https://gs.statcounter.com/os-market-share/mobile/turkey</a></li>
+<li>CNN Türk — 2026 asgari ücret — <a href="https://www.cnnturk.com/ekonomi/2026-asgari-ucret-resmi-gazetede-yayimlandi-2377320">https://www.cnnturk.com/ekonomi/2026-asgari-ucret-resmi-gazetede-yayimlandi-2377320</a></li>
+<li>Oksijen — Eylül 2026 enflasyon — <a href="https://gazeteoksijen.com/ekonomi/eylulde-enflasyon-yillik-yuzde-29-73-aylik-yuzde-1-84-oldu-291680">https://gazeteoksijen.com/ekonomi/eylulde-enflasyon-yillik-yuzde-29-73-aylik-yuzde-1-84-oldu-291680</a></li>
+<li>Foreks — RevenueCat raporu — <a href="https://www.foreks.com/haber/detay/6ae1ac87422c786f3f7ab76d/FRKS/tr/revenuecat-in-eylul-2025agustos-2026-raporuna-gore-turk-mobil-uygulamalarinin-abonelik-gelirlerinin-yuzde-89-u-yurt-disindan-geliyor-28-10-26/">https://www.foreks.com/haber/detay/6ae1ac87422c786f3f7ab76d/FRKS/tr/revenuecat-in-eylul-2025agustos-2026-raporuna-gore-turk-mobil-uygulamalarinin-abonelik-gelirlerinin-yuzde-89-u-yurt-disindan-geliyor-28-10-26/</a></li>
+<li>LOG — dijital hizmet vergisi — <a href="https://www.log.com.tr/?p=993161">https://www.log.com.tr/?p=993161</a></li>
+<li>Alomaliye — Apple soruşturması — <a href="https://www.alomaliye.com/2024/06/07/apple-inc-ve-apple-teknoloji-ve-satis-ltd-sti-hakkinda-sorusturma-acildi/">https://www.alomaliye.com/2024/06/07/apple-inc-ve-apple-teknoloji-ve-satis-ltd-sti-hakkinda-sorusturma-acildi/</a></li>
+<li>Ticimax — iyzico komisyonları — <a href="https://www.ticimax.com/blog/iyzico-komisyon-oranlari">https://www.ticimax.com/blog/iyzico-komisyon-oranlari</a></li>
+<li>ETBİS — <a href="https://etbis.ticaret.gov.tr">https://etbis.ticaret.gov.tr</a></li>
+<li>İYS — <a href="https://iys.org.tr">https://iys.org.tr</a></li>
+<li>Erdem &amp; Erdem — yurt dışına aktarım rehberi — <a href="https://www.erdem-erdem.av.tr/bilgi-bankasi/yurt-disina-kisisel-veri-aktarimi-rehberi-neleri-duzenliyor">https://www.erdem-erdem.av.tr/bilgi-bankasi/yurt-disina-kisisel-veri-aktarimi-rehberi-neleri-duzenliyor</a></li>
+<li>Cottgroup — standart sözleşme bildirimi — <a href="https://cottgroup.com/tr/blog/kvkk-gdpr/item/standart-sozlesme-bildirim-yukumlulugu-ve-yaptirimlari">https://cottgroup.com/tr/blog/kvkk-gdpr/item/standart-sozlesme-bildirim-yukumlulugu-ve-yaptirimlari</a></li>
+<li>Alomaliye — KVKK üretken AI rehberi — <a href="https://www.alomaliye.com/2025/11/24/sorularla-uretken-yapay-zeka-ve-kisisel-verilerin-korunmasi-rehberi/">https://www.alomaliye.com/2025/11/24/sorularla-uretken-yapay-zeka-ve-kisisel-verilerin-korunmasi-rehberi/</a></li>
+<li>Dünya — dijital abonelik incelemesi — <a href="https://www.dunya.com/ekonomi/dijital-aboneliklerde-onaysiz-yenileme-mercek-altinda-bakanlik-inceleme-baslatti-haberi-844536">https://www.dunya.com/ekonomi/dijital-aboneliklerde-onaysiz-yenileme-mercek-altinda-bakanlik-inceleme-baslatti-haberi-844536</a></li>
+<li>Hukukçular Evi — otomatik yenileme — <a href="https://hukukcularevi.com/otomatik-yenilenen-abonelik-6502-bilgilendirme-iptal/">https://hukukcularevi.com/otomatik-yenilenen-abonelik-6502-bilgilendirme-iptal/</a></li>
+<li>NTV — reklam yönetmeliği — <a href="https://www.ntv.com.tr/turkiye/aldatici-indirim-ve-yapay-zeka-reklamlarina-yeni-onlem-1730847">https://www.ntv.com.tr/turkiye/aldatici-indirim-ve-yapay-zeka-reklamlarina-yeni-onlem-1730847</a></li>
+<li>Türkiye — emlak fotoğraf cezası — <a href="https://www.turkiyegazetesi.com.tr/ekonomi/sahte-fotograflar-kullandilar-dolandirici-emlakcilar-ticaret-bakanligina-takildi-997058">https://www.turkiyegazetesi.com.tr/ekonomi/sahte-fotograflar-kullandilar-dolandirici-emlakcilar-ticaret-bakanligina-takildi-997058</a></li>
+<li>Ekonomi Gazetesi — evlilik kredisi — <a href="https://www.ekonomigazetesi.com/sektor-haberleri/sektor-2025e-evlilik-kredisi-mujdesiyle-girdi-52036">https://www.ekonomigazetesi.com/sektor-haberleri/sektor-2025e-evlilik-kredisi-mujdesiyle-girdi-52036</a></li></ol>
+</section>
+
+</body></html>
