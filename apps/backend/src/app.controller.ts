@@ -21,6 +21,8 @@ import { ALLOWED_MIME, ImagesService, isUuid } from './images/images.service.js'
 import { SAMPLE_IDS, loadSample } from './images/samples.js';
 import { UsersService } from './users/users.service.js';
 import { PUSH_TOKEN_RE, PushService, maskToken } from './push/push.service.js';
+import { OAuthService } from './auth/oauth.service.js';
+import { OAUTH_PROVIDERS } from './auth/oidc.js';
 
 export function localeOf(req: AppRequest, fallback?: string): Locale {
   const q = typeof req.query.locale === 'string' ? req.query.locale : '';
@@ -167,6 +169,7 @@ export class UserController {
     private usage: UsageService,
     private consents: ConsentsService,
     private push: PushService,
+    private oauth: OAuthService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -188,10 +191,26 @@ export class UserController {
   @HttpCode(204)
   @Doc('Hesabı ve tüm verileri sil (KVKK)', { status: 204, errors: [401] })
   async deleteMe(@Auth() auth: AuthContext) {
+    // App Store 5.1.1(v): Apple tokens are revoked by a retrying job, so Apple being down never blocks the deletion.
+    const appleRevokes = await this.oauth.scheduleAccountRevocations(auth.userId);
     const imgs = await this.prisma.image.findMany({ where: { ownerId: auth.userId }, select: { id: true } });
     await this.prisma.user.delete({ where: { id: auth.userId } });
     await this.images.remove(imgs.map((i) => i.id));
-    log.info('account_deleted', { userId: auth.userId, images: imgs.length });
+    log.info('account_deleted', { userId: auth.userId, images: imgs.length, appleRevokes });
+  }
+
+  @Get('me/identities')
+  @Doc('Bağlı giriş yöntemleri (Apple / Google) ve şifre olup olmadığı', { errors: [401] })
+  async identities(@Auth() auth: AuthContext) {
+    return this.oauth.identities(auth.userId);
+  }
+
+  @Delete('me/identities/:provider')
+  @HttpCode(204)
+  @Doc('Apple / Google bağlantısını kaldır (son giriş yöntemi kaldırılamaz; Apple token iptal edilir)', { status: 204, errors: [401, 404, 409] })
+  async unlinkIdentity(@Auth() auth: AuthContext, @Param('provider') provider: string) {
+    const p = parse(z.enum(OAUTH_PROVIDERS), provider);
+    await this.oauth.unlink(auth.userId, p);
   }
 
   /** Called on every app launch with permission granted; also refreshes lastSeenAt. */
@@ -312,13 +331,14 @@ export class UserController {
   async exportMe(@Auth() auth: AuthContext, @Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
     await this.limiter.hit(LIMITS.export, auth.userId);
     const user = await this.users.get(auth.userId);
-    const [designs, ledger, consents, reports, uploads, devices] = await Promise.all([
+    const [designs, ledger, consents, reports, uploads, devices, identities] = await Promise.all([
       this.prisma.design.findMany({ where: { userId: auth.userId }, include: { inputImage: true, results: true, analyses: true }, orderBy: { createdAt: 'desc' } }),
       this.prisma.creditLedger.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.consent.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.contentReport.findMany({ where: { reporterId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.image.findMany({ where: { ownerId: auth.userId, kind: { in: ['UPLOAD', 'SAMPLE'] } }, orderBy: { createdAt: 'desc' } }),
       this.prisma.pushToken.findMany({ where: { userId: auth.userId }, orderBy: { lastSeenAt: 'desc' } }),
+      this.prisma.authIdentity.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'asc' } }),
     ]);
     log.info('data_export', { userId: auth.userId });
     res.setHeader('Content-Disposition', `attachment; filename="ai-room-verilerim-${new Date().toISOString().slice(0, 10)}.json"`);
@@ -328,6 +348,7 @@ export class UserController {
       profile: { ...this.users.toDto(user), status: user.status, lastSeenAt: user.lastSeenAt?.toISOString() ?? null, emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null },
       consents: consents.map((c) => ({ kind: c.kind, version: c.version, granted: c.granted, createdAt: c.createdAt.toISOString() })),
       uploads: uploads.map((i) => this.images.ref(i)),
+      signInMethods: identities.map((i) => ({ provider: i.provider, email: i.email, linkedAt: i.createdAt.toISOString(), lastUsedAt: i.lastUsedAt.toISOString() })),
       pushDevices: devices.map((t) => ({ platform: t.platform, token: maskToken(t.token), registeredAt: t.createdAt.toISOString(), lastSeenAt: t.lastSeenAt.toISOString() })),
       designs: await Promise.all(
         designs.map(async (d) => ({

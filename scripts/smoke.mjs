@@ -234,6 +234,25 @@ ok(strangerReport.status === 404, "can't report someone else's non-featured desi
 const exp = await call('GET', '/me/export', { token: vt });
 ok(exp.status === 200 && exp.json?.designs?.length >= 1 && exp.headers.get('content-disposition')?.includes('attachment'), 'KVKK data export downloads JSON');
 ok(Array.isArray(exp.json?.pushDevices) && exp.json.pushDevices.length === 0, 'export lists push devices (moved token no longer listed)');
+ok(Array.isArray(exp.json?.signInMethods), 'export lists linked sign-in methods');
+
+// Apple / Google sign-in (#7). Without client ids the providers answer 503; a configured one rejects junk with 401.
+const nonceRes = await call('POST', '/auth/oauth/nonce');
+ok(nonceRes.status === 201 && /^[A-Za-z0-9_-]{43}$/.test(nonceRes.json?.nonce ?? ''), 'sign-in nonce issued (TOK-03)');
+const junkToken = `eyJ${'a'.repeat(150)}.${'b'.repeat(60)}.${'c'.repeat(40)}`;
+for (const [provider, body] of [['google', { idToken: junkToken, nonce: nonceRes.json?.nonce }], ['apple', { identityToken: junkToken, nonce: nonceRes.json?.nonce }]]) {
+  const r = await call('POST', `/auth/oauth/${provider}`, { body });
+  ok((r.status === 503 && r.json?.error?.code === 'oauth_not_configured') || (r.status === 401 && r.json?.error?.code === 'invalid_token'), `${provider} sign-in refuses an unverifiable token`, `${r.status} ${r.json?.error?.code}`);
+}
+const badShape = await call('POST', '/auth/oauth/apple', { body: { identityToken: junkToken, nonce: 'short', extra: 1 } });
+ok(badShape.status === 400, 'sign-in body is validated strictly');
+const appleEvent = await call('POST', '/webhooks/apple', { body: { payload: junkToken } });
+ok(appleEvent.status === 503 || appleEvent.status === 401, 'Apple server event is verified before anything is written', `${appleEvent.status}`);
+const ids = await call('GET', '/me/identities', { token: vt });
+ok(ids.status === 200 && Array.isArray(ids.json?.items) && typeof ids.json?.hasPassword === 'boolean', 'linked sign-in methods listed');
+const unlinkNone = await call('DELETE', '/me/identities/apple', { token: vt });
+const unlinkBad = await call('DELETE', '/me/identities/github', { token: vt });
+ok(unlinkNone.status === 404 && unlinkBad.status === 400, 'unlinking an unknown or unlinked provider is refused');
 
 if (adminToken) {
   const A = { token: adminToken };
@@ -370,7 +389,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

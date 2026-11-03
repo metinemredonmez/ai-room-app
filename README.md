@@ -139,13 +139,14 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 
 ```bash
 cd apps/ai-service && uv run pytest              # 42 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change, bölge kilidi, fal.ai
-cd apps/backend && npm test                      # 23 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar
-node scripts/smoke.mjs                           # 91 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
+cd apps/backend && npm test                      # 36 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar, Apple/Google token, hesap bağlama, alan şifreleme
+node scripts/smoke.mjs                           # 99 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 
 Uçtan uca smoke testi şunları kapsar:
 - Kullanıcı akışı: misafir giriş, katalog, örnek yükleme, üretim, kota, PRO kilidi, analiz, sohbet.
 - Admin rolleri ve MFA kurtarma: SUPPORT yetki sınırları, kendine yetki verme, yedek kodla tek seferlik giriş, MFA sıfırlama, denetim kaydı.
+- Apple/Google girişi: nonce, doğrulanamayan token reddi, katı gövde, Apple bildirimi, bağlı yöntemler.
 - Kuyruk + push: asenkron tasarım, "Tasarımın hazır" bildirimi, token taşıma, KVKK dışa aktarımında cihazlar.
 - Görsel güvenliği: imzalı URL'yi değiştirme ve görsel olmayan dosya reddi (FIL).
 - Yetkilendirme ve oturum: başka kullanıcının kaydına erişim (AZ-01) ve refresh token yeniden kullanımı (SES-05).
@@ -162,6 +163,8 @@ Kontroller red-team kataloğundaki kimliklerle eşleştirildi; ayrıntı PDF rap
 - **Kota (RES-01):** Redis'te atomik, çok boyutlu kotalar. Kredi düşümü satır kilidiyle yapılır, başarısız üretimde iade edilir.
 - **Token'lar (TOK, SES):** JWT yalnız HS256; `iss`, `aud` ve `typ` doğrulanır, kullanıcı ve admin ayrı audience kullanır.
   Refresh token rotasyonlu, yeniden kullanımda tüm aile iptal edilir. Ban ve rol değişiminde `tokenVersion` ile anında iptal.
+- **Apple/Google girişi (TOK-01/02/03/05):** Yalnız RS256 ID token; `iss`, `aud`, yaş ve tek kullanımlık nonce kontrol edilir.
+  E-postayla hesap bağlama yalnız iki taraf da doğrulamışsa yapılır. Apple refresh token'ı AES-256-GCM ile şifreli saklanır, hesap silinince iptal edilir.
 - **Admin (AUT-01):** Parola + TOTP zorunlu, aynı kod tekrar kullanılamaz. Her yazma işlemi denetim kaydına girer (LOG-01).
 - **Tarayıcı (SES-01, WEB-03):** Web ve admin tarafında token tarayıcıya hiç gelmez (BFF + httpOnly çerez).
   Durum değiştiren isteklerde Origin kontrolü yapılır; CSP ve güvenlik başlıkları açık.

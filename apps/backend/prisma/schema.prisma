@@ -93,6 +93,7 @@ model User {
   purchases     StorePurchase[]
   pushTokens    PushToken[]
   backupCodes   AdminBackupCode[]
+  identities    AuthIdentity[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -376,3 +377,23 @@ model AdminBackupCode {
 
   @@index([userId])
 }
+
+/// Sign in with Apple / Google: one row per provider account, always resolving to the same user.
+model AuthIdentity {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  provider        String // google | apple
+  subject         String // the provider's stable user id (sub)
+  clientId        String? // audience the identity signed in with (Apple revoke must use the same client)
+  email           String?
+  emailVerified   Boolean  @default(false)
+  isPrivateEmail  Boolean  @default(false) // Apple "Hide My Email" relay address
+  refreshTokenEnc String? // Apple refresh token, AES-256-GCM with FIELD_ENC_KEY; revoked on deletion / unlink
+  createdAt       DateTime @default(now())
+  lastUsedAt      DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, subject])
+  @@index([userId])
+}
+

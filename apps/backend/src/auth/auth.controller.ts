@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Inject, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, Inject, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Doc } from '../common/openapi.js';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ import { isAdminRole } from '../admin/roles.js';
 import { UsersService } from '../users/users.service.js';
 import { hashPassword, newTotpSecret, otpauthUri, sha256, verifyPassword, verifyTotp } from './crypto.js';
 import { EmailTokensService } from './email-tokens.service.js';
+import { OAuthService } from './oauth.service.js';
 import { AUD_APP, TokensService, UserGuard } from './tokens.service.js';
 
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
@@ -27,6 +28,17 @@ const emailToken = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 const ForgotSchema = z.object({ email }).strict();
 const ResetSchema = z.object({ token: emailToken, password }).strict();
 const VerifySchema = z.object({ token: emailToken }).strict();
+const nonce = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+const idToken = z.string().min(100).max(4096);
+const GoogleSchema = z.object({ idToken, nonce }).strict();
+const AppleSchema = z
+  .object({
+    identityToken: idToken,
+    nonce,
+    authorizationCode: z.string().regex(/^[A-Za-z0-9._-]{10,1024}$/).optional(),
+    name: z.string().trim().min(1).max(80).optional(), // Apple sends the name to the app only on first sign-in
+  })
+  .strict();
 const otp = z.string().regex(/^\d{6}$/);
 const AdminLoginSchema = z
   .object({ email, password: z.string().min(1).max(128), otp: otp.optional(), backupCode: z.string().min(10).max(16).optional() })
@@ -47,6 +59,7 @@ export class AuthController {
     private limiter: RateLimiter,
     private audit: AuditService,
     private emailTokens: EmailTokensService,
+    private oauth: OAuthService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -117,6 +130,32 @@ export class AuthController {
     await this.limiter.reset(LIMITS.loginAccount, sha256(input.email));
     log.info('login_succeeded', { userId: user.id, ip: req.clientIp });
     return this.respond(user.id);
+  }
+
+  /** TOK-03: step 1 of Apple / Google sign-in — a single-use nonce for this attempt (10 minutes). */
+  @Post('oauth/nonce')
+  @Doc('Apple/Google girişi 1/2: tek kullanımlık nonce (10 dk). Uygulama sağlayıcıya SHA-256(nonce) (hex) verir', { status: 201, response: { type: 'object', properties: { nonce: { type: 'string' }, expiresIn: { type: 'number' } } }, errors: [429] })
+  async oauthNonce(@Req() req: AppRequest) {
+    await this.limiter.hit(LIMITS.oauthNonce, req.clientIp);
+    return { nonce: await this.oauth.issueNonce(), expiresIn: 600 };
+  }
+
+  @Post('oauth/google')
+  @Doc('Google ile giriş 2/2: ID token + nonce. Geçerli oturum (misafir dahil) Bearer ile gelirse hesaba bağlanır', { body: GoogleSchema, status: 201, response: 'AuthResponse', description: 'Sonuç `result`: created | signed_in | linked. 409 `account_exists`: aynı e-postayla doğrulanmamış hesap var; 409 `identity_in_use`: bu Google hesabı başka kullanıcıya bağlı; 503 `oauth_not_configured`.', errors: [400, 401, 403, 409, 429, 503] })
+  async google(@Body() body: unknown, @Req() req: AppRequest, @Headers('authorization') authorization?: string) {
+    const input = parse(GoogleSchema, body);
+    await this.limiter.hit(LIMITS.oauthLogin, req.clientIp);
+    return this.oauth.signIn('google', { token: input.idToken, nonce: input.nonce, authorization });
+  }
+
+  @Post('oauth/apple')
+  @Doc('Apple ile giriş 2/2: identityToken + nonce (+ authorizationCode: hesap silinince Apple token iptali için)', { body: AppleSchema, status: 201, response: 'AuthResponse', description: 'Bağlama kuralları Google ile aynı. `name` yalnız ilk girişte (Apple adı yalnız o zaman verir).', errors: [400, 401, 403, 409, 429, 503] })
+  async appleSignIn(@Body() body: unknown, @Req() req: AppRequest, @Headers('authorization') authorization?: string) {
+    const input = parse(AppleSchema, body);
+    await this.limiter.hit(LIMITS.oauthLogin, req.clientIp);
+    return this.oauth.signIn('apple', {
+      token: input.identityToken, nonce: input.nonce, authorizationCode: input.authorizationCode, name: input.name, authorization,
+    });
   }
 
   @Post('refresh')
@@ -304,3 +343,20 @@ export class AdminAuthController {
     return user;
   }
 }
+
+/** TOK-05: Sign in with Apple server-to-server notifications (consent revoked, Apple ID deleted). */
+@ApiTags('auth')
+@Controller('v1/webhooks')
+export class AppleWebhookController {
+  constructor(private oauth: OAuthService, private limiter: RateLimiter) {}
+
+  @Post('apple')
+  @HttpCode(200)
+  @Doc('Apple sunucu bildirimleri: Apple imzalı JWT (`payload`) doğrulanmadan hiçbir şey yazılmaz', { body: z.object({ payload: z.string().min(100).max(8192) }).strict(), errors: [400, 401, 429, 503] })
+  async apple(@Body() body: unknown, @Req() req: AppRequest) {
+    const { payload } = parse(z.object({ payload: z.string().min(100).max(8192) }).strict(), body);
+    await this.limiter.hit(LIMITS.webhooks, req.clientIp);
+    return this.oauth.appleEvent(payload);
+  }
+}
+

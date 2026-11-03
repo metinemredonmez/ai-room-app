@@ -436,3 +436,61 @@ Rol bildirmeyen uç **reddedilir** (AZ-01). Rol her istekte veritabanından okun
 - Admin paneli ekranları (ekip yönetimi, yedek kod gösterimi, role göre menü) henüz yapılmadı; admin aşamasında tek tek ele alınacak.
   Şimdilik panelde yalnız girişin her admin rolünü kabul etmesi uyumlu hâle getirildi.
 
+
+### 7.12 Apple / Google ile giriş — #7 (backend)
+Mobil uygulama yerel SDK'dan (Sign in with Apple, Google Sign-In) bir **ID token** alır ve onu backend'e gönderir. Şifre ya da
+sağlayıcı erişim token'ı backend'e gelmez.
+
+**Akış**
+1. `POST /auth/oauth/nonce` → `{ nonce, expiresIn: 600 }`. Tek kullanımlıktır, Redis'te yalnız SHA-256'sı tutulur (TOK-03).
+   Uygulama sağlayıcı SDK'sına `SHA-256(nonce)` (hex) verir. Hız sınırı: IP başına saatte 60.
+2. `POST /auth/oauth/google { idToken, nonce }` ya da `POST /auth/oauth/apple { identityToken, nonce, authorizationCode?, name? }`.
+   Yanıt normal oturumdur (`accessToken`, `refreshToken`, `user`) + `result: created | signed_in | linked`. Hız sınırı: IP başına 15 dakikada 30.
+   - Geçerli bir oturum `Authorization: Bearer` ile gelirse sağlayıcı o hesaba bağlanır. Misafir hesabı kayıtlı hesaba yükseltilir:
+     tasarımları kalır, cihaz bağı ve eski oturumları kapanır. Geçersiz bir Bearer 401 döner; sessizce yeni hesap açılmaz.
+   - `name` Apple'dan yalnız ilk girişte gelir; uygulama o anda gönderir.
+
+**Token doğrulama** (TOK-01, TOK-02)
+- Yalnız RS256 kabul edilir; `alg=none` ve HS256 reddedilir.
+- `iss`, `aud`, `exp` ve token yaşı kontrol edilir: Google için en çok 1 saat, Apple için 10 dakika, ±60 sn saat farkı.
+- `aud` bizim client id listemizde olmalıdır (`GOOGLE_CLIENT_IDS`, `APPLE_CLIENT_IDS`).
+- Anahtarlar sabit tablodaki JWKS adresinden gelir; token içindeki `kid` yalnız bu güvenilir küme içinde anahtar seçer.
+- Nonce, token'ın kendisi için basıldığı kanıtlandıktan sonra silinir. Aynı nonce ikinci kez 401 alır.
+- Hata kodları:
+  - 401 `invalid_token`: token doğrulanamadı.
+  - 503 `oauth_not_configured`: client id tanımlı değil.
+  - 503 `oauth_unavailable`: sağlayıcının anahtar sunucusuna ulaşılamadı; istemci tekrar dener.
+
+**Hesap bağlama** (ön-hesap ele geçirmeye karşı)
+- Sağlayıcı hesabı (`provider + sub`) zaten biliniyorsa o hesaba girilir. Kayıtlı başka bir kullanıcının Bearer'ı ile gelirse
+  409 `identity_in_use` döner.
+- Aynı e-postayla bir hesap varsa bağlantı yalnız **iki taraf da e-postayı doğrulamışsa** kurulur. Aksi hâlde 409 `account_exists`
+  döner: kullanıcı e-posta ve şifresiyle girip profilden bağlar. Doğrulanmamış hesap hiçbir zaman ele geçirilmez ya da sessizce birleştirilmez.
+- Var olan bir hesaba bağlanınca kullanıcıya "hesabın bağlandı" e-postası gider. Askıya alınmış hesap 403 alır.
+- Aynı sağlayıcı hesabıyla iki paralel ilk giriş tek hesap açar: benzersiz kısıt yarışı kazananın hesabına yönlendirilir.
+
+**Bağlı yöntemler**
+- `GET /me/identities` → `{ hasPassword, items: [{ provider, email, isPrivateEmail, createdAt, lastUsedAt }] }`.
+- `DELETE /me/identities/:provider` (`google | apple`). Hesaba girmenin son yolu kaldırılamaz: şifre yok ve tek yöntemse
+  409 `last_login_method` döner.
+- KVKK dışa aktarımı `signInMethods` alanında bağlı yöntemleri listeler.
+
+**Apple token iptali** (App Store 5.1.1(v))
+- `authorizationCode` gelirse backend onu Apple'da refresh token ile değiştirir. Bunun için ES256 client secret kullanılır
+  (`APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`).
+- Refresh token veritabanında AES-256-GCM ile şifreli tutulur (`FIELD_ENC_KEY`, amaç etiketi AAD olarak bağlı, KEY-01).
+- Hesap silinince ya da Apple bağlantısı kaldırılınca `apple-revoke` işi kuyruğa girer: 6 deneme, üstel bekleme.
+  Apple'ın token'ı zaten geçersiz saymasında iş başarılı biter.
+- Kod değişimi başarısız olursa giriş yine tamamlanır; yalnız sonraki iptal yapılamaz (loglanır).
+
+**Apple sunucu bildirimleri** (TOK-05): `POST /webhooks/apple { payload }`
+- `payload` Apple imzalı JWT'dir; aynı doğrulamadan geçmeden hiçbir şey yazılmaz. Aynı bildirim 48 saat içinde tekrar gelirse yok sayılır.
+- `consent-revoked`: saklı token silinir ve kullanıcının oturumları kapanır. Sonraki Apple girişi aynı hesaba ulaşır.
+- `account-delete`: Apple bağlantısı silinir ve oturumlar kapanır.
+- Apple Developer'da bildirim adresi `https://<api>/v1/webhooks/apple` olarak ayarlanır.
+
+**Yapılandırma**
+- `GOOGLE_CLIENT_IDS`, `APPLE_CLIENT_IDS`: virgülle ayrılır. Boşsa ilgili giriş 503 döner.
+- Apple anahtar üçlüsü birlikte verilir. `APPLE_PRIVATE_KEY` varsa `FIELD_ENC_KEY` (32 bayt, base64) zorunludur.
+- Üretimde `APPLE_CLIENT_IDS` doluysa Apple anahtarı zorunludur. `FIELD_ENC_KEY` diğer sırlardan farklı olmalıdır.
+- Mobil giriş ekranı (Apple/Google butonları, profilde bağlı yöntemler) henüz yapılmadı.

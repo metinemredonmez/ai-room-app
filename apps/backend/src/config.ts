@@ -56,6 +56,16 @@ const Env = z.object({
   PUSH_TRANSPORT: z.enum(['outbox', 'expo']).default('outbox'),
   // Optional Expo access token (required once "enhanced push security" is enabled for the Expo project).
   EXPO_ACCESS_TOKEN: z.string().min(20).optional(),
+  // Sign in with Google / Apple (#7). Comma-separated OAuth client ids accepted as the ID token audience:
+  // Google → the *web* client id the apps pass as serverClientId; Apple → bundle id (+ Services ID for web).
+  GOOGLE_CLIENT_IDS: z.string().default(''),
+  APPLE_CLIENT_IDS: z.string().default(''),
+  // Apple key for the token exchange and the revoke on account deletion (App Store 5.1.1(v)). PEM; "\n" escapes allowed.
+  APPLE_TEAM_ID: z.string().regex(/^[A-Z0-9]{10}$/).optional(),
+  APPLE_KEY_ID: z.string().regex(/^[A-Z0-9]{10}$/).optional(),
+  APPLE_PRIVATE_KEY: z.string().min(100).optional(),
+  // KEY-01: AES-256-GCM key (base64, 32 bytes) for provider tokens stored at rest.
+  FIELD_ENC_KEY: z.string().optional().refine((v) => v === undefined || Buffer.from(v, 'base64').length === 32, 'FIELD_ENC_KEY must be 32 bytes, base64'),
   // Run BullMQ workers in this process (set false on API-only replicas when workers run separately).
   WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   // Swagger UI at /docs — on by default only outside production.
@@ -73,6 +83,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const cfg = parsed.data;
   if (cfg.STORAGE_DRIVER === 's3' && !cfg.S3_BUCKET) throw new Error('Invalid configuration — S3_BUCKET is required for STORAGE_DRIVER=s3');
   const corsOrigins = cfg.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean);
+  const appleKey = [cfg.APPLE_TEAM_ID, cfg.APPLE_KEY_ID, cfg.APPLE_PRIVATE_KEY].filter(Boolean).length;
+  if (appleKey > 0 && appleKey < 3) throw new Error('Invalid configuration — APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY go together');
+  if (cfg.APPLE_PRIVATE_KEY && !cfg.FIELD_ENC_KEY) throw new Error('Invalid configuration — FIELD_ENC_KEY is required to store Apple refresh tokens');
   const isProd = cfg.NODE_ENV === 'production';
   if (isProd) {
     const problems: string[] = [];
@@ -83,7 +96,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (cfg.MAIL_TRANSPORT !== 'smtp' || !cfg.SMTP_URL) problems.push('MAIL_TRANSPORT=smtp with SMTP_URL is required');
     if (cfg.PUSH_TRANSPORT !== 'expo') problems.push('PUSH_TRANSPORT=expo is required');
     if (cfg.REVENUECAT_API_KEY && !cfg.REVENUECAT_WEBHOOK_SECRET) problems.push('REVENUECAT_WEBHOOK_SECRET (HMAC signing) is required with RevenueCat');
-    if (new Set([cfg.JWT_SECRET, cfg.IMAGE_URL_SECRET, cfg.DEVICE_PEPPER, cfg.AI_INTERNAL_TOKEN]).size < 4) {
+    // Account deletion must revoke Apple tokens (App Store 5.1.1(v)), which needs the Apple key.
+    if (cfg.APPLE_CLIENT_IDS.trim() && !cfg.APPLE_PRIVATE_KEY) problems.push('APPLE_TEAM_ID / APPLE_KEY_ID / APPLE_PRIVATE_KEY are required with Sign in with Apple');
+    const secrets = [cfg.JWT_SECRET, cfg.IMAGE_URL_SECRET, cfg.DEVICE_PEPPER, cfg.AI_INTERNAL_TOKEN, ...(cfg.FIELD_ENC_KEY ? [cfg.FIELD_ENC_KEY] : [])];
+    if (new Set(secrets).size < secrets.length) {
       problems.push('each secret must be distinct');
     }
     if (problems.length) throw new Error(`Unsafe production configuration — ${problems.join('; ')}`);

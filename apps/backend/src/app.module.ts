@@ -6,7 +6,9 @@ import { AdminSecurityService } from './admin/admin-security.service.js';
 import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
 import { AiClient } from './ai/ai.client.js';
 import { PublicController, UserController } from './app.controller.js';
-import { AdminAuthController, AuthController } from './auth/auth.controller.js';
+import { AdminAuthController, AppleWebhookController, AuthController } from './auth/auth.controller.js';
+import { AppleService } from './auth/apple.service.js';
+import { OAuthService } from './auth/oauth.service.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { AdminGuard, TokensService, UserGuard } from './auth/tokens.service.js';
 import { BillingController } from './billing/billing.controller.js';
@@ -27,7 +29,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -44,6 +46,8 @@ import { UsersService } from './users/users.service.js';
     MailerService,
     PushService,
     EmailTokensService,
+    AppleService,
+    OAuthService,
     UserGuard,
     AdminGuard,
     UsersService,

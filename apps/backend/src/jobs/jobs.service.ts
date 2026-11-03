@@ -11,6 +11,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { ImagesService } from '../images/images.service.js';
 import { BillingService } from '../billing/billing.service.js';
 import { PushRetryableError, PushService } from '../push/push.service.js';
+import { AppleRetryableError, AppleService } from '../auth/apple.service.js';
 import { QueuesService, type DesignJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -30,6 +31,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private images: ImagesService,
     private billing: BillingService,
     private push: PushService,
+    private apple: AppleService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -91,6 +93,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private async runMaintenance(job: Job) {
     // Store events track their own status in WebhookEvent; they don't belong in the cron log.
     if (job.name === 'revenuecat-event') return this.billing.process((job.data as { eventId: string }).eventId);
+    if (job.name === 'apple-revoke') return this.appleRevoke(job as Job<{ clientId: string; tokenEnc: string }>);
     const run = await this.prisma.jobRun.create({ data: { name: job.name, status: 'running' } });
     try {
       const details = job.name === 'retention' ? await this.retention() : { failedStale: await this.designs.reconcile() };
@@ -106,6 +109,18 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       });
       log.error('maintenance_job_failed', { job: job.name, error: (e as Error).name });
       throw e;
+    }
+  }
+
+  private async appleRevoke(job: Job<{ clientId: string; tokenEnc: string }>) {
+    try {
+      const result = await this.apple.revoke(job.data.clientId, job.data.tokenEnc);
+      log.info('apple_token_revoke', { result });
+      return { result };
+    } catch (e) {
+      if (e instanceof AppleRetryableError) throw e;
+      log.error('apple_token_revoke_failed', { error: (e as Error).name });
+      throw new UnrecoverableError((e as Error).message);
     }
   }
 
