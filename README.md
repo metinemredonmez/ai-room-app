@@ -161,6 +161,15 @@ Uçtan uca smoke testi şunları kapsar:
 - Hesap kurtarma: e-posta doğrulama, şifre sıfırlama, tek kullanım, yanlış amaç, sahte Host başlığı (MAIL-01),
   sıfırlama sonrası oturum iptali (SES-04).
 
+CI (`.github/workflows/ci.yml`, her push / PR ve haftalık):
+- **secrets:** gitleaks bütün git geçmişini tarar. İncelenmiş yanlış alarmlar `.gitleaksignore` dosyasındadır.
+- **backend:** typecheck, lint, birim testleri, derleme; geçici Postgres + Redis üzerinde migrasyon, seed ve uçtan uca smoke
+  (AI servisi `mock` sağlayıcıyla). Sırlar her çalışmada rastgele üretilir.
+- **ai-service:** pytest.
+- **Bağımlılık denetimi:** `npm audit --audit-level=high` ve `pip-audit`. Yeni bir açık CI'ı kırmızıya çevirir.
+- **sbom:** bütün lockfile'lardan CycloneDX SBOM (`sbom.cdx.json`, 90 gün saklanır).
+- Action'lar commit SHA'sına sabitlenmiştir; Dependabot ayda bir günceller.
+
 ## Güvenlik
 
 Kontroller red-team kataloğundaki kimliklerle eşleştirildi; ayrıntı PDF raporunun "Güvenlik ve uyum" bölümünde.

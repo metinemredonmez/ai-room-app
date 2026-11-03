@@ -54,5 +54,8 @@
   "private": true,
   "engines": {
     "node": ">=22.13"
+  },
+  "overrides": {
+    "glob": "^14.0.3"
   }
 }

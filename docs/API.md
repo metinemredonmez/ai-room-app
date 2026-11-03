@@ -333,7 +333,7 @@ Zamanlı işler BullMQ ile tekrarlı çalışır; her çalışma `JobRun` tablos
   İstemci sözleşmesi ve CSP değişmez.
 - Anahtarlar yalnız sunucunun ürettiği UUID'lerdir (`images/<uuid>.jpg`); kullanıcı girdisi anahtar olamaz.
 - Taşıma: `npm run storage:migrate` yerel dosyaları kovaya kopyalar; tekrar çalıştırmak güvenlidir.
-  Yerel test için `npm run s3:dev` (s3rver, port 4569).
+  Yerelde varsayılan `local` sürücüdür; S3/R2 yolu staging'de denenir (s3rver güvenlik açığı nedeniyle kaldırıldı, #10).
 - `/health` ve `/admin/system` yanıtlarına depolama sürücüsü ve durumu (`storage`) eklendi.
 
 ### 7.8 Bölge kilidi ve fal.ai (maske tabanlı düzenleme) — #4

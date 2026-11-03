@@ -25,8 +25,7 @@
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "openapi:export": "node -e \"fetch((process.env.API_URL||'http://localhost:4000')+'/docs/openapi.json').then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text()}).then(t=>require('fs').writeFileSync('../../docs/openapi/backend.json',JSON.stringify(JSON.parse(t),null,2)+'\\n')).then(()=>console.log('docs/openapi/backend.json written'))\"",
-    "storage:migrate": "tsx scripts/migrate-storage.ts",
-    "s3:dev": "s3rver -d ./data/s3rver -p 4569 --configure-bucket airoom-dev"
+    "storage:migrate": "tsx scripts/migrate-storage.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
@@ -52,7 +51,6 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
-    "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
     "@types/express": "^5.0.0",
@@ -65,7 +63,6 @@
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
     "prisma": "^7.10.1",
-    "s3rver": "^3.7.1",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "tsx": "^4.23.15",
@@ -75,5 +72,13 @@
   },
   "engines": {
     "node": ">=20.9"
+  },
+  "overrides": {
+    "@nestjs/cli": {
+      "minimatch": "^11.0.4"
+    },
+    "@sentry/bundler-plugins": {
+      "glob": "^14.0.3"
+    }
   }
 }

@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Doc } from '../common/openapi.js';
 import { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';
-import { AppError, parse, unauthorized } from '../common/errors.js';
+import { AppError, parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { LIMITS, PrismaService, RateLimiter } from '../common/infra.js';
 import { log } from '../common/log.js';
