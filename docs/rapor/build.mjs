@@ -230,8 +230,8 @@ function references() {
 
 // ------------------------------------------------------------------------------ ekran görüntüleri
 const CAPTIONS = {
-  '01-ornek-girdi-oturma-odasi': 'Önce: uygulamanın yerleşik örnek fotoğrafı (oturma odası)',
-  '02-gemini-modern-turk-sonucu': 'Sonra: gerçek Gemini 2.5 Flash Image çıktısı · "Modern Türk" stili (~9 sn)',
+  '01-ornek-girdi-oturma-odasi': 'Önce: uygulamanın yerleşik örnek fotoğrafı (gerçek oda, Pexels)',
+  '02-gemini-modern-turk-sonucu': 'Sonra: gerçek Gemini 2.5 Flash Image çıktısı · "Modern Türk" stili',
   '10-mobil-ana-sayfa': 'Mobil · Ana Sayfa',
   '11-mobil-yeni-tasarim': 'Mobil · Yeni tasarım (araç, fotoğraf, seçenekler)',
   '12-mobil-once-sonra': 'Mobil · Önce/sonra ve "Yapay zekâ ile oluşturulmuştur" etiketi',
@@ -247,10 +247,10 @@ const autoCaption = (stem) => stem.replace(/^\d+-/, '').replace(/-/g, ' ').repla
 
 function screenshots() {
   const dir = path.join(docs, 'screenshots');
-  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.png')).sort() : [];
+  const files = existsSync(dir) ? readdirSync(dir).filter((f) => /\.(png|jpe?g)$/i.test(f)).sort() : [];
   if (!files.length) return '<p class="muted">Bu sürümde ekran görüntüsü bulunmuyor.</p>';
   const fig = (f, label, cls = '') => {
-    const stem = f.replace(/\.png$/i, '');
+    const stem = f.replace(/\.(png|jpe?g)$/i, '');
     return `<figure class="${cls}"><img src="../screenshots/${encodeURIComponent(f)}" alt="${esc(CAPTIONS[stem] ?? autoCaption(stem))}"><figcaption>${label ? `<b>${label}</b> — ` : ''}${esc(CAPTIONS[stem] ?? autoCaption(stem))}</figcaption></figure>`;
   };
   const groups = [

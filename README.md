@@ -8,9 +8,9 @@ bahçe tasarım platformu. Fotoğraf yükle, stil seç, yapay zekâ yeniden tasa
 > [docs/AI-Room-Pazar-Arastirmasi-ve-MVP-Raporu.pdf](docs/AI-Room-Pazar-Arastirmasi-ve-MVP-Raporu.pdf)
 > dosyasında, API sözleşmesi [docs/API.md](docs/API.md) dosyasındadır.
 
-| Önce (örnek fotoğraf) | Sonra (Gemini 2.5 Flash Image · "Modern Türk") |
+| Önce (yerleşik örnek: gerçek oda fotoğrafı) | Sonra (Gemini 2.5 Flash Image · "Modern Türk") |
 |---|---|
-| ![önce](docs/screenshots/01-ornek-girdi-oturma-odasi.png) | ![sonra](docs/screenshots/02-gemini-modern-turk-sonucu.png) |
+| ![önce](docs/screenshots/01-ornek-girdi-oturma-odasi.jpg) | ![sonra](docs/screenshots/02-gemini-modern-turk-sonucu.jpg) |
 
 ## Bileşenler
 
