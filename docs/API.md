@@ -535,3 +535,62 @@ sağlayıcı erişim token'ı backend'e gelmez.
   - Sentry'de AB veri bölgesi seçilir ve "Prevent Storing of IP Addresses" açılır.
   - `SENTRY_RELEASE` olarak commit SHA verilir.
   - Mobil Sentry mobil aşamada eklenecek.
+
+### 7.14 Yasal metinler ve KVKK başvuruları — #9 (backend)
+
+**Yasal metinler** (`terms`, `privacy`, `ai_processing`, `marketing`; `tr` ve `en`)
+- Metinler veritabanında sürümlü tutulur. Sürüm `YYYY-MM-DD` ya da aynı gün düzeltmesi için `YYYY-MM-DD.n` biçimindedir.
+- İlk açılışta `assets/legal/*.md` taslakları `2026-11-01` sürümüyle yayınlanır. Bu metinler **taslaktır; yayından önce hukukçu
+  incelemesi gerekir**.
+- Yer tutucular (`{{controller.name}}`, `{{controller.address}}`, `{{controller.email}}`, `{{controller.kep}}`) ortam
+  değişkenlerinden doldurulur: `LEGAL_CONTROLLER_NAME`, `LEGAL_CONTROLLER_ADDRESS`, `LEGAL_CONTACT_EMAIL`, `LEGAL_KEP_ADDRESS`.
+  Üretimde ilk üçü zorunludur.
+- Yayınlanmış metin değiştirilemez ve silinemez; kullanıcının neyi onayladığının kanıtıdır. Değişiklik yeni sürümle yapılır.
+- `requiresConsent: false` ile yayınlanan sürüm (yazım düzeltmesi) eski onayları geçerli bırakır. `true` ise kullanıcıdan yeniden
+  onay istenir: `/me/consents` içindeki `current.<tür>.granted` false olur.
+- Onay yalnız yayındaki sürüm için verilebilir (eski sürüme 409). Geri çekme her zaman kabul edilir.
+- Gövde Markdown'dur; HTML etiketi reddedilir (WEB-01). İstemciler metni HTML olarak işlemez.
+
+| Metot | Yol | Gövde / sorgu | Yanıt |
+|---|---|---|---|
+| GET | `/legal` | `?locale=tr\|en` | `{ items: { kind, version, consentVersion, publishedAt, url }[] }` |
+| GET | `/legal/:kind` | `?locale=tr\|en&version=` | `{ kind, version, locale, title, body, format: 'markdown', requiresConsent, publishedAt, current }`. Çeviri yoksa Türkçe döner; eski sürüm `version` ile okunur. |
+| GET | `/admin/legal` | `?kind=` (SUPPORT) | `{ current, items: { id, kind, version, locale, title, requiresConsent, status: 'draft'\|'published', publishedAt, updatedAt }[] }` |
+| GET | `/admin/legal/:id` | SUPPORT | Ham satır (yer tutucular doldurulmadan) |
+| POST | `/admin/legal` | `{ kind, version, locale, title, body, requiresConsent }` (ADMIN) | 201 taslak. Sürüm yayındakinden büyük olmalı; aynı tür + sürüm + dil için 409. |
+| PATCH | `/admin/legal/:id` | `{ title?, body?, requiresConsent? }` (ADMIN) | Taslak; yayınlanmışsa 409 |
+| DELETE | `/admin/legal/:id` | ADMIN | 204; yayınlanmışsa 409 |
+| POST | `/admin/legal/publish` | `{ kind, version, reason }` (ADMIN) | Sürümün bütün dilleri birlikte yayınlanır; Türkçe taslak zorunlu (400). `requiresConsent` Türkçe metinden alınır. Denetim kaydına gerekçeyle girer. |
+
+`GET /catalog` yanıtındaki `legal` alanı (`termsVersion`, `privacyVersion`, `aiProcessingVersion`, `marketingVersion`) yayındaki
+sürümleri gösterir; yayın sonrası en geç 60 sn içinde güncellenir.
+
+**KVKK m.11 başvuruları** (m.13: en geç 30 gün içinde yanıt)
+- Başvuru türleri: `info`, `access`, `transfers`, `rectification`, `erasure`, `third_party_notice`, `objection`,
+  `compensation`, `other`.
+- Uygulamadan gelen başvuruda kimlik doğrulaması oturumdur. E-posta, KEP ya da yazılı gelen başvuruyu admin geliş tarihiyle
+  kaydeder; süre o günden işler.
+- Başvuru numarası `KVKK-YYYY-XXXXXX` biçimindedir; son tarih geliş + 30 gündür.
+- Kullanıcının aynı anda en çok 3 açık başvurusu olabilir (409 `too_many_open_requests`); günde en çok 5 başvuru (429).
+- Durumlar: `RECEIVED → IN_PROGRESS → COMPLETED | REJECTED`. Kapatmak için yanıt zorunlu. Kapanan başvuru yeniden açılmaz.
+  İki admin aynı anda kapatamaz (koşullu güncelleme, 409).
+- Yanıt uygulamada görünür ve başvuru sahibine e-postayla gider; e-postada KVKK m.14 şikâyet hakkı hatırlatılır.
+- Başvuru ve yanıt metni kişisel veridir: loglara, denetim kaydına ve e-posta konusuna girmez. E-postalarda yalnız başvuru
+  numarası, konu ve tarih bulunur.
+- Hesap silinince başvuru kaydı kalır, kullanıcı bağlantısı kaldırılır (işlemin kanıtı). Kapanan başvurular 2 yıl sonra
+  `retention` işiyle silinir.
+- `kvkk-deadlines` (günlük 09:00 TR): 7 gün içinde dolacak ya da gecikmiş açık başvurular `LEGAL_CONTACT_EMAIL` adresine ve
+  ADMIN / SUPER_ADMIN'lere e-postayla bildirilir.
+- `GET /me/export` yanıtında `dataRequests` alanı vardır.
+
+| Metot | Yol | Gövde / sorgu | Yanıt |
+|---|---|---|---|
+| GET | `/me/data-requests` | — | `{ items: { id, reference, type, status, details, response, receivedAt, dueAt, closedAt }[] }` |
+| POST | `/me/data-requests` | `{ type, details: string (10..2000) }` | 201 başvuru. Kullanıcıya alındı, `LEGAL_CONTACT_EMAIL` adresine bildirim e-postası gider. |
+| GET | `/admin/data-requests` | `?status&overdue=true&cursor&limit` (SUPPORT) | `{ counts: { open, dueSoon, overdue }, items: (başvuru + { channel, contactEmail, userId, handledBy, daysLeft, overdue })[], nextCursor }`; son tarihe göre sıralı |
+| GET | `/admin/data-requests/:id` | SUPPORT | Başvuru + `user` özeti |
+| POST | `/admin/data-requests` | `{ type, channel: 'email'\|'kep'\|'letter'\|'other', contactEmail?, details, receivedAt (ISO), userId? }` (ADMIN) | 201; gelecek tarih reddedilir. Denetlenir. |
+| PATCH | `/admin/data-requests/:id` | `{ status: 'IN_PROGRESS'\|'COMPLETED'\|'REJECTED', response? (10..5000) }` (ADMIN) | Güncel kayıt. Denetim kaydına yanıt metni girmez. |
+
+Bekleyenler: admin panelinde metin düzenleyici ve başvuru masası (admin aşaması); mobilde onay yenileme ekranı ve başvuru formu
+(mobil aşaması); metinlerin hukukçu incelemesi.

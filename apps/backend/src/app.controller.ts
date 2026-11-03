@@ -13,7 +13,7 @@ import { AppError, parse } from './common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from './common/http.js';
 import { LIMITS, PrismaService, RateLimiter, RedisService } from './common/infra.js';
 import { ConsentsService } from './kvkk/consents.service.js';
-import { CONSENT_KINDS, LEGAL_VERSIONS } from './kvkk/legal.js';
+import { CONSENT_KINDS } from './kvkk/legal.js';
 import { UsageService } from './usage/usage.service.js';
 import { log } from './common/log.js';
 import { CreateDesignSchema, DesignsService, cursorArgs } from './designs/designs.service.js';
@@ -164,7 +164,7 @@ const ReportSchema = z
   .object({ reason: z.enum(['inappropriate', 'offensive', 'copyright', 'privacy', 'other']), note: z.string().trim().max(500).optional() })
   .strict();
 const ConsentSchema = z
-  .object({ kind: z.enum(CONSENT_KINDS as [string, ...string[]]).transform((k) => k as keyof typeof LEGAL_VERSIONS), version: z.string().max(40), granted: z.boolean() })
+  .object({ kind: z.enum(CONSENT_KINDS), version: z.string().max(40), granted: z.boolean() })
   .strict();
 const ChatSchema = z
   .object({
@@ -356,7 +356,7 @@ export class UserController {
   async exportMe(@Auth() auth: AuthContext, @Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
     await this.limiter.hit(LIMITS.export, auth.userId);
     const user = await this.users.get(auth.userId);
-    const [designs, ledger, consents, reports, uploads, devices, identities] = await Promise.all([
+    const [designs, ledger, consents, reports, uploads, devices, identities, dataRequests] = await Promise.all([
       this.prisma.design.findMany({ where: { userId: auth.userId }, include: { inputImage: true, results: true, analyses: true }, orderBy: { createdAt: 'desc' } }),
       this.prisma.creditLedger.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.consent.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
@@ -364,6 +364,7 @@ export class UserController {
       this.prisma.image.findMany({ where: { ownerId: auth.userId, kind: { in: ['UPLOAD', 'SAMPLE'] } }, orderBy: { createdAt: 'desc' } }),
       this.prisma.pushToken.findMany({ where: { userId: auth.userId }, orderBy: { lastSeenAt: 'desc' } }),
       this.prisma.authIdentity.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'asc' } }),
+      this.prisma.dataRequest.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
     ]);
     log.info('data_export', { userId: auth.userId });
     res.setHeader('Content-Disposition', `attachment; filename="ai-room-verilerim-${new Date().toISOString().slice(0, 10)}.json"`);
@@ -373,6 +374,7 @@ export class UserController {
       profile: { ...this.users.toDto(user), status: user.status, lastSeenAt: user.lastSeenAt?.toISOString() ?? null, emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null },
       consents: consents.map((c) => ({ kind: c.kind, version: c.version, granted: c.granted, createdAt: c.createdAt.toISOString() })),
       uploads: uploads.map((i) => this.images.ref(i)),
+      dataRequests: dataRequests.map((r) => ({ reference: r.reference, type: r.type, status: r.status, details: r.details, response: r.response, receivedAt: r.receivedAt.toISOString(), dueAt: r.dueAt.toISOString(), closedAt: r.closedAt?.toISOString() ?? null })),
       signInMethods: identities.map((i) => ({ provider: i.provider, email: i.email, linkedAt: i.createdAt.toISOString(), lastUsedAt: i.lastUsedAt.toISOString() })),
       pushDevices: devices.map((t) => ({ platform: t.platform, token: maskToken(t.token), registeredAt: t.createdAt.toISOString(), lastSeenAt: t.lastSeenAt.toISOString() })),
       designs: await Promise.all(

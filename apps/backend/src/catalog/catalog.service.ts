@@ -7,7 +7,7 @@ import { AppError } from '../common/errors.js';
 import { PrismaService } from '../common/infra.js';
 import type { Style } from '../generated/prisma/client.js';
 import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
-import { LEGAL_VERSIONS } from '../kvkk/legal.js';
+import { LegalService } from '../kvkk/legal.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
 
@@ -15,7 +15,7 @@ import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './ca
 export class CatalogService {
   private cache: { at: number; styles: Style[] } | null = null;
 
-  constructor(private prisma: PrismaService, private settings: SettingsService, @Inject(CONFIG) private cfg: Config) {}
+  constructor(private prisma: PrismaService, private settings: SettingsService, private legal: LegalService, @Inject(CONFIG) private cfg: Config) {}
 
   async styles(includeInactive = false): Promise<Style[]> {
     if (includeInactive) return this.prisma.style.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
@@ -65,7 +65,10 @@ export class CatalogService {
       plans: PLANS.map((p) => ({ id: p.id, name: p.name[locale], period: p.period, priceTRY: p.priceTRY, badge: p.badge?.[locale] ?? null, storeProductId: p.storeProductId })),
       creditPacks: this.cfg.CREDIT_PACKS.split(',').map((x) => x.trim().split(':')).filter(([id, n]) => id && Number(n) > 0).map(([productId, n]) => ({ productId, credits: Math.trunc(Number(n)) })),
       ...this.notices(locale),
-      legal: { termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy, aiProcessingVersion: LEGAL_VERSIONS.ai_processing },
+      legal: {
+        termsVersion: this.legal.versionOf('terms').version, privacyVersion: this.legal.versionOf('privacy').version,
+        aiProcessingVersion: this.legal.versionOf('ai_processing').version, marketingVersion: this.legal.versionOf('marketing').version,
+      },
     };
   }
 

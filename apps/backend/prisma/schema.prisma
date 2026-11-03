@@ -53,6 +53,13 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum DataRequestStatus {
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
 enum DesignStatus {
   PENDING
   SUCCEEDED
@@ -94,6 +101,7 @@ model User {
   pushTokens    PushToken[]
   backupCodes   AdminBackupCode[]
   identities    AuthIdentity[]
+  dataRequests  DataRequest[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -397,3 +405,46 @@ model AuthIdentity {
   @@index([userId])
 }
 
+/// KVKK legal texts (#9). One row per kind + version + locale; a published row is never edited —
+/// it is the text a user saw when they accepted it. Placeholders ({{controller.name}} …) are filled on read.
+model LegalDocument {
+  id              String    @id @default(uuid()) @db.Uuid
+  kind            String // terms | privacy | ai_processing | marketing
+  version         String // YYYY-MM-DD[.n]
+  locale          String // tr | en
+  title           String
+  body            String // Markdown, no HTML
+  requiresConsent Boolean   @default(true) // false: wording fix, earlier acceptances stay valid
+  createdBy       String?   @db.Uuid
+  publishedBy     String?   @db.Uuid
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([kind, version, locale])
+  @@index([kind, publishedAt])
+}
+
+/// KVKK m.11 applications (#9): answered within 30 days (m.13). Kept after the account is deleted
+/// (userId → null) as proof of how the application was handled; purged by retention after 2 years.
+model DataRequest {
+  id           String            @id @default(uuid()) @db.Uuid
+  reference    String            @unique
+  userId       String?           @db.Uuid
+  type         String // info | access | transfers | rectification | erasure | third_party_notice | objection | compensation | other
+  channel      String            @default("app") // app | email | kep | letter | other
+  contactEmail String?
+  details      String
+  status       DataRequestStatus @default(RECEIVED)
+  receivedAt   DateTime          @default(now())
+  dueAt        DateTime
+  response     String?
+  handledBy    String?           @db.Uuid
+  closedAt     DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, dueAt])
+  @@index([userId, createdAt])
+}

@@ -13,6 +13,7 @@ import { ImagesService } from '../images/images.service.js';
 import { BillingService } from '../billing/billing.service.js';
 import { PushRetryableError, PushService } from '../push/push.service.js';
 import { AppleRetryableError, AppleService } from '../auth/apple.service.js';
+import { DataRequestsService } from '../kvkk/data-requests.service.js';
 import { QueuesService, type DesignJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -33,6 +34,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private billing: BillingService,
     private push: PushService,
     private apple: AppleService,
+    private dataRequests: DataRequestsService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -58,6 +60,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       'retention',
       { pattern: '30 3 * * *', tz: 'Europe/Istanbul' },
       { name: 'retention' },
+    );
+    await this.queues.maintenance.upsertJobScheduler(
+      'kvkk-deadlines',
+      { pattern: '0 9 * * *', tz: 'Europe/Istanbul' },
+      { name: 'kvkk-deadlines' },
     );
     log.info('workers_started', { concurrency: this.cfg.MAX_CONCURRENT_GENERATIONS });
   }
@@ -107,7 +114,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     if (job.name === 'apple-revoke') return this.appleRevoke(job as Job<{ clientId: string; tokenEnc: string }>);
     const run = await this.prisma.jobRun.create({ data: { name: job.name, status: 'running' } });
     try {
-      const details = job.name === 'retention' ? await this.retention() : { failedStale: await this.designs.reconcile() };
+      const details =
+        job.name === 'retention' ? await this.retention()
+        : job.name === 'kvkk-deadlines' ? await this.dataRequests.deadlineDigest()
+        : { failedStale: await this.designs.reconcile() };
       await this.prisma.jobRun.update({
         where: { id: run.id },
         data: { status: 'ok', details: details as Prisma.InputJsonValue, finishedAt: new Date() },
@@ -168,9 +178,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
     // Devices not seen for 270 days (Expo expires idle tokens; the app re-registers on every launch).
     const pushTokens = await this.prisma.pushToken.deleteMany({ where: { lastSeenAt: { lt: new Date(now - 270 * DAY) } } });
+    const dataRequests = await this.dataRequests.purgeClosed();
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count,
-      outboxMails: mails, pushTokens: pushTokens.count,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests,
     };
   }
 

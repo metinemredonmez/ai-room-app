@@ -70,6 +70,11 @@ const Env = z.object({
   WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   // Swagger UI at /docs — on by default only outside production.
   SWAGGER_ENABLED: z.enum(['true', 'false']).optional().transform((v) => (v === undefined ? undefined : v === 'true')),
+  // KVKK data controller, filled into the legal texts ({{controller.*}}); required in production.
+  LEGAL_CONTROLLER_NAME: z.string().trim().min(2).max(200).default('AI Room (geliştirme)'),
+  LEGAL_CONTROLLER_ADDRESS: z.string().trim().min(2).max(300).default('Adres henüz tanımlanmadı'),
+  LEGAL_CONTACT_EMAIL: z.email().default('kvkk@airoom.local'),
+  LEGAL_KEP_ADDRESS: z.string().trim().max(200).optional(),
   // Error reporting (Sentry). Unset = off. Reports carry no personal data (src/common/monitoring.ts).
   SENTRY_DSN: z.url().optional(),
   SENTRY_ENVIRONMENT: z.string().max(40).optional(),
@@ -100,6 +105,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!cfg.ADMIN_APP_URL.startsWith('https://')) problems.push('ADMIN_APP_URL must use https');
     if (cfg.MAIL_TRANSPORT !== 'smtp' || !cfg.SMTP_URL) problems.push('MAIL_TRANSPORT=smtp with SMTP_URL is required');
     if (cfg.PUSH_TRANSPORT !== 'expo') problems.push('PUSH_TRANSPORT=expo is required');
+    // The legal texts must name the real data controller (KVKK m.10).
+    if (!env.LEGAL_CONTROLLER_NAME || !env.LEGAL_CONTROLLER_ADDRESS || !env.LEGAL_CONTACT_EMAIL) problems.push('LEGAL_CONTROLLER_NAME, LEGAL_CONTROLLER_ADDRESS and LEGAL_CONTACT_EMAIL are required');
     if (cfg.REVENUECAT_API_KEY && !cfg.REVENUECAT_WEBHOOK_SECRET) problems.push('REVENUECAT_WEBHOOK_SECRET (HMAC signing) is required with RevenueCat');
     // Account deletion must revoke Apple tokens (App Store 5.1.1(v)), which needs the Apple key.
     if (cfg.APPLE_CLIENT_IDS.trim() && !cfg.APPLE_PRIVATE_KEY) problems.push('APPLE_TEAM_ID / APPLE_KEY_ID / APPLE_PRIVATE_KEY are required with Sign in with Apple');

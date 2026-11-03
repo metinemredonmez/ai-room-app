@@ -145,6 +145,7 @@ describe('Sign in with Apple configuration (KEY-01)', () => {
     const prod = {
       ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com',
       ADMIN_APP_URL: 'https://admin.airoom.example.com', MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com', PUSH_TRANSPORT: 'expo',
+      LEGAL_CONTROLLER_NAME: 'AI Room Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@airoom.example.com',
     };
     expect(() => loadConfig({ ...prod, APPLE_CLIENT_IDS: CLIENT })).toThrow(/APPLE_PRIVATE_KEY/);
     const key = randomBytes(32).toString('base64');

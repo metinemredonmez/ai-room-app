@@ -11,6 +11,7 @@ import { Reflector } from '@nestjs/core';
 import { PATH_METADATA } from '@nestjs/common/constants.js';
 import { AdminController } from './admin/admin.controller.js';
 import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
+import { AdminDataRequestsController, AdminLegalController } from './kvkk/kvkk.controller.js';
 import { MIN_ROLE, MinRole, atLeast, isAdminRole } from './admin/roles.js';
 import { AdminGuard } from './auth/tokens.service.js';
 import { resolveClientIp } from './common/http.js';
@@ -107,7 +108,9 @@ describe('configuration (KEY-01)', () => {
     expect(() => loadConfig(prod)).toThrow(/SMTP/);
     const mail = { MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com' };
     expect(() => loadConfig({ ...prod, ...mail })).toThrow(/PUSH_TRANSPORT/);
-    expect(loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo' }).isProd).toBe(true);
+    // KVKK m.10: the legal texts must name the real data controller, never the development defaults.
+    expect(() => loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo' })).toThrow(/LEGAL_CONTROLLER_NAME/);
+    expect(loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo', LEGAL_CONTROLLER_NAME: 'AI Room Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@airoom.example.com' }).isProd).toBe(true);
   });
 });
 
@@ -228,7 +231,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('every admin route declares its least role', () => {
     const reflector = new Reflector();
     const missing: string[] = [];
-    for (const ctrl of [AdminController, AdminSelfController, AdminsController]) {
+    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController]) {
       for (const name of Object.getOwnPropertyNames(ctrl.prototype)) {
         const handler = (ctrl.prototype as unknown as Record<string, unknown>)[name];
         if (name === 'constructor' || typeof handler !== 'function' || Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;

@@ -23,6 +23,9 @@ import { ImagesService } from './images/images.service.js';
 import { JobsService } from './jobs/jobs.service.js';
 import { QueuesService } from './jobs/queues.service.js';
 import { ConsentsService } from './kvkk/consents.service.js';
+import { DataRequestsService } from './kvkk/data-requests.service.js';
+import { AdminDataRequestsController, AdminLegalController, DataRequestsController, LegalController } from './kvkk/kvkk.controller.js';
+import { LegalService } from './kvkk/legal.service.js';
 import { MailerService } from './mail/mailer.service.js';
 import { PushService } from './push/push.service.js';
 import { SettingsService } from './settings/settings.service.js';
@@ -30,7 +33,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -40,7 +43,9 @@ import { UsersService } from './users/users.service.js';
     SettingsService,
     UsageService,
     QueuesService,
+    LegalService,
     ConsentsService,
+    DataRequestsService,
     BillingService,
     JobsService,
     RateLimiter,

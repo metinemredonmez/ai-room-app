@@ -236,6 +236,29 @@ ok(exp.status === 200 && exp.json?.designs?.length >= 1 && exp.headers.get('cont
 ok(Array.isArray(exp.json?.pushDevices) && exp.json.pushDevices.length === 0, 'export lists push devices (moved token no longer listed)');
 ok(Array.isArray(exp.json?.signInMethods), 'export lists linked sign-in methods');
 
+// KVKK legal texts + m.11 applications (#9).
+const legalIndex = await call('GET', '/legal?locale=en');
+const aiText = legalIndex.json?.items?.find((d) => d.kind === 'ai_processing');
+ok(legalIndex.status === 200 && legalIndex.json.items.length === 4 && aiText?.version === catalog2.json?.legal?.aiProcessingVersion, 'legal index matches the catalog versions');
+const privacyEn = await call('GET', '/legal/privacy?locale=en');
+ok(privacyEn.status === 200 && privacyEn.json?.locale === 'en' && privacyEn.json.format === 'markdown' && !privacyEn.json.body.includes('{{'), 'privacy notice served with the controller details filled in');
+const legalMissing = await call('GET', '/legal/cookies');
+const legalBadVersion = await call('GET', '/legal/privacy?version=latest');
+const legalOld = await call('GET', '/legal/privacy?version=1999-01-01');
+ok(legalMissing.status === 404 && legalBadVersion.status === 400 && legalOld.status === 404, 'unknown kind, malformed and unpublished versions are refused');
+const drBad = await call('POST', '/me/data-requests', { token: vt, body: { type: 'access', details: 'smoke kvkk', status: 'COMPLETED' } });
+ok(drBad.status === 400, 'data request body is validated strictly (no client-set status)');
+const dr = await call('POST', '/me/data-requests', { token: vt, body: { type: 'access', details: 'smoke: verilerimin bir kopyasını istiyorum' } });
+const drDays = (new Date(dr.json?.dueAt) - new Date(dr.json?.receivedAt)) / 86_400_000;
+ok(dr.status === 201 && /^KVKK-\d{4}-[A-Z2-9]{6}$/.test(dr.json?.reference ?? '') && dr.json.status === 'RECEIVED' && drDays === 30, 'KVKK m.11 application filed with a 30-day deadline', dr.json?.reference);
+const drMine = await call('GET', '/me/data-requests', { token: vt });
+const drOther = await call('GET', '/me/data-requests', { token: other.json.accessToken });
+ok(drMine.json?.items?.some((r) => r.id === dr.json.id) && !drOther.json?.items?.some((r) => r.id === dr.json.id), "applications are listed to their owner only (AZ-01)");
+const exp2 = await call('GET', '/me/export', { token: vt });
+ok(exp2.json?.dataRequests?.some((r) => r.reference === dr.json.reference), 'export includes KVKK applications');
+const drNoAdmin = await call('GET', '/admin/data-requests', { token: vt });
+ok(drNoAdmin.status === 401 || drNoAdmin.status === 403, 'a user cannot open the application desk', `${drNoAdmin.status}`);
+
 // Apple / Google sign-in (#7). Without client ids the providers answer 503; a configured one rejects junk with 401.
 const nonceRes = await call('POST', '/auth/oauth/nonce');
 ok(nonceRes.status === 201 && /^[A-Za-z0-9_-]{43}$/.test(nonceRes.json?.nonce ?? ''), 'sign-in nonce issued (TOK-03)');
@@ -287,6 +310,35 @@ if (adminToken) {
   const check = await call('GET', '/app/version?platform=ios&version=1.1.0', { headers: ios('1.1.0') });
   ok(check.status === 200 && check.json?.updateRequired === true && check.json.updateAvailable === true && check.json.latestVersion === '1.3.0', 'version check stays reachable for an outdated build');
   await call('PATCH', '/admin/settings', { ...A, body: { values: { appVersions: versions }, reason: 'smoke test revert' } });
+
+  // KVKK desk (#9): deadline-ordered list, answer required to close, the applicant sees the answer.
+  const desk = await call('GET', '/admin/data-requests?status=RECEIVED&limit=100', A);
+  ok(desk.status === 200 && typeof desk.json?.counts?.overdue === 'number' && desk.json.items.some((r) => r.id === dr.json.id && r.daysLeft === 30), 'admin sees the application with days left');
+  const noAnswer = await call('PATCH', `/admin/data-requests/${dr.json.id}`, { ...A, body: { status: 'COMPLETED' } });
+  const working = await call('PATCH', `/admin/data-requests/${dr.json.id}`, { ...A, body: { status: 'IN_PROGRESS' } });
+  const closed = await call('PATCH', `/admin/data-requests/${dr.json.id}`, { ...A, body: { status: 'COMPLETED', response: 'smoke: verilerinin kopyası e-postana gönderildi' } });
+  const reopen = await call('PATCH', `/admin/data-requests/${dr.json.id}`, { ...A, body: { status: 'IN_PROGRESS' } });
+  ok(noAnswer.status === 400 && working.status === 200 && closed.status === 200 && closed.json?.closedAt && reopen.status === 409, 'application closes only with an answer and stays closed');
+  const drAfter = await call('GET', '/me/data-requests', { token: vt });
+  ok(drAfter.json?.items?.find((r) => r.id === dr.json.id)?.response?.startsWith('smoke:'), 'applicant sees the answer');
+  const manual = await call('POST', '/admin/data-requests', { ...A, body: { type: 'erasure', channel: 'kep', details: 'smoke: KEP ile gelen silme talebi', receivedAt: new Date(Date.now() - 31 * 86_400_000).toISOString() } });
+  ok(manual.status === 201 && manual.json?.overdue === true, 'application received by KEP is logged with its arrival date (overdue)');
+  if (manual.json?.id) await call('PATCH', `/admin/data-requests/${manual.json.id}`, { ...A, body: { status: 'REJECTED', response: 'smoke: test kaydı kapatıldı' } });
+
+  const texts = await call('GET', '/admin/legal', A);
+  ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');
+  const draftBody = { kind: 'marketing', version: '2099-12-31', locale: 'tr', title: 'Smoke taslak', body: 'Smoke testi için geçici taslak metin. '.repeat(3), requiresConsent: false };
+  const htmlDraft = await call('POST', '/admin/legal', { ...A, body: { ...draftBody, body: `${draftBody.body}<script>alert(1)</script>` } });
+  const draft = await call('POST', '/admin/legal', { ...A, body: draftBody });
+  const draftEdit = await call('PATCH', `/admin/legal/${draft.json?.id}`, { ...A, body: { title: 'Smoke taslak 2' } });
+  const liveEdit = await call('PATCH', `/admin/legal/${texts.json?.items?.find((r) => r.status === 'published')?.id}`, { ...A, body: { title: 'Değişti' } });
+  const draftDel = await call('DELETE', `/admin/legal/${draft.json?.id}`, A);
+  ok(htmlDraft.status === 400 && draft.status === 201 && draftEdit.status === 200 && liveEdit.status === 409 && draftDel.status === 204, 'drafts are editable, published texts are not, HTML is refused');
+  const publishNoDraft = await call('POST', '/admin/legal/publish', { ...A, body: { kind: 'marketing', version: '2099-12-31', reason: 'smoke' } });
+  ok(publishNoDraft.status === 400, 'nothing to publish without a Turkish draft');
+  const kvkkAudit = await call('GET', '/admin/audit?limit=30', A);
+  const kvkkActions = new Set((kvkkAudit.json?.items ?? []).map((a) => a.action));
+  ok(['kvkk.request_update', 'kvkk.request_create', 'legal.draft_create', 'legal.draft_delete'].every((a) => kvkkActions.has(a)) && !JSON.stringify(kvkkAudit.json).includes('smoke: verilerinin'), 'KVKK actions are audited without the answer text');
 
   const usage = await call('GET', '/admin/ai/usage?days=7', A);
   ok(usage.status === 200 && usage.json?.budget?.state && usage.json.daily.length === 7 && usage.json.today.calls >= 1, 'AI cost ledger + budget state', `today calls ${usage.json?.today?.calls}, $${usage.json?.today?.costUsd}`);
@@ -405,7 +457,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

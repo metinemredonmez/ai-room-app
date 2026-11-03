@@ -103,7 +103,7 @@ export const COMPONENTS: Record<string, SchemaObject> = Object.fromEntries(
       plans: z.array(z.object({ id: z.string(), name: z.string(), period: z.enum(['week', 'month', 'year']), priceTRY: z.number(), badge: z.string().nullable() })),
       announcement: z.string().nullable(),
       maintenance: z.object({ enabled: z.boolean(), message: z.string() }),
-      legal: z.object({ termsVersion: z.string(), privacyVersion: z.string(), aiProcessingVersion: z.string() }),
+      legal: z.object({ termsVersion: z.string(), privacyVersion: z.string(), aiProcessingVersion: z.string(), marketingVersion: z.string() }),
     }),
     ChatReply: z.object({
       reply: z.string(),

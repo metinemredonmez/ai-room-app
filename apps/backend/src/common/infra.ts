@@ -103,6 +103,7 @@ export const LIMITS = {
   pushTokens: { name: 'push-tokens', max: 30, windowSec: 3600 },
   oauthNonce: { name: 'oauth-nonce', max: 60, windowSec: 3600 },
   oauthLogin: { name: 'oauth-login', max: 30, windowSec: 900 },
+  dataRequests: { name: 'data-requests', max: 5, windowSec: 86_400 },
 } satisfies Record<string, Limit>;
 
 /** In-process cap on simultaneous AI generations per instance. */

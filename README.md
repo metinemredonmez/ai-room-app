@@ -64,6 +64,9 @@ Admin ──cookie──> Admin BFF ──────┤
   zorunluluğu panelden değişir. Gerekçe zorunlu ve her değişiklik denetim kaydına girer.
 - **KVKK.** Sürümlü ve yalnız eklenerek tutulan onay kaydı; `GET /me/export` ile tüm veriyi JSON olarak indirme;
   gece çalışan temizlik işi (eski yüklemeler, token'lar, outbox).
+- **Yasal metinler ve KVKK başvuruları.** Aydınlatma, kullanım koşulları, AI işleme ve pazarlama metinleri sürümlü ve
+  değiştirilemez; yeniden onay gerektiren sürüm ayrı işaretlenir. m.11 başvuruları 30 günlük son tarihle izlenir, günlük
+  süre bildirimi gider (`docs/API.md` §7.14). Metinler taslaktır, hukukçu incelemesi gerekir.
 - **AI içerik bildirimi.** Google Play'in üretken AI politikası için. Admin bildirimleri sonuçlandırır; öne
   çıkarmayı kaldırabilir ya da tasarımı silebilir.
 - **AI servisi sağlamlaştırma.** Yedek sağlayıcı zinciri (`IMAGE_FALLBACKS`), sağlayıcı başına devre kesici, 150 sn süre
@@ -139,8 +142,8 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 
 ```bash
 cd apps/ai-service && uv run pytest              # 45 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change, bölge kilidi, fal.ai, Sentry maskeleme
-cd apps/backend && npm test                      # 44 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar, Apple/Google token, hesap bağlama, alan şifreleme, zorunlu güncelleme, Sentry maskeleme
-node scripts/smoke.mjs                           # 104 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
+cd apps/backend && npm test                      # 58 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar, Apple/Google token, hesap bağlama, alan şifreleme, zorunlu güncelleme, Sentry maskeleme, yasal metin sürümleri, KVKK başvuruları
+node scripts/smoke.mjs                           # 120 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 
 Uçtan uca smoke testi şunları kapsar:
@@ -148,6 +151,8 @@ Uçtan uca smoke testi şunları kapsar:
 - Admin rolleri ve MFA kurtarma: SUPPORT yetki sınırları, kendine yetki verme, yedek kodla tek seferlik giriş, MFA sıfırlama, denetim kaydı.
 - Zorunlu güncelleme: eski iOS sürümüne 426 + mağaza bağlantısı, web ve güncel sürüm serbest, resmî olmayan mağaza bağlantısı reddi.
 - Apple/Google girişi: nonce, doğrulanamayan token reddi, katı gövde, Apple bildirimi, bağlı yöntemler.
+- KVKK: yasal metinler (yer tutucular, sürüm, taslak / yayın kuralları, HTML reddi), m.11 başvurusu, 30 günlük süre,
+  yalnız sahibine listeleme, yanıtsız kapatma reddi, KEP ile gelen başvuru, denetim kaydında yanıt metni olmaması.
 - Kuyruk + push: asenkron tasarım, "Tasarımın hazır" bildirimi, token taşıma, KVKK dışa aktarımında cihazlar.
 - Görsel güvenliği: imzalı URL'yi değiştirme ve görsel olmayan dosya reddi (FIL).
 - Yetkilendirme ve oturum: başka kullanıcının kaydına erişim (AZ-01) ve refresh token yeniden kullanımı (SES-05).
