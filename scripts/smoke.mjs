@@ -30,6 +30,8 @@ const token = guest.json.accessToken;
 
 const cat = await call('GET', '/catalog?locale=tr');
 ok(cat.json?.tools?.length === 10 && cat.json.styles.length >= 10, 'catalog', `${cat.json?.tools?.length} tools, ${cat.json?.styles?.length} styles`);
+const preview = await fetch(cat.json.styles[0].previewUrl);
+ok(preview.status === 200 && preview.headers.get('content-type') === 'image/jpeg', 'style preview image', `status ${preview.status}`);
 
 const sample = await call('POST', '/uploads/sample', { token, body: { sample: 'living_room' } });
 ok(sample.status === 201, 'sample upload', sample.json?.image?.id);

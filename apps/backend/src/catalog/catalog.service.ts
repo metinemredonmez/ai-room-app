@@ -85,7 +85,9 @@ export class CatalogService {
         <rect y="${h - 90}" width="${w / 4}" height="90" fill="${c1}"/><rect x="${w / 4}" y="${h - 90}" width="${w / 4}" height="90" fill="${c2}"/>
         <rect x="${w / 2}" y="${h - 90}" width="${w / 4}" height="90" fill="${c3}"/><rect x="${(3 * w) / 4}" y="${h - 90}" width="${w / 4}" height="90" fill="${c4}"/>
       </svg>`);
-      const buf = await sharp(base).modulate({ saturation: 1.1 }).composite([{ input: overlay }]).resize(640).jpeg({ quality: 82 }).toBuffer();
+      // sharp always resizes before compositing, so compose at full size first, then downscale.
+      const composed = await sharp(base).modulate({ saturation: 1.1 }).composite([{ input: overlay }]).toBuffer();
+      const buf = await sharp(composed).resize(640).jpeg({ quality: 82 }).toBuffer();
       await writeFile(file, buf);
       return buf;
     }
