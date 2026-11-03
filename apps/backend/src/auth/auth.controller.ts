@@ -1,4 +1,6 @@
 import { Body, Controller, HttpCode, Inject, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Doc } from '../common/openapi.js';
 import { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';
 import { AppError, parse, unauthorized } from '../common/errors.js';
@@ -27,6 +29,7 @@ const AdminLoginSchema = z.object({ email, password: z.string().min(1).max(128),
 
 const INVALID = () => new AppError(401, 'unauthorized', 'E-posta veya şifre hatalı');
 
+@ApiTags('auth')
 @Controller('v1/auth')
 export class AuthController {
   constructor(
@@ -46,6 +49,7 @@ export class AuthController {
   }
 
   @Post('guest')
+  @Doc('Misafir girişi (cihaz kimliğiyle)', { body: GuestSchema, status: 201, response: 'AuthResponse', errors: [400, 403, 429] })
   async guest(@Body() body: unknown, @Req() req: AppRequest) {
     const { deviceId } = parse(GuestSchema, body);
     await this.limiter.hit(LIMITS.guest, req.clientIp);
@@ -60,6 +64,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @Doc('Kayıt ol (geçerli misafir Bearer varsa misafir hesabı yükseltilir)', { body: RegisterSchema, status: 201, response: 'AuthResponse', errors: [400, 409, 429] })
   async register(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(RegisterSchema, body);
     await this.limiter.hit(LIMITS.register, req.clientIp);
@@ -88,6 +93,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Doc('E-posta + parola ile giriş', { body: LoginSchema, status: 201, response: 'AuthResponse', errors: [400, 401, 403, 429] })
   async login(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(LoginSchema, body);
     // AUT-02: per-IP and per-account budgets; no permanent lockout a third party could trigger.
@@ -106,6 +112,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Doc('Refresh token rotasyonu (yeniden kullanımda aile iptali, SES-05)', { body: RefreshSchema, status: 201, response: 'AuthResponse', errors: [401] })
   async refresh(@Body() body: unknown, @Req() req: AppRequest) {
     const { refreshToken } = parse(RefreshSchema, body);
     await this.limiter.hit(LIMITS.ip, req.clientIp);
@@ -115,6 +122,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(204)
+  @Doc('Çıkış (refresh ailesi iptal)', { body: RefreshSchema, status: 204 })
   async logout(@Body() body: unknown) {
     const { refreshToken } = parse(RefreshSchema, body);
     await this.tokens.revoke(refreshToken);
@@ -126,6 +134,7 @@ export class AuthController {
    */
   @Post('password/forgot')
   @HttpCode(202)
+  @Doc('Şifre sıfırlama bağlantısı iste', { body: ForgotSchema, status: 202, response: 'Ok', description: 'Hesap olsun olmasın aynı yanıt döner; bağlantı yalnız WEB_APP_URL üzerinden, token URL fragment\'ında (AUT-03, MAIL-01).', errors: [400, 429] })
   async forgotPassword(@Body() body: unknown, @Req() req: AppRequest) {
     const { email: address } = parse(ForgotSchema, body);
     await this.limiter.hit(LIMITS.forgotIp, req.clientIp);
@@ -141,6 +150,7 @@ export class AuthController {
   /** AUT-03 + SES-04: one-time token; on success every session and outstanding e-mail token is revoked. */
   @Post('password/reset')
   @HttpCode(204)
+  @Doc('Yeni şifre belirle (tüm oturumlar kapanır, SES-04)', { body: ResetSchema, status: 204, errors: [400, 429] })
   async resetPassword(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(ResetSchema, body);
     await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
@@ -157,6 +167,7 @@ export class AuthController {
   }
 
   @Post('email/verify')
+  @Doc('E-posta doğrula', { body: VerifySchema, status: 201, response: 'Ok', errors: [400, 429] })
   async verifyEmail(@Body() body: unknown, @Req() req: AppRequest) {
     const { token } = parse(VerifySchema, body);
     await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
@@ -169,6 +180,8 @@ export class AuthController {
   @Post('email/resend')
   @HttpCode(202)
   @UseGuards(UserGuard)
+  @ApiBearerAuth('user')
+  @Doc('Doğrulama e-postasını tekrar gönder', { status: 202, errors: [400, 401, 429] })
   async resendVerification(@Auth() auth: AuthContext) {
     await this.limiter.hit(LIMITS.verifyResend, auth.userId);
     const user = await this.users.get(auth.userId);
@@ -179,6 +192,7 @@ export class AuthController {
   }
 }
 
+@ApiTags('admin-auth')
 @Controller('v1/admin/auth')
 export class AdminAuthController {
   constructor(
@@ -191,6 +205,7 @@ export class AdminAuthController {
 
   /** AUT-01: password + TOTP in one step; codes are single-use (step must advance). */
   @Post('login')
+  @Doc('Admin girişi: parola + TOTP (AUT-01); kod tekrar kullanılamaz', { body: AdminLoginSchema, status: 201, response: { type: 'object', properties: { accessToken: { type: 'string' }, expiresIn: { type: 'number' }, admin: { $ref: '#/components/schemas/User' } } }, errors: [400, 401, 429] })
   async login(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(AdminLoginSchema, body);
     await this.limiter.hit(LIMITS.adminLogin, req.clientIp);

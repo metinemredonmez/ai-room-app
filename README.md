@@ -52,6 +52,29 @@ Admin ──cookie──> Admin BFF ──────┤
 - **Admin paneli:** KPI'lar ve grafikler; kullanıcı yönetimi (askıya alma, plan, gerekçeli kredi);
   tasarım moderasyonu ve İlham galerisine öne çıkarma; stil editörü; denetim kaydı; sistem durumu.
 
+## v1.1: backend ve AI servisi
+
+- **İş kuyruğu (BullMQ, mevcut Redis üzerinde).** `POST /designs` varsayılan olarak senkron çalışır.
+  `Prefer: respond-async` başlığıyla 202 döner; istemci `GET /designs/:id` ile durumu sorgular.
+  `Idempotency-Key` aynı isteğin iki kez ücretlendirilmesini önler. 10 dakikadan uzun takılan işler toparlanır.
+- **Kredi rezervasyonu.** Akış HELD → CAPTURED / RELEASED. Atomik çalışır, çift iade olmaz; kısmi sonuçta eksik varyantlar iade edilir.
+- **AI maliyet defteri ve bütçe kesici.** Her çağrının sağlayıcısı, modeli, süresi ve USD maliyeti kaydedilir.
+  Günlük bütçe aşılırsa FREE kullanıcıya tek varyant verilir ya da üretimi durdurulur; PRO etkilenmez.
+- **Çalışma zamanı ayarları (admin API).** Günlük haklar, varyant sınırları, bütçe, bakım modu, duyuru ve AI onayı
+  zorunluluğu panelden değişir. Gerekçe zorunlu ve her değişiklik denetim kaydına girer.
+- **KVKK.** Sürümlü ve yalnız eklenerek tutulan onay kaydı; `GET /me/export` ile tüm veriyi JSON olarak indirme;
+  gece çalışan temizlik işi (eski yüklemeler, token'lar, outbox).
+- **AI içerik bildirimi.** Google Play'in üretken AI politikası için. Admin bildirimleri sonuçlandırır; öne
+  çıkarmayı kaldırabilir ya da tasarımı silebilir.
+- **AI servisi sağlamlaştırma.** Yedek sağlayıcı zinciri (`IMAGE_FALLBACKS`), sağlayıcı başına devre kesici, 150 sn süre
+  bütçesi, yeniden denenebilir / denenemez hata ayrımı, fotoğraf kalite kapısı (`/quality`), "değişiklik yok"
+  tespiti ve Türkçe metin normalizasyonu.
+- **Swagger / OpenAPI.**
+  - Backend: <http://localhost:4000/docs>.
+  - AI servisi: <http://localhost:8001/docs>.
+  - Statik kopyalar: [`docs/openapi/`](docs/openapi).
+  - Üretimde varsayılan olarak kapalı (`SWAGGER_ENABLED`, `ENV=production`).
+
 ## Hızlı başlangıç (yerel)
 
 Gerekenler: Node 22 (mobil için ≥ 22.13; diğerleri Node 20.9+ ile de çalışır), Python 3.12+ ve
@@ -102,9 +125,9 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 ## Testler
 
 ```bash
-cd apps/ai-service && uv run pytest              # 8 test: iç token, prompt kaçışı, görsel doğrulama, sohbet filtresi, güvensiz ayar
-cd apps/backend && npm test                      # 11 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01 açılış kontrolleri, MAIL-01 bağlantı üretimi
-node scripts/smoke.mjs                           # 40 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
+cd apps/ai-service && uv run pytest              # 27 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change
+cd apps/backend && npm test                      # 12 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici
+node scripts/smoke.mjs                           # 64 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 
 Uçtan uca smoke testi şunları kapsar:

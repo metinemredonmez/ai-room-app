@@ -34,9 +34,13 @@ const Env = z.object({
   MAX_UPLOAD_MB: z.coerce.number().min(1).max(20).default(10),
   IMAGE_URL_TTL_HOURS: z.coerce.number().min(1).max(168).default(24),
   MAX_CONCURRENT_GENERATIONS: z.coerce.number().int().min(1).max(64).default(4),
+  // Run BullMQ workers in this process (set false on API-only replicas when workers run separately).
+  WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  // Swagger UI at /docs — on by default only outside production.
+  SWAGGER_ENABLED: z.enum(['true', 'false']).optional().transform((v) => (v === undefined ? undefined : v === 'true')),
 });
 
-export type Config = z.infer<typeof Env> & { corsOrigins: string[]; isProd: boolean };
+export type Config = z.infer<typeof Env> & { corsOrigins: string[]; isProd: boolean; swaggerEnabled: boolean };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = Env.safeParse(env);
@@ -58,7 +62,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     }
     if (problems.length) throw new Error(`Unsafe production configuration — ${problems.join('; ')}`);
   }
-  return { ...cfg, corsOrigins, isProd };
+  return { ...cfg, corsOrigins, isProd, swaggerEnabled: cfg.SWAGGER_ENABLED ?? !isProd };
 }
 
 export const CONFIG = Symbol('CONFIG');

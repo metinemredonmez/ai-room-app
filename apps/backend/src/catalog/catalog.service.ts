@@ -7,13 +7,15 @@ import { AppError } from '../common/errors.js';
 import { PrismaService } from '../common/infra.js';
 import type { Style } from '../generated/prisma/client.js';
 import { loadSample } from '../images/samples.js';
+import { LEGAL_VERSIONS } from '../kvkk/legal.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
 
 @Injectable()
 export class CatalogService {
   private cache: { at: number; styles: Style[] } | null = null;
 
-  constructor(private prisma: PrismaService, @Inject(CONFIG) private cfg: Config) {}
+  constructor(private prisma: PrismaService, private settings: SettingsService, @Inject(CONFIG) private cfg: Config) {}
 
   async styles(includeInactive = false): Promise<Style[]> {
     if (includeInactive) return this.prisma.style.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
@@ -61,6 +63,17 @@ export class CatalogService {
       floors: Object.entries(FLOORS).map(([id, f]) => ({ id, name: f.name[locale] })),
       colors: COLORS.map((c) => ({ id: c.id, name: c.name[locale], hex: c.hex })),
       plans: PLANS.map((p) => ({ id: p.id, name: p.name[locale], period: p.period, priceTRY: p.priceTRY, badge: p.badge?.[locale] ?? null })),
+      ...this.notices(locale),
+      legal: { termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy, aiProcessingVersion: LEGAL_VERSIONS.ai_processing },
+    };
+  }
+
+  private notices(locale: Locale) {
+    const { announcement, maintenance } = this.settings.current;
+    const en = locale === 'en';
+    return {
+      announcement: announcement.enabled ? (en ? announcement.textEn || announcement.textTr : announcement.textTr) || null : null,
+      maintenance: { enabled: maintenance.enabled, message: maintenance.enabled ? (en ? maintenance.messageEn : maintenance.messageTr) : '' },
     };
   }
 

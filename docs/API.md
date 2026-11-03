@@ -217,3 +217,85 @@ demo yanıtı döner (uygulama anahtarsız uçtan uca çalışır).
 
 Köşe yarıçapı 14–20, yumuşak gölge, Türkçe öncelikli metinler, ikonlar Ionicons/Lucide.
 Marka: **AI Room** — "Odanı saniyeler içinde yeniden tasarla".
+
+## 7. v1.1 eklemeleri (backend + AI servisi)
+
+### 7.1 Asenkron üretim ve kredi rezervasyonu
+- `POST /designs` iki modda çalışır. Varsayılan **senkron** davranış değişmedi.
+  - `Prefer: respond-async` başlığıyla çağrılırsa **202** + `Design` (`status: 'PENDING'`) döner. İş BullMQ
+    kuyruğunda çalışır; istemci `GET /designs/:id` ile durumu sorgular (önerilen aralık 2 sn).
+  - İsteğe bağlı `Idempotency-Key` başlığı: `[A-Za-z0-9_-]{8,64}`, kullanıcı başına 24 saat. Aynı anahtarla tekrar
+    gelen istek yeni üretim başlatmaz, aynı `Design`'ı döndürür (200).
+- Kredi akışı: önce rezerve edilir (`HELD`), başarıda kesinleşir (`CAPTURED`), hata, zaman aşımı veya "değişiklik
+  yok" durumunda iade edilir (`RELEASED`). Durum geçişleri atomiktir; çift iade olmaz.
+- Takılan işler: 10 dakikadan uzun `PENDING` kalan tasarım uzlaştırma işiyle `FAILED` (`timeout`) yapılır, kredisi iade edilir.
+- `Design` alanlarına `queuedAt`, `startedAt` ve `chargeState` ('HELD'|'CAPTURED'|'RELEASED') eklenir.
+- Yeni hata kodu: `generation_paused` 503. Bütçe kesicisi FREE kullanıcının üretimini durdurduğunda döner.
+
+### 7.2 AI maliyet defteri, bütçe kesici, çalışma zamanı ayarları
+- AI servisi her yanıtta `usage` döndürür. Backend bunu `AiUsage` tablosuna yazar.
+  `usage: { provider, model, kind: 'generate'|'analyze'|'chat'|'describe', images, input_tokens, output_tokens, latency_ms, cost_usd, fallback_used }`
+- Bütçe durumu: `normal` (< %80), `warning` (%80–100), `exceeded` (≥ %100, `dailyBudgetUsd` aşıldı).
+  `exceeded` olduğunda `budgetBrakeMode` ayarı uygulanır:
+  - `off`: hiçbir şey değişmez.
+  - `free_single_variant`: FREE kullanıcı en fazla 1 varyant üretir.
+  - `free_paused`: FREE kullanıcıya 503 `generation_paused` döner.
+- Ayarlar `Setting` tablosunda tutulur; tipli varsayılanları kodda durur. Admin uçları (gerekçe zorunlu, denetlenir):
+  | Metot | Yol | Gövde | Yanıt |
+  |---|---|---|---|
+  | GET | `/admin/settings` | — | `{ values: Settings, defaults: Settings }` |
+  | PATCH | `/admin/settings` | `{ values: Partial<Settings>, reason: string (3..200) }` | `{ values: Settings }` |
+  | GET | `/admin/ai/usage` | `?days=30` | `{ today: { costUsd, calls, images }, budget: { dailyBudgetUsd, spentTodayUsd, state, brakeMode }, daily: { date, costUsd, calls }[], byProvider: { provider, model, calls, costUsd }[], byKind: { kind, calls, costUsd }[] }` |
+  ```ts
+  type Settings = {
+    freeDailyGenerations: number; proDailyGenerations: number;   // 0..1000
+    maxVariantsFree: 1|2|3|4; maxVariantsPro: 1|2|3|4;
+    dailyBudgetUsd: number;                                      // 0 = sınırsız
+    budgetBrakeMode: 'off' | 'free_single_variant' | 'free_paused';
+    maintenance: { enabled: boolean; messageTr: string; messageEn: string };   // açıkken üretim 503 `busy`
+    announcement: { enabled: boolean; textTr: string; textEn: string } ;
+    requireAiConsent: boolean;  // true ise üretimden önce güncel `ai_processing` onayı aranır (403 `consent_required`)
+  };
+  ```
+- `GET /catalog` yanıtına şu alanlar eklenir:
+  - `announcement: string | null`
+  - `maintenance: { enabled: boolean; message: string }`
+  - `legal: { termsVersion: string; privacyVersion: string; aiProcessingVersion: string }`
+
+### 7.3 KVKK ve içerik bildirimi
+| Metot | Yol | Gövde | Yanıt |
+|---|---|---|---|
+| GET | `/me/export` | — | Kullanıcının tüm verisi: profil, onaylar, tasarımlar (imzalı URL'lerle), analizler, kredi hareketleri, bildirimler. KVKK m.11; saatte 3 istek sınırı. |
+| GET | `/me/consents` | — | `{ items: { kind, version, granted, createdAt }[], current: { terms, privacy, ai_processing, marketing } }` |
+| POST | `/me/consents` | `{ kind: 'terms'|'privacy'|'ai_processing'|'marketing', version: string, granted: boolean }` | 201 `{ kind, version, granted, createdAt }`. Kayıtlar eklenerek tutulur, silinmez. |
+| POST | `/designs/:id/report` | `{ reason: 'inappropriate'|'offensive'|'copyright'|'privacy'|'other', note?: string (≤500) }` | 201 `{ id, status: 'OPEN' }`. Kendi tasarımı ya da öne çıkarılmış bir tasarım bildirilebilir; Google Play üretken AI politikası gereği. |
+| GET | `/admin/reports` | `?status=OPEN|RESOLVED|DISMISSED&cursor&limit` | `{ items: { id, designId, reason, note, status, reporterId, createdAt, resolvedAt, resolution, design: Design }[], nextCursor }` |
+| PATCH | `/admin/reports/:id` | `{ status: 'RESOLVED'|'DISMISSED', resolution: string (3..500), unfeature?: boolean, deleteDesign?: boolean }` | Güncel kayıt (denetlenir) |
+| GET | `/admin/jobs` | `?limit=50` | Zamanlı işlerin son çalışmaları: `{ items: { id, name, status: 'ok'|'error', startedAt, finishedAt, details }[], queue: { waiting, active, failed, delayed } }` |
+
+Zamanlı işler BullMQ ile tekrarlı çalışır; her çalışma `JobRun` tablosuna yazılır:
+- `reconcile-designs` (her dakika): takılan işleri `FAILED` yapar ve kredisini iade eder.
+- `retention` (günlük 03:30 TR): 7 günü geçen bağlantısız yükleme ve örnek görselleri, süresi dolmuş token'ları ve
+  outbox postalarını siler.
+
+### 7.4 AI servisi (§5'e ek)
+- `usage` alanı `generate`, `analyze` ve `chat` yanıtlarında döner (biçimi §7.2'de).
+- Yedek sağlayıcı zinciri: `IMAGE_PROVIDER` birincil sağlayıcıdır, `IMAGE_FALLBACKS=replicate,...` sırayla denenir.
+  Yalnız yeniden denenebilir hatada (`retryable`) ya da devre açıkken sıradakine geçilir.
+- Devre kesici: süreç içinde, sağlayıcı başına çalışır. 5 ardışık hatada 60 sn açılır, ardından tek deneme isteğiyle kontrol edilir (yarı açık).
+- Süre bütçesi: bir `generate` isteği toplam 150 sn'yi aşamaz.
+- `POST /internal/v1/quality` `{ image_b64 }` → `{ score: 0..100, issues: ('too_dark'|'too_bright'|'blurry'|'low_res'|'low_contrast')[], metrics }`.
+  Backend bunu `/uploads` sırasında çağırır ve `quality` alanını uyarı olarak yanıta ekler: `{ image, quality }`.
+- "Değişiklik yok" tespiti: çıktı girdiye çok benziyorsa (küçültülmüş görüntülerin ortalama mutlak farkı 3'ün altındaysa)
+  o varyant atılır. Hiç geçerli varyant kalmazsa 422 `no_change` döner; backend krediyi iade eder.
+- Hata gövdesine `retryable: boolean` eklenir. Backend kuyruğu yalnız yeniden denenebilir hatada işi tekrarlar.
+- Kısmi sonuç: varyantlardan bazıları atılırsa `images_b64` istenenden az görsel içerir. Backend eksik varyantların
+  kredisini iade eder; önce ücretli kredi, sonra günlük hak iade edilir.
+- 422 `no_change` gövdesinde üst seviye `usage` da döner. Backend maliyeti kaydeder ve krediyi iade eder.
+
+### 7.5 API dokümantasyonu (Swagger / OpenAPI)
+- Backend: Swagger UI `GET /docs`, şema `GET /docs/openapi.json`. Yalnız `SWAGGER_ENABLED=true` iken açılır;
+  varsayılan geliştirmede açık, üretimde kapalı. Yoga test raporundaki "Swagger herkese açık" bulgusu böylece önlenir.
+  Statik kopyası `docs/openapi/backend.json` dosyasındadır.
+- AI servisi: FastAPI `GET /docs` ve `GET /openapi.json` yalnız `ENV != production` iken açılır. Statik kopyası
+  `docs/openapi/ai-service.json` dosyasındadır.

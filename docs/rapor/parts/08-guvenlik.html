@@ -7,7 +7,7 @@
     <li><strong>Doğrulanacak:</strong> uygulandı, testi bekliyor.</li>
     <li><strong>Uygulanmaz:</strong> kapsam dışında.</li>
   </ul>
-  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (40/40), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
+  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (64/64), <code>apps/ai-service/tests</code> (27/27), admin BFF curl testleri.</p>
   <table class="compact">
     <thead><tr><th style="width:9%">Kontrol</th><th style="width:47%">Uygulama</th><th style="width:30%">Kanıt</th><th class="c" style="width:14%">Durum</th></tr></thead>
     <tbody>
@@ -39,6 +39,8 @@
       <tr><td>AZ-05</td><td>Admin guard rol, durum ve sürümü her istekte yeniden kontrol ediyor; kendini askıya alma engelli; tüm yazma işlemleri denetleniyor.</td><td>Rol düşürme testi eklenecek</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>WEB-01</td><td>AI ve kullanıcı metni HTML olarak işlenmiyor; CSP var (admin'de nonce'lu).</td><td>CSP başlık denetimi (<code>redteam headers</code>)</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>WEB-03</td><td>BFF, durum değiştiren isteklerde Origin ve Sec-Fetch-Site kontrolü yapıyor.</td><td>Admin BFF: Origin yok veya yanlış → 403</td><td class="c y">Geçti (admin)</td></tr>
+      <tr><td>API-01</td><td>Uç envanteri: Swagger/OpenAPI zod şemalarından üretilir (51 işlem); <code>/docs</code> yalnız <code>SWAGGER_ENABLED</code> ile, üretimde varsayılan kapalı (yoga'daki "Swagger açık" bulgusu önlendi); statik kopyası <code>docs/openapi/</code>.</td><td>Smoke: geliştirmede 41 yol; üretim profilinde kapalı</td><td class="c y">Geçti</td></tr>
+      <tr><td>RES-01 (AI)</td><td>AI maliyet defteri (<code>AiUsage</code>), günlük USD bütçesi ve FREE için fren (tek varyant / durdur); BullMQ eşzamanlılık sınırı; AI servisinde devre kesici ve 150 sn süre bütçesi.</td><td>Birim test: bütçe durumları; AI testleri: devre kesici, yedek zincir</td><td class="c y">Geçti</td></tr>
     </tbody>
   </table>
 

@@ -4,6 +4,7 @@ import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { loadConfig, type Config } from './config.js';
 import { isUuid, sniffMime } from './images/images.service.js';
+import { UsageService } from './usage/usage.service.js';
 
 const RFC_SECRET = base32Encode(Buffer.from('12345678901234567890')); // RFC 6238 appendix B seed (SHA-1)
 
@@ -104,5 +105,21 @@ describe('e-mailed links (MAIL-01 / AUT-03)', () => {
     expect(url.search).toBe('');
     expect(url.hash).toBe('#token=tok_123');
     expect(new URL(svc.link('VERIFY_EMAIL', 'x')).pathname).toBe('/eposta-dogrula');
+  });
+});
+
+describe('budget brake (RES-01 / AI cost)', () => {
+  const make = (spent: number, dailyBudgetUsd: number) => {
+    const prisma = { aiUsage: { aggregate: async () => ({ _sum: { costUsd: spent } }) } };
+    const settings = { current: { dailyBudgetUsd, budgetBrakeMode: 'free_paused' } };
+    return new UsageService(prisma as never, settings as never);
+  };
+
+  it('classifies spend against the daily budget', async () => {
+    expect((await make(1, 0).budget()).state).toBe('normal'); // 0 = unlimited
+    expect((await make(7, 10).budget()).state).toBe('normal');
+    expect((await make(8, 10).budget()).state).toBe('warning');
+    expect((await make(10, 10).budget()).state).toBe('exceeded');
+    expect((await make(12.5, 10).budget()).brakeMode).toBe('free_paused');
   });
 });

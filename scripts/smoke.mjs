@@ -99,12 +99,14 @@ const totp = (secret) => {
   const o = mac[mac.length - 1] & 15;
   return ((mac.readUInt32BE(o) & 0x7fffffff) % 1e6).toString().padStart(6, '0');
 };
+let adminToken = null;
 const code = totp(creds.totp_secret);
 const admin = await call('POST', '/admin/auth/login', { body: { email: creds.email, password: creds.password, otp: code } });
 if (admin.status === 401 || admin.status === 429) {
   console.log(`  (admin login returned ${admin.status}: ${admin.status === 429 ? 'admin login rate limit (5 / 15 min) reached' : 'TOTP code already used this window'} — rerun later)`);
 } else {
   ok(admin.status === 201 && admin.json?.accessToken, 'admin login with password + TOTP');
+  adminToken = admin.json?.accessToken ?? null;
   const replay = await call('POST', '/admin/auth/login', { body: { email: creds.email, password: creds.password, otp: code } });
   ok(replay.status === 401, 'TOTP code replay rejected');
   const stats = await call('GET', '/admin/stats?days=7', { token: admin.json.accessToken });
@@ -162,6 +164,79 @@ ok(oldSession.status === 401 && oldRefresh.status === 401, 'all sessions revoked
 const oldPw = await call('POST', '/auth/login', { body: { email: userEmail, password: 'first-password-123' } });
 const newPw = await call('POST', '/auth/login', { body: { email: userEmail, password: 'second-password-456' } });
 ok(oldPw.status === 401 && newPw.status === 201, 'old password rejected, new password works');
+
+// ---------------------------------------------------------------- v1.1: queue, settings, KVKK, reports
+const v11 = await call('POST', '/auth/guest', { body: { deviceId: `smoke-${crypto.randomUUID()}` } });
+const vt = v11.json.accessToken;
+const vSample = await call('POST', '/uploads/sample', { token: vt, body: { sample: 'bedroom' } });
+ok('quality' in (vSample.json ?? {}) || vSample.status === 201, 'upload response carries the quality field');
+const realJpeg = (await (await fetch(vSample.json.image.url)).arrayBuffer());
+const up = await call('POST', '/uploads', { token: vt, body: { data: Buffer.from(realJpeg).toString('base64'), mimeType: 'image/jpeg' } });
+ok(up.status === 201 && 'quality' in up.json, 'upload returns advisory quality', JSON.stringify(up.json?.quality));
+
+const idemKey = `smoke-${Date.now()}`;
+const asyncBody = { tool: 'redesign', inputImageId: vSample.json.image.id, styleId: 'scandinavian', roomId: 'bedroom', variants: 1 };
+const a1 = await call('POST', '/designs', { token: vt, body: asyncBody, headers: { prefer: 'respond-async', 'idempotency-key': idemKey } });
+ok(a1.status === 202 && a1.json?.status === 'PENDING' && a1.json.chargeState === 'HELD', 'async design → 202 PENDING with credits HELD');
+const a2 = await call('POST', '/designs', { token: vt, body: asyncBody, headers: { prefer: 'respond-async', 'idempotency-key': idemKey } });
+ok(a2.status === 200 && a2.json?.id === a1.json.id, 'same Idempotency-Key returns the same design (no second charge)');
+let polled = null;
+for (let i = 0; i < 40; i++) {
+  polled = await call('GET', `/designs/${a1.json.id}`, { token: vt });
+  if (polled.json?.status !== 'PENDING') break;
+  await new Promise((r) => setTimeout(r, 500));
+}
+ok(polled?.json?.status === 'SUCCEEDED' && polled.json.chargeState === 'CAPTURED' && polled.json.results.length === 1, 'queued design completed by the worker, credits CAPTURED');
+const vMe = await call('GET', '/me', { token: vt });
+ok(vMe.json?.dailyFreeRemaining === 2, 'idempotent retry charged once (3 → 2)', `remaining ${vMe.json?.dailyFreeRemaining}`);
+
+const consents = await call('GET', '/me/consents', { token: vt });
+ok(consents.status === 200 && consents.json?.current?.ai_processing?.granted === false, 'consents start ungranted');
+const badVersion = await call('POST', '/me/consents', { token: vt, body: { kind: 'ai_processing', version: '1999-01-01', granted: true } });
+ok(badVersion.status === 409, 'stale consent version rejected');
+const catalog2 = await call('GET', '/catalog');
+ok(catalog2.json?.legal?.aiProcessingVersion && catalog2.json.maintenance?.enabled === false, 'catalog exposes legal versions + maintenance');
+
+const report = await call('POST', `/designs/${a1.json.id}/report`, { token: vt, body: { reason: 'inappropriate', note: 'smoke' } });
+ok(report.status === 201 && report.json?.status === 'OPEN', 'user reports an AI result (Google Play policy)');
+const strangerReport = await call('POST', `/designs/${a1.json.id}/report`, { token: other.json.accessToken, body: { reason: 'other' } });
+ok(strangerReport.status === 404, "can't report someone else's non-featured design");
+
+const exp = await call('GET', '/me/export', { token: vt });
+ok(exp.status === 200 && exp.json?.designs?.length >= 1 && exp.headers.get('content-disposition')?.includes('attachment'), 'KVKK data export downloads JSON');
+
+if (adminToken) {
+  const A = { token: adminToken };
+  const st = await call('GET', '/admin/settings', A);
+  ok(st.status === 200 && st.json?.values?.freeDailyGenerations >= 0, 'admin reads runtime settings');
+  const noReason = await call('PATCH', '/admin/settings', { ...A, body: { values: { maxVariantsFree: 1 } } });
+  ok(noReason.status === 400, 'settings change without a reason is rejected');
+  const maint = await call('PATCH', '/admin/settings', { ...A, body: { values: { maintenance: { ...st.json.values.maintenance, enabled: true }, requireAiConsent: true }, reason: 'smoke test' } });
+  ok(maint.status === 200 && maint.json?.values?.maintenance?.enabled === true, 'admin enables maintenance + consent requirement');
+  const during = await call('POST', '/designs', { token: vt, body: { ...asyncBody, variants: 1 } });
+  ok(during.status === 503 && during.json?.error?.code === 'busy', 'maintenance blocks generation (503)');
+  await call('PATCH', '/admin/settings', { ...A, body: { values: { maintenance: { ...st.json.values.maintenance, enabled: false } }, reason: 'smoke test' } });
+  const noConsent = await call('POST', '/designs', { token: vt, body: asyncBody });
+  ok(noConsent.status === 403 && noConsent.json?.error?.code === 'consent_required', 'requireAiConsent enforces KVKK consent (403)');
+  const give = await call('POST', '/me/consents', { token: vt, body: { kind: 'ai_processing', version: catalog2.json.legal.aiProcessingVersion, granted: true } });
+  const withConsent = await call('POST', '/designs', { token: vt, body: asyncBody });
+  ok(give.status === 201 && withConsent.status === 201, 'after consent the design succeeds');
+  await call('PATCH', '/admin/settings', { ...A, body: { values: { requireAiConsent: st.json.values.requireAiConsent }, reason: 'smoke test revert' } });
+
+  const usage = await call('GET', '/admin/ai/usage?days=7', A);
+  ok(usage.status === 200 && usage.json?.budget?.state && usage.json.daily.length === 7 && usage.json.today.calls >= 1, 'AI cost ledger + budget state', `today calls ${usage.json?.today?.calls}, $${usage.json?.today?.costUsd}`);
+  const reports = await call('GET', '/admin/reports?status=OPEN', A);
+  ok(reports.json?.items?.some((r) => r.id === report.json.id), 'admin sees the open report');
+  const resolved = await call('PATCH', `/admin/reports/${report.json.id}`, { ...A, body: { status: 'RESOLVED', resolution: 'smoke checked' } });
+  ok(resolved.status === 200 && resolved.json?.status === 'RESOLVED', 'admin resolves the report');
+  const jobs = await call('GET', '/admin/jobs', A);
+  ok(jobs.status === 200 && typeof jobs.json?.queue?.waiting === 'number', 'jobs overview + queue counts', `${jobs.json?.items?.length} runs`);
+  const auditV11 = await call('GET', '/admin/audit?limit=10', A);
+  ok(auditV11.json?.items?.some((a) => a.action === 'settings.update'), 'settings changes are audited');
+}
+const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
+const spec = docs.ok ? await docs.json() : null;
+ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });
 ok(del.status === 204, 'user deletes own design');

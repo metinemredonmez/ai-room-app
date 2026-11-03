@@ -656,7 +656,7 @@
   <div class="small">
     <p class="small">Rakip değerleri dünya ve Türkiye taramalarından alındı <sup class="ref">[1]–[124]</sup>.</p>
     <ul class="small">
-      <li>AI Room MVP sütunu bu depodaki çalışan kodu gösterir; uçtan uca test 40/40 geçti.</li>
+      <li>AI Room MVP sütunu bu depodaki çalışan kodu gösterir; uçtan uca test 64/64 geçti.</li>
       <li>Android ve iOS sütunlarında AI Room uygulaması Expo ile tek kod tabanından derleniyor. Web dışa aktarımı ve typecheck doğrulandı; fiziksel cihaz testi Faz 1'de.</li>
       <li>"Mağaza linki" MVP'de ürün eşleştirme değil, Türk mağazalarında arama linki. Gerçek katalog eşleştirme yol haritasında.</li>
     </ul>
@@ -752,8 +752,8 @@
   <h1><span class="num">8</span>MVP kapsamı</h1>
   <p>MVP beş ayrı uygulamadan oluşuyor. Hepsi <code>docs/API.md</code>'deki tek sözleşmeye uyuyor.</p>
   <div class="kpis">
-    <div class="kpi"><div class="v">40/40</div><div class="l">Uçtan uca smoke testi (<code>scripts/smoke.mjs</code>)</div></div>
-    <div class="kpi"><div class="v">8/8</div><div class="l">AI servisi birim testleri (pytest)</div></div>
+    <div class="kpi"><div class="v">64/64</div><div class="l">Uçtan uca smoke testi (<code>scripts/smoke.mjs</code>)</div></div>
+    <div class="kpi"><div class="v">27/27</div><div class="l">AI servisi birim testleri (pytest)</div></div>
     <div class="kpi"><div class="v">5/5</div><div class="l">Uygulamada typecheck, lint ve build temiz</div></div>
     <div class="kpi"><div class="v">~9 sn</div><div class="l">Gerçek Gemini 2.5 Flash Image üretim süresi (tek örnek, Modern Türk)</div></div>
   </div>
@@ -927,7 +927,7 @@
         <li><b class="y">✓</b> Typecheck, lint ve build temiz</li>
         <li><b class="p">◐</b> Ban sonrası anında iptal, misafir yükseltmede oturum yenileme</li>
         <li><b class="y">✓</b> Şifre sıfırlama ve e-posta doğrulama: tek kullanımlık, amaca ve e-postaya bağlı token; Host başlığına güvenmeyen bağlantı; sıfırlamada tüm oturumların iptali (AUT-03, MAIL-01, SES-04 — smoke)</li>
-        <li><b class="n">○</b> Asenkron kuyruk, S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
+        <li><b class="n">○</b> S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
       </ul>
     </div>
   </div>
@@ -1037,7 +1037,8 @@
     <thead><tr><th style="width:13%">Öncelik</th><th>Kapsam</th><th style="width:20%">Durum</th></tr></thead>
     <tbody>
       <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; şifre sıfırlama ve e-posta doğrulama; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
-      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; gerçek SMTP sağlayıcısı (SPF/DKIM/DMARC, MAIL-02); S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Must</strong> (v1.1)</td><td>BullMQ iş kuyruğu (202 + durum sorgulama, Idempotency-Key, takılan işleri toparlama); kredi rezervasyonu (HELD→CAPTURED/RELEASED, kısmi iade); AI maliyet defteri + günlük bütçe kesici; panelden çalışma zamanı ayarları (bakım, duyuru, kota, varyant); KVKK sürümlü onay + veri dışa aktarma; AI içerik bildirimi (Google Play); temizlik ve uzlaştırma işleri (JobRun); AI servisinde yedek sağlayıcı zinciri, devre kesici, süre bütçesi, kalite kapısı, "değişiklik yok" tespiti; Swagger/OpenAPI (üretimde kapalı)</td><td><b class="y">Tamamlandı (v1.1)</b></td></tr>
+      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; gerçek SMTP sağlayıcısı (SPF/DKIM/DMARC, MAIL-02); S3/R2 depolama; KVKK aydınlatma metni ve yurt dışı aktarım bildirimi; admin panelinde ayar/maliyet/bildirim ekranları; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Should</strong></td><td>iyzico/PayTR web ödemesi; kredi paketi satışı; anlık bildirim; ürün analitiği ve çökme raporlama; ETBİS/İYS; "Doğrulanacak" güvenlik testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Could</strong></td><td>Maske/fırça düzenleme; sonuç üzerinden yineleme; affiliate ve katalog eşleştirme; usta teklifi; emlakçı paneli; yüz/belge maskeleme</td><td>Faz 2</td></tr>
       <tr><td><strong>Won't</strong> (bu sürümde değil)</td><td>LiDAR/RoomPlan ölçü, 2D/3D plan, AR, video yürüyüşü, marka SDK'sı, kendi GPU modeli, yeni ülkeler</td><td>Faz 3</td></tr>
@@ -1244,7 +1245,7 @@
     <li><strong>Doğrulanacak:</strong> uygulandı, testi bekliyor.</li>
     <li><strong>Uygulanmaz:</strong> kapsam dışında.</li>
   </ul>
-  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (40/40), <code>apps/ai-service/tests</code> (8/8), admin BFF curl testleri.</p>
+  <p class="small">Kanıt kaynakları: <code>scripts/smoke.mjs</code> (64/64), <code>apps/ai-service/tests</code> (27/27), admin BFF curl testleri.</p>
   <table class="compact">
     <thead><tr><th style="width:9%">Kontrol</th><th style="width:47%">Uygulama</th><th style="width:30%">Kanıt</th><th class="c" style="width:14%">Durum</th></tr></thead>
     <tbody>
@@ -1276,6 +1277,8 @@
       <tr><td>AZ-05</td><td>Admin guard rol, durum ve sürümü her istekte yeniden kontrol ediyor; kendini askıya alma engelli; tüm yazma işlemleri denetleniyor.</td><td>Rol düşürme testi eklenecek</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>WEB-01</td><td>AI ve kullanıcı metni HTML olarak işlenmiyor; CSP var (admin'de nonce'lu).</td><td>CSP başlık denetimi (<code>redteam headers</code>)</td><td class="c p">Doğrulanacak</td></tr>
       <tr><td>WEB-03</td><td>BFF, durum değiştiren isteklerde Origin ve Sec-Fetch-Site kontrolü yapıyor.</td><td>Admin BFF: Origin yok veya yanlış → 403</td><td class="c y">Geçti (admin)</td></tr>
+      <tr><td>API-01</td><td>Uç envanteri: Swagger/OpenAPI zod şemalarından üretilir (51 işlem); <code>/docs</code> yalnız <code>SWAGGER_ENABLED</code> ile, üretimde varsayılan kapalı (yoga'daki "Swagger açık" bulgusu önlendi); statik kopyası <code>docs/openapi/</code>.</td><td>Smoke: geliştirmede 41 yol; üretim profilinde kapalı</td><td class="c y">Geçti</td></tr>
+      <tr><td>RES-01 (AI)</td><td>AI maliyet defteri (<code>AiUsage</code>), günlük USD bütçesi ve FREE için fren (tek varyant / durdur); BullMQ eşzamanlılık sınırı; AI servisinde devre kesici ve 150 sn süre bütçesi.</td><td>Birim test: bütçe durumları; AI testleri: devre kesici, yedek zincir</td><td class="c y">Geçti</td></tr>
     </tbody>
   </table>
 
@@ -1411,7 +1414,7 @@
           <li>5 bileşen, 10 araç, 15 stil.</li>
           <li>Analiz ve TL bütçe, sohbet, admin MFA, imzalı URL'ler, kota/kredi.</li>
           <li>Mock + Gemini + Replicate + Claude sağlayıcıları.</li>
-          <li>Smoke 40/40, AI testleri 8/8, 5 uygulamada typecheck/lint/build temiz.</li>
+          <li>Smoke 64/64, AI testleri 27/27, 5 uygulamada typecheck/lint/build temiz.</li>
         </ul></td><td>Gerçek Gemini çağrısıyla örnek çıktı üretildi (~9 sn)</td></tr>
       <tr><td><strong>Faz 1 — Beta</strong><br><small>0–6 hafta</small></td><td>
         <ul>

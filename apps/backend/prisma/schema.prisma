@@ -37,6 +37,18 @@ enum EmailTokenPurpose {
   VERIFY_EMAIL
 }
 
+enum ChargeState {
+  HELD
+  CAPTURED
+  RELEASED
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
 enum DesignStatus {
   PENDING
   SUCCEEDED
@@ -68,6 +80,8 @@ model User {
 
   refreshTokens RefreshToken[]
   emailTokens   EmailToken[]
+  consents      Consent[]
+  reports       ContentReport[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -138,6 +152,10 @@ model Design {
   inputImageId String       @db.Uuid
   creditsUsed  Int          @default(0)
   freeUsed     Int          @default(0)
+  chargeDay    String?
+  chargeState  ChargeState?
+  queuedAt     DateTime?
+  startedAt    DateTime?
   favorite     Boolean      @default(false)
   featured     Boolean      @default(false)
   createdAt    DateTime     @default(now())
@@ -146,6 +164,8 @@ model Design {
   inputImage   Image        @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
   results      Image[]      @relation("results")
   analyses     Analysis[]
+  reports      ContentReport[]
+  usages       AiUsage[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -202,4 +222,76 @@ model AuditLog {
   actor      User?    @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+// Cost ledger: one row per AI service call (usage reported by the AI service).
+model AiUsage {
+  id           String   @id @default(uuid()) @db.Uuid
+  kind         String // generate | analyze | chat | describe
+  provider     String
+  model        String
+  images       Int      @default(0)
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  latencyMs    Int      @default(0)
+  costUsd      Decimal  @default(0) @db.Decimal(12, 6)
+  fallbackUsed Boolean  @default(false)
+  userId       String?  @db.Uuid
+  designId     String?  @db.Uuid
+  createdAt    DateTime @default(now())
+  design       Design?  @relation(fields: [designId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([provider, createdAt])
+}
+
+// Runtime settings (typed defaults live in code; rows only store overrides).
+model Setting {
+  key       String   @id
+  value     Json
+  updatedBy String?  @db.Uuid
+  updatedAt DateTime @updatedAt
+}
+
+// Append-only consent log (KVKK): the latest row per kind is the current state.
+model Consent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  kind      String // terms | privacy | ai_processing | marketing
+  version   String
+  granted   Boolean
+  ip        String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+}
+
+model ContentReport {
+  id         String       @id @default(uuid()) @db.Uuid
+  designId   String       @db.Uuid
+  reporterId String?      @db.Uuid
+  reason     String
+  note       String?
+  status     ReportStatus @default(OPEN)
+  resolution String?
+  resolvedBy String?      @db.Uuid
+  resolvedAt DateTime?
+  createdAt  DateTime     @default(now())
+  design     Design       @relation(fields: [designId], references: [id], onDelete: Cascade)
+  reporter   User?        @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+// Execution log of scheduled jobs (cron tracker).
+model JobRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  status     String // ok | error
+  details    Json      @default("{}")
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([name, startedAt])
 }

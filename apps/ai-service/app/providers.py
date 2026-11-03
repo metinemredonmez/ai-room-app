@@ -11,18 +11,41 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 from .config import Settings
 
-TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 MAX_RESULT_BYTES = 20 * 1024 * 1024
 
 
 class ProviderError(RuntimeError):
-    pass
+    """A provider failure. `retryable` decides whether the chain may try the next provider."""
+
+    def __init__(self, code: str, retryable: bool = False):
+        super().__init__(code)
+        self.code = code
+        self.retryable = retryable
+
+
+def status_is_retryable(status: int) -> bool:
+    """408/429/5xx are transient; every other 4xx means the request itself is wrong."""
+    return status in (408, 429) or status >= 500
+
+
+def http_error(provider: str, status: int) -> ProviderError:
+    return ProviderError(f"{provider}_http_{status}", retryable=status_is_retryable(status))
+
+
+def transport_error(provider: str, exc: Exception) -> ProviderError:
+    kind = "timeout" if isinstance(exc, httpx.TimeoutException) else "connection"
+    return ProviderError(f"{provider}_{kind}", retryable=True)
+
+
+def _timeout(seconds: float) -> httpx.Timeout:
+    return httpx.Timeout(seconds, connect=min(10.0, seconds))
 
 
 class ImageProvider(Protocol):
     name: str
+    model: str
 
-    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None) -> bytes: ...
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, timeout: float) -> bytes: ...
 
 
 def _tint_from(seed: str) -> tuple[int, int, int]:
@@ -35,8 +58,9 @@ class MockProvider:
     """Offline, deterministic colour-grade so the whole product works without any paid API key."""
 
     name = "mock"
+    model = "mock-tint"
 
-    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None) -> bytes:
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, timeout: float) -> bytes:
         return await asyncio.to_thread(self._render, image, prompt, variant, tint_hex)
 
     def _render(self, image: bytes, prompt: str, variant: int, tint_hex: str | None) -> bytes:
@@ -67,6 +91,10 @@ class MockProvider:
         return out.getvalue()
 
 
+# Gemini finish/block reasons that mean "this request will never produce an image" (non-retryable).
+GEMINI_BLOCK_REASONS = {"SAFETY", "PROHIBITED_CONTENT", "IMAGE_SAFETY", "BLOCKLIST", "SPII", "RECITATION", "OTHER"}
+
+
 class GeminiProvider:
     """Google Gemini image editing via generateContent (inline image + instruction)."""
 
@@ -74,9 +102,10 @@ class GeminiProvider:
 
     def __init__(self, api_key: str, model: str):
         self._key = api_key
+        self.model = model
         self._url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
-    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None) -> bytes:
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, timeout: float) -> bytes:
         text = prompt if variant == 0 else f"{prompt} (Alternative variation #{variant + 1}.)"
         body = {
             "contents": [{"role": "user", "parts": [
@@ -85,16 +114,24 @@ class GeminiProvider:
             ]}],
             "generationConfig": {"responseModalities": ["IMAGE"]},
         }
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            res = await client.post(self._url, json=body, headers={"x-goog-api-key": self._key})
+        try:
+            async with httpx.AsyncClient(timeout=_timeout(timeout)) as client:
+                res = await client.post(self._url, json=body, headers={"x-goog-api-key": self._key})
+        except httpx.TransportError as exc:
+            raise transport_error(self.name, exc) from exc
         if res.status_code != 200:
-            raise ProviderError(f"gemini_http_{res.status_code}")
-        parts = (res.json().get("candidates") or [{}])[0].get("content", {}).get("parts", [])
-        for part in parts:
-            data = (part.get("inlineData") or part.get("inline_data") or {}).get("data")
-            if data:
-                return base64.b64decode(data)
-        raise ProviderError("gemini_no_image")
+            raise http_error(self.name, res.status_code)
+        data = res.json()
+        if (data.get("promptFeedback") or {}).get("blockReason"):
+            raise ProviderError("gemini_safety_blocked", retryable=False)
+        candidate = (data.get("candidates") or [{}])[0]
+        for part in candidate.get("content", {}).get("parts", []):
+            b64 = (part.get("inlineData") or part.get("inline_data") or {}).get("data")
+            if b64:
+                return base64.b64decode(b64)
+        if candidate.get("finishReason") in GEMINI_BLOCK_REASONS:
+            raise ProviderError("gemini_safety_blocked", retryable=False)
+        raise ProviderError("gemini_no_image", retryable=True)
 
 
 REPLICATE_RESULT_HOSTS = ("replicate.delivery",)
@@ -107,9 +144,10 @@ class ReplicateProvider:
 
     def __init__(self, token: str, model: str):
         self._headers = {"Authorization": f"Bearer {token}"}
+        self.model = model
         self._url = f"https://api.replicate.com/v1/models/{model}/predictions"
 
-    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None) -> bytes:
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, timeout: float) -> bytes:
         payload = {"input": {
             "prompt": prompt,
             "input_image": "data:image/jpeg;base64," + base64.b64encode(image).decode(),
@@ -117,24 +155,34 @@ class ReplicateProvider:
             "output_format": "jpg",
             "seed": 1000 + variant,
         }}
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            res = await client.post(self._url, json=payload, headers={**self._headers, "Prefer": "wait=60"})
-            if res.status_code not in (200, 201):
-                raise ProviderError(f"replicate_http_{res.status_code}")
-            pred = res.json()
-            for _ in range(80):
-                if pred.get("status") in ("succeeded", "failed", "canceled"):
-                    break
-                await asyncio.sleep(1.5)
-                poll = await client.get(pred["urls"]["get"], headers=self._headers)
-                if poll.status_code != 200:
-                    raise ProviderError(f"replicate_poll_{poll.status_code}")
-                pred = poll.json()
-            output = pred.get("output")
-            if pred.get("status") != "succeeded" or not output:
-                raise ProviderError(f"replicate_{pred.get('status')}")
-            url = output[0] if isinstance(output, list) else output
-            return await self._download(client, url)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        try:
+            async with httpx.AsyncClient(timeout=_timeout(timeout)) as client:
+                wait = max(1, min(60, int(timeout) - 5))
+                res = await client.post(self._url, json=payload, headers={**self._headers, "Prefer": f"wait={wait}"})
+                if res.status_code not in (200, 201):
+                    raise http_error(self.name, res.status_code)
+                pred = res.json()
+                while pred.get("status") not in ("succeeded", "failed", "canceled"):
+                    if loop.time() + 1.5 >= deadline:
+                        raise ProviderError("replicate_timeout", retryable=True)
+                    await asyncio.sleep(1.5)
+                    poll = await client.get(pred["urls"]["get"], headers=self._headers)
+                    if poll.status_code != 200:
+                        raise http_error(self.name, poll.status_code)
+                    pred = poll.json()
+                status = pred.get("status")
+                output = pred.get("output")
+                if status == "canceled":
+                    raise ProviderError("replicate_canceled", retryable=False)
+                if status != "succeeded" or not output:
+                    # Model-side failures (OOM, cold start) are usually transient.
+                    raise ProviderError("replicate_failed", retryable=True)
+                url = output[0] if isinstance(output, list) else output
+                return await self._download(client, url)
+        except httpx.TransportError as exc:
+            raise transport_error(self.name, exc) from exc
 
     @staticmethod
     async def _download(client: httpx.AsyncClient, url: str) -> bytes:
@@ -142,16 +190,23 @@ class ReplicateProvider:
         parsed = urlparse(url)
         host = parsed.hostname or ""
         if parsed.scheme != "https" or not any(host == h or host.endswith("." + h) for h in REPLICATE_RESULT_HOSTS):
-            raise ProviderError("replicate_untrusted_output_host")
+            raise ProviderError("replicate_untrusted_output_host", retryable=False)
         res = await client.get(url, follow_redirects=False)
-        if res.status_code != 200 or len(res.content) > MAX_RESULT_BYTES:
-            raise ProviderError("replicate_download_failed")
+        if res.status_code != 200:
+            raise http_error("replicate_download", res.status_code)
+        if len(res.content) > MAX_RESULT_BYTES:
+            raise ProviderError("replicate_result_too_large", retryable=False)
         return res.content
 
 
-def create_provider(settings: Settings) -> ImageProvider:
-    if settings.image_provider == "gemini":
+def create_provider(name: str, settings: Settings) -> ImageProvider:
+    if name == "gemini":
         return GeminiProvider(settings.gemini_api_key or "", settings.gemini_image_model)
-    if settings.image_provider == "replicate":
+    if name == "replicate":
         return ReplicateProvider(settings.replicate_api_token or "", settings.replicate_model)
     return MockProvider()
+
+
+def create_providers(settings: Settings) -> list[ImageProvider]:
+    """Primary first, then IMAGE_FALLBACKS in order."""
+    return [create_provider(name, settings) for name in settings.provider_chain]

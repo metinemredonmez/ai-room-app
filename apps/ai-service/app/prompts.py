@@ -10,23 +10,38 @@ KEEP_STRUCTURE = (
 DEFAULT_STYLE = "modern interior: clean lines, neutral palette with warm wood accents, layered lighting"
 
 _UNSAFE = re.compile(r"[\x00-\x1f\x7f<>{}`\"]")
+# "k a n e p e" → "kanepe": four or more single letters separated by single spaces.
+_SPACED = re.compile(r"(?<!\S)(?:\w ){3,}\w(?!\S)")
+_TR_LOWER = str.maketrans({"I": "ı", "İ": "i"})
 
 
-def clean(text: str | None, limit: int = 200) -> str:
-    """User free text is flattened and quoted as data inside the template, never as instructions."""
+def normalize_tr(text: str) -> str:
+    """Pattern from the yoga guardrail: invisible characters out, Turkish-aware casefold (I→ı, İ→i),
+    spaced-out letters joined — so obfuscated text reads the same as plain text. No blocking."""
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    text = text.translate(_TR_LOWER).lower()
+    return _SPACED.sub(lambda m: m.group(0).replace(" ", ""), text)
+
+
+def clean(text: str | None, limit: int = 200, user_text: bool = False) -> str:
+    """Free text is flattened and quoted as data inside the template, never as instructions.
+    `user_text=True` additionally applies the Turkish normalisation (homeowner input only)."""
     if not text:
         return ""
     text = unicodedata.normalize("NFKC", text)
     text = _UNSAFE.sub(" ", text)
-    return re.sub(r"\s+", " ", text).strip()[:limit]
+    text = re.sub(r"\s+", " ", text).strip()
+    if user_text:
+        text = normalize_tr(text)
+    return text[:limit]
 
 
 def build_prompt(req: GenerateRequest, reference_style: str | None = None) -> str:
     room = clean(req.room, 60) or "room"
     style = clean(req.style_prompt, 600) or DEFAULT_STYLE
-    target = clean(req.target, 120)
-    replacement = clean(req.replacement, 120)
-    extra = clean(req.instructions, 300)
+    target = clean(req.target, 120, user_text=True)
+    replacement = clean(req.replacement, 120, user_text=True)
+    extra = clean(req.instructions, 300, user_text=True)
     extra_line = f' Additional request from the homeowner: "{extra}".' if extra else ""
 
     match req.tool:
@@ -58,7 +73,7 @@ def build_prompt(req: GenerateRequest, reference_style: str | None = None) -> st
             )
         case "paint":
             color = (
-                f"{clean(req.color_name, 40) or 'the chosen colour'} ({req.color_hex})"
+                f"{clean(req.color_name, 40, user_text=True) or 'the chosen colour'} ({req.color_hex})"
                 if req.color_hex
                 else "a warm off-white"
             )

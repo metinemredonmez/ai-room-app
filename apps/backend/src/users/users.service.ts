@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { CONFIG, type Config } from '../config.js';
+import { Injectable } from '@nestjs/common';
 import { AppError } from '../common/errors.js';
 import { todayInIstanbul } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
 import type { User } from '../generated/prisma/client.js';
+import { SettingsService } from '../settings/settings.service.js';
 
 export interface Charge {
   day: string;
@@ -15,14 +15,15 @@ type QuotaRow = Pick<User, 'plan' | 'planExpiresAt' | 'credits' | 'freeUsedOn' |
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService, @Inject(CONFIG) private cfg: Config) {}
+  constructor(private prisma: PrismaService, private settings: SettingsService) {}
 
   isPro(u: Pick<User, 'plan' | 'planExpiresAt'>, now = new Date()): boolean {
     return u.plan === 'PRO' && (!u.planExpiresAt || u.planExpiresAt > now);
   }
 
   dailyLimit(u: Pick<User, 'plan' | 'planExpiresAt'>) {
-    return this.isPro(u) ? this.cfg.PRO_DAILY_GENERATIONS : this.cfg.FREE_DAILY_GENERATIONS;
+    const s = this.settings.current;
+    return this.isPro(u) ? s.proDailyGenerations : s.freeDailyGenerations;
   }
 
   freeRemaining(u: QuotaRow): number {

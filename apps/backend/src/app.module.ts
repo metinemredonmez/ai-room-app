@@ -13,7 +13,12 @@ import { PrismaService, RateLimiter, RedisService } from './common/infra.js';
 import { CONFIG, loadConfig } from './config.js';
 import { DesignsService } from './designs/designs.service.js';
 import { ImagesService } from './images/images.service.js';
+import { JobsService } from './jobs/jobs.service.js';
+import { QueuesService } from './jobs/queues.service.js';
+import { ConsentsService } from './kvkk/consents.service.js';
 import { MailerService } from './mail/mailer.service.js';
+import { SettingsService } from './settings/settings.service.js';
+import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
@@ -23,6 +28,11 @@ import { UsersService } from './users/users.service.js';
     { provide: APP_FILTER, useClass: ErrorFilter },
     PrismaService,
     RedisService,
+    SettingsService,
+    UsageService,
+    QueuesService,
+    ConsentsService,
+    JobsService,
     RateLimiter,
     TokensService,
     MailerService,

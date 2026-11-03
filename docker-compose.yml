@@ -30,6 +30,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      IMAGE_FALLBACKS: ${IMAGE_FALLBACKS:-}
 
   backend:
     build: ./apps/backend
@@ -55,6 +56,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-0}
       DATA_DIR: /app/data
+      WORKER_ENABLED: "true"
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
     volumes: [images:/app/data]
     ports: ["4000:4000"]
 

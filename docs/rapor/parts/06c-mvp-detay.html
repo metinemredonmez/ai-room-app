@@ -56,7 +56,7 @@
         <li><b class="y">✓</b> Typecheck, lint ve build temiz</li>
         <li><b class="p">◐</b> Ban sonrası anında iptal, misafir yükseltmede oturum yenileme</li>
         <li><b class="y">✓</b> Şifre sıfırlama ve e-posta doğrulama: tek kullanımlık, amaca ve e-postaya bağlı token; Host başlığına güvenmeyen bağlantı; sıfırlamada tüm oturumların iptali (AUT-03, MAIL-01, SES-04 — smoke)</li>
-        <li><b class="n">○</b> Asenkron kuyruk, S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
+        <li><b class="n">○</b> S3/R2, IAP webhook'ları, admin oturum iptal ucu, RLS</li>
       </ul>
     </div>
   </div>
@@ -166,7 +166,8 @@
     <thead><tr><th style="width:13%">Öncelik</th><th>Kapsam</th><th style="width:20%">Durum</th></tr></thead>
     <tbody>
       <tr><td><strong>Must</strong></td><td>Misafir + kayıt; fotoğraf/örnek yükleme; 10 araç; 15 stil (5 yerel); önce/sonra ve varyant; kota, kredi ve iade; analiz + TL bütçe + mağaza linkleri; sohbet; admin MFA, moderasyon, stil yönetimi, denetim; şifre sıfırlama ve e-posta doğrulama; P0 güvenlik kontrolleri; AI etiketi; hesap silme</td><td><b class="y">Tamamlandı (MVP)</b></td></tr>
-      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; gerçek SMTP sağlayıcısı (SPF/DKIM/DMARC, MAIL-02); S3/R2 depolama; asenkron kuyruk; KVKK aydınlatma, rıza ve yurt dışı aktarım bildirimi; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
+      <tr><td><strong>Must</strong> (v1.1)</td><td>BullMQ iş kuyruğu (202 + durum sorgulama, Idempotency-Key, takılan işleri toparlama); kredi rezervasyonu (HELD→CAPTURED/RELEASED, kısmi iade); AI maliyet defteri + günlük bütçe kesici; panelden çalışma zamanı ayarları (bakım, duyuru, kota, varyant); KVKK sürümlü onay + veri dışa aktarma; AI içerik bildirimi (Google Play); temizlik ve uzlaştırma işleri (JobRun); AI servisinde yedek sağlayıcı zinciri, devre kesici, süre bütçesi, kalite kapısı, "değişiklik yok" tespiti; Swagger/OpenAPI (üretimde kapalı)</td><td><b class="y">Tamamlandı (v1.1)</b></td></tr>
+      <tr><td><strong>Must</strong> (beta öncesi)</td><td>Gerçek görsel sağlayıcı kalite seti; RevenueCat IAP; gerçek SMTP sağlayıcısı (SPF/DKIM/DMARC, MAIL-02); S3/R2 depolama; KVKK aydınlatma metni ve yurt dışı aktarım bildirimi; admin panelinde ayar/maliyet/bildirim ekranları; fiziksel cihaz testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Should</strong></td><td>iyzico/PayTR web ödemesi; kredi paketi satışı; anlık bildirim; ürün analitiği ve çökme raporlama; ETBİS/İYS; "Doğrulanacak" güvenlik testleri</td><td><b class="p">Faz 1</b></td></tr>
       <tr><td><strong>Could</strong></td><td>Maske/fırça düzenleme; sonuç üzerinden yineleme; affiliate ve katalog eşleştirme; usta teklifi; emlakçı paneli; yüz/belge maskeleme</td><td>Faz 2</td></tr>
       <tr><td><strong>Won't</strong> (bu sürümde değil)</td><td>LiDAR/RoomPlan ölçü, 2D/3D plan, AR, video yürüyüşü, marka SDK'sı, kendi GPU modeli, yeni ülkeler</td><td>Faz 3</td></tr>

@@ -2,6 +2,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CONFIG, type Config } from '../config.js';
 import { AppError } from '../common/errors.js';
 import { log } from '../common/log.js';
+import type { AiUsageReport } from '../usage/usage.service.js';
+
+/** AI failure with the AI service's retry hint (docs/API.md §7.4); the queue retries only retryable ones. */
+export class AiError extends AppError {
+  constructor(status: number, code: string, message: string, public retryable: boolean, public usage?: AiUsageReport) {
+    super(status, code, message);
+  }
+}
+
+export interface QualityReport {
+  score: number;
+  issues: Array<'too_dark' | 'too_bright' | 'blurry' | 'low_res' | 'low_contrast'>;
+}
 
 // NET-04: the AI service is internal-only; every call carries the shared internal token.
 
@@ -26,6 +39,7 @@ export interface GenerateOutput {
   prompt: string;
   provider: string;
   reference_style: string | null;
+  usage?: AiUsageReport;
 }
 
 export interface AnalyzeOutput {
@@ -37,11 +51,13 @@ export interface AnalyzeOutput {
   }>;
   renovation: Array<{ task: string; unit: string; quantity: number; cost_min_try: number; cost_max_try: number }>;
   disclaimer: string;
+  usage?: AiUsageReport;
 }
 
 export interface ChatOutput {
   reply: string;
   suggestions: Array<{ label: string; tool: string; style_id?: string | null; room_id?: string | null; instructions?: string | null }>;
+  usage?: AiUsageReport;
 }
 
 @Injectable()
@@ -63,14 +79,17 @@ export class AiClient {
       });
     } catch (e) {
       log.warn('ai_unreachable', { path, error: (e as Error).name });
-      throw new AppError(502, 'ai_unavailable', 'Yapay zekâ servisine ulaşılamadı');
+      throw new AiError(502, 'ai_unavailable', 'Yapay zekâ servisine ulaşılamadı', true);
     }
     if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { error?: { code?: string } } | null;
+      const err = (await res.json().catch(() => null)) as { error?: { code?: string; retryable?: boolean }; usage?: AiUsageReport } | null;
       const code = err?.error?.code ?? 'unknown';
       log.warn('ai_error', { path, status: res.status, code });
-      if (res.status === 400 || res.status === 415) throw new AppError(400, 'bad_request', 'Görsel işlenemedi');
-      throw new AppError(502, 'ai_unavailable', 'Yapay zekâ şu an yanıt veremiyor');
+      if (res.status === 422 && code === 'no_change') {
+        throw new AiError(422, 'no_change', 'Yapay zekâ görselde değişiklik üretemedi; hakkın iade edildi', false, err?.usage);
+      }
+      if (res.status === 400 || res.status === 415) throw new AiError(400, 'bad_request', 'Görsel işlenemedi', false);
+      throw new AiError(502, 'ai_unavailable', 'Yapay zekâ şu an yanıt veremiyor', err?.error?.retryable ?? res.status >= 500);
     }
     return (await res.json()) as T;
   }
@@ -85,6 +104,16 @@ export class AiClient {
 
   chat(input: unknown, requestId?: string) {
     return this.call<ChatOutput>('POST', '/internal/v1/chat', input, 90_000, requestId);
+  }
+
+  /** Advisory capture-quality check; failures are swallowed (never blocks an upload). */
+  async quality(image_b64: string, requestId?: string): Promise<QualityReport | null> {
+    try {
+      const q = await this.call<QualityReport>('POST', '/internal/v1/quality', { image_b64 }, 10_000, requestId);
+      return { score: q.score, issues: q.issues };
+    } catch {
+      return null;
+    }
   }
 
   async health(): Promise<{ status: 'ok' | 'down'; provider: string; chatEnabled: boolean; latencyMs: number | null }> {

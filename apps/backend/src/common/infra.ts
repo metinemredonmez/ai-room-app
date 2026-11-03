@@ -95,6 +95,8 @@ export const LIMITS = {
   analysis: { name: 'analysis', max: 30, windowSec: 3600 },
   chatUser: { name: 'chat-user', max: 40, windowSec: 3600 },
   chatIp: { name: 'chat-ip', max: 150, windowSec: 3600 },
+  reports: { name: 'reports', max: 20, windowSec: 3600 },
+  export: { name: 'export', max: 3, windowSec: 3600 },
 } satisfies Record<string, Limit>;
 
 /** In-process cap on simultaneous AI generations per instance. */

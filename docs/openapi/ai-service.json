@@ -1,0 +1,1390 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Room AI Service",
+    "description": "Internal AI service of AI Room. Only the backend calls it (header `X-Internal-Token`).\n\n* image generation with a provider fallback chain, circuit breakers and a 150 s time budget\n* capture-quality gate, no-change detection\n* Claude design chat and shopping/budget analysis\n* every AI answer carries a `usage` cost-ledger entry (API.md §7.2)\n\nErrors: `{\"error\": {\"code\", \"message\", \"retryable\"}}` — the backend retries only when `retryable` is true.",
+    "version": "1.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness (no auth)",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Provider chain and circuit-breaker state",
+        "operationId": "health_internal_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/generate": {
+      "post": {
+        "tags": [
+          "generation"
+        ],
+        "summary": "Restyle / edit a room photo (1–4 variants)",
+        "operationId": "generate_internal_v1_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`no_change`: every variant matched the input (usage included)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`ai_unavailable`: providers failed or the 150 s budget ran out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/quality": {
+      "post": {
+        "tags": [
+          "quality"
+        ],
+        "summary": "Advisory capture-quality score (never blocks)",
+        "operationId": "quality_internal_v1_quality_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/analyze": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Shopping list, TL price ranges and renovation lines for a room image",
+        "operationId": "analyze_internal_v1_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/chat": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Design chat; suggestions limited to catalog ids",
+        "operationId": "chat_internal_v1_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalyzeItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "material": {
+            "type": "string",
+            "title": "Material"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Quantity"
+          },
+          "price_min_try": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Price Min Try"
+          },
+          "price_max_try": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Price Max Try"
+          },
+          "search_query": {
+            "type": "string",
+            "title": "Search Query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "material",
+          "color",
+          "quantity",
+          "price_min_try",
+          "price_max_try",
+          "search_query"
+        ],
+        "title": "AnalyzeItem"
+      },
+      "AnalyzeRequest": {
+        "properties": {
+          "image_b64": {
+            "type": "string",
+            "maxLength": 17000000,
+            "minLength": 100,
+            "title": "Image B64",
+            "description": "Base64-encoded JPEG/PNG/WEBP image"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en"
+            ],
+            "title": "Locale",
+            "default": "tr"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room"
+          },
+          "style_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "image_b64"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "AnalyzeResponse": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "palette": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Palette"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyzeItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "renovation": {
+            "items": {
+              "$ref": "#/components/schemas/RenovationItem"
+            },
+            "type": "array",
+            "title": "Renovation"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Usage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "palette",
+          "items",
+          "renovation",
+          "disclaimer"
+        ],
+        "title": "AnalyzeResponse"
+      },
+      "CatalogEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CatalogEntry"
+      },
+      "ChatCatalog": {
+        "properties": {
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogEntry"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Tools"
+          },
+          "styles": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogEntry"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Styles"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogEntry"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Rooms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ChatCatalog"
+      },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Text"
+          },
+          "image_b64": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 17000000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image B64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "text"
+        ],
+        "title": "ChatMessage"
+      },
+      "ChatRequest": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en"
+            ],
+            "title": "Locale",
+            "default": "tr"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Messages"
+          },
+          "catalog": {
+            "$ref": "#/components/schemas/ChatCatalog"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "title": "Reply"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/Suggestion"
+            },
+            "type": "array",
+            "title": "Suggestions"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Usage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply",
+          "suggestions"
+        ],
+        "title": "ChatResponse"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable",
+            "description": "True when the backend may retry the same request"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "retryable"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Usage"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present when cost was incurred before the failure (e.g. no_change)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "GenerateRequest": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "enum": [
+              "redesign",
+              "furnish",
+              "declutter",
+              "replace",
+              "paint",
+              "flooring",
+              "exterior",
+              "garden",
+              "reference",
+              "custom"
+            ],
+            "title": "Tool"
+          },
+          "image_b64": {
+            "type": "string",
+            "maxLength": 17000000,
+            "minLength": 100,
+            "title": "Image B64",
+            "description": "Base64-encoded JPEG/PNG/WEBP image"
+          },
+          "variants": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Variants",
+            "default": 1
+          },
+          "style_prompt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 600
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Prompt"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room"
+          },
+          "floor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floor"
+          },
+          "color_hex": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Hex"
+          },
+          "color_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Name"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "replacement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacement"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "remove_all": {
+            "type": "boolean",
+            "title": "Remove All",
+            "default": false
+          },
+          "reference_image_b64": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 17000000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Image B64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tool",
+          "image_b64"
+        ],
+        "title": "GenerateRequest"
+      },
+      "GenerateResponse": {
+        "properties": {
+          "images_b64": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images B64"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "reference_style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Style"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "images_b64",
+          "prompt",
+          "provider",
+          "usage"
+        ],
+        "title": "GenerateResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Primary image provider"
+          },
+          "chat_enabled": {
+            "type": "boolean",
+            "title": "Chat Enabled"
+          },
+          "fallbacks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fallbacks"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderState"
+            },
+            "type": "array",
+            "title": "Providers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "provider",
+          "chat_enabled",
+          "fallbacks",
+          "providers"
+        ],
+        "title": "HealthResponse"
+      },
+      "ProviderState": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "closed",
+              "open",
+              "half_open"
+            ],
+            "title": "State"
+          },
+          "consecutive_failures": {
+            "type": "integer",
+            "title": "Consecutive Failures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "state",
+          "consecutive_failures"
+        ],
+        "title": "ProviderState"
+      },
+      "QualityMetrics": {
+        "properties": {
+          "brightness": {
+            "type": "number",
+            "title": "Brightness",
+            "description": "Mean luminance 0–255"
+          },
+          "contrast": {
+            "type": "number",
+            "title": "Contrast",
+            "description": "Luminance standard deviation"
+          },
+          "sharpness": {
+            "type": "number",
+            "title": "Sharpness",
+            "description": "Edge strength relative to contrast (×100) on a ≤512 px downscale"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brightness",
+          "contrast",
+          "sharpness",
+          "width",
+          "height"
+        ],
+        "title": "QualityMetrics"
+      },
+      "QualityRequest": {
+        "properties": {
+          "image_b64": {
+            "type": "string",
+            "maxLength": 17000000,
+            "minLength": 100,
+            "title": "Image B64",
+            "description": "Base64-encoded JPEG/PNG/WEBP image"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "image_b64"
+        ],
+        "title": "QualityRequest"
+      },
+      "QualityResponse": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "issues": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "too_dark",
+                "too_bright",
+                "blurry",
+                "low_res",
+                "low_contrast"
+              ]
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/QualityMetrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "issues",
+          "metrics"
+        ],
+        "title": "QualityResponse"
+      },
+      "RenovationItem": {
+        "properties": {
+          "task": {
+            "type": "string",
+            "title": "Task"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Quantity"
+          },
+          "cost_min_try": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cost Min Try"
+          },
+          "cost_max_try": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cost Max Try"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task",
+          "unit",
+          "quantity",
+          "cost_min_try",
+          "cost_max_try"
+        ],
+        "title": "RenovationItem"
+      },
+      "Suggestion": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "tool": {
+            "type": "string",
+            "enum": [
+              "redesign",
+              "furnish",
+              "declutter",
+              "replace",
+              "paint",
+              "flooring",
+              "exterior",
+              "garden",
+              "reference",
+              "custom"
+            ],
+            "title": "Tool"
+          },
+          "style_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Id"
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Id"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "tool"
+        ],
+        "title": "Suggestion"
+      },
+      "Usage": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider that produced most of the output; 'demo' for keyless answers"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "generate",
+              "analyze",
+              "chat",
+              "describe"
+            ],
+            "title": "Kind"
+          },
+          "images": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Images",
+            "description": "Images billed by the provider (including variants dropped as no_change)",
+            "default": 0
+          },
+          "input_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Input Tokens",
+            "default": 0
+          },
+          "output_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Output Tokens",
+            "default": 0
+          },
+          "latency_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "default": 0
+          },
+          "cost_usd": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cost Usd",
+            "default": 0.0
+          },
+          "fallback_used": {
+            "type": "boolean",
+            "title": "Fallback Used",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "model",
+          "kind"
+        ],
+        "title": "Usage",
+        "description": "Cost-ledger entry the backend stores in `AiUsage` (API.md §7.2)."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "description": "Shared secret held only by the backend (NET-04)",
+        "in": "header",
+        "name": "X-Internal-Token"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "generation",
+      "description": "Image editing / restyling"
+    },
+    {
+      "name": "quality",
+      "description": "Advisory capture-quality check"
+    },
+    {
+      "name": "assistant",
+      "description": "Claude chat and analysis (demo answers without a key)"
+    },
+    {
+      "name": "health",
+      "description": "Liveness and provider state"
+    }
+  ]
+}

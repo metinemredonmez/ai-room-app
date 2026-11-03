@@ -1,4 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Doc } from '../common/openapi.js';
+import { SettingsSchema } from '../settings/settings.service.js';
 import { z } from 'zod';
 import { AiClient } from '../ai/ai.client.js';
 import { AdminGuard, TokensService } from '../auth/tokens.service.js';
@@ -12,6 +15,9 @@ import type { Prisma, User } from '../generated/prisma/client.js';
 import { isUuid } from '../images/images.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AuditService } from './audit.service.js';
+import { JobsService } from '../jobs/jobs.service.js';
+import { SettingsService } from '../settings/settings.service.js';
+import { UsageService } from '../usage/usage.service.js';
 
 const Page = { cursor: z.string().max(64).optional(), limit: z.coerce.number().int().min(1).max(100).default(25) };
 const UsersQuery = z.object({ ...Page, q: z.string().trim().max(100).optional() });
@@ -43,6 +49,8 @@ const StyleInput = z
   .strict();
 
 /** Every route here requires an MFA-complete admin token (AdminGuard), and every write is audited. */
+@ApiTags('admin')
+@ApiBearerAuth('admin')
 @Controller('v1/admin')
 @UseGuards(AdminGuard)
 export class AdminController {
@@ -55,6 +63,9 @@ export class AdminController {
     private tokens: TokensService,
     private audit: AuditService,
     private ai: AiClient,
+    private settings: SettingsService,
+    private usage: UsageService,
+    private jobs: JobsService,
   ) {}
 
   private async adminUser(u: User) {
@@ -63,6 +74,7 @@ export class AdminController {
   }
 
   @Get('stats')
+  @Doc('KPI ve günlük seriler', { errors: [401, 403] })
   async stats(@Query('days') daysRaw?: string) {
     const days = Math.min(90, Math.max(7, Number(daysRaw) || 30));
     const since = new Date(Date.now() - days * 86400_000);
@@ -107,6 +119,7 @@ export class AdminController {
   }
 
   @Get('users')
+  @Doc('Kullanıcılar (arama, sayfalı)', { errors: [401, 403] })
   async listUsers(@Query() query: unknown) {
     const q = parse(UsersQuery, query);
     const where: Prisma.UserWhereInput = q.q
@@ -120,6 +133,7 @@ export class AdminController {
   }
 
   @Get('users/:id')
+  @Doc('Kullanıcı detayı + son tasarımlar + kredi hareketleri', { errors: [401, 403, 404] })
   async getUser(@Param('id') id: string) {
     if (!isUuid(id)) throw notFound();
     const user = await this.prisma.user.findUnique({ where: { id } });
@@ -136,6 +150,7 @@ export class AdminController {
   }
 
   @Patch('users/:id')
+  @Doc('Durum / plan güncelle (ban → tüm oturumlar iptal)', { body: PatchUser, errors: [400, 401, 403, 404] })
   async patchUser(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(PatchUser, body);
     if (!isUuid(id)) throw notFound();
@@ -156,6 +171,7 @@ export class AdminController {
   }
 
   @Post('users/:id/credits')
+  @Doc('Gerekçeli kredi ekle/çıkar', { body: Credits, status: 201, errors: [400, 401, 403, 404] })
   async credits(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(Credits, body);
     if (!isUuid(id)) throw notFound();
@@ -171,6 +187,7 @@ export class AdminController {
   }
 
   @Get('designs')
+  @Doc('Tasarım moderasyonu listesi', { errors: [401, 403] })
   async listDesigns(@Query() query: unknown) {
     const q = parse(DesignsQuery, query);
     const where: Prisma.DesignWhereInput = {
@@ -191,6 +208,7 @@ export class AdminController {
   }
 
   @Patch('designs/:id')
+  @Doc('Öne çıkar / kaldır', { errors: [400, 401, 403, 404] })
   async patchDesign(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const { featured } = parse(z.object({ featured: z.boolean() }).strict(), body);
     if (!isUuid(id)) throw notFound();
@@ -204,6 +222,7 @@ export class AdminController {
 
   @Delete('designs/:id')
   @HttpCode(204)
+  @Doc('Tasarımı sil (denetlenir)', { status: 204, errors: [401, 403, 404] })
   async deleteDesign(@Param('id') id: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     if (!isUuid(id)) throw notFound();
     await this.designs.remove(id);
@@ -224,11 +243,13 @@ export class AdminController {
   }
 
   @Get('styles')
+  @Doc('Stil kataloğu (kullanım sayısıyla)', { errors: [401, 403] })
   async styles() {
     return this.styleDtos();
   }
 
   @Post('styles')
+  @Doc('Stil ekle', { body: StyleInput, status: 201, errors: [400, 401, 403, 409] })
   async createStyle(@Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(StyleInput, body);
     if (await this.prisma.style.findUnique({ where: { id: input.id } })) throw new AppError(409, 'conflict', 'Bu kimlikte stil var');
@@ -239,6 +260,7 @@ export class AdminController {
   }
 
   @Patch('styles/:id')
+  @Doc('Stil güncelle', { body: StyleInput.omit({ id: true }).partial(), errors: [400, 401, 403, 404] })
   async patchStyle(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(StyleInput.omit({ id: true }).partial().strict(), body);
     if (!/^[a-z_]{2,40}$/.test(id) || !(await this.prisma.style.findUnique({ where: { id } }))) throw notFound();
@@ -249,6 +271,7 @@ export class AdminController {
   }
 
   @Get('audit')
+  @Doc('Denetim kaydı', { errors: [401, 403] })
   async auditLog(@Query() query: unknown) {
     const q = parse(z.object(Page), query);
     const rows = await this.prisma.auditLog.findMany({
@@ -265,7 +288,89 @@ export class AdminController {
     };
   }
 
+  @Get('settings')
+  @Doc('Çalışma zamanı ayarları (değerler + varsayılanlar)', { errors: [401, 403] })
+  async getSettings() {
+    return { values: this.settings.current, defaults: this.settings.defaults };
+  }
+
+  /** Every change needs a reason and lands in the audit log (palemi admin `reason` pattern). */
+  @Patch('settings')
+  @Doc('Ayarları değiştir (gerekçe zorunlu, denetlenir)', { body: z.object({ values: SettingsSchema.partial(), reason: z.string().min(3).max(200) }), errors: [400, 401, 403] })
+  async patchSettings(@Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const input = parse(z.object({ values: z.record(z.string(), z.unknown()), reason: z.string().trim().min(3).max(200) }).strict(), body);
+    const before = this.settings.current;
+    const { values, changed } = await this.settings.update(input.values, auth.userId);
+    const diff = Object.fromEntries(changed.map((k) => [k, { from: before[k as keyof typeof before], to: values[k as keyof typeof values] }]));
+    await this.audit.record(auth.userId, 'settings.update', 'settings', null, { reason: input.reason, diff }, req.clientIp);
+    return { values };
+  }
+
+  @Get('ai/usage')
+  @Doc('AI maliyet defteri ve bütçe durumu', { errors: [401, 403] })
+  async aiUsage(@Query('days') daysRaw?: string) {
+    return this.usage.stats(Math.min(90, Math.max(1, Number(daysRaw) || 30)));
+  }
+
+  @Get('reports')
+  @Doc('İçerik bildirimleri', { errors: [401, 403] })
+  async listReports(@Query() query: unknown) {
+    const q = parse(z.object({ ...Page, status: z.enum(['OPEN', 'RESOLVED', 'DISMISSED']).optional() }), query);
+    const rows = await this.prisma.contentReport.findMany({
+      where: q.status ? { status: q.status } : {},
+      include: { design: { include: { inputImage: true, results: true } } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: q.limit + 1, ...cursorArgs(q.cursor),
+    });
+    const page = rows.slice(0, q.limit);
+    return {
+      items: await Promise.all(
+        page.map(async (r) => ({
+          id: r.id, designId: r.designId, reason: r.reason, note: r.note, status: r.status, reporterId: r.reporterId,
+          createdAt: r.createdAt.toISOString(), resolvedAt: r.resolvedAt?.toISOString() ?? null, resolution: r.resolution,
+          design: await this.designs.toDto(r.design),
+        })),
+      ),
+      nextCursor: rows.length > q.limit ? page[page.length - 1].id : null,
+    };
+  }
+
+  @Patch('reports/:id')
+  @Doc('Bildirimi sonuçlandır (isteğe bağlı: öne çıkarmayı kaldır / tasarımı sil)', { errors: [400, 401, 403, 404] })
+  async resolveReport(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const input = parse(
+      z.object({
+        status: z.enum(['RESOLVED', 'DISMISSED']),
+        resolution: z.string().trim().min(3).max(500),
+        unfeature: z.boolean().optional(),
+        deleteDesign: z.boolean().optional(),
+      }).strict(),
+      body,
+    );
+    if (!isUuid(id)) throw notFound();
+    const report = await this.prisma.contentReport.findUnique({ where: { id } });
+    if (!report) throw notFound();
+    if (input.unfeature) await this.prisma.design.update({ where: { id: report.designId }, data: { featured: false } });
+    const updated = await this.prisma.contentReport.update({
+      where: { id },
+      data: { status: input.status, resolution: input.resolution, resolvedBy: auth.userId, resolvedAt: new Date() },
+    });
+    await this.audit.record(auth.userId, 'report.resolve', 'report', id, { status: input.status, unfeature: input.unfeature ?? false, deleteDesign: input.deleteDesign ?? false }, req.clientIp);
+    if (input.deleteDesign) {
+      await this.designs.remove(report.designId); // cascades the report row too
+      await this.audit.record(auth.userId, 'design.delete', 'design', report.designId, { via: 'report', reportId: id }, req.clientIp);
+      return { ...updated, status: input.status, deleted: true };
+    }
+    return { id: updated.id, status: updated.status, resolution: updated.resolution, resolvedAt: updated.resolvedAt?.toISOString() ?? null };
+  }
+
+  @Get('jobs')
+  @Doc('Zamanlı işler ve kuyruk durumu', { errors: [401, 403] })
+  async jobRuns(@Query('limit') limitRaw?: string) {
+    return this.jobs.overview(Math.min(200, Math.max(1, Number(limitRaw) || 50)));
+  }
+
   @Get('system')
+  @Doc('Sistem durumu (AI, DB, Redis)', { errors: [401, 403] })
   async system() {
     const [ai, db, redis] = await Promise.all([
       this.ai.health(),
