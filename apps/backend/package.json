@@ -21,6 +21,7 @@
     "test:e2e": "node ../../scripts/smoke.mjs",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:demo": "tsx scripts/seed-demo.ts",
     "admin:otp": "tsx scripts/admin-otp.ts",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",

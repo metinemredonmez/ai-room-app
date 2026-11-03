@@ -105,6 +105,7 @@ npm install
 createdb ai_room
 npx prisma migrate deploy
 npm run db:seed               # 15 stil + TOTP'li admin; bilgiler data/admin-credentials.txt dosyasına yazılır
+npm run db:seed:demo          # isteğe bağlı demo verisi: 40 kullanıcı, 46 görselli tasarım, bildirimler, KVKK başvuruları, ödeme olayları (yalnız geliştirme; her çalıştırmada yenilenir)
 npm run build && npm run start:prod
 ```
 
