@@ -94,6 +94,9 @@ Admin ──cookie──> Admin BFF ──────┤
 Gerekenler: Node 22 (mobil için ≥ 22.13; diğerleri Node 20.9+ ile de çalışır), Python 3.12+ ve
 [uv](https://docs.astral.sh/uv/), PostgreSQL 15+, Redis 7+.
 
+Sunucuya kurulum, yayın, geri dönüş ve yedek/geri yükleme: [docs/RUNBOOK.md](docs/RUNBOOK.md)
+(Ubuntu 24.04, systemd, Caddy; Docker yok).
+
 ```bash
 # 1) Backend
 cd apps/backend
@@ -199,7 +202,9 @@ Kontroller red-team kataloğundaki kimliklerle eşleştirildi; ayrıntı PDF rap
 
 **Henüz yok:**
 - Gerçek SMTP sağlayıcısı ve SPF/DKIM/DMARC ayarı (kod hazır, `MAIL_TRANSPORT=smtp`).
-- Gerçek R2/S3 kovası (kod hazır, sahte S3 sunucusuyla uçtan uca doğrulandı).
+- Gerçek R2/S3 kovası (kod hazır; geliştirmede sahte S3 sunucusuyla doğrulandı, o araç güvenlik açığı nedeniyle kaldırıldı).
+- Sunucu kurulumu (runbook hazır; sunucu, alan adı ve SMTP bilgisi bekleniyor).
+- Playwright ile web/admin uçtan uca testleri (admin ve web aşamasında).
 - Gerçek mağaza ürünleri ve RevenueCat hesabı (kod hazır; anahtarlar `.env` dosyalarına girilmeli). Web ödemesi (iyzico/PayTR).
 - Fırça ile maske düzenleme.
 - Çoklu fotoğraf tutarlılığı.
