@@ -325,3 +325,13 @@ Zamanlı işler BullMQ ile tekrarlı çalışır; her çalışma `JobRun` tablos
 - **Kredi paketleri:** `CREDIT_PACKS=productId:kredi,...` ile tanımlanır. Mağaza işlem kimliği `StorePurchase` tablosunun
   birincil anahtarıdır; aynı satın alma iki kez krediye çevrilmez.
 - **Katalog:** `plans[].storeProductId` ve `creditPacks[]` alanları eklendi.
+
+### 7.7 Görsel deposu (S3 / R2) — #3
+- `STORAGE_DRIVER=local|s3`. `s3` sürücüsü S3 uyumlu her kovayla çalışır: Cloudflare R2, AWS S3, MinIO.
+  Ayarlar: `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE`, `S3_PREFIX`.
+- Kova **özel** kalır; istemcilere yine backend'in 24 saatlik imzalı URL'si verilir (FIL-04) ve backend nesneyi akıtır.
+  İstemci sözleşmesi ve CSP değişmez.
+- Anahtarlar yalnız sunucunun ürettiği UUID'lerdir (`images/<uuid>.jpg`); kullanıcı girdisi anahtar olamaz.
+- Taşıma: `npm run storage:migrate` yerel dosyaları kovaya kopyalar; tekrar çalıştırmak güvenlidir.
+  Yerel test için `npm run s3:dev` (s3rver, port 4569).
+- `/health` ve `/admin/system` yanıtlarına depolama sürücüsü ve durumu (`storage`) eklendi.

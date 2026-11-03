@@ -1,12 +1,13 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { createHmac, randomUUID } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 import { CONFIG, type Config } from '../config.js';
 import { AppError } from '../common/errors.js';
+import { log } from '../common/log.js';
 import { PrismaService } from '../common/infra.js';
 import { safeEqual } from '../auth/crypto.js';
+import { createObjectStore, type ObjectStore } from './object-store.js';
 import type { Image, ImageKind } from '../generated/prisma/client.js';
 
 // FIL-01 / FIL-02 / FIL-04: uploads are sniffed, decoded and re-encoded (strips EXIF/GPS — KVKK),
@@ -31,21 +32,21 @@ export type ImageRef = { id: string; url: string; width: number; height: number 
 
 @Injectable()
 export class ImagesService implements OnModuleInit {
-  private dir: string;
+  readonly store: ObjectStore;
   private maxBytes: number;
 
   constructor(private prisma: PrismaService, @Inject(CONFIG) private cfg: Config) {
-    this.dir = path.resolve(cfg.DATA_DIR, 'images');
+    this.store = createObjectStore(cfg, path.resolve(cfg.DATA_DIR, 'images'));
     this.maxBytes = cfg.MAX_UPLOAD_MB * 1024 * 1024;
   }
 
   async onModuleInit() {
-    await mkdir(this.dir, { recursive: true, mode: 0o700 });
+    if ((await this.store.health()) !== 'ok') log.warn('storage_unavailable', { driver: this.store.driver });
   }
 
-  private file(id: string) {
+  private key(id: string) {
     if (!isUuid(id)) throw new AppError(404, 'not_found', 'Görsel bulunamadı');
-    return path.join(this.dir, `${id}.jpg`);
+    return `${id}.jpg`;
   }
 
   async normalize(buf: Buffer, declared: string, maxSide = 2048) {
@@ -74,18 +75,16 @@ export class ImagesService implements OnModuleInit {
   async save(buffer: Buffer, meta: { ownerId: string; kind: ImageKind; designId?: string }): Promise<Image> {
     const { width, height } = await sharp(buffer).metadata();
     const id = randomUUID();
-    await writeFile(this.file(id), buffer, { mode: 0o600 });
+    await this.store.put(this.key(id), buffer, 'image/jpeg');
     return this.prisma.image.create({
       data: { id, ownerId: meta.ownerId, kind: meta.kind, designId: meta.designId, width, height, bytes: buffer.length },
     });
   }
 
   async read(id: string): Promise<Buffer> {
-    try {
-      return await readFile(this.file(id));
-    } catch {
-      throw new AppError(404, 'not_found', 'Görsel bulunamadı');
-    }
+    const buf = await this.store.get(this.key(id));
+    if (!buf) throw new AppError(404, 'not_found', 'Görsel bulunamadı');
+    return buf;
   }
 
   /** AZ-01: an image can only be used as model input by its owner; others get a plain 404. */
@@ -97,7 +96,7 @@ export class ImagesService implements OnModuleInit {
   }
 
   async remove(ids: string[]) {
-    await Promise.all(ids.filter(isUuid).map((id) => rm(this.file(id), { force: true })));
+    await this.store.delete(ids.filter(isUuid).map((id) => this.key(id)));
   }
 
   private signature(id: string, exp: number) {

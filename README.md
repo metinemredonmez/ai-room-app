@@ -76,6 +76,10 @@ Admin ──cookie──> Admin BFF ──────┤
   - Kredi paketleri her mağaza işlemi için bir kez yüklenir.
   - Admin'de "Ödeme olayları" sayfasında eşleşmeyen ve başarısız olaylar yeniden işlenebilir.
   - Anahtar yoksa geliştirmede demo yükseltme kullanılır.
+- **S3 / R2 görsel deposu.**
+  - `STORAGE_DRIVER=s3` ile Cloudflare R2, AWS S3 ve MinIO desteklenir.
+  - Kova özel kalır; istemciler yine imzalı backend URL'si kullanır.
+  - Yerel görseller `npm run storage:migrate` ile kovaya taşınır.
 - **Swagger / OpenAPI.**
   - Backend: <http://localhost:4000/docs>.
   - AI servisi: <http://localhost:8001/docs>.
@@ -171,6 +175,7 @@ Kontroller red-team kataloğundaki kimliklerle eşleştirildi; ayrıntı PDF rap
 
 **Henüz yok:**
 - Gerçek SMTP sağlayıcısı ve SPF/DKIM/DMARC ayarı (kod hazır, `MAIL_TRANSPORT=smtp`).
+- Gerçek R2/S3 kovası (kod hazır, sahte S3 sunucusuyla uçtan uca doğrulandı).
 - Gerçek mağaza ürünleri ve RevenueCat hesabı (kod hazır; anahtarlar `.env` dosyalarına girilmeli). Web ödemesi (iyzico/PayTR).
 - Fırça ile maske düzenleme.
 - Çoklu fotoğraf tutarlılığı.

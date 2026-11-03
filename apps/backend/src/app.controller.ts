@@ -51,12 +51,14 @@ export class PublicController {
   @Get('health')
   @Doc('Servis sağlığı (DB, Redis, AI servisi)', { response: { type: 'object', properties: { status: { type: 'string', enum: ['ok', 'degraded'] }, db: { type: 'string' }, redis: { type: 'string' }, ai: { type: 'string' } } } })
   async health() {
-    const [db, redis, ai] = await Promise.all([
+    const [db, redis, ai, storage] = await Promise.all([
       this.prisma.$queryRaw`SELECT 1`.then(() => 'ok' as const, () => 'down' as const),
       this.redis.client.ping().then(() => 'ok' as const, () => 'down' as const),
       this.ai.health().then((h) => h.status),
+      this.images.store.health(),
     ]);
-    return { status: db === 'ok' && redis === 'ok' && ai === 'ok' ? 'ok' : 'degraded', db, redis, ai };
+    const ok = db === 'ok' && redis === 'ok' && ai === 'ok' && storage === 'ok';
+    return { status: ok ? 'ok' : 'degraded', db, redis, ai, storage };
   }
 
   @Get('catalog')

@@ -1,5 +1,9 @@
 import type { Request } from 'express';
 import { createHmac } from 'node:crypto';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { LocalStore } from './images/object-store.js';
 import { BillingService } from './billing/billing.service.js';
 import { base32Decode, base32Encode, totpAt, verifyTotp } from './auth/crypto.js';
 import { resolveClientIp } from './common/http.js';
@@ -151,5 +155,17 @@ describe('RevenueCat webhook authentication (yoga BE-01 lesson: verify before wr
     expect(() => s.verify({ authorization: auth, 'x-revenuecat-webhook-signature': sign(t - 301) }, body, now)).toThrow(/İmza/);
     expect(() => s.verify({ authorization: 'Bearer nope', 'x-revenuecat-webhook-signature': sign(t) }, body, now)).toThrow(/İmza/);
     expect(() => s.verify({ authorization: auth }, body, now)).toThrow(/İmza/);
+  });
+});
+
+describe('object store (local driver)', () => {
+  it('puts, reads and deletes by server-generated key', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'airoom-store-'));
+    const store = new LocalStore(dir);
+    await store.put('0f8fad5b-d9cb-469f-a165-70867728950e.jpg', Buffer.from('jpeg-bytes'), 'image/jpeg');
+    expect((await store.get('0f8fad5b-d9cb-469f-a165-70867728950e.jpg'))?.toString()).toBe('jpeg-bytes');
+    await store.delete(['0f8fad5b-d9cb-469f-a165-70867728950e.jpg']);
+    expect(await store.get('0f8fad5b-d9cb-469f-a165-70867728950e.jpg')).toBeNull();
+    expect(await store.health()).toBe('ok');
   });
 });

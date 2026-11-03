@@ -26,6 +26,15 @@ const Env = z.object({
   MAIL_FROM: z.string().default('AI Room <no-reply@airoom.local>'),
   AI_INTERNAL_TOKEN: secret('AI_INTERNAL_TOKEN'),
   DATA_DIR: z.string().default('./data'),
+  // Image storage: local disk (single server / dev) or any S3-compatible bucket (Cloudflare R2, AWS S3, MinIO).
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  S3_BUCKET: z.string().optional(),
+  S3_REGION: z.string().default('auto'),
+  S3_ENDPOINT: z.url().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+  S3_PREFIX: z.string().regex(/^[A-Za-z0-9/_-]*$/).default('images/'),
   CORS_ORIGINS: z.string().default('http://localhost:8081'),
   // NET-03: number of trusted reverse proxies that append X-Forwarded-For (0 = use the socket peer).
   TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
@@ -56,6 +65,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error(`Invalid configuration — ${issues}`);
   }
   const cfg = parsed.data;
+  if (cfg.STORAGE_DRIVER === 's3' && !cfg.S3_BUCKET) throw new Error('Invalid configuration — S3_BUCKET is required for STORAGE_DRIVER=s3');
   const corsOrigins = cfg.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean);
   const isProd = cfg.NODE_ENV === 'production';
   if (isProd) {
