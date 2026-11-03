@@ -36,7 +36,7 @@ export async function createApp() {
   app.enableCors({
     origin: cfg.corsOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'Accept-Language', 'X-Request-Id'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Accept-Language', 'X-Request-Id', 'Prefer', 'Idempotency-Key'],
     exposedHeaders: ['Retry-After', 'X-Request-Id'],
     credentials: false,
     maxAge: 600,

@@ -4,6 +4,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LocalStore } from './images/object-store.js';
+import { PUSH_TOKEN_RE, PushService, maskToken } from './push/push.service.js';
 import { BillingService } from './billing/billing.service.js';
 import { base32Decode, base32Encode, totpAt, verifyTotp } from './auth/crypto.js';
 import { resolveClientIp } from './common/http.js';
@@ -97,7 +98,9 @@ describe('configuration (KEY-01)', () => {
     ).toThrow(/distinct/);
     const prod = { ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com' };
     expect(() => loadConfig(prod)).toThrow(/SMTP/);
-    expect(loadConfig({ ...prod, MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com' }).isProd).toBe(true);
+    const mail = { MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com' };
+    expect(() => loadConfig({ ...prod, ...mail })).toThrow(/PUSH_TRANSPORT/);
+    expect(loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo' }).isProd).toBe(true);
   });
 });
 
@@ -167,5 +170,30 @@ describe('object store (local driver)', () => {
     await store.delete(['0f8fad5b-d9cb-469f-a165-70867728950e.jpg']);
     expect(await store.get('0f8fad5b-d9cb-469f-a165-70867728950e.jpg')).toBeNull();
     expect(await store.health()).toBe('ok');
+  });
+});
+
+describe('push notifications (LOG-02 / AZ-01)', () => {
+  const token = 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]';
+
+  it('accepts only Expo push tokens', () => {
+    expect(PUSH_TOKEN_RE.test(token)).toBe(true);
+    expect(PUSH_TOKEN_RE.test('ExpoPushToken[abcdefghij_-1234]')).toBe(true);
+    for (const bad of ['', 'fcm:abc', 'ExponentPushToken[]', 'ExponentPushToken[a b c d e f g h]', `${token}\n`, 'https://evil.example']) {
+      expect(PUSH_TOKEN_RE.test(bad)).toBe(false);
+    }
+    expect(maskToken(token)).not.toContain('xxxxxxxxxxxxxxxx');
+  });
+
+  it('drops devices Expo reports as unregistered and keeps receipt ids for the rest', async () => {
+    const deleted: unknown[] = [];
+    const prisma = { pushToken: { deleteMany: async (q: unknown) => void deleted.push(q) } };
+    const svc = new PushService(prisma as never, { DATA_DIR: tmpdir(), PUSH_TRANSPORT: 'expo' } as Config);
+    const receipts = await svc.handleTickets(
+      ['ExponentPushToken[aaaaaaaaaaaa]', 'ExponentPushToken[bbbbbbbbbbbb]', 'ExponentPushToken[cccccccccccc]'],
+      [{ status: 'ok', id: 'r1' }, { status: 'error', details: { error: 'DeviceNotRegistered' } }, { status: 'error', details: { error: 'MessageRateExceeded' } }],
+    );
+    expect(receipts).toEqual({ r1: 'ExponentPushToken[aaaaaaaaaaaa]' });
+    expect(deleted).toEqual([{ where: { token: { in: ['ExponentPushToken[bbbbbbbbbbbb]'] } } }]);
   });
 });

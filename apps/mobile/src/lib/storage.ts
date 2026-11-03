@@ -56,6 +56,13 @@ export const prefs = {
       // ignore
     }
   },
+  async remove(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+  },
 };
 
 export const KEYS = {
@@ -64,4 +71,5 @@ export const KEYS = {
   deviceId: 'airoom.deviceId',
   locale: 'airoom.locale',
   onboardingDone: 'airoom.onboardingDone',
+  pushToken: 'airoom.pushToken',
 } as const;

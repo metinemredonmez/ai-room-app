@@ -13,6 +13,7 @@ import { PrismaService, RedisService } from '../common/infra.js';
 import { DesignsService, cursorArgs } from '../designs/designs.service.js';
 import type { Prisma, User } from '../generated/prisma/client.js';
 import { ImagesService, isUuid } from '../images/images.service.js';
+import { PushService } from '../push/push.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AuditService } from './audit.service.js';
 import { BillingService } from '../billing/billing.service.js';
@@ -69,6 +70,7 @@ export class AdminController {
     private jobs: JobsService,
     private billing: BillingService,
     private images: ImagesService,
+    private push: PushService,
   ) {}
 
   private async adminUser(u: User) {
@@ -415,12 +417,17 @@ export class AdminController {
   @Get('system')
   @Doc('Sistem durumu (AI, DB, Redis)', { errors: [401, 403] })
   async system() {
-    const [ai, db, redis, storage] = await Promise.all([
+    const [ai, db, redis, storage, pushDevices] = await Promise.all([
       this.ai.health(),
       this.prisma.$queryRaw`SELECT 1`.then(() => 'ok' as const, () => 'down' as const),
       this.redis.client.ping().then(() => 'ok' as const, () => 'down' as const),
       this.images.store.health(),
+      this.prisma.pushToken.count(),
     ]);
-    return { ai, db, redis, storage: { driver: this.images.store.driver, status: storage }, version: process.env.npm_package_version ?? '0.1.0' };
+    return {
+      ai, db, redis, storage: { driver: this.images.store.driver, status: storage },
+      push: { transport: this.push.transport, devices: pushDevices },
+      version: process.env.npm_package_version ?? '0.1.0',
+    };
   }
 }

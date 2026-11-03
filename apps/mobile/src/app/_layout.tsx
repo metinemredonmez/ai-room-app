@@ -8,6 +8,7 @@ import { AppText, Button, EmptyState } from '@/components/ui';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { onPushOpen } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -26,6 +27,12 @@ function BootGate() {
       router.replace('/onboarding');
     }
   }, [status, onboardingDone, segments]);
+
+  // "Tasarımın hazır" push tapped (also when it launched the app): open that design once ready.
+  useEffect(() => {
+    if (status !== 'ready') return;
+    return onPushOpen((designId) => router.push({ pathname: '/design/[id]', params: { id: designId } }));
+  }, [status]);
 
   if (status === 'booting') {
     return (

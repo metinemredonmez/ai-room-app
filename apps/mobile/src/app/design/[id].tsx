@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -12,12 +13,13 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { api, ApiError, type Analysis, type Design } from '@/lib/api';
 import { formatDate } from '@/lib/i18n';
+import { pushAvailable } from '@/lib/push';
 import { useSession } from '@/lib/session';
 
 export default function DesignScreen() {
   const c = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t, locale, errorMessage } = useSession();
+  const { t, locale, errorMessage, refreshUser } = useSession();
   const [design, setDesign] = useState<Design | null>(null);
   const [selected, setSelected] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,35 @@ export default function DesignScreen() {
       cancelled = true;
     };
   }, [id, errorMessage]);
+
+  // Queued design: poll with a gentle backoff until the worker finishes (the push covers a closed app).
+  const pending = design?.status === 'PENDING';
+  useEffect(() => {
+    if (!pending) return;
+    let stopped = false;
+    let delay = 1500;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      try {
+        const next = await api.design(id);
+        if (stopped) return;
+        setDesign(next);
+        if (next.status !== 'PENDING') {
+          void refreshUser();
+          return;
+        }
+      } catch {
+        // transient network error: keep polling
+      }
+      delay = Math.min(delay * 1.3, 5000);
+      if (!stopped) timer = setTimeout(tick, delay);
+    };
+    timer = setTimeout(tick, delay);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [pending, id, refreshUser]);
 
   if (!design) {
     return (
@@ -123,7 +154,17 @@ export default function DesignScreen() {
         </View>
       ) : null}
 
-      {design.status !== 'SUCCEEDED' || !result ? (
+      {pending ? (
+        <View style={[styles.pending, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <ActivityIndicator color={c.primary} size="large" />
+          <AppText variant="heading" style={{ textAlign: 'center' }}>
+            {t('design.pending')}
+          </AppText>
+          <AppText variant="small" muted style={{ textAlign: 'center' }}>
+            {pushAvailable ? t('design.pendingPush') : t('design.pendingHint')}
+          </AppText>
+        </View>
+      ) : design.status !== 'SUCCEEDED' || !result ? (
         <EmptyState
           icon="alert-circle-outline"
           title={t('design.failed')}
@@ -139,6 +180,21 @@ export default function DesignScreen() {
             beforeLabel={t('design.before')}
             afterLabel={t('design.after')}
           />
+          {/* Only a real SAM 3 mask backs the "windows and doors kept" promise; the demo mask is a rough guess. */}
+          {design.region?.applied && design.region.method === 'sam3' ? (
+            <View style={styles.region}>
+              <Ionicons name="lock-closed-outline" size={14} color={c.primary} />
+              <AppText variant="small" muted style={{ flex: 1 }}>
+                {t(
+                  design.region.target === 'wall'
+                    ? 'design.regionWall'
+                    : design.region.target === 'floor'
+                      ? 'design.regionFloor'
+                      : 'design.regionObject',
+                )}
+              </AppText>
+            </View>
+          ) : null}
 
           {design.results.length > 1 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.variants}>
@@ -191,6 +247,14 @@ export default function DesignScreen() {
 }
 
 const styles = StyleSheet.create({
+  region: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, marginTop: Spacing.two },
+  pending: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.five,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   variants: { gap: Spacing.two, paddingVertical: Spacing.three },
   thumbWrap: { borderWidth: 2, borderRadius: Radius.md + 2, padding: 1 },
   thumb: { width: 72, height: 72, borderRadius: Radius.md },

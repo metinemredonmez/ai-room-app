@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { StyleCard, ToolCard, isPro, openPaywall } from '@/components/catalog-cards';
@@ -12,6 +13,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { api, ApiError, type CreateDesign, type ImageRef, type SampleId, type ToolId } from '@/lib/api';
 import { pickAndUpload, type PickSource } from '@/lib/pick-image';
+import { enablePush } from '@/lib/push';
 import { useSession } from '@/lib/session';
 
 type Params = {
@@ -64,6 +66,8 @@ export default function CreateScreen() {
   const [removeAll, setRemoveAll] = useState(false);
   const [variants, setVariants] = useState<1 | 2 | 3 | 4>(2);
   const [generating, setGenerating] = useState(false);
+  // Same key until the server answers, so a retry after a dropped connection is never charged twice.
+  const idemKey = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const color = useMemo(() => catalog?.colors.find((x) => x.id === colorId), [catalog, colorId]);
@@ -128,12 +132,17 @@ export default function CreateScreen() {
 
     setError(null);
     setGenerating(true);
+    idemKey.current ??= Crypto.randomUUID();
     try {
-      const design = await api.createDesign(body);
+      const design = await api.createDesign(body, idemKey.current);
+      idemKey.current = null;
       refreshUser();
       setGenerating(false);
+      // Contextual permission ask: the user has just started a wait worth being notified about.
+      void enablePush();
       router.replace({ pathname: '/design/[id]', params: { id: design.id } });
     } catch (e) {
+      if (!(e instanceof ApiError && e.status === 0)) idemKey.current = null;
       setGenerating(false);
       refreshUser();
       handleError(e);

@@ -358,3 +358,36 @@ Rakiplerde en sık şikâyet: "boyamak istedim, pencerelerimi de değiştirdi". 
   - Girdi ve çıktı `sync_mode` ile satır içi data URI olarak taşınır. URL dönerse yalnız `https` + `fal.media`/`fal.run`/`fal.ai`
     alan adlarından indirilir (EXT-01, SSRF).
   - Güvenlik denetimi açıktır; `has_nsfw_concepts` yeniden denenmeyen `falai_safety_blocked` hatasına dönüşür.
+
+### 7.9 "Tasarımın hazır" push bildirimi — #5
+- Yalnız **kuyruktaki** tasarımlar bildirim gönderir (`Prefer: respond-async`). Senkron istekte kullanıcı zaten ekranda bekler.
+  Mobil uygulama artık her tasarımı asenkron başlatır, `Idempotency-Key` ile gönderir ve tasarım ekranında `PENDING` durumunu yoklar
+  (1,5 sn'den başlayıp 5 sn'ye kadar uzayan aralıkla). Kullanıcı uygulamadan çıkarsa bildirim gelir.
+- `POST /v1/me/push-tokens { token, platform: 'ios'|'android' }` → 204. Yalnız Expo push token kabul edilir
+  (`ExponentPushToken[...]`/`ExpoPushToken[...]`), aksi 400. Kayıt token'a göre upsert edilir; aynı cihaz başka hesapla
+  kaydolursa token o hesaba **taşınır** ve eski hesap o cihaza bildirim gönderemez (AZ-01). Kullanıcı başına en çok 10 cihaz tutulur.
+  Hız sınırı: saatte 30.
+- `DELETE /v1/me/push-tokens { token }` → 204 (çıkışta ve bildirim kapatılınca). Başka hesabın token'ı sessizce yok sayılır.
+- Gönderim: tasarım işi bitince (başarılı ya da son denemede başarısız) `notifications` kuyruğuna `design-result` işi eklenir.
+  İş kimliği `design-<id>` olduğu için tasarım işi yeniden çalışsa da tek bildirim gider. Bildirim sorunu tasarımı asla başarısız yapmaz.
+- İçerik kullanıcının diline göre (TR/EN):
+  - Başarılı: "Tasarımın hazır" + `"<başlık>" tamamlandı`.
+  - Başarısız: "Tasarım oluşturulamadı" + "Hakkın iade edildi".
+  - `data: { type: 'design', designId, status, url: 'airoom://design/<id>' }`. Uygulama yalnız UUID biçimindeki `designId`'yi kullanır,
+    yükteki URL'ye gitmez.
+- Taşıma: `PUSH_TRANSPORT=outbox` (geliştirme: `DATA_DIR/push-outbox/*.json`) | `expo` (Expo Push API, üretimde zorunlu).
+  `EXPO_ACCESS_TOKEN`, Expo projesinde "enhanced push security" açıksa gerekir.
+- Ölü cihaz temizliği: Expo bileti ya da 15 dk sonra kontrol edilen makbuz `DeviceNotRegistered` derse token silinir.
+  270 gündür görülmeyen cihazlar gece bakım işinde silinir. 429/5xx yanıtlarında iş üstel geri çekilmeyle yeniden denenir.
+- KVKK: token'lar loglanmaz, loglarda yalnız maskeli hâli görünür (LOG-02). `GET /me/export` yanıtında `pushDevices` alanı
+  maskeli token, platform ve tarihleri içerir. Hesap silinince token'lar da silinir.
+- `/admin/system` yanıtı `push: { transport, devices }`, `/admin/jobs` yanıtı `notifications` kuyruk sayılarını içerir.
+- Mobil: izin ilk açılışta değil, kullanıcı ilk tasarımını başlatınca istenir. İzin verilmişse her açılışta ve her hesap değişiminde
+  token sessizce yeniden kaydedilir. Push için EAS `projectId` ve development build gerekir; Expo Go Android'de push almaz.
+
+### 7.10 Örnek fotoğraflar
+- `POST /v1/uploads/sample` artık çizim değil **gerçek oda fotoğrafı** döndürür: salon, boş oda, yatak odası, dış cephe, bahçe.
+  Fotoğraflar Pexels lisanslıdır; kaynak ve fotoğrafçılar `apps/backend/assets/samples/CREDITS.md` dosyasındadır.
+- Fotoğraflar 1280×960'a kırpılmış ve meta verisi silinmiştir; salon fotoğrafında görünen araç plakası bulanıklaştırılmıştır.
+  Dosyalar backend ile birlikte gelir, çalışma sırasında indirilmez.
+

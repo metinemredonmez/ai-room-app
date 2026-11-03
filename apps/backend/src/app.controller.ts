@@ -20,6 +20,7 @@ import { CreateDesignSchema, DesignsService, cursorArgs } from './designs/design
 import { ALLOWED_MIME, ImagesService, isUuid } from './images/images.service.js';
 import { SAMPLE_IDS, loadSample } from './images/samples.js';
 import { UsersService } from './users/users.service.js';
+import { PUSH_TOKEN_RE, PushService, maskToken } from './push/push.service.js';
 
 export function localeOf(req: AppRequest, fallback?: string): Locale {
   const q = typeof req.query.locale === 'string' ? req.query.locale : '';
@@ -128,6 +129,8 @@ export class PublicController {
 const UploadSchema = z.object({ data: z.string().min(100).max(15_000_000), mimeType: z.enum(ALLOWED_MIME) }).strict();
 const SampleSchema = z.object({ sample: z.enum(SAMPLE_IDS) }).strict();
 const PatchMeSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), locale: z.enum(['tr', 'en']).optional() }).strict();
+const PushTokenSchema = z.object({ token: z.string().max(200).regex(PUSH_TOKEN_RE), platform: z.enum(['ios', 'android']) }).strict();
+const PushTokenDeleteSchema = z.object({ token: z.string().max(200) }).strict();
 const FavoriteSchema = z.object({ favorite: z.boolean() }).strict();
 const AnalysisSchema = z.object({ imageId: z.uuid().optional() }).strict();
 const ReportSchema = z
@@ -163,6 +166,7 @@ export class UserController {
     private redis: RedisService,
     private usage: UsageService,
     private consents: ConsentsService,
+    private push: PushService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -190,6 +194,25 @@ export class UserController {
     log.info('account_deleted', { userId: auth.userId, images: imgs.length });
   }
 
+  /** Called on every app launch with permission granted; also refreshes lastSeenAt. */
+  @Post('me/push-tokens')
+  @HttpCode(204)
+  @Doc('Push token kaydet ("Tasarımın hazır" bildirimi)', { body: PushTokenSchema, status: 204, description: 'Yalnız Expo push token. Aynı cihaz başka hesapla kaydolursa token o hesaba taşınır. Kullanıcı başına en çok 10 cihaz.', errors: [400, 401, 429] })
+  async registerPush(@Auth() auth: AuthContext, @Body() body: unknown) {
+    const input = parse(PushTokenSchema, body);
+    await this.limiter.hit(LIMITS.pushTokens, auth.userId);
+    await this.push.register(auth.userId, input.token, input.platform);
+  }
+
+  /** Sign-out and "notifications off" call this; a token of another account is silently ignored. */
+  @Delete('me/push-tokens')
+  @HttpCode(204)
+  @Doc('Push token sil (çıkış / bildirim kapalı)', { body: PushTokenDeleteSchema, status: 204, errors: [400, 401] })
+  async unregisterPush(@Auth() auth: AuthContext, @Body() body: unknown) {
+    const input = parse(PushTokenDeleteSchema, body);
+    await this.push.unregister(auth.userId, input.token);
+  }
+
   @Post('uploads')
   @Doc('Fotoğraf yükle (base64; imza + MIME kontrolü, EXIF/GPS silinir) + kalite uyarısı', { body: UploadSchema, status: 201, response: 'Upload', errors: [400, 401, 413, 415, 429] })
   async upload(@Auth() auth: AuthContext, @Body() body: unknown) {
@@ -208,7 +231,7 @@ export class UserController {
   async sample(@Auth() auth: AuthContext, @Body() body: unknown) {
     const { sample } = parse(SampleSchema, body);
     await this.limiter.hit(LIMITS.uploads, auth.userId);
-    const img = await this.images.save(await loadSample(this.cfg.DATA_DIR, sample), { ownerId: auth.userId, kind: 'SAMPLE' });
+    const img = await this.images.save(await loadSample(sample), { ownerId: auth.userId, kind: 'SAMPLE' });
     return { image: this.images.ref(img) };
   }
 
@@ -289,12 +312,13 @@ export class UserController {
   async exportMe(@Auth() auth: AuthContext, @Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
     await this.limiter.hit(LIMITS.export, auth.userId);
     const user = await this.users.get(auth.userId);
-    const [designs, ledger, consents, reports, uploads] = await Promise.all([
+    const [designs, ledger, consents, reports, uploads, devices] = await Promise.all([
       this.prisma.design.findMany({ where: { userId: auth.userId }, include: { inputImage: true, results: true, analyses: true }, orderBy: { createdAt: 'desc' } }),
       this.prisma.creditLedger.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.consent.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.contentReport.findMany({ where: { reporterId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.image.findMany({ where: { ownerId: auth.userId, kind: { in: ['UPLOAD', 'SAMPLE'] } }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.pushToken.findMany({ where: { userId: auth.userId }, orderBy: { lastSeenAt: 'desc' } }),
     ]);
     log.info('data_export', { userId: auth.userId });
     res.setHeader('Content-Disposition', `attachment; filename="ai-room-verilerim-${new Date().toISOString().slice(0, 10)}.json"`);
@@ -304,6 +328,7 @@ export class UserController {
       profile: { ...this.users.toDto(user), status: user.status, lastSeenAt: user.lastSeenAt?.toISOString() ?? null, emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null },
       consents: consents.map((c) => ({ kind: c.kind, version: c.version, granted: c.granted, createdAt: c.createdAt.toISOString() })),
       uploads: uploads.map((i) => this.images.ref(i)),
+      pushDevices: devices.map((t) => ({ platform: t.platform, token: maskToken(t.token), registeredAt: t.createdAt.toISOString(), lastSeenAt: t.lastSeenAt.toISOString() })),
       designs: await Promise.all(
         designs.map(async (d) => ({
           ...(await this.designs.toDto(d, locale)),

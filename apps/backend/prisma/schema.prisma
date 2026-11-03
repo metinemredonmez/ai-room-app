@@ -85,6 +85,7 @@ model User {
   reports       ContentReport[]
   subscriptions Subscription[]
   purchases     StorePurchase[]
+  pushTokens    PushToken[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -342,4 +343,17 @@ model StorePurchase {
   store     String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Expo push token of a signed-in device. Unique per device: signing into another account moves it.
+model PushToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  token      String   @unique
+  platform   String // ios | android
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

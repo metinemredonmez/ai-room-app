@@ -65,15 +65,19 @@ export class DesignsService {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
 
-  async toDto(d: DesignWithImages, locale: Locale = 'tr') {
-    const styles = await this.catalog.styles(true);
-    const style = d.styleId ? styles.find((s) => s.id === d.styleId) : undefined;
+  /** "Japandi · Oturma odası" — style (or tool) name plus room, in the given locale. */
+  async titleOf(d: Pick<Design, 'styleId' | 'tool' | 'roomId'>, locale: Locale = 'tr') {
+    const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
     const tool = TOOLS[d.tool as ToolId];
     const room = d.roomId ? ROOMS[d.roomId]?.name[locale] : undefined;
     const head = style ? this.catalog.styleName(style, locale) : (tool?.name[locale] ?? d.tool);
+    return room ? `${head} · ${room}` : head;
+  }
+
+  async toDto(d: DesignWithImages, locale: Locale = 'tr') {
     return {
       id: d.id,
-      title: room ? `${head} · ${room}` : head,
+      title: await this.titleOf(d, locale),
       tool: d.tool,
       styleId: d.styleId,
       roomId: d.roomId,

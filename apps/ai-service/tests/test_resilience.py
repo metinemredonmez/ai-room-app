@@ -27,7 +27,7 @@ from app.resilience import CircuitBreaker  # noqa: E402
 
 TOKEN = os.environ["INTERNAL_TOKEN"]
 AUTH = {"X-Internal-Token": TOKEN}
-SAMPLES = sorted(glob.glob(os.path.join(os.path.dirname(__file__), "../../backend/data/samples/*.jpg")))
+SAMPLES = sorted(glob.glob(os.path.join(os.path.dirname(__file__), "../../backend/assets/samples/*.jpg")))
 
 
 def settings(**overrides) -> Settings:
@@ -237,7 +237,7 @@ def test_quality_accepts_a_clean_room_and_flags_bad_captures():
     assert "low_res" in small.issues and small.metrics.width == 320
 
 
-@pytest.mark.skipif(not SAMPLES, reason="backend sample images are generated on first backend run")
+@pytest.mark.skipif(not SAMPLES, reason="backend sample photos (apps/backend/assets/samples) not found")
 def test_quality_built_in_samples_pass():
     for path in SAMPLES:
         with open(path, "rb") as f:

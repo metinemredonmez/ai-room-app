@@ -10,7 +10,8 @@ import { DesignsService } from '../designs/designs.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { ImagesService } from '../images/images.service.js';
 import { BillingService } from '../billing/billing.service.js';
-import { QueuesService, type DesignJob } from './queues.service.js';
+import { PushRetryableError, PushService } from '../push/push.service.js';
+import { QueuesService, type DesignJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
 
@@ -28,6 +29,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private prisma: PrismaService,
     private images: ImagesService,
     private billing: BillingService,
+    private push: PushService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -37,6 +39,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     this.workers.push(
       new Worker<DesignJob>('designs', (job) => this.runDesign(job), { connection, concurrency: this.cfg.MAX_CONCURRENT_GENERATIONS }),
       new Worker('maintenance', (job) => this.runMaintenance(job), { connection, concurrency: 1 }),
+      new Worker<NotificationJob>('notifications', (job) => this.runNotification(job), { connection, concurrency: 4 }),
     );
     for (const w of this.workers) w.on('error', (e) => log.warn('worker_error', { error: e.name }));
     await this.queues.maintenance.upsertJobScheduler('reconcile-designs', { every: 60_000 }, { name: 'reconcile-designs' });
@@ -59,6 +62,28 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     } catch (e) {
       // process() already failed + refunded the design for anything non-retryable or final.
       if (e instanceof AiError && e.retryable && !finalAttempt) throw e;
+      await this.notify(job.data.designId);
+      throw new UnrecoverableError((e as Error).message);
+    }
+    await this.notify(job.data.designId);
+  }
+
+  private async notify(designId: string) {
+    // A push problem must never turn a finished design into a failed job.
+    await this.queues.notifyDesign(designId).catch((e: Error) => log.warn('push_enqueue_failed', { designId, error: e.name }));
+  }
+
+  private async runNotification(job: Job<NotificationJob>) {
+    try {
+      if ('receipts' in job.data) return await this.push.checkReceipts(job.data.receipts);
+      const receipts = await this.push.notifyDesign(job.data.designId, (d, locale) => this.designs.titleOf(d, locale));
+      if (Object.keys(receipts).length) {
+        await this.queues.notifications.add('push-receipts', { receipts }, { delay: 15 * 60_000, attempts: 2 });
+      }
+      return { receipts: Object.keys(receipts).length };
+    } catch (e) {
+      if (e instanceof PushRetryableError) throw e;
+      log.error('push_failed', { job: job.name, error: (e as Error).name });
       throw new UnrecoverableError((e as Error).message);
     }
   }
@@ -104,16 +129,23 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     });
     const runs = await this.prisma.jobRun.deleteMany({ where: { startedAt: { lt: new Date(now - 30 * DAY) } } });
     let mails = 0;
-    const outbox = path.resolve(this.cfg.DATA_DIR, 'outbox');
-    for (const f of await readdir(outbox).catch(() => [] as string[])) {
-      const full = path.join(outbox, f);
-      const s = await stat(full).catch(() => null);
-      if (s && now - s.mtimeMs > 7 * DAY) {
-        await rm(full, { force: true });
-        mails++;
+    for (const dir of ['outbox', 'push-outbox']) {
+      const outbox = path.resolve(this.cfg.DATA_DIR, dir);
+      for (const f of await readdir(outbox).catch(() => [] as string[])) {
+        const full = path.join(outbox, f);
+        const s = await stat(full).catch(() => null);
+        if (s?.isFile() && now - s.mtimeMs > 7 * DAY) {
+          await rm(full, { force: true });
+          mails++;
+        }
       }
     }
-    return { images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, outboxMails: mails };
+    // Devices not seen for 270 days (Expo expires idle tokens; the app re-registers on every launch).
+    const pushTokens = await this.prisma.pushToken.deleteMany({ where: { lastSeenAt: { lt: new Date(now - 270 * DAY) } } });
+    return {
+      images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count,
+      outboxMails: mails, pushTokens: pushTokens.count,
+    };
   }
 
   async overview(limit: number) {
@@ -121,12 +153,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.prisma.jobRun.findMany({ orderBy: { startedAt: 'desc' }, take: limit }),
       this.queues.designs.getJobCounts('waiting', 'active', 'failed', 'delayed'),
     ]);
+    const push = await this.queues.notifications.getJobCounts('waiting', 'active', 'failed', 'delayed');
     return {
       items: runs.map((r) => ({
         id: r.id, name: r.name, status: r.status, details: r.details,
         startedAt: r.startedAt.toISOString(), finishedAt: r.finishedAt?.toISOString() ?? null,
       })),
       queue: { waiting: counts.waiting ?? 0, active: counts.active ?? 0, failed: counts.failed ?? 0, delayed: counts.delayed ?? 0 },
+      notifications: { waiting: push.waiting ?? 0, active: push.active ?? 0, failed: push.failed ?? 0, delayed: push.delayed ?? 0 },
     };
   }
 }

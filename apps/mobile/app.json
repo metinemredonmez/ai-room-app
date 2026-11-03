@@ -33,6 +33,13 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "color": "#1F6F5C",
+          "defaultChannel": "designs"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "AI Room, yeniden tasarlamak istediğin oda fotoğraflarını seçebilmen için fotoğraflarına erişir.",

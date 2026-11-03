@@ -13,6 +13,7 @@ import {
   type User,
 } from '@/lib/api';
 import { translate, type MessageKey } from '@/lib/i18n';
+import { disablePush, syncPush } from '@/lib/push';
 import { KEYS, prefs } from '@/lib/storage';
 
 type Status = 'booting' | 'ready' | 'offline';
@@ -148,7 +149,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setUser(auth.user);
   }, []);
 
+  // Every account change (boot, sign-in, guest fallback) re-binds this device's push token to it.
+  useEffect(() => {
+    if (user?.id) void syncPush();
+  }, [user?.id]);
+
   const signOut = useCallback(async () => {
+    await disablePush();
     const refresh = tokens.refresh;
     if (refresh) await api.logout(refresh).catch(() => undefined);
     await tokens.clear();
@@ -157,6 +164,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const deleteAccount = useCallback(async () => {
     await api.deleteMe();
+    await prefs.remove(KEYS.pushToken); // the server rows went with the account
     await tokens.clear();
     await loginAsGuest();
   }, [loginAsGuest]);

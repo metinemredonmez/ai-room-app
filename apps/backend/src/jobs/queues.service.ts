@@ -8,6 +8,8 @@ export interface DesignJob {
   requestId?: string;
 }
 
+export type NotificationJob = { designId: string } | { receipts: Record<string, string> };
+
 /** BullMQ queues on the existing Redis (palemi jobs/outbox pattern, ported to Node). */
 @Injectable()
 export class QueuesService implements OnModuleDestroy {
@@ -15,6 +17,7 @@ export class QueuesService implements OnModuleDestroy {
   readonly connection: Redis;
   readonly designs: Queue<DesignJob>;
   readonly maintenance: Queue;
+  readonly notifications: Queue<NotificationJob>;
 
   constructor(@Inject(CONFIG) cfg: Config) {
     this.connection = new Redis(cfg.REDIS_URL, { maxRetriesPerRequest: null });
@@ -32,10 +35,25 @@ export class QueuesService implements OnModuleDestroy {
       connection: this.connection,
       defaultJobOptions: { removeOnComplete: { count: 200 }, removeOnFail: { count: 500 } },
     });
+    this.notifications = new Queue<NotificationJob>('notifications', {
+      connection: this.connection,
+      defaultJobOptions: {
+        attempts: 4,
+        backoff: { type: 'exponential', delay: 10_000 },
+        // Kept a day so the jobId dedupe below holds: one push per design, even if the design job re-runs.
+        removeOnComplete: { age: 86_400 },
+        removeOnFail: { count: 1_000 },
+      },
+    });
+  }
+
+  /** Queued designs only: sync requests are answered in-app, so they never push. */
+  notifyDesign(designId: string) {
+    return this.notifications.add('design-result', { designId }, { jobId: `design-${designId}` });
   }
 
   async onModuleDestroy() {
-    await Promise.allSettled([this.designs.close(), this.maintenance.close()]);
+    await Promise.allSettled([this.designs.close(), this.maintenance.close(), this.notifications.close()]);
     this.connection.disconnect();
   }
 }

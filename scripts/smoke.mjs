@@ -182,6 +182,13 @@ const realJpeg = (await (await fetch(vSample.json.image.url)).arrayBuffer());
 const up = await call('POST', '/uploads', { token: vt, body: { data: Buffer.from(realJpeg).toString('base64'), mimeType: 'image/jpeg' } });
 ok(up.status === 201 && 'quality' in up.json, 'upload returns advisory quality', JSON.stringify(up.json?.quality));
 
+// #5 "Tasarımın hazır" push: only Expo tokens are accepted; queued designs push to every device of the owner.
+const pushToken = `ExponentPushToken[smoke${Date.now()}]`;
+const badPush = await call('POST', '/me/push-tokens', { token: vt, body: { token: 'https://evil.example/hook', platform: 'ios' } });
+ok(badPush.status === 400, 'non-Expo push token rejected', `status ${badPush.status}`);
+const regPush = await call('POST', '/me/push-tokens', { token: vt, body: { token: pushToken, platform: 'ios' } });
+ok(regPush.status === 204, 'push token registered', `status ${regPush.status}`);
+
 const idemKey = `smoke-${Date.now()}`;
 const asyncBody = { tool: 'redesign', inputImageId: vSample.json.image.id, styleId: 'scandinavian', roomId: 'bedroom', variants: 1 };
 const a1 = await call('POST', '/designs', { token: vt, body: asyncBody, headers: { prefer: 'respond-async', 'idempotency-key': idemKey } });
@@ -195,6 +202,20 @@ for (let i = 0; i < 40; i++) {
   await new Promise((r) => setTimeout(r, 500));
 }
 ok(polled?.json?.status === 'SUCCEEDED' && polled.json.chargeState === 'CAPTURED' && polled.json.results.length === 1, 'queued design completed by the worker, credits CAPTURED');
+const pushDir = new URL('../apps/backend/data/push-outbox/', import.meta.url);
+let pushed = null;
+for (let i = 0; i < 40 && !pushed; i++) {
+  for (const f of (await readdir(pushDir).catch(() => [])).sort().reverse()) {
+    const m = JSON.parse(await readFile(new URL(f, pushDir), 'utf8'));
+    if (m.to === pushToken && m.data?.designId === a1.json.id) { pushed = m; break; }
+  }
+  if (!pushed) await new Promise((r) => setTimeout(r, 250));
+}
+ok(pushed?.title === 'Tasarımın hazır' && pushed.data.url === `airoom://design/${a1.json.id}`, '"Tasarımın hazır" push sent for the queued design', pushed?.body);
+const moved = await call('POST', '/me/push-tokens', { token: other.json.accessToken, body: { token: pushToken, platform: 'ios' } });
+const strangerDelete = await call('DELETE', '/me/push-tokens', { token: vt, body: { token: pushToken } });
+ok(moved.status === 204 && strangerDelete.status === 204, 'same device on another account moves the token (old account no longer owns it)');
+
 const vMe = await call('GET', '/me', { token: vt });
 ok(vMe.json?.dailyFreeRemaining === 2, 'idempotent retry charged once (3 → 2)', `remaining ${vMe.json?.dailyFreeRemaining}`);
 
@@ -212,6 +233,7 @@ ok(strangerReport.status === 404, "can't report someone else's non-featured desi
 
 const exp = await call('GET', '/me/export', { token: vt });
 ok(exp.status === 200 && exp.json?.designs?.length >= 1 && exp.headers.get('content-disposition')?.includes('attachment'), 'KVKK data export downloads JSON');
+ok(Array.isArray(exp.json?.pushDevices) && exp.json.pushDevices.length === 0, 'export lists push devices (moved token no longer listed)');
 
 if (adminToken) {
   const A = { token: adminToken };
@@ -293,7 +315,7 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

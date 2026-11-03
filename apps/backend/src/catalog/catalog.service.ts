@@ -6,7 +6,7 @@ import { CONFIG, type Config } from '../config.js';
 import { AppError } from '../common/errors.js';
 import { PrismaService } from '../common/infra.js';
 import type { Style } from '../generated/prisma/client.js';
-import { loadSample } from '../images/samples.js';
+import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
 import { LEGAL_VERSIONS } from '../kvkk/legal.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
@@ -78,19 +78,19 @@ export class CatalogService {
     };
   }
 
-  /** Palette-tinted preview of the sample living room, cached on disk; public, contains no user data. */
+  /** Palette-tinted preview of the sample living room photo, cached on disk; public, contains no user data. */
   async preview(id: string): Promise<Buffer> {
     if (!/^[a-z_]{2,40}$/.test(id)) throw new AppError(404, 'not_found', 'Bulunamadı');
     const style = (await this.styles(true)).find((s) => s.id === id);
     if (!style) throw new AppError(404, 'not_found', 'Bulunamadı');
     const dir = path.resolve(this.cfg.DATA_DIR, 'previews');
-    const key = `${id}-${style.palette.join('').replace(/#/g, '')}.jpg`;
+    const key = `${id}-${SAMPLES_VERSION}-${style.palette.join('').replace(/#/g, '')}.jpg`;
     const file = path.join(dir, key);
     try {
       return await readFile(file);
     } catch {
       await mkdir(dir, { recursive: true });
-      const base = await loadSample(this.cfg.DATA_DIR, 'living_room');
+      const base = await loadSample('living_room');
       const [c1 = '#cccccc', c2 = c1, c3 = c2, c4 = c3] = style.palette;
       const w = 1280;
       const h = 960;

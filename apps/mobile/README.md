@@ -52,6 +52,7 @@ src/
     session.tsx             Oturum, misafir girişi (cihaz kimliği), katalog, dil
     i18n.ts                 TR (varsayılan) / EN metinleri, TL biçimlendirme
     storage.ts              Token: Keychain/Keystore (expo-secure-store); web'de localStorage
+    push.native.ts          "Tasarımın hazır" push: izin, Expo token kaydı, bildirime dokununca tasarımı açma (web: push.ts boş)
     pick-image.ts           Galeri/kamera → base64 → POST /uploads (imzaya göre MIME)
 ```
 
@@ -61,8 +62,10 @@ src/
 - Model çıktısı yalnızca düz metin olarak gösterilir; sohbet önerileri üretimi otomatik başlatmaz,
   yalnızca tasarım ekranını doldurur (AI-01/AI-02).
 - Mağaza bağlantıları yalnızca `http(s)` ise açılır.
-- Ödeme demo: `POST /billing/dev-upgrade`. Üretimde RevenueCat (App Store / Google Play) +
-  sunucu tarafı makbuz doğrulaması gerekir (`paywall.tsx` içindeki TODO).
+- Ödeme: iOS/Android'de RevenueCat (`lib/purchases.native.ts`, API.md §7.6). Web'de ve anahtar yokken demo yükseltme.
+- Push (API.md §7.9): izin ilk tasarım başlatılınca istenir. Bildirime dokununca yalnız UUID biçimindeki `designId` açılır,
+  yükteki URL'ye gidilmez. Push için `app.json` → `extra.eas.projectId` (EAS projesi) ve **development build** gerekir.
+  Expo Go Android'de push alamaz.
 
 ## Kontroller
 

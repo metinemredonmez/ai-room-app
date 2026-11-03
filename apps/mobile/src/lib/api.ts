@@ -48,6 +48,8 @@ export type Design = {
   results: ImageRef[];
   favorite: boolean;
   featured: boolean;
+  /** Region lock (API.md §7.8): when applied, only the wall / floor / object changed. */
+  region?: { applied: boolean; target: string; method: 'sam3' | 'heuristic' | 'none'; coverage: number; reason: string | null } | null;
   createdAt: string;
 };
 
@@ -214,11 +216,11 @@ async function refreshOnce(): Promise<boolean> {
   return refreshing;
 }
 
-type RequestOptions = { method?: string; body?: unknown; auth?: boolean; timeoutMs?: number };
+type RequestOptions = { method?: string; body?: unknown; auth?: boolean; timeoutMs?: number; headers?: Record<string, string> };
 
 export async function request<T>(path: string, opts: RequestOptions = {}, retried = false): Promise<T> {
   const { method = 'GET', body, auth = true, timeoutMs = 30_000 } = opts;
-  const headers: Record<string, string> = { accept: 'application/json', 'accept-language': locale };
+  const headers: Record<string, string> = { ...opts.headers, accept: 'application/json', 'accept-language': locale };
   if (body !== undefined) headers['content-type'] = 'application/json';
   if (auth && accessToken) headers.authorization = `Bearer ${accessToken}`;
 
@@ -281,6 +283,9 @@ export const api = {
   me: () => request<User>('/me'),
   updateMe: (body: { name?: string; locale?: Locale }) => request<User>('/me', { method: 'PATCH', body }),
   deleteMe: () => request<void>('/me', { method: 'DELETE' }),
+  registerPushToken: (token: string, platform: 'ios' | 'android') =>
+    request<void>('/me/push-tokens', { method: 'POST', body: { token, platform } }),
+  unregisterPushToken: (token: string) => request<void>('/me/push-tokens', { method: 'DELETE', body: { token } }),
 
   catalog: () => request<Catalog>('/catalog'),
   inspiration: () => request<{ items: InspirationItem[] }>('/inspiration'),
@@ -289,7 +294,17 @@ export const api = {
     request<{ image: ImageRef }>('/uploads', { method: 'POST', body: { data, mimeType }, timeoutMs: 90_000 }),
   uploadSample: (sample: SampleId) => request<{ image: ImageRef }>('/uploads/sample', { method: 'POST', body: { sample } }),
 
-  createDesign: (body: CreateDesign) => request<Design>('/designs', { method: 'POST', body, timeoutMs: 150_000 }),
+  /**
+   * Queued (202 + PENDING): the design screen polls, and a "Tasarımın hazır" push arrives if the user
+   * leaves. The idempotency key makes a network retry safe — never a second charge.
+   */
+  createDesign: (body: CreateDesign, idempotencyKey: string) =>
+    request<Design>('/designs', {
+      method: 'POST',
+      body,
+      timeoutMs: 30_000,
+      headers: { prefer: 'respond-async', 'idempotency-key': idempotencyKey },
+    }),
   designs: (params: { cursor?: string | null; favorite?: boolean; limit?: number } = {}) => {
     const q = new URLSearchParams();
     if (params.cursor) q.set('cursor', params.cursor);

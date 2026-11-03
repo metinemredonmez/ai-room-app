@@ -50,6 +50,10 @@ const Env = z.object({
   REVENUECAT_ENTITLEMENT: z.string().default('pro'),
   // Consumable credit packs: productId:credits pairs.
   CREDIT_PACKS: z.string().default('airoom_credits_10:10,airoom_credits_50:50'),
+  // "Tasarımın hazır" push: outbox (DATA_DIR/push-outbox, development) | expo (Expo Push service).
+  PUSH_TRANSPORT: z.enum(['outbox', 'expo']).default('outbox'),
+  // Optional Expo access token (required once "enhanced push security" is enabled for the Expo project).
+  EXPO_ACCESS_TOKEN: z.string().min(20).optional(),
   // Run BullMQ workers in this process (set false on API-only replicas when workers run separately).
   WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   // Swagger UI at /docs — on by default only outside production.
@@ -74,6 +78,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (corsOrigins.includes('*')) problems.push('CORS_ORIGINS must not contain *');
     if (!cfg.WEB_APP_URL.startsWith('https://')) problems.push('WEB_APP_URL must use https');
     if (cfg.MAIL_TRANSPORT !== 'smtp' || !cfg.SMTP_URL) problems.push('MAIL_TRANSPORT=smtp with SMTP_URL is required');
+    if (cfg.PUSH_TRANSPORT !== 'expo') problems.push('PUSH_TRANSPORT=expo is required');
     if (cfg.REVENUECAT_API_KEY && !cfg.REVENUECAT_WEBHOOK_SECRET) problems.push('REVENUECAT_WEBHOOK_SECRET (HMAC signing) is required with RevenueCat');
     if (new Set([cfg.JWT_SECRET, cfg.IMAGE_URL_SECRET, cfg.DEVICE_PEPPER, cfg.AI_INTERNAL_TOKEN]).size < 4) {
       problems.push('each secret must be distinct');

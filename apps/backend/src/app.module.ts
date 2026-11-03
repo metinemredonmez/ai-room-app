@@ -19,6 +19,7 @@ import { JobsService } from './jobs/jobs.service.js';
 import { QueuesService } from './jobs/queues.service.js';
 import { ConsentsService } from './kvkk/consents.service.js';
 import { MailerService } from './mail/mailer.service.js';
+import { PushService } from './push/push.service.js';
 import { SettingsService } from './settings/settings.service.js';
 import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
@@ -39,6 +40,7 @@ import { UsersService } from './users/users.service.js';
     RateLimiter,
     TokensService,
     MailerService,
+    PushService,
     EmailTokensService,
     UserGuard,
     AdminGuard,
