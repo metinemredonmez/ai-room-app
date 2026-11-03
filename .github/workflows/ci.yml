@@ -128,7 +128,7 @@ jobs:
           (cd ../ai-service && nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8001 --no-access-log > "$RUNNER_TEMP/ai.log" 2>&1 &)
           nohup node dist/main.js > "$RUNNER_TEMP/backend.log" 2>&1 &
           for i in $(seq 1 60); do
-            curl -sf http://127.0.0.1:8001/health >/dev/null && curl -sf http://localhost:4000/v1/health >/dev/null && exit 0
+            curl -sf http://127.0.0.1:8001/healthz >/dev/null && curl -sf http://localhost:4000/v1/health >/dev/null && exit 0
             sleep 1
           done
           echo "services did not become healthy"; exit 1
