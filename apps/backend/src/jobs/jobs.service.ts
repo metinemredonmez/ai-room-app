@@ -9,6 +9,7 @@ import { log } from '../common/log.js';
 import { DesignsService } from '../designs/designs.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { ImagesService } from '../images/images.service.js';
+import { BillingService } from '../billing/billing.service.js';
 import { QueuesService, type DesignJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -26,6 +27,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private designs: DesignsService,
     private prisma: PrismaService,
     private images: ImagesService,
+    private billing: BillingService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -62,6 +64,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async runMaintenance(job: Job) {
+    // Store events track their own status in WebhookEvent; they don't belong in the cron log.
+    if (job.name === 'revenuecat-event') return this.billing.process((job.data as { eventId: string }).eventId);
     const run = await this.prisma.jobRun.create({ data: { name: job.name, status: 'running' } });
     try {
       const details = job.name === 'retention' ? await this.retention() : { failedStale: await this.designs.reconcile() };

@@ -159,6 +159,9 @@ const tr = {
   'paywall.privacy': 'Gizlilik',
   'paywall.success': "PRO etkin! İyi tasarımlar.",
   'paywall.cancelAnytime': 'İstediğin zaman iptal et',
+  'paywall.storeMissing': 'Bu paket mağazada bulunamadı. Lütfen daha sonra tekrar dene.',
+  'paywall.restored': 'Satın alımların geri yüklendi.',
+  'paywall.store': 'Ödeme App Store / Google Play hesabından alınır; abonelik dönem sonunda otomatik yenilenir.',
 
   'auth.login': 'Giriş yap',
   'auth.register': 'Kayıt ol',
@@ -361,6 +364,9 @@ const en: Record<MessageKey, string> = {
   'paywall.privacy': 'Privacy',
   'paywall.success': 'PRO is active. Happy designing!',
   'paywall.cancelAnytime': 'Cancel anytime',
+  'paywall.storeMissing': "This package isn't available in the store. Please try again later.",
+  'paywall.restored': 'Your purchases were restored.',
+  'paywall.store': 'Payment is charged to your App Store / Google Play account; the subscription renews automatically.',
 
   'auth.login': 'Sign in',
   'auth.register': 'Sign up',

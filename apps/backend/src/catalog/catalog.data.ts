@@ -122,10 +122,12 @@ export const COLORS: Array<{ id: string; name: L; hex: string }> = [
   { id: 'antrasit', name: { tr: 'Antrasit', en: 'Anthracite' }, hex: '#3A3D40' },
 ];
 
-export const PLANS: Array<{ id: string; name: L; period: 'week' | 'month' | 'year'; priceTRY: number; badge: L | null }> = [
-  { id: 'pro_weekly', name: { tr: 'Haftalık', en: 'Weekly' }, period: 'week', priceTRY: 149.99, badge: null },
-  { id: 'pro_monthly', name: { tr: 'Aylık', en: 'Monthly' }, period: 'month', priceTRY: 349.99, badge: { tr: 'POPÜLER', en: 'POPULAR' } },
-  { id: 'pro_yearly', name: { tr: 'Yıllık', en: 'Yearly' }, period: 'year', priceTRY: 1299.99, badge: { tr: 'EN AVANTAJLI', en: 'BEST VALUE' } },
+// storeProductId = App Store / Play product id (RevenueCat package). Store prices win in the app;
+// priceTRY is the list price shown on the web and as a fallback.
+export const PLANS: Array<{ id: string; name: L; period: 'week' | 'month' | 'year'; priceTRY: number; badge: L | null; storeProductId: string }> = [
+  { id: 'pro_weekly', name: { tr: 'Haftalık', en: 'Weekly' }, period: 'week', priceTRY: 149.99, badge: null, storeProductId: 'airoom_pro_weekly' },
+  { id: 'pro_monthly', name: { tr: 'Aylık', en: 'Monthly' }, period: 'month', priceTRY: 349.99, badge: { tr: 'POPÜLER', en: 'POPULAR' }, storeProductId: 'airoom_pro_monthly' },
+  { id: 'pro_yearly', name: { tr: 'Yıllık', en: 'Yearly' }, period: 'year', priceTRY: 1299.99, badge: { tr: 'EN AVANTAJLI', en: 'BEST VALUE' }, storeProductId: 'airoom_pro_yearly' },
 ];
 
 /** Seed data for the admin-managed Style table. */

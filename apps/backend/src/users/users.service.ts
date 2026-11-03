@@ -11,17 +11,24 @@ export interface Charge {
   fromCredits: number;
 }
 
-type QuotaRow = Pick<User, 'plan' | 'planExpiresAt' | 'credits' | 'freeUsedOn' | 'freeUsedCount'>;
+type QuotaRow = Pick<User, 'plan' | 'planExpiresAt' | 'storeProUntil' | 'credits' | 'freeUsedOn' | 'freeUsedCount'>;
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService, private settings: SettingsService) {}
 
-  isPro(u: Pick<User, 'plan' | 'planExpiresAt'>, now = new Date()): boolean {
-    return u.plan === 'PRO' && (!u.planExpiresAt || u.planExpiresAt > now);
+  /** PRO from an admin/dev grant (plan) or from an active store subscription (storeProUntil). */
+  isPro(u: Pick<User, 'plan' | 'planExpiresAt'> & { storeProUntil?: Date | null }, now = new Date()): boolean {
+    const granted = u.plan === 'PRO' && (!u.planExpiresAt || u.planExpiresAt > now);
+    return granted || Boolean(u.storeProUntil && u.storeProUntil > now);
   }
 
-  dailyLimit(u: Pick<User, 'plan' | 'planExpiresAt'>) {
+  private proUntil(u: User): Date | null {
+    const dates = [u.plan === 'PRO' ? u.planExpiresAt : null, u.storeProUntil].filter((d): d is Date => d instanceof Date);
+    return dates.sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
+  }
+
+  dailyLimit(u: Pick<User, 'plan' | 'planExpiresAt'> & { storeProUntil?: Date | null }) {
     const s = this.settings.current;
     return this.isPro(u) ? s.proDailyGenerations : s.freeDailyGenerations;
   }
@@ -40,7 +47,7 @@ export class UsersService {
       role: u.role,
       isGuest: u.isGuest,
       plan: this.isPro(u) ? ('PRO' as const) : ('FREE' as const),
-      planExpiresAt: u.planExpiresAt?.toISOString() ?? null,
+      planExpiresAt: this.isPro(u) ? (this.proUntil(u)?.toISOString() ?? null) : (u.planExpiresAt?.toISOString() ?? null),
       credits: u.credits,
       dailyFreeRemaining: this.freeRemaining(u),
       locale: u.locale === 'en' ? 'en' : 'tr',
@@ -61,7 +68,7 @@ export class UsersService {
   async charge(userId: string, units: number, refId: string): Promise<Charge> {
     return this.prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<QuotaRow[]>`
-        SELECT "plan", "planExpiresAt", "credits", "freeUsedOn", "freeUsedCount"
+        SELECT "plan", "planExpiresAt", "storeProUntil", "credits", "freeUsedOn", "freeUsedCount"
         FROM "User" WHERE "id" = ${userId}::uuid FOR UPDATE`;
       const u = rows[0];
       if (!u) throw new AppError(404, 'not_found', 'Kullanıcı bulunamadı');
@@ -89,7 +96,7 @@ export class UsersService {
     if (!charge.fromFree && !charge.fromCredits) return;
     await this.prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<QuotaRow[]>`
-        SELECT "plan", "planExpiresAt", "credits", "freeUsedOn", "freeUsedCount"
+        SELECT "plan", "planExpiresAt", "storeProUntil", "credits", "freeUsedOn", "freeUsedCount"
         FROM "User" WHERE "id" = ${userId}::uuid FOR UPDATE`;
       const u = rows[0];
       if (!u) return;

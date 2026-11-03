@@ -62,7 +62,8 @@ export class CatalogService {
       rooms: Object.entries(ROOMS).map(([id, r]) => ({ id, name: r.name[locale], icon: r.icon })),
       floors: Object.entries(FLOORS).map(([id, f]) => ({ id, name: f.name[locale] })),
       colors: COLORS.map((c) => ({ id: c.id, name: c.name[locale], hex: c.hex })),
-      plans: PLANS.map((p) => ({ id: p.id, name: p.name[locale], period: p.period, priceTRY: p.priceTRY, badge: p.badge?.[locale] ?? null })),
+      plans: PLANS.map((p) => ({ id: p.id, name: p.name[locale], period: p.period, priceTRY: p.priceTRY, badge: p.badge?.[locale] ?? null, storeProductId: p.storeProductId })),
+      creditPacks: this.cfg.CREDIT_PACKS.split(',').map((x) => x.trim().split(':')).filter(([id, n]) => id && Number(n) > 0).map(([productId, n]) => ({ productId, credits: Math.trunc(Number(n)) })),
       ...this.notices(locale),
       legal: { termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy, aiProcessingVersion: LEGAL_VERSIONS.ai_processing },
     };

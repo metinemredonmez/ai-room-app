@@ -15,6 +15,7 @@ import type { Prisma, User } from '../generated/prisma/client.js';
 import { isUuid } from '../images/images.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AuditService } from './audit.service.js';
+import { BillingService } from '../billing/billing.service.js';
 import { JobsService } from '../jobs/jobs.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { UsageService } from '../usage/usage.service.js';
@@ -66,6 +67,7 @@ export class AdminController {
     private settings: SettingsService,
     private usage: UsageService,
     private jobs: JobsService,
+    private billing: BillingService,
   ) {}
 
   private async adminUser(u: User) {
@@ -138,14 +140,19 @@ export class AdminController {
     if (!isUuid(id)) throw notFound();
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw notFound();
-    const [recent, ledger] = await Promise.all([
+    const [recent, ledger, subscriptions] = await Promise.all([
       this.prisma.design.findMany({ where: { userId: id }, include: { inputImage: true, results: true }, orderBy: { createdAt: 'desc' }, take: 12 }),
       this.prisma.creditLedger.findMany({ where: { userId: id }, orderBy: { createdAt: 'desc' }, take: 50 }),
+      this.prisma.subscription.findMany({ where: { userId: id } }),
     ]);
     return {
       ...(await this.adminUser(user)),
       recentDesigns: await Promise.all(recent.map((d) => this.designs.toDto(d))),
       ledger: ledger.map((l) => ({ id: l.id, delta: l.delta, reason: l.reason, refId: l.refId, createdAt: l.createdAt.toISOString() })),
+      subscriptions: subscriptions.map((sub) => ({
+        entitlement: sub.entitlement, productId: sub.productId, store: sub.store, environment: sub.environment, status: sub.status,
+        expiresAt: sub.expiresAt?.toISOString() ?? null, gracePeriodExpiresAt: sub.gracePeriodExpiresAt?.toISOString() ?? null, updatedAt: sub.updatedAt.toISOString(),
+      })),
     };
   }
 
@@ -361,6 +368,41 @@ export class AdminController {
       return { ...updated, status: input.status, deleted: true };
     }
     return { id: updated.id, status: updated.status, resolution: updated.resolution, resolvedAt: updated.resolvedAt?.toISOString() ?? null };
+  }
+
+  @Doc('Ödeme olayları (RevenueCat webhook kutusu)', { errors: [401, 403] })
+  @Get('billing/events')
+  async billingEvents(@Query() query: unknown) {
+    const q = parse(z.object({ ...Page, status: z.enum(['queued', 'processed', 'unmatched', 'ignored', 'failed']).optional() }), query);
+    const rows = await this.prisma.webhookEvent.findMany({
+      where: q.status ? { status: q.status } : {},
+      orderBy: [{ receivedAt: 'desc' }, { id: 'desc' }], take: q.limit + 1,
+      ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
+    });
+    const page = rows.slice(0, q.limit);
+    return {
+      items: page.map((e) => {
+        const p = e.payload as Record<string, unknown>;
+        return {
+          id: e.id, type: e.type, status: e.status, appUserId: e.appUserId, userId: e.userId, error: e.error,
+          productId: p.product_id ?? null, store: p.store ?? null, environment: p.environment ?? null,
+          receivedAt: e.receivedAt.toISOString(), processedAt: e.processedAt?.toISOString() ?? null,
+        };
+      }),
+      nextCursor: rows.length > q.limit ? page[page.length - 1].id : null,
+    };
+  }
+
+  @Doc('Ödeme olayını yeniden işle (eşleşmeyen / başarısız)', { status: 201, errors: [401, 403, 404] })
+  @Post('billing/events/:id/retry')
+  async retryBillingEvent(@Param('id') id: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const ev = await this.prisma.webhookEvent.findUnique({ where: { id } });
+    if (!ev) throw notFound();
+    await this.prisma.webhookEvent.update({ where: { id }, data: { status: 'queued', error: null } });
+    await this.billing.process(id);
+    await this.audit.record(auth.userId, 'billing.event_retry', 'webhook_event', id, {}, req.clientIp);
+    const after = await this.prisma.webhookEvent.findUnique({ where: { id } });
+    return { id, status: after?.status };
   }
 
   @Get('jobs')

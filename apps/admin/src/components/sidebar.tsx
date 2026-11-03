@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Coins, Flag, LayoutDashboard, ListChecks, LogOut, Menu, Palette, ScrollText, SlidersHorizontal, Sparkles, Users, X } from "lucide-react";
+import { Activity, Coins, CreditCard, Flag, LayoutDashboard, ListChecks, LogOut, Menu, Palette, ScrollText, SlidersHorizontal, Sparkles, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/styles", label: "Stiller", icon: Palette },
   { href: "/reports", label: "İçerik bildirimleri", icon: Flag },
   { href: "/ai-costs", label: "AI maliyeti", icon: Coins },
+  { href: "/billing", label: "Ödeme olayları", icon: CreditCard },
   { href: "/settings", label: "Ayarlar", icon: SlidersHorizontal },
   { href: "/jobs", label: "Zamanlı işler", icon: ListChecks },
   { href: "/audit", label: "Denetim kaydı", icon: ScrollText },

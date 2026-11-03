@@ -234,9 +234,59 @@ if (adminToken) {
   const auditV11 = await call('GET', '/admin/audit?limit=10', A);
   ok(auditV11.json?.items?.some((a) => a.action === 'settings.update'), 'settings changes are audited');
 }
+// ---------------------------------------------------------------- RevenueCat webhook (store billing)
+const benv = Object.fromEntries((await readFile(new URL('../apps/backend/.env', import.meta.url), 'utf8'))
+  .split('\n').filter((l) => l.includes('=') && !l.startsWith('#')).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]));
+if (benv.REVENUECAT_WEBHOOK_SECRET) {
+  const rcUser = (await call('GET', '/me', { token: vt })).json;
+  const rc = async (event, opts = {}) => {
+    const raw = JSON.stringify({ api_version: '1.0', event });
+    const t = Math.floor(Date.now() / 1000) - (opts.age ?? 0);
+    const v1 = createHmac('sha256', opts.secret ?? benv.REVENUECAT_WEBHOOK_SECRET).update(`${t}.${raw}`).digest('hex');
+    const res = await fetch(`${API}/webhooks/revenuecat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: benv.REVENUECAT_WEBHOOK_AUTH ?? '', 'x-revenuecat-webhook-signature': `t=${t},v1=${v1}` },
+      body: raw,
+    });
+    return { status: res.status, json: await res.json().catch(() => null) };
+  };
+  const waitFor = async (fn) => { for (let i = 0; i < 30; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 300)); } return null; };
+  const evId = `smoke_${crypto.randomUUID()}`;
+  const purchase = { id: evId, type: 'INITIAL_PURCHASE', app_user_id: rcUser.id, product_id: 'airoom_pro_monthly', entitlement_ids: ['pro'], period_type: 'NORMAL', expiration_at_ms: Date.now() + 30 * 86400_000, environment: 'SANDBOX', store: 'APP_STORE' };
+  const forged = await rc(purchase, { secret: 'wrong-secret-0123456789' });
+  ok(forged.status === 401, 'forged RevenueCat signature rejected before any write');
+  const stale = await rc(purchase, { age: 600 });
+  ok(stale.status === 401, 'stale signature timestamp rejected (replay window 5 min)');
+  const first = await rc(purchase);
+  const dup = await rc(purchase);
+  ok(first.status === 200 && first.json?.result === 'queued' && dup.json?.result === 'duplicate', 'webhook stored once; retry acknowledged as duplicate');
+  const proNow = await waitFor(async () => { const m = (await call('GET', '/me', { token: vt })).json; return m?.plan === 'PRO' ? m : null; });
+  ok(proNow?.plan === 'PRO' && proNow.planExpiresAt, 'INITIAL_PURCHASE → user is PRO until the store expiry');
+  const creditsBefore = proNow?.credits ?? 0;
+  const pack = { id: `smoke_${crypto.randomUUID()}`, type: 'NON_RENEWING_PURCHASE', app_user_id: rcUser.id, product_id: 'airoom_credits_10', transaction_id: `txn_${Date.now()}`, store: 'PLAY_STORE', environment: 'SANDBOX' };
+  await rc(pack);
+  await rc({ ...pack, id: `smoke_${crypto.randomUUID()}` }); // same transaction delivered as a different event
+  const withCredits = await waitFor(async () => { const m = (await call('GET', '/me', { token: vt })).json; return m?.credits >= creditsBefore + 10 ? m : null; });
+  await new Promise((r) => setTimeout(r, 800));
+  const afterDup = (await call('GET', '/me', { token: vt })).json;
+  ok(withCredits && afterDup.credits === creditsBefore + 10, 'credit pack credited exactly once per store transaction', `${creditsBefore} → ${afterDup.credits}`);
+  await rc({ ...purchase, id: `smoke_${crypto.randomUUID()}`, type: 'EXPIRATION', expiration_at_ms: Date.now() - 1000 });
+  const expired = await waitFor(async () => { const m = (await call('GET', '/me', { token: vt })).json; return m?.plan === 'FREE' ? m : null; });
+  ok(expired?.plan === 'FREE', 'EXPIRATION → back to FREE');
+  const orphan = await rc({ id: `smoke_${crypto.randomUUID()}`, type: 'RENEWAL', app_user_id: '$RCAnonymousID:abc', entitlement_ids: ['pro'] });
+  if (adminToken) {
+    const unmatched = await waitFor(async () => {
+      const list = (await call('GET', '/admin/billing/events?status=unmatched', { token: adminToken })).json;
+      return list?.items?.length ? list : null;
+    });
+    ok(orphan.status === 200 && unmatched?.items?.length >= 1, 'event for an unknown app user lands in admin "unmatched" list');
+  }
+}
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs'];
+ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });
 ok(del.status === 204, 'user deletes own design');

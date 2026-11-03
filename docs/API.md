@@ -299,3 +299,29 @@ Zamanlı işler BullMQ ile tekrarlı çalışır; her çalışma `JobRun` tablos
   Statik kopyası `docs/openapi/backend.json` dosyasındadır.
 - AI servisi: FastAPI `GET /docs` ve `GET /openapi.json` yalnız `ENV != production` iken açılır. Statik kopyası
   `docs/openapi/ai-service.json` dosyasındadır.
+
+### 7.6 Mağaza aboneliği (RevenueCat) — #2
+| Metot | Yol | Gövde | Yanıt |
+|---|---|---|---|
+| POST | `/webhooks/revenuecat` | RevenueCat olay gövdesi `{ api_version, event }` | 200 `{ ok, result: 'queued'|'duplicate' }`. 401 imza/yetki hatası, 404 yapılandırılmamış. |
+| POST | `/billing/sync` | — (Bearer) | `User`. Satın alma veya geri yükleme sonrası RevenueCat REST ile durum eşitlenir. |
+| GET | `/admin/billing/events` | `?status=queued|processed|unmatched|ignored|failed&cursor&limit` | Webhook kutusu |
+| POST | `/admin/billing/events/:id/retry` | — | `{ id, status }` (denetlenir) |
+
+- **Kimlik doğrulama, yazmadan önce yapılır (yoga BE-01 dersi):**
+  - `Authorization` başlığı panelde ayarlanan değerle birebir aynı olmalıdır (`REVENUECAT_WEBHOOK_AUTH`).
+  - HMAC: `X-RevenueCat-Webhook-Signature: t=<unix>,v1=<hex>` başlığıyla gelir; imzalanan metin `"<t>.<ham gövde>"`, algoritma
+    HMAC-SHA256 (`REVENUECAT_WEBHOOK_SECRET`).
+  - Zaman damgası ±5 dk içinde olmalıdır; karşılaştırmalar sabit zamanlıdır.
+  - Hiçbiri yapılandırılmamışsa uç kapalıdır (404). Üretimde HMAC sırrı zorunludur.
+- **Tek seferlik işleme:**
+  - `event.id` birincil anahtardır; RevenueCat tekrar denediğinde de aynı `id` gelir ve yeniden işlenmez.
+  - Olay kuyrukta işlenir. `REVENUECAT_API_KEY` varsa `GET /v1/subscribers/{app_user_id}` ile abone kaydının tamamı eşitlenir,
+    yoksa olay alanlarından türetilir.
+- **Eşleme:** `app_user_id` bizim kullanıcı UUID'imizdir; mobil uygulama RevenueCat'i bu kimlikle yapılandırır. Eşleşmeyen olaylar
+  admin'de "Eşleşmeyen" olarak görünür ve yeniden işlenebilir.
+- **PRO kaynakları:** `User.plan` (admin / demo verilen PRO) ile `User.storeProUntil` (mağaza aboneliği) birbirinden ayrıdır.
+  Kullanıcı ikisinden biri geçerliyse PRO'dur. Abonelik durumları: `active`, `grace`, `cancelled`, `billing_issue`, `expired`.
+- **Kredi paketleri:** `CREDIT_PACKS=productId:kredi,...` ile tanımlanır. Mağaza işlem kimliği `StorePurchase` tablosunun
+  birincil anahtarıdır; aynı satın alma iki kez krediye çevrilmez.
+- **Katalog:** `plans[].storeProductId` ve `creditPacks[]` alanları eklendi.

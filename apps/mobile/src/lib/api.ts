@@ -103,7 +103,7 @@ export type CatalogTool = {
   needs: ToolNeeds;
 };
 export type CatalogStyle = { id: string; name: string; description: string; palette: string[]; isPro: boolean };
-export type Plan = { id: string; name: string; period: 'week' | 'month' | 'year'; priceTRY: number; badge: string | null };
+export type Plan = { id: string; name: string; period: 'week' | 'month' | 'year'; priceTRY: number; badge: string | null; storeProductId?: string };
 
 export type Catalog = {
   tools: CatalogTool[];
@@ -316,5 +316,7 @@ export const api = {
     }),
 
   devUpgrade: () => request<User>('/billing/dev-upgrade', { method: 'POST', body: {} }),
+  /** After a store purchase/restore: the backend re-reads RevenueCat and returns the updated user. */
+  billingSync: () => request<User>('/billing/sync', { method: 'POST', body: {} }),
   health: () => request<{ status: string }>('/health', { auth: false, timeoutMs: 5_000 }),
 };

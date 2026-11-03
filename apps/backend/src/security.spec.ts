@@ -1,4 +1,6 @@
 import type { Request } from 'express';
+import { createHmac } from 'node:crypto';
+import { BillingService } from './billing/billing.service.js';
 import { base32Decode, base32Encode, totpAt, verifyTotp } from './auth/crypto.js';
 import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
@@ -121,5 +123,33 @@ describe('budget brake (RES-01 / AI cost)', () => {
     expect((await make(8, 10).budget()).state).toBe('warning');
     expect((await make(10, 10).budget()).state).toBe('exceeded');
     expect((await make(12.5, 10).budget()).brakeMode).toBe('free_paused');
+  });
+});
+
+describe('RevenueCat webhook authentication (yoga BE-01 lesson: verify before writing)', () => {
+  const secret = 'whsec_test_0123456789abcdef';
+  const auth = 'Bearer rc-webhook-auth-0123456789';
+  const svc = (cfg: Partial<Record<string, string>>) =>
+    new BillingService({} as never, {} as never, { CREDIT_PACKS: 'airoom_credits_10:10', ...cfg } as never);
+  const body = Buffer.from(JSON.stringify({ api_version: '1.0', event: { id: 'evt_1', type: 'INITIAL_PURCHASE' } }));
+  const sign = (t: number, b: Buffer = body) => `t=${t},v1=${createHmac('sha256', secret).update(`${t}.`).update(b).digest('hex')}`;
+  const now = 1_800_000_000_000;
+  const t = now / 1000;
+
+  it('is disabled (404) when nothing is configured', () => {
+    expect(() => svc({}).verify({}, body, now)).toThrow(/Bulunamadı/);
+  });
+
+  it('accepts a valid HMAC signature and Authorization header', () => {
+    expect(() => svc({ REVENUECAT_WEBHOOK_SECRET: secret, REVENUECAT_WEBHOOK_AUTH: auth }).verify({ authorization: auth, 'x-revenuecat-webhook-signature': sign(t) }, body, now)).not.toThrow();
+  });
+
+  it('rejects tampered bodies, stale timestamps and wrong auth', () => {
+    const s = svc({ REVENUECAT_WEBHOOK_SECRET: secret, REVENUECAT_WEBHOOK_AUTH: auth });
+    const tampered = Buffer.from(body.toString().replace('INITIAL_PURCHASE', 'RENEWAL'));
+    expect(() => s.verify({ authorization: auth, 'x-revenuecat-webhook-signature': sign(t) }, tampered, now)).toThrow(/İmza/);
+    expect(() => s.verify({ authorization: auth, 'x-revenuecat-webhook-signature': sign(t - 301) }, body, now)).toThrow(/İmza/);
+    expect(() => s.verify({ authorization: 'Bearer nope', 'x-revenuecat-webhook-signature': sign(t) }, body, now)).toThrow(/İmza/);
+    expect(() => s.verify({ authorization: auth }, body, now)).toThrow(/İmza/);
   });
 });

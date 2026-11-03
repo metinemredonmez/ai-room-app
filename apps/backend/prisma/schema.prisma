@@ -67,6 +67,7 @@ model User {
   deviceHash    String?    @unique
   plan          Plan       @default(FREE)
   planExpiresAt DateTime?
+  storeProUntil DateTime? // App Store / Play entitlement synced from RevenueCat (separate from admin/dev grants)
   credits       Int        @default(0)
   freeUsedOn    String? // YYYY-MM-DD, Europe/Istanbul
   freeUsedCount Int        @default(0)
@@ -82,6 +83,8 @@ model User {
   emailTokens   EmailToken[]
   consents      Consent[]
   reports       ContentReport[]
+  subscriptions Subscription[]
+  purchases     StorePurchase[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -294,4 +297,49 @@ model JobRun {
   finishedAt DateTime?
 
   @@index([name, startedAt])
+}
+
+// RevenueCat webhook inbox: stored after signature verification, processed by the queue, never twice.
+model WebhookEvent {
+  id          String    @id // RevenueCat event.id (retries reuse it)
+  source      String
+  type        String
+  appUserId   String?
+  userId      String?   @db.Uuid
+  status      String // queued | processed | unmatched | ignored | failed
+  error       String?
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([status, receivedAt])
+}
+
+// Store subscription state per entitlement (synced from RevenueCat).
+model Subscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @db.Uuid
+  entitlement          String
+  productId            String?
+  store                String?
+  environment          String?
+  periodType           String?
+  status               String // active | grace | cancelled | expired | billing_issue
+  expiresAt            DateTime?
+  gracePeriodExpiresAt DateTime?
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entitlement])
+}
+
+// Consumable credit packs: one row per store purchase id, so a purchase is credited exactly once.
+model StorePurchase {
+  id        String   @id // store transaction / purchase id
+  userId    String   @db.Uuid
+  productId String
+  credits   Int
+  store     String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

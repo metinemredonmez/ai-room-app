@@ -9,7 +9,7 @@ import { log } from './common/log.js';
 import { CONFIG, type Config } from './config.js';
 
 export async function createApp() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false, logger: ['error', 'warn'] });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false, rawBody: true, logger: ['error', 'warn'] });
   const cfg = app.get<Config>(CONFIG);
 
   app.disable('x-powered-by');
@@ -41,7 +41,7 @@ export async function createApp() {
     credentials: false,
     maxAge: 600,
   });
-  app.useBodyParser('json', { limit: '15mb' }); // base64 uploads (≤ 10 MB decoded)
+  app.useBodyParser('json', { limit: '15mb' }); // base64 uploads (≤ 10 MB decoded); raw body kept for webhook HMAC
   app.enableShutdownHooks();
 
   if (cfg.swaggerEnabled) {

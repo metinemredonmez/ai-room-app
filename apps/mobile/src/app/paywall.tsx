@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Plan } from '@/lib/api';
 import { formatTRY, type MessageKey } from '@/lib/i18n';
+import { buy, restore, storeBillingAvailable, storePackages, type StorePackage } from '@/lib/purchases';
 import { useSession } from '@/lib/session';
 
 const PERIOD_KEY: Record<Plan['period'], MessageKey> = {
@@ -22,7 +23,7 @@ const WEEKS: Record<Plan['period'], number> = { week: 1, month: 52 / 12, year: 5
 export default function PaywallScreen() {
   const c = useTheme();
   const insets = useSafeAreaInsets();
-  const { t, locale, catalog, setUser, errorMessage } = useSession();
+  const { t, locale, catalog, user, setUser, errorMessage } = useSession();
   const plans = catalog?.plans ?? [];
   const [selected, setSelected] = useState<string | undefined>(
     plans.find((p) => p.badge)?.id ?? plans[0]?.id,
@@ -32,15 +33,52 @@ export default function PaywallScreen() {
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  // TODO(billing): replace the demo upgrade with RevenueCat (App Store / Google Play IAP) and
-  // server-side receipt validation; the backend then grants PRO from the store webhook.
+  // Store billing (RevenueCat) on iOS/Android dev & store builds; the demo upgrade only where it's absent.
+  const [packages, setPackages] = useState<StorePackage[]>([]);
+  useEffect(() => {
+    if (!storeBillingAvailable || !user) return;
+    storePackages(user.id)
+      .then(setPackages)
+      .catch((e: unknown) => setError(errorMessage(e)));
+  }, [user, errorMessage]);
+  const packageFor = (plan: Plan) => packages.find((p) => p.productId === plan.storeProductId || p.productId.startsWith(`${plan.storeProductId}:`));
+
   const purchase = async () => {
     setBusy(true);
     setError(null);
     try {
-      setUser(await api.devUpgrade());
+      if (storeBillingAvailable && user) {
+        const plan = plans.find((p) => p.id === selected);
+        const pkg = plan ? packageFor(plan) : undefined;
+        if (!pkg) {
+          setError(t('paywall.storeMissing'));
+          return;
+        }
+        if ((await buy(user.id, pkg)) === 'cancelled') return;
+        // PRO is granted server-side from RevenueCat (webhook / REST), never by the app itself.
+        setUser(await api.billingSync());
+      } else {
+        setUser(await api.devUpgrade());
+      }
       notify(t('paywall.success'));
       close();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onRestore = async () => {
+    if (!storeBillingAvailable || !user) {
+      notify(t('paywall.restoreInfo'));
+      return;
+    }
+    setBusy(true);
+    try {
+      await restore(user.id);
+      setUser(await api.billingSync());
+      notify(t('paywall.restored'));
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -98,7 +136,7 @@ export default function PaywallScreen() {
                   <AppText variant="bodyBold" color={active ? c.primary : c.text}>
                     {p.name || t(PERIOD_KEY[p.period])}
                   </AppText>
-                  <AppText variant="heading">{formatTRY(p.priceTRY, locale)}</AppText>
+                  <AppText variant="heading">{packageFor(p)?.priceString ?? formatTRY(p.priceTRY, locale)}</AppText>
                   <AppText variant="small" muted>
                     {formatTRY(p.priceTRY / WEEKS[p.period], locale)}
                     {t('paywall.perWeek')}
@@ -118,11 +156,11 @@ export default function PaywallScreen() {
             </AppText>
           </View>
           <AppText variant="small" muted style={{ textAlign: 'center' }}>
-            {t('paywall.demo')}
+            {storeBillingAvailable ? t('paywall.store') : t('paywall.demo')}
           </AppText>
 
           <View style={styles.links}>
-            <Pressable onPress={() => notify(t('paywall.restoreInfo'))} accessibilityRole="link">
+            <Pressable onPress={onRestore} accessibilityRole="link">
               <AppText variant="small" muted>
                 {t('paywall.restore')}
               </AppText>

@@ -69,6 +69,13 @@ Admin ──cookie──> Admin BFF ──────┤
 - **AI servisi sağlamlaştırma.** Yedek sağlayıcı zinciri (`IMAGE_FALLBACKS`), sağlayıcı başına devre kesici, 150 sn süre
   bütçesi, yeniden denenebilir / denenemez hata ayrımı, fotoğraf kalite kapısı (`/quality`), "değişiklik yok"
   tespiti ve Türkçe metin normalizasyonu.
+- **Gerçek abonelik (RevenueCat).**
+  - Mobilde `react-native-purchases`; development ya da store build gerekir, Expo Go'da çalışmaz.
+  - Backend'de imzası doğrulanan webhook ve abonelik durum tablosu.
+  - Satın alma sonrası `POST /billing/sync`.
+  - Kredi paketleri her mağaza işlemi için bir kez yüklenir.
+  - Admin'de "Ödeme olayları" sayfasında eşleşmeyen ve başarısız olaylar yeniden işlenebilir.
+  - Anahtar yoksa geliştirmede demo yükseltme kullanılır.
 - **Swagger / OpenAPI.**
   - Backend: <http://localhost:4000/docs>.
   - AI servisi: <http://localhost:8001/docs>.
@@ -164,7 +171,7 @@ Kontroller red-team kataloğundaki kimliklerle eşleştirildi; ayrıntı PDF rap
 
 **Henüz yok:**
 - Gerçek SMTP sağlayıcısı ve SPF/DKIM/DMARC ayarı (kod hazır, `MAIL_TRANSPORT=smtp`).
-- Gerçek ödeme (App Store/Play için RevenueCat, web için iyzico/PayTR).
+- Gerçek mağaza ürünleri ve RevenueCat hesabı (kod hazır; anahtarlar `.env` dosyalarına girilmeli). Web ödemesi (iyzico/PayTR).
 - Fırça ile maske düzenleme.
 - Çoklu fotoğraf tutarlılığı.
 - LiDAR/RoomPlan ile ölçü.

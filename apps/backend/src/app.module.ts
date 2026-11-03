@@ -7,6 +7,8 @@ import { PublicController, UserController } from './app.controller.js';
 import { AdminAuthController, AuthController } from './auth/auth.controller.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { AdminGuard, TokensService, UserGuard } from './auth/tokens.service.js';
+import { BillingController } from './billing/billing.controller.js';
+import { BillingService } from './billing/billing.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
 import { ErrorFilter } from './common/errors.js';
 import { PrismaService, RateLimiter, RedisService } from './common/infra.js';
@@ -22,7 +24,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, BillingController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -32,6 +34,7 @@ import { UsersService } from './users/users.service.js';
     UsageService,
     QueuesService,
     ConsentsService,
+    BillingService,
     JobsService,
     RateLimiter,
     TokensService,

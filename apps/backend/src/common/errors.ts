@@ -68,7 +68,9 @@ export class ErrorFilter implements ExceptionFilter {
       message = 'Geçersiz JSON';
     }
 
-    if (status >= 500) {
+    if (status >= 500 && exception instanceof AppError) {
+      log.warn('request_failed', { requestId: req.id, path: req.path, status, code });
+    } else if (status >= 500) {
       log.error('unhandled_error', {
         requestId: req.id,
         path: req.path,

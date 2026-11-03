@@ -97,6 +97,8 @@ export const LIMITS = {
   chatIp: { name: 'chat-ip', max: 150, windowSec: 3600 },
   reports: { name: 'reports', max: 20, windowSec: 3600 },
   export: { name: 'export', max: 3, windowSec: 3600 },
+  webhooks: { name: 'webhooks-ip', max: 600, windowSec: 60 },
+  billingSync: { name: 'billing-sync', max: 20, windowSec: 600 },
 } satisfies Record<string, Limit>;
 
 /** In-process cap on simultaneous AI generations per instance. */
