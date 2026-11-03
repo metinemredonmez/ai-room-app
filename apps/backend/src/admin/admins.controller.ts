@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
-import { AdminGuard } from '../auth/tokens.service.js';
+import { AdminGuard, TokensService } from '../auth/tokens.service.js';
 import { AppError, notFound, parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
@@ -29,13 +29,14 @@ export class AdminSelfController {
     private users: UsersService,
     private security: AdminSecurityService,
     private audit: AuditService,
+    private tokens: TokensService,
   ) {}
 
   @Get()
-  @Doc('Oturumdaki yönetici: rol ve MFA durumu', { errors: [401, 403] })
+  @Doc('Oturumdaki yönetici: rol ve MFA durumu (`required: false` yalnız geliştirmede, ADMIN_DEV_SKIP_MFA)', { errors: [401, 403] })
   async me(@Auth() auth: AuthContext) {
     const user = await this.users.get(auth.userId);
-    return { ...this.users.toDto(user), mfa: { enrolled: !!user.totpSecret, backupCodesRemaining: await this.security.remainingBackupCodes(user.id) } };
+    return { ...this.users.toDto(user), mfa: { required: !this.tokens.devSkipMfa, enrolled: !!user.totpSecret, backupCodesRemaining: await this.security.remainingBackupCodes(user.id) } };
   }
 
   /** AUT-04: adding or replacing a factor needs a fresh TOTP code, not just a live session. */

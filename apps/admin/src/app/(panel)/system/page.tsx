@@ -2,7 +2,7 @@
 
 import { CheckCircle2, RotateCw, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button, ErrorState, PageHeader, Spinner } from "@/components/ui";
+import { Button, ErrorState, PageHeader, Spinner } from "@/components/common";
 import { useApi } from "@/lib/api";
 import type { SystemStatus } from "@/lib/types";
 
@@ -30,7 +30,7 @@ function Tile({ title, children }: { title: string; children: ReactNode }) {
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-muted">{label}</span>
+      <span className="text-muted-foreground">{label}</span>
       <span className="text-right text-fg">{value}</span>
     </div>
   );

@@ -173,3 +173,5 @@ export type BillingEvent = {
   receivedAt: string;
   processedAt: string | null;
 };
+
+export type AdminMe = User & { mfa: { required: boolean; enrolled: boolean; backupCodesRemaining: number } };

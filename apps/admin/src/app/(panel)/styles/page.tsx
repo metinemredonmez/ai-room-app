@@ -3,7 +3,7 @@
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, PageHeader, Spinner, Table, td, Textarea, th } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, PageHeader, Spinner, Table, td, Textarea, th } from "@/components/common";
 import { api, ApiError, useApi } from "@/lib/api";
 import { fmtInt, HEX_RE } from "@/lib/format";
 import type { AdminStyle, AdminStyleInput } from "@/lib/types";
@@ -106,7 +106,7 @@ function StyleEditor({ initial, isNew, onClose, onSaved }: { initial: AdminStyle
           <h2 id="style-editor-title" className="text-base font-semibold text-fg">
             {isNew ? "Yeni stil" : `Stili düzenle: ${initial.nameTr}`}
           </h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-fg" aria-label="Kapat">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-fg" aria-label="Kapat">
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -245,9 +245,9 @@ export default function StylesPage() {
                 </td>
                 <td className={td}>
                   <p className="font-medium text-fg">{s.nameTr}</p>
-                  <p className="text-xs text-muted">{s.nameEn}</p>
+                  <p className="text-xs text-muted-foreground">{s.nameEn}</p>
                 </td>
-                <td className={`${td} font-mono text-xs text-muted`}>{s.id}</td>
+                <td className={`${td} font-mono text-xs text-muted-foreground`}>{s.id}</td>
                 <td className={td}>{s.isPro ? <Badge tone="warn">PRO</Badge> : <Badge>Ücretsiz</Badge>}</td>
                 <td className={td}>{s.isActive ? <Badge tone="good">Aktif</Badge> : <Badge>Pasif</Badge>}</td>
                 <td className={`${td} text-right`}>{s.sortOrder}</td>

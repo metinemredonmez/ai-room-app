@@ -1,20 +1,43 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-/* Tokens: docs/API.md §6. Chart roles: validated with the dataviz palette validator
+/* Tokens: docs/API.md §6, in shadcn/ui names (components/ui) plus the panel's own (surface, line, fg, …)
+   that older pages still use. Chart roles: validated with the dataviz palette validator
    (series-1 + status-critical pass light on #ffffff and dark on #18201D). */
 :root {
   color-scheme: light;
-  --bg: #f7f4ef;
-  --surface: #ffffff;
-  --surface-2: #fbf9f6;
-  --fg: #141414;
-  --muted: #6b6a66;
-  --line: #e6e1d8;
+  --radius: 0.875rem;
+
+  --background: #f7f4ef;
+  --foreground: #141414;
+  --card: #ffffff;
+  --card-foreground: #141414;
+  --popover: #ffffff;
+  --popover-foreground: #141414;
   --primary: #1f6f5c;
-  --primary-fg: #ffffff;
+  --primary-foreground: #ffffff;
+  --secondary: #efebe4;
+  --secondary-foreground: #141414;
+  --muted: #f1ede6;
+  --muted-foreground: #6b6a66;
+  --accent: #ece7df;
+  --accent-foreground: #141414;
+  --destructive: #c23434;
+  --border: #e6e1d8;
+  --input: #cfc8bc;
+  --ring: #1f6f5c;
+
+  --sidebar: #fbf9f6;
+  --sidebar-foreground: #141414;
+  --sidebar-primary: #1f6f5c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e3efeb;
+  --sidebar-accent-foreground: #1f6f5c;
+  --sidebar-border: #e6e1d8;
+  --sidebar-ring: #1f6f5c;
+
+  --brand-accent: #e07a4f;
   --primary-soft: #e3efeb;
-  --accent: #e07a4f;
-  --danger: #c23434;
   --danger-soft: #fbeaea;
   --good-text: #006300;
   --good-soft: #e6f4e6;
@@ -32,17 +55,37 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #0e1311;
-    --surface: #18201d;
-    --surface-2: #141b18;
-    --fg: #f2efea;
-    --muted: #a3a8a4;
-    --line: #2a332f;
+
+    --background: #0e1311;
+    --foreground: #f2efea;
+    --card: #18201d;
+    --card-foreground: #f2efea;
+    --popover: #18201d;
+    --popover-foreground: #f2efea;
     --primary: #3fb28f;
-    --primary-fg: #0e1311;
+    --primary-foreground: #0e1311;
+    --secondary: #222b27;
+    --secondary-foreground: #f2efea;
+    --muted: #1c2420;
+    --muted-foreground: #a3a8a4;
+    --accent: #232d29;
+    --accent-foreground: #f2efea;
+    --destructive: #e66767;
+    --border: #2a332f;
+    --input: #3d4a45;
+    --ring: #3fb28f;
+
+    --sidebar: #141b18;
+    --sidebar-foreground: #f2efea;
+    --sidebar-primary: #3fb28f;
+    --sidebar-primary-foreground: #0e1311;
+    --sidebar-accent: #1d3029;
+    --sidebar-accent-foreground: #3fb28f;
+    --sidebar-border: #2a332f;
+    --sidebar-ring: #3fb28f;
+
+    --brand-accent: #f09a72;
     --primary-soft: #1d3029;
-    --accent: #f09a72;
-    --danger: #e66767;
     --danger-soft: #3a1f1f;
     --good-text: #0ca30c;
     --good-soft: #17301a;
@@ -59,30 +102,65 @@
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-fg: var(--fg);
-  --color-muted: var(--muted);
-  --color-line: var(--line);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
-  --color-primary-fg: var(--primary-fg);
-  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-danger: var(--danger);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand-accent: var(--brand-accent);
+
+  /* Older pages (migrated screen by screen). */
+  --color-bg: var(--background);
+  --color-surface: var(--card);
+  --color-surface-2: var(--sidebar);
+  --color-fg: var(--foreground);
+  --color-line: var(--border);
+  --color-primary-fg: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-danger: var(--destructive);
   --color-danger-soft: var(--danger-soft);
   --color-good: var(--good-text);
   --color-good-soft: var(--good-soft);
   --color-warn: var(--warn-text);
   --color-warn-soft: var(--warn-soft);
+
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-html,
-body {
-  background: var(--bg);
-  color: var(--fg);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 .tabular {
@@ -90,6 +168,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Loader2, RotateCw, XCircle } from "lucide-react";
-import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Spinner, Table, td, th } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Spinner, Table, td, th } from "@/components/common";
 import { StatTile } from "@/components/charts";
 import { useApi } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
@@ -81,12 +81,12 @@ export default function JobsPage() {
                   <tr key={r.id}>
                     <td className={td}>
                       <span className="text-fg">{JOB_LABELS[r.name]?.label ?? r.name}</span>
-                      <span className="block text-xs text-muted">{JOB_LABELS[r.name]?.schedule ?? r.name}</span>
+                      <span className="block text-xs text-muted-foreground">{JOB_LABELS[r.name]?.schedule ?? r.name}</span>
                     </td>
                     <td className={td}><StatusBadge status={r.status} /></td>
-                    <td className={`${td} whitespace-nowrap text-muted`}>{fmtDateTime(r.startedAt)}</td>
+                    <td className={`${td} whitespace-nowrap text-muted-foreground`}>{fmtDateTime(r.startedAt)}</td>
                     <td className={`${td} tabular`}>{duration(r)}</td>
-                    <td className={`${td} max-w-md break-all font-mono text-[11px] text-muted`}>{details(r)}</td>
+                    <td className={`${td} max-w-md break-all font-mono text-[11px] text-muted-foreground`}>{details(r)}</td>
                   </tr>
                 ))}
               </Table>

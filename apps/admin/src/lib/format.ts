@@ -51,3 +51,11 @@ export const STATUS_LABELS = {
 } as const;
 
 export const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+export const ROLE_LABELS: Record<string, string> = {
+  SUPPORT: "Destek",
+  EDITOR: "Editör",
+  ADMIN: "Yönetici",
+  SUPER_ADMIN: "Süper yönetici",
+  USER: "Kullanıcı",
+};

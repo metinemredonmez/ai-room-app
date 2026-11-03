@@ -58,13 +58,13 @@ export function ChartCard({
       <figcaption className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-fg">{title}</p>
-          {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         <button
           type="button"
           onClick={() => setShowTable((v) => !v)}
           aria-pressed={showTable}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2 hover:text-fg"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-fg"
         >
           <Table2 className="h-3.5 w-3.5" aria-hidden /> {showTable ? "Grafik" : "Tablo"}
         </button>
@@ -139,7 +139,7 @@ export function DailyDesignsChart({ data }: { data: DailyDesigns[] }) {
       }
       table={
         <table className="w-full text-left text-xs">
-          <thead className="text-muted">
+          <thead className="text-muted-foreground">
             <tr>
               <th className="py-1 font-medium">Gün</th>
               <th className="py-1 text-right font-medium">Toplam</th>
@@ -299,7 +299,7 @@ export function DailyLineChart({
       subtitle={subtitle}
       table={
         <table className="w-full text-left text-xs">
-          <thead className="text-muted">
+          <thead className="text-muted-foreground">
             <tr>
               <th className="py-1 font-medium">Gün</th>
               <th className="py-1 text-right font-medium">{columnLabel}</th>
@@ -406,7 +406,7 @@ export function BarList({ title, subtitle, rows }: { title: string; subtitle?: s
       subtitle={subtitle}
       table={
         <table className="w-full text-left text-xs">
-          <thead className="text-muted">
+          <thead className="text-muted-foreground">
             <tr>
               <th className="py-1 font-medium">Ad</th>
               <th className="py-1 text-right font-medium">Adet</th>
@@ -426,7 +426,7 @@ export function BarList({ title, subtitle, rows }: { title: string; subtitle?: s
       }
     >
       {sorted.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">Bu aralıkta veri yok.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">Bu aralıkta veri yok.</p>
       ) : (
         <ul className="flex flex-col gap-1">
           {sorted.map((r) => (
@@ -455,9 +455,9 @@ export function BarList({ title, subtitle, rows }: { title: string; subtitle?: s
 export function StatTile({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
     <div className="rounded-2xl border border-line bg-surface px-4 py-3">
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-fg">{fmtInt(value)}</p>
-      {note && <p className="mt-0.5 text-xs text-muted">{note}</p>}
+      {note && <p className="mt-0.5 text-xs text-muted-foreground">{note}</p>}
     </div>
   );
 }

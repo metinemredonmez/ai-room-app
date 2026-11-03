@@ -29,9 +29,12 @@ interface Claims {
 @Injectable()
 export class TokensService {
   private key: Uint8Array;
+  /** ADMIN_DEV_SKIP_MFA (development only): admin tokens without a second factor are accepted. */
+  readonly devSkipMfa: boolean;
 
   constructor(private prisma: PrismaService, @Inject(CONFIG) cfg: Config) {
     this.key = new TextEncoder().encode(cfg.JWT_SECRET);
+    this.devSkipMfa = cfg.ADMIN_DEV_SKIP_MFA;
   }
 
   private sign(user: Pick<User, 'id' | 'tokenVersion'>, audience: string, ttlSec: number, amr?: string[]) {
@@ -66,9 +69,9 @@ export class TokensService {
     return { accessToken: await this.sign(user, AUD_APP, ACCESS_TTL_SEC), refreshToken, expiresIn: ACCESS_TTL_SEC };
   }
 
-  /** amr records the second factor: `otp` (TOTP) or `mfa` (single-use recovery code). */
-  async issueAdmin(user: User, factor: 'otp' | 'backup' = 'otp') {
-    const amr = ['pwd', factor === 'otp' ? 'otp' : 'mfa'];
+  /** amr records the second factor: `otp` (TOTP), `mfa` (single-use recovery code) or `dev` (none, ADMIN_DEV_SKIP_MFA). */
+  async issueAdmin(user: User, factor: 'otp' | 'backup' | 'dev' = 'otp') {
+    const amr = ['pwd', factor === 'otp' ? 'otp' : factor === 'backup' ? 'mfa' : 'dev'];
     return { accessToken: await this.sign(user, AUD_ADMIN, ADMIN_TTL_SEC, amr), expiresIn: ADMIN_TTL_SEC };
   }
 
@@ -148,7 +151,8 @@ export class AdminGuard implements CanActivate {
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<AppRequest>();
     const claims = await this.tokens.verify(bearer(req), AUD_ADMIN);
-    if (!claims.amr?.some((m) => m === 'otp' || m === 'mfa')) throw unauthorized();
+    // A `dev` token stops working as soon as ADMIN_DEV_SKIP_MFA is switched off.
+    if (!claims.amr?.some((m) => m === 'otp' || m === 'mfa' || (m === 'dev' && this.tokens.devSkipMfa))) throw unauthorized();
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
       select: { id: true, role: true, status: true, tokenVersion: true },

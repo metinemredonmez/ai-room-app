@@ -3,7 +3,7 @@
 import { RotateCw, Save } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, ErrorState, Field, Input, PageHeader, Select, Spinner, Textarea } from "@/components/ui";
+import { Badge, Button, Card, ErrorState, Field, Input, PageHeader, Select, Spinner, Textarea } from "@/components/common";
 import { api, ApiError, useApi } from "@/lib/api";
 import type { BrakeMode, Settings, SettingsResponse } from "@/lib/types";
 
@@ -25,7 +25,7 @@ function Toggle({ id, checked, onChange, label }: { id: string; checked: boolean
 function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
     <Card title={title}>
-      <p className="mb-4 text-xs text-muted">{description}</p>
+      <p className="mb-4 text-xs text-muted-foreground">{description}</p>
       <div className="grid gap-4 md:grid-cols-2">{children}</div>
     </Card>
   );

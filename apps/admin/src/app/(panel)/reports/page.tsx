@@ -3,7 +3,7 @@
 import { ArrowRight, Flag } from "lucide-react";
 import { useState } from "react";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, EmptyState, ErrorState, LoadMore, PageHeader, Spinner, Textarea, Thumb } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, LoadMore, PageHeader, Spinner, Textarea, Thumb } from "@/components/common";
 import { api, ApiError, usePaged } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
 import type { ContentReport, ReportStatus } from "@/lib/types";
@@ -57,7 +57,7 @@ function ReportRow({ report, onDone }: { report: ContentReport; onDone: (id: str
     <li className="grid gap-4 border-b border-line py-4 last:border-b-0 lg:grid-cols-[260px_1fr]">
       <div className="flex items-center gap-2">
         <Thumb src={d.input.url} alt="Önce" className="h-20 w-24" />
-        <ArrowRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
         <Thumb src={d.results[0]?.url} alt="Sonra" className="h-20 w-24" />
       </div>
       <div className="flex flex-col gap-2">
@@ -65,7 +65,7 @@ function ReportRow({ report, onDone }: { report: ContentReport; onDone: (id: str
           <Badge tone="danger" icon={<Flag className="h-3.5 w-3.5" />}>{REASONS[report.reason]}</Badge>
           <Badge tone={STATUS[report.status].tone}>{STATUS[report.status].label}</Badge>
           {d.featured && <Badge tone="primary">İlham galerisinde</Badge>}
-          <span className="text-xs text-muted">{fmtDateTime(report.createdAt)}</span>
+          <span className="text-xs text-muted-foreground">{fmtDateTime(report.createdAt)}</span>
         </div>
         <p className="text-sm text-fg">{d.title}</p>
         {/* User text is rendered as plain text only (WEB-01). */}
@@ -85,7 +85,7 @@ function ReportRow({ report, onDone }: { report: ContentReport; onDone: (id: str
             </div>
           </div>
         ) : (
-          <p className="text-xs text-muted">Karar: {report.resolution ?? "—"} · {fmtDateTime(report.resolvedAt)}</p>
+          <p className="text-xs text-muted-foreground">Karar: {report.resolution ?? "—"} · {fmtDateTime(report.resolvedAt)}</p>
         )}
       </div>
     </li>

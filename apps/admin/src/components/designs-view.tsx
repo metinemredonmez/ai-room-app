@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DesignCard } from "@/components/design-card";
 import { useFeedback } from "@/components/feedback";
-import { Button, EmptyState, ErrorState, Input, LoadMore, PageHeader, Select, Spinner } from "@/components/ui";
+import { Button, EmptyState, ErrorState, Input, LoadMore, PageHeader, Select, Spinner } from "@/components/common";
 import { api, ApiError, useApi, usePaged } from "@/lib/api";
 import { STATUS_LABELS, TOOL_LABELS } from "@/lib/format";
 import type { AdminDesign, AdminStyle, Design } from "@/lib/types";

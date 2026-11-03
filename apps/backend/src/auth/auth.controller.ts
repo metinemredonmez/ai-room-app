@@ -43,7 +43,7 @@ const otp = z.string().regex(/^\d{6}$/);
 const AdminLoginSchema = z
   .object({ email, password: z.string().min(1).max(128), otp: otp.optional(), backupCode: z.string().min(10).max(16).optional() })
   .strict()
-  .refine((v) => !!v.otp !== !!v.backupCode, { message: 'otp veya backupCode (yalnız biri)', path: ['otp'] });
+  .refine((v) => !(v.otp && v.backupCode), { message: 'otp veya backupCode (yalnız biri)', path: ['otp'] });
 const AdminEnrollSchema = z.object({ email, password: z.string().min(1).max(128) }).strict();
 const AdminConfirmSchema = z.object({ email, password: z.string().min(1).max(128), otp }).strict();
 
@@ -259,6 +259,9 @@ export class AdminAuthController {
   @Doc('Admin girişi: parola + TOTP **veya** tek kullanımlık yedek kod (AUT-01/AUT-04)', { body: AdminLoginSchema, status: 201, description: 'Doğrulayıcısı kayıtlı olmayan, kayıt süresi açık bir yönetici doğru parolayla 403 `mfa_enrollment_required` alır → `/mfa/enroll`.', response: { type: 'object', properties: { accessToken: { type: 'string' }, expiresIn: { type: 'number' }, admin: { $ref: '#/components/schemas/User' }, backupCodesRemaining: { type: 'number' } } }, errors: [400, 401, 403, 429] })
   async login(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(AdminLoginSchema, body);
+    // Development machines may switch the second factor off (ADMIN_DEV_SKIP_MFA, refused outside development).
+    const devSkip = this.tokens.devSkipMfa && !input.otp && !input.backupCode;
+    if (!devSkip && !input.otp && !input.backupCode) throw new AppError(400, 'validation_failed', 'otp veya backupCode gerekli');
     await this.limiter.hit(LIMITS.adminLogin, req.clientIp);
     await this.limiter.hit(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
@@ -268,7 +271,7 @@ export class AdminAuthController {
       return new AppError(401, 'unauthorized', 'Giriş bilgileri hatalı');
     };
     if (!user || !ok || !isAdminRole(user.role) || user.status !== 'ACTIVE') throw await fail();
-    if (!user.totpSecret) {
+    if (!user.totpSecret && !devSkip) {
       // Password is right but no authenticator yet: only inside the enrollment window.
       if (user.mfaEnrollBefore && user.mfaEnrollBefore > new Date()) {
         throw new AppError(403, 'mfa_enrollment_required', 'Doğrulayıcı uygulamanı kaydetmen gerekiyor');
@@ -277,10 +280,11 @@ export class AdminAuthController {
     }
     // Recovery codes are only spent after the password checked out.
     const remaining = input.backupCode ? await this.security.consumeBackupCode(user.id, input.backupCode) : null;
-    const passed = input.backupCode ? remaining !== null : await this.security.claimTotp(user, input.otp!);
+    const passed = devSkip || (input.backupCode ? remaining !== null : await this.security.claimTotp(user, input.otp!));
+    const factor = devSkip ? 'dev' : input.backupCode ? 'backup' : 'otp';
     if (!passed) throw await fail();
     await this.limiter.reset(LIMITS.loginAccount, sha256(`admin:${input.email}`));
-    await this.audit.record(user.id, 'admin.login', 'user', user.id, { factor: input.backupCode ? 'backup' : 'otp', ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) }, req.clientIp);
+    await this.audit.record(user.id, 'admin.login', 'user', user.id, { factor, ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) }, req.clientIp);
     if (remaining !== null) {
       log.warn('admin_backup_code_used', { userId: user.id, remaining });
       this.security.notify(user, 'Yedek kodla giriş yapıldı', [
@@ -288,7 +292,8 @@ export class AdminAuthController {
         `Kalan yedek kod: ${remaining}. ${remaining <= 3 ? 'Panelden yeni kodlar oluşturmanı öneririz.' : ''}`.trim(),
       ]);
     }
-    const tokens = await this.tokens.issueAdmin(user, input.backupCode ? 'backup' : 'otp');
+    if (devSkip) log.warn('admin_login_without_mfa', { userId: user.id });
+    const tokens = await this.tokens.issueAdmin(user, factor);
     return { ...tokens, admin: this.users.toDto(user), ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) };
   }
 

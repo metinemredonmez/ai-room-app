@@ -22,8 +22,9 @@ export async function POST(req: NextRequest) {
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
   const otp = typeof body.otp === "string" ? body.otp.trim() : "";
-  if (!email || email.length > 254 || !password || password.length > 256 || !/^\d{6}$/.test(otp)) {
-    return errorResponse(400, "validation_failed", "E-posta, parola ve 6 haneli doğrulama kodu gerekli.");
+  // The code is optional here: the backend decides whether this deployment needs it (ADMIN_DEV_SKIP_MFA).
+  if (!email || email.length > 254 || !password || password.length > 256 || (otp && !/^\d{6}$/.test(otp))) {
+    return errorResponse(400, "validation_failed", "E-posta ve parola gerekli; doğrulama kodu 6 haneli olmalı.");
   }
 
   let res: Response;
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     res = await fetch(`${apiBaseUrl()}/admin/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json", "accept-language": "tr" },
-      body: JSON.stringify({ email, password, otp }),
+      body: JSON.stringify(otp ? { email, password, otp } : { email, password }),
       cache: "no-store",
       signal: AbortSignal.timeout(15_000),
     });

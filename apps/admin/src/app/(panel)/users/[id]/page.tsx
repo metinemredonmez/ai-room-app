@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { DesignCard } from "@/components/design-card";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, PageHeader, Select, Spinner, Table, td, th } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, PageHeader, Select, Spinner, Table, td, th } from "@/components/common";
 import { api, ApiError, useApi } from "@/lib/api";
 import { fmtDate, fmtDateTime, fmtInt } from "@/lib/format";
 import type { AdminStyle, AdminUser, AdminUserDetail } from "@/lib/types";
@@ -104,7 +104,7 @@ export default function UserDetailPage() {
 
   return (
     <>
-      <Link href="/users" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-fg">
+      <Link href="/users" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-fg">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Kullanıcılar
       </Link>
       {detail.error && !user ? (
@@ -127,30 +127,30 @@ export default function UserDetailPage() {
           <div className="grid gap-5 lg:grid-cols-3">
             <Card title="Profil">
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-                <dt className="text-muted">Ad</dt>
+                <dt className="text-muted-foreground">Ad</dt>
                 <dd className="text-fg">{user.name ?? "—"}</dd>
-                <dt className="text-muted">E-posta</dt>
+                <dt className="text-muted-foreground">E-posta</dt>
                 <dd className="break-all text-fg">{user.email ?? "—"}</dd>
-                <dt className="text-muted">Tür</dt>
+                <dt className="text-muted-foreground">Tür</dt>
                 <dd>{user.isGuest ? <Badge>Misafir</Badge> : <Badge tone="primary">Kayıtlı</Badge>}</dd>
-                <dt className="text-muted">Rol</dt>
+                <dt className="text-muted-foreground">Rol</dt>
                 <dd className="text-fg">{user.role === "USER" ? "Kullanıcı" : `Yönetici (${user.role})`}</dd>
-                <dt className="text-muted">Durum</dt>
+                <dt className="text-muted-foreground">Durum</dt>
                 <dd>{user.status === "BANNED" ? <Badge tone="danger">Engelli</Badge> : <Badge tone="good">Aktif</Badge>}</dd>
-                <dt className="text-muted">Dil</dt>
+                <dt className="text-muted-foreground">Dil</dt>
                 <dd className="uppercase text-fg">{user.locale}</dd>
-                <dt className="text-muted">Kayıt</dt>
+                <dt className="text-muted-foreground">Kayıt</dt>
                 <dd className="text-fg">{fmtDateTime(user.createdAt)}</dd>
-                <dt className="text-muted">Son görülme</dt>
+                <dt className="text-muted-foreground">Son görülme</dt>
                 <dd className="text-fg">{fmtDateTime(user.lastSeenAt)}</dd>
-                <dt className="text-muted">Tasarım</dt>
+                <dt className="text-muted-foreground">Tasarım</dt>
                 <dd className="tabular text-fg">{fmtInt(user.designsCount)}</dd>
               </dl>
             </Card>
 
             <Card title="Plan">
               <form onSubmit={savePlan} className="flex flex-col gap-3">
-                <p className="text-sm text-muted">
+                <p className="text-sm text-muted-foreground">
                   Şu an:{" "}
                   <span className="font-medium text-fg">{user.plan === "PRO" ? "PRO" : "Ücretsiz"}</span>
                   {user.plan === "PRO" && user.planExpiresAt ? ` · ${fmtDate(user.planExpiresAt)} tarihine kadar` : ""}
@@ -179,11 +179,11 @@ export default function UserDetailPage() {
             <Card title="Krediler">
               <div className="mb-3 grid grid-cols-2 gap-2">
                 <div className="rounded-xl bg-surface-2 px-3 py-2">
-                  <p className="text-xs text-muted">Ek kredi</p>
+                  <p className="text-xs text-muted-foreground">Ek kredi</p>
                   <p className="text-xl font-semibold text-fg">{fmtInt(user.credits)}</p>
                 </div>
                 <div className="rounded-xl bg-surface-2 px-3 py-2">
-                  <p className="text-xs text-muted">Bugünkü ücretsiz hak</p>
+                  <p className="text-xs text-muted-foreground">Bugünkü ücretsiz hak</p>
                   <p className="text-xl font-semibold text-fg">{fmtInt(user.dailyFreeRemaining)}</p>
                 </div>
               </div>
@@ -217,14 +217,14 @@ export default function UserDetailPage() {
                 >
                   {user.ledger.map((l) => (
                     <tr key={l.id}>
-                      <td className={`${td} whitespace-nowrap text-muted`}>{fmtDateTime(l.createdAt)}</td>
+                      <td className={`${td} whitespace-nowrap text-muted-foreground`}>{fmtDateTime(l.createdAt)}</td>
                       <td className={`${td} text-right font-medium ${l.delta < 0 ? "text-danger" : "text-good"}`}>
                         {l.delta > 0 ? "+" : ""}
                         {fmtInt(l.delta)}
                       </td>
                       <td className={td}>
                         {l.reason}
-                        {l.refId && <span className="ml-1 font-mono text-[11px] text-muted">({l.refId})</span>}
+                        {l.refId && <span className="ml-1 font-mono text-[11px] text-muted-foreground">({l.refId})</span>}
                       </td>
                     </tr>
                   ))}

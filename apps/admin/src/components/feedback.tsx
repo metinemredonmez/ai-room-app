@@ -2,7 +2,7 @@
 
 import { CheckCircle2, X, XCircle } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Button } from "./ui";
+import { Button } from "./common";
 
 type Toast = { id: number; tone: "success" | "error"; message: string };
 type ConfirmOptions = { title: string; description?: string; confirmLabel?: string; destructive?: boolean };
@@ -58,7 +58,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             <span className="flex-1">{t.message}</span>
             <button
               type="button"
-              className="text-muted hover:text-fg"
+              className="text-muted-foreground hover:text-fg"
               aria-label="Kapat"
               onClick={() => setToasts((all) => all.filter((x) => x.id !== t.id))}
             >
@@ -95,7 +95,7 @@ function ConfirmDialog({ opts, onClose }: { opts: ConfirmOptions; onClose: (v: b
         <h2 id="confirm-title" className="text-base font-semibold text-fg">
           {opts.title}
         </h2>
-        {opts.description && <p className="mt-1.5 text-sm text-muted">{opts.description}</p>}
+        {opts.description && <p className="mt-1.5 text-sm text-muted-foreground">{opts.description}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <Button onClick={() => onClose(false)}>Vazgeç</Button>
           <Button ref={confirmRef} variant={opts.destructive ? "danger" : "primary"} onClick={() => onClose(true)}>

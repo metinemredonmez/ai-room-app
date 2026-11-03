@@ -89,6 +89,14 @@ describe('configuration (KEY-01)', () => {
     AI_INTERNAL_TOKEN: 'd'.repeat(40),
   };
 
+  it('allows switching admin MFA off only in development (AUT-01)', () => {
+    expect(loadConfig({ ...base, ADMIN_DEV_SKIP_MFA: 'true' }).ADMIN_DEV_SKIP_MFA).toBe(true);
+    expect(loadConfig(base).ADMIN_DEV_SKIP_MFA).toBe(false);
+    for (const NODE_ENV of ['production', 'test']) {
+      expect(() => loadConfig({ ...base, NODE_ENV, ADMIN_DEV_SKIP_MFA: 'true' })).toThrow(/ADMIN_DEV_SKIP_MFA/);
+    }
+  });
+
   it('refuses missing or default-looking secrets', () => {
     expect(() => loadConfig({ ...base, JWT_SECRET: undefined })).toThrow(/JWT_SECRET/);
     expect(() => loadConfig({ ...base, JWT_SECRET: 'change-me-change-me-change-me-change-me' })).toThrow(/default/);

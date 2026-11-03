@@ -3,7 +3,7 @@
 import { AlertTriangle, CheckCircle2, OctagonAlert } from "lucide-react";
 import { useState } from "react";
 import { DailyLineChart } from "@/components/charts";
-import { Badge, Button, Card, ErrorState, PageHeader, Spinner, Table, td, th } from "@/components/ui";
+import { Badge, Button, Card, ErrorState, PageHeader, Spinner, Table, td, th } from "@/components/common";
 import { useApi } from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 import type { AiUsageStats, BrakeMode, BudgetState } from "@/lib/types";
@@ -50,13 +50,13 @@ export default function AiCostsPage() {
         <div className={`flex flex-col gap-4 ${res.loading ? "opacity-60" : ""}`}>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-line bg-surface px-4 py-3">
-              <p className="text-xs text-muted">Bugünkü harcama</p>
+              <p className="text-xs text-muted-foreground">Bugünkü harcama</p>
               <p className="mt-1 text-2xl font-semibold text-fg tabular">{usd(s.today.costUsd)}</p>
-              <p className="mt-0.5 text-xs text-muted">{fmtInt(s.today.calls)} çağrı · {fmtInt(s.today.images)} görsel</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{fmtInt(s.today.calls)} çağrı · {fmtInt(s.today.images)} görsel</p>
             </div>
             <div className="rounded-2xl border border-line bg-surface px-4 py-3 xl:col-span-2">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-muted">Günlük bütçe</p>
+                <p className="text-xs text-muted-foreground">Günlük bütçe</p>
                 <BudgetBadge state={budget.state} />
               </div>
               <p className="mt-1 text-2xl font-semibold text-fg tabular">
@@ -70,12 +70,12 @@ export default function AiCostsPage() {
                   />
                 </div>
               )}
-              <p className="mt-1 text-xs text-muted">Aşılınca: {BRAKE_LABELS[budget.brakeMode]} · Ayarlardan değiştirilir</p>
+              <p className="mt-1 text-xs text-muted-foreground">Aşılınca: {BRAKE_LABELS[budget.brakeMode]} · Ayarlardan değiştirilir</p>
             </div>
             <div className="rounded-2xl border border-line bg-surface px-4 py-3">
-              <p className="text-xs text-muted">Dönem toplamı</p>
+              <p className="text-xs text-muted-foreground">Dönem toplamı</p>
               <p className="mt-1 text-2xl font-semibold text-fg tabular">{usd(s.daily.reduce((t, d) => t + d.costUsd, 0))}</p>
-              <p className="mt-0.5 text-xs text-muted">{fmtInt(s.daily.reduce((t, d) => t + d.calls, 0))} çağrı · son {days} gün</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{fmtInt(s.daily.reduce((t, d) => t + d.calls, 0))} çağrı · son {days} gün</p>
             </div>
           </div>
 
@@ -94,7 +94,7 @@ export default function AiCostsPage() {
           <div className="grid gap-4 xl:grid-cols-2">
             <Card title="Sağlayıcı ve modele göre">
               {s.byProvider.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted">Bu aralıkta çağrı yok.</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">Bu aralıkta çağrı yok.</p>
               ) : (
                 <Table head={<tr><th className={th}>Sağlayıcı</th><th className={th}>Model</th><th className={`${th} text-right`}>Çağrı</th><th className={`${th} text-right`}>Maliyet</th></tr>}>
                   {s.byProvider.map((p) => (
@@ -110,7 +110,7 @@ export default function AiCostsPage() {
             </Card>
             <Card title="İşe göre">
               {s.byKind.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted">Bu aralıkta çağrı yok.</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">Bu aralıkta çağrı yok.</p>
               ) : (
                 <Table head={<tr><th className={th}>İş</th><th className={`${th} text-right`}>Çağrı</th><th className={`${th} text-right`}>Maliyet</th><th className={`${th} text-right`}>Çağrı başı</th></tr>}>
                   {s.byKind.map((k) => (
@@ -125,7 +125,7 @@ export default function AiCostsPage() {
               )}
             </Card>
           </div>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted-foreground">
             Maliyetler tahminidir: görsel başı fiyatlar ve Claude token fiyatları AI servisinin ortam değişkenlerinden okunur (mock ve demo yanıtları $0).
           </p>
         </div>

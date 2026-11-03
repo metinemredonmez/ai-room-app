@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, EmptyState, ErrorState, LoadMore, PageHeader, Spinner, Table, td, th } from "@/components/ui";
+import { Card, EmptyState, ErrorState, LoadMore, PageHeader, Spinner, Table, td, th } from "@/components/common";
 import { usePaged } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
 import type { AuditEntry } from "@/lib/types";
@@ -41,14 +41,14 @@ export default function AuditPage() {
             >
               {audit.items.map((a) => (
                 <tr key={a.id}>
-                  <td className={`${td} whitespace-nowrap text-muted`}>{fmtDateTime(a.createdAt)}</td>
+                  <td className={`${td} whitespace-nowrap text-muted-foreground`}>{fmtDateTime(a.createdAt)}</td>
                   <td className={td}>{a.actorEmail ?? "—"}</td>
                   <td className={`${td} font-mono text-xs`}>{a.action}</td>
                   <td className={td}>
                     <span className="text-fg">{a.targetType}</span>
-                    {a.targetId && <span className="ml-1 font-mono text-[11px] text-muted">{a.targetId}</span>}
+                    {a.targetId && <span className="ml-1 font-mono text-[11px] text-muted-foreground">{a.targetId}</span>}
                   </td>
-                  <td className={`${td} max-w-md break-all font-mono text-[11px] text-muted`}>{metaText(a.meta)}</td>
+                  <td className={`${td} max-w-md break-all font-mono text-[11px] text-muted-foreground`}>{metaText(a.meta)}</td>
                 </tr>
               ))}
             </Table>

@@ -4,7 +4,7 @@ import { RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, EmptyState, ErrorState, LoadMore, PageHeader, Spinner, Table, td, th } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, LoadMore, PageHeader, Spinner, Table, td, th } from "@/components/common";
 import { api, ApiError, usePaged } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
 import type { BillingEvent, BillingEventStatus } from "@/lib/types";
@@ -75,7 +75,7 @@ export default function BillingEventsPage() {
             >
               {list.items.map((e) => (
                 <tr key={e.id}>
-                  <td className={`${td} whitespace-nowrap text-muted`}>{fmtDateTime(e.receivedAt)}</td>
+                  <td className={`${td} whitespace-nowrap text-muted-foreground`}>{fmtDateTime(e.receivedAt)}</td>
                   <td className={`${td} font-mono text-xs`}>{e.type}</td>
                   <td className={td}>
                     <Badge tone={STATUS[e.status]?.tone ?? "neutral"}>{STATUS[e.status]?.label ?? e.status}</Badge>
@@ -85,12 +85,12 @@ export default function BillingEventsPage() {
                     {e.userId ? (
                       <Link href={`/users/${e.userId}`} className="font-mono text-xs text-primary hover:underline">{e.userId.slice(0, 8)}…</Link>
                     ) : (
-                      <span className="font-mono text-[11px] text-muted">{e.appUserId ?? "—"}</span>
+                      <span className="font-mono text-[11px] text-muted-foreground">{e.appUserId ?? "—"}</span>
                     )}
                   </td>
                   <td className={`${td} text-xs`}>
                     <span className="font-mono">{e.productId ?? "—"}</span>
-                    <span className="block text-muted">{[e.store, e.environment].filter(Boolean).join(" · ") || "—"}</span>
+                    <span className="block text-muted-foreground">{[e.store, e.environment].filter(Boolean).join(" · ") || "—"}</span>
                   </td>
                   <td className={`${td} text-right`}>
                     {(e.status === "unmatched" || e.status === "failed") && (

@@ -70,6 +70,8 @@ const Env = z.object({
   WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   // Swagger UI at /docs — on by default only outside production.
   SWAGGER_ENABLED: z.enum(['true', 'false']).optional().transform((v) => (v === undefined ? undefined : v === 'true')),
+  // Local development only: admin login with e-mail + password, no TOTP. Refused outside NODE_ENV=development.
+  ADMIN_DEV_SKIP_MFA: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   // KVKK data controller, filled into the legal texts ({{controller.*}}); required in production.
   LEGAL_CONTROLLER_NAME: z.string().trim().min(2).max(200).default('AI Room (geliştirme)'),
   LEGAL_CONTROLLER_ADDRESS: z.string().trim().min(2).max(300).default('Adres henüz tanımlanmadı'),
@@ -96,6 +98,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const appleKey = [cfg.APPLE_TEAM_ID, cfg.APPLE_KEY_ID, cfg.APPLE_PRIVATE_KEY].filter(Boolean).length;
   if (appleKey > 0 && appleKey < 3) throw new Error('Invalid configuration — APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY go together');
   if (cfg.APPLE_PRIVATE_KEY && !cfg.FIELD_ENC_KEY) throw new Error('Invalid configuration — FIELD_ENC_KEY is required to store Apple refresh tokens');
+  // AUT-01: admin MFA can be switched off only on a developer machine, never on a shared or public deployment.
+  if (cfg.ADMIN_DEV_SKIP_MFA && cfg.NODE_ENV !== 'development') throw new Error('Invalid configuration — ADMIN_DEV_SKIP_MFA is only allowed with NODE_ENV=development');
   const isProd = cfg.NODE_ENV === 'production';
   if (isProd) {
     const problems: string[] = [];

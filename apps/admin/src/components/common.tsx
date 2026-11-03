@@ -37,7 +37,7 @@ export function Button({
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-line bg-surface px-3 text-sm text-fg placeholder:text-muted focus:border-primary focus:outline-none";
+  "w-full rounded-lg border border-line bg-surface px-3 text-sm text-fg placeholder:text-muted-foreground focus:border-primary focus:outline-none";
 
 export function Input({ className, ...rest }: ComponentProps<"input">) {
   return <input {...rest} className={cx(fieldBase, "h-9", className)} />;
@@ -62,7 +62,7 @@ export function Field({ label, hint, children, htmlFor }: { label: string; hint?
         {label}
       </label>
       {children}
-      {hint && <p className="text-xs text-muted">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -88,7 +88,7 @@ export function Badge({ tone = "neutral", children, icon }: { tone?: Tone; child
     <span
       className={cx(
         "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium",
-        tone === "neutral" && "bg-surface-2 text-muted ring-1 ring-line",
+        tone === "neutral" && "bg-surface-2 text-muted-foreground ring-1 ring-line",
         tone === "good" && "bg-good-soft text-good",
         tone === "danger" && "bg-danger-soft text-danger",
         tone === "warn" && "bg-warn-soft text-warn",
@@ -103,7 +103,7 @@ export function Badge({ tone = "neutral", children, icon }: { tone?: Tone; child
 
 export function Spinner({ label = "Yükleniyor…" }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted" role="status">
+    <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground" role="status">
       <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
       {label}
     </div>
@@ -113,9 +113,9 @@ export function Spinner({ label = "Yükleniyor…" }: { label?: string }) {
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-      <Inbox className="h-8 w-8 text-muted" aria-hidden />
+      <Inbox className="h-8 w-8 text-muted-foreground" aria-hidden />
       <p className="text-sm font-medium text-fg">{title}</p>
-      {description && <p className="max-w-sm text-sm text-muted">{description}</p>}
+      {description && <p className="max-w-sm text-sm text-muted-foreground">{description}</p>}
     </div>
   );
 }
@@ -139,7 +139,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-fg">{title}</h1>
-        {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
+        {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -162,7 +162,7 @@ export function Table({ head, children }: { head: ReactNode; children: ReactNode
   return (
     <div className="-mx-4 overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-        <thead className="text-xs uppercase tracking-wide text-muted">{head}</thead>
+        <thead className="text-xs uppercase tracking-wide text-muted-foreground">{head}</thead>
         <tbody className="tabular">{children}</tbody>
       </table>
     </div>
