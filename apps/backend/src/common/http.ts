@@ -1,11 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
+import type { Role } from '../generated/prisma/client.js';
 import { log } from './log.js';
 
 export interface AuthContext {
   userId: string;
-  role: 'USER' | 'ADMIN';
+  role: Role;
   isGuest: boolean;
   admin: boolean; // true only for MFA-complete admin-audience tokens
 }

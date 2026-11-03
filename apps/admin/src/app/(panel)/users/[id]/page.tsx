@@ -134,7 +134,7 @@ export default function UserDetailPage() {
                 <dt className="text-muted">Tür</dt>
                 <dd>{user.isGuest ? <Badge>Misafir</Badge> : <Badge tone="primary">Kayıtlı</Badge>}</dd>
                 <dt className="text-muted">Rol</dt>
-                <dd className="text-fg">{user.role === "ADMIN" ? "Yönetici" : "Kullanıcı"}</dd>
+                <dd className="text-fg">{user.role === "USER" ? "Kullanıcı" : `Yönetici (${user.role})`}</dd>
                 <dt className="text-muted">Durum</dt>
                 <dd>{user.status === "BANNED" ? <Badge tone="danger">Engelli</Badge> : <Badge tone="good">Aktif</Badge>}</dd>
                 <dt className="text-muted">Dil</dt>

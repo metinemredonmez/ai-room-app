@@ -391,3 +391,48 @@ Rakiplerde en sık şikâyet: "boyamak istedim, pencerelerimi de değiştirdi". 
 - Fotoğraflar 1280×960'a kırpılmış ve meta verisi silinmiştir; salon fotoğrafında görünen araç plakası bulanıklaştırılmıştır.
   Dosyalar backend ile birlikte gelir, çalışma sırasında indirilmez.
 
+### 7.11 Admin rolleri ve MFA kurtarma — #6 (backend)
+Roller hiyerarşiktir: `SUPPORT < EDITOR < ADMIN < SUPER_ADMIN`. Her admin ucu en düşük rolünü açıkça bildirir (`@MinRole`).
+Rol bildirmeyen uç **reddedilir** (AZ-01). Rol her istekte veritabanından okunur; düşürme ya da MFA sıfırlama bir sonraki istekte etkili olur.
+
+| Rol | Yetki |
+|---|---|
+| SUPPORT | İstatistik, kullanıcı/tasarım/stil/ayar okuma, ödeme olaylarını görme, içerik bildirimlerini sonuçlandırma |
+| EDITOR | + stil ekleme/düzenleme, tasarım öne çıkarma, bildirimde "öne çıkarmayı kaldır" |
+| ADMIN | + kullanıcı durum/plan/kredi, ayarları değiştirme, tasarım silme, AI maliyeti, denetim kaydı, işler/sistem, ödeme olayını yeniden deneme |
+| SUPER_ADMIN | + yönetici ekibi: rol verme/kaldırma, MFA sıfırlama; yönetici hesaplarında plan/kredi |
+
+- Yönetici hesapları yalnız `/admin/admins` üzerinden değişir. `PATCH /admin/users/:id` bir yöneticiyi askıya alamaz
+  ("önce rolünü kaldırın"). Plan/kredi değişikliği SUPER_ADMIN ister.
+- `GET /admin/admins` (SUPER_ADMIN): ekip, rol, MFA durumu, kalan yedek kod, son görülme.
+- `PATCH /admin/admins/:id { role: USER|SUPPORT|EDITOR|ADMIN|SUPER_ADMIN, reason }` (SUPER_ADMIN):
+  - Kendi rolünü değiştirmek 400 döner. Hedef e-postası doğrulanmış, aktif, kayıtlı bir hesap olmalıdır (misafir olamaz).
+  - Son SUPER_ADMIN düşürülemez (409). Kontrol **serializable** işlemde yapılır; iki SUPER_ADMIN aynı anda birbirini
+    düşürürse yalnız biri başarılı olur, diğeri 409 alır (eşzamanlılık testiyle doğrulandı).
+  - Rol değişince hedefin bütün oturumları kapanır (`tokenVersion`). USER'a düşen hesabın TOTP sırrı ve yedek kodları silinir.
+    TOTP'si olmayan yeni yönetici için 72 saatlik kayıt penceresi açılır (`mfaEnrollBefore`).
+- `POST /admin/admins/:id/mfa-reset { reason }` (SUPER_ADMIN, kendine uygulanamaz): TOTP + yedek kodlar silinir,
+  oturumlar kapanır ve 72 saatlik yeniden kayıt penceresi açılır.
+- Her rol ve MFA değişikliği denetim kaydına yazılır (`admin.role_change`, `admin.mfa_reset`, `admin.mfa_enrolled`,
+  `admin.backup_codes_regenerated`, `admin.login` + `factor`). Etkilenen yöneticiye e-posta gider (AUT-04: sessiz arka kapı yok).
+  E-postadaki bağlantı `ADMIN_APP_URL` adresidir (üretimde https zorunlu).
+
+**Giriş ve kayıt** (AUT-01: her giriş yolu MFA'yı tamamlamadan oturum vermez)
+- `POST /admin/auth/login { email, password, otp }` **veya** `{ email, password, backupCode }`; ikisi birlikte gönderilemez.
+  - Yedek kod yalnız parola doğruysa harcanır. Tek kullanımlıktır (atomik `usedAt`), büyük/küçük harf ve tire önemsizdir.
+  - Yanıtta `backupCodesRemaining` döner ve yöneticiye "yedek kodla giriş yapıldı" e-postası gider.
+  - Token `amr` değeri: TOTP ile `otp`, yedek kodla `mfa`.
+- Doğrulayıcısı olmayan, kayıt penceresi açık yönetici doğru parolayla 403 `mfa_enrollment_required` alır.
+  - `POST /admin/auth/mfa/enroll { email, password }` → `{ secret, otpauth }`.
+  - `POST /admin/auth/mfa/confirm { email, password, otp }` → oturum + **10 yedek kod**. Kodlar yalnız bu yanıtta gösterilir.
+  - Pencere dolarsa SUPER_ADMIN'in MFA sıfırlaması gerekir. Hız sınırı: IP başına saatte 10.
+- `GET /admin/me` (her rol): rol + `mfa { enrolled, backupCodesRemaining }`.
+- `POST /admin/me/backup-codes { otp }`: yeni 10 kod üretir, eskileri geçersiz olur. **Güncel ve kullanılmamış** bir TOTP kodu ister
+  (yeniden doğrulama); açık oturum tek başına yetmez.
+- Yedek kod biçimi `XXXXX-XXXXX`: 0/O/1/I/L/U yok, ~49 bit. Veritabanında yalnız `HMAC-SHA256(DEVICE_PEPPER, kod)` tutulur;
+  veritabanının bir kopyası tek başına çevrimdışı denemeye yetmez.
+- Geçiş: önceki `ADMIN` hesapları migrasyonla `SUPER_ADMIN` oldu; o zamana kadar her şeyi yapabiliyorlardı. Seed ilk hesabı
+  SUPER_ADMIN olarak ve 10 yedek kodla oluşturur. Kodlar `DATA_DIR/admin-credentials.txt` dosyasına yazılır (git'e girmez, izin 600).
+- Admin paneli ekranları (ekip yönetimi, yedek kod gösterimi, role göre menü) henüz yapılmadı; admin aşamasında tek tek ele alınacak.
+  Şimdilik panelde yalnız girişin her admin rolünü kabul etmesi uyumlu hâle getirildi.
+

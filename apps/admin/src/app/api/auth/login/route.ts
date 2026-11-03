@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { apiBaseUrl, cookieOptions, PROFILE_COOKIE, SESSION_COOKIE } from "@/lib/server/config";
 import { errorResponse, isSameOrigin } from "@/lib/server/guards";
+import { ADMIN_ROLES, type AdminRole } from "@/lib/types";
 
 type LoginBody = { email?: unknown; password?: unknown; otp?: unknown };
 type BackendLogin = {
@@ -52,7 +53,8 @@ export async function POST(req: NextRequest) {
   }
 
   const data = (await res.json()) as BackendLogin;
-  if (!data?.accessToken || data.admin?.role !== "ADMIN") {
+  // Any admin role may sign in; the backend enforces what each role can do on every request.
+  if (!data?.accessToken || !ADMIN_ROLES.includes(data.admin?.role as AdminRole)) {
     return errorResponse(403, "forbidden", "Bu hesap yönetici paneline erişemez.");
   }
   const maxAge = Math.max(60, Math.min(Number(data.expiresIn) || 0, 12 * 60 * 60));

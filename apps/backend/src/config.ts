@@ -21,6 +21,8 @@ const Env = z.object({
   AI_SERVICE_URL: z.url().default('http://localhost:8001'),
   // MAIL-01: the only origin ever used in e-mailed links (never the request Host header).
   WEB_APP_URL: z.url().default('http://localhost:3000'),
+  // Admin panel origin, used in security notices e-mailed to admins.
+  ADMIN_APP_URL: z.url().default('http://localhost:3001'),
   MAIL_TRANSPORT: z.enum(['outbox', 'smtp']).default('outbox'),
   SMTP_URL: z.string().optional(),
   MAIL_FROM: z.string().default('AI Room <no-reply@airoom.local>'),
@@ -77,6 +79,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!cfg.PUBLIC_BASE_URL.startsWith('https://')) problems.push('PUBLIC_BASE_URL must use https');
     if (corsOrigins.includes('*')) problems.push('CORS_ORIGINS must not contain *');
     if (!cfg.WEB_APP_URL.startsWith('https://')) problems.push('WEB_APP_URL must use https');
+    if (!cfg.ADMIN_APP_URL.startsWith('https://')) problems.push('ADMIN_APP_URL must use https');
     if (cfg.MAIL_TRANSPORT !== 'smtp' || !cfg.SMTP_URL) problems.push('MAIL_TRANSPORT=smtp with SMTP_URL is required');
     if (cfg.PUSH_TRANSPORT !== 'expo') problems.push('PUSH_TRANSPORT=expo is required');
     if (cfg.REVENUECAT_API_KEY && !cfg.REVENUECAT_WEBHOOK_SECRET) problems.push('REVENUECAT_WEBHOOK_SECRET (HMAC signing) is required with RevenueCat');

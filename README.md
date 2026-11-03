@@ -139,12 +139,13 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 
 ```bash
 cd apps/ai-service && uv run pytest              # 42 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change, bölge kilidi, fal.ai
-cd apps/backend && npm test                      # 18 test: TOTP RFC 6238, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push
-node scripts/smoke.mjs                           # 78 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
+cd apps/backend && npm test                      # 23 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar
+node scripts/smoke.mjs                           # 91 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 
 Uçtan uca smoke testi şunları kapsar:
 - Kullanıcı akışı: misafir giriş, katalog, örnek yükleme, üretim, kota, PRO kilidi, analiz, sohbet.
+- Admin rolleri ve MFA kurtarma: SUPPORT yetki sınırları, kendine yetki verme, yedek kodla tek seferlik giriş, MFA sıfırlama, denetim kaydı.
 - Kuyruk + push: asenkron tasarım, "Tasarımın hazır" bildirimi, token taşıma, KVKK dışa aktarımında cihazlar.
 - Görsel güvenliği: imzalı URL'yi değiştirme ve görsel olmayan dosya reddi (FIL).
 - Yetkilendirme ve oturum: başka kullanıcının kaydına erişim (AZ-01) ve refresh token yeniden kullanımı (SES-05).

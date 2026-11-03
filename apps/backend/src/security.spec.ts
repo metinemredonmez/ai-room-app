@@ -6,7 +6,13 @@ import path from 'node:path';
 import { LocalStore } from './images/object-store.js';
 import { PUSH_TOKEN_RE, PushService, maskToken } from './push/push.service.js';
 import { BillingService } from './billing/billing.service.js';
-import { base32Decode, base32Encode, totpAt, verifyTotp } from './auth/crypto.js';
+import { base32Decode, base32Encode, hashBackupCode, newBackupCode, normalizeBackupCode, totpAt, verifyTotp } from './auth/crypto.js';
+import { Reflector } from '@nestjs/core';
+import { PATH_METADATA } from '@nestjs/common/constants.js';
+import { AdminController } from './admin/admin.controller.js';
+import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
+import { MIN_ROLE, MinRole, atLeast, isAdminRole } from './admin/roles.js';
+import { AdminGuard } from './auth/tokens.service.js';
 import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { loadConfig, type Config } from './config.js';
@@ -96,7 +102,8 @@ describe('configuration (KEY-01)', () => {
     expect(() =>
       loadConfig({ ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', IMAGE_URL_SECRET: base.JWT_SECRET }),
     ).toThrow(/distinct/);
-    const prod = { ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com' };
+    const prod = { ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com', ADMIN_APP_URL: 'https://admin.airoom.example.com' };
+    expect(() => loadConfig({ ...prod, ADMIN_APP_URL: 'http://admin.airoom.example.com' })).toThrow(/ADMIN_APP_URL/);
     expect(() => loadConfig(prod)).toThrow(/SMTP/);
     const mail = { MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com' };
     expect(() => loadConfig({ ...prod, ...mail })).toThrow(/PUSH_TRANSPORT/);
@@ -197,3 +204,63 @@ describe('push notifications (LOG-02 / AZ-01)', () => {
     expect(deleted).toEqual([{ where: { token: { in: ['ExponentPushToken[bbbbbbbbbbbb]'] } } }]);
   });
 });
+
+describe('admin recovery codes (AUT-04)', () => {
+  it('are unambiguous, normalise loosely and hash with the pepper', () => {
+    const code = newBackupCode();
+    expect(code).toMatch(/^[A-HJKMNP-TV-Z2-9]{5}-[A-HJKMNP-TV-Z2-9]{5}$/);
+    expect(normalizeBackupCode(` ${code.toLowerCase().replace('-', ' - ')} `)).toBe(code.replace('-', ''));
+    for (const bad of ['', 'ABCDE-FGHI', 'ABCDE-FGHIO', '0000000000', 'ABCDE-FGHIJK', "ABCDE'; --"]) expect(normalizeBackupCode(bad)).toBeNull();
+    const n = normalizeBackupCode(code)!;
+    expect(hashBackupCode('pepper-a', n)).not.toBe(hashBackupCode('pepper-b', n));
+    expect(new Set(Array.from({ length: 200 }, newBackupCode)).size).toBe(200);
+  });
+});
+
+describe('admin roles (AZ-01 / AZ-05)', () => {
+  it('orders roles and never treats USER as admin', () => {
+    expect(isAdminRole('USER')).toBe(false);
+    expect(atLeast('SUPER_ADMIN', 'ADMIN')).toBe(true);
+    expect(atLeast('SUPPORT', 'EDITOR')).toBe(false);
+    expect(atLeast('USER', 'SUPPORT')).toBe(false);
+  });
+
+  it('every admin route declares its least role', () => {
+    const reflector = new Reflector();
+    const missing: string[] = [];
+    for (const ctrl of [AdminController, AdminSelfController, AdminsController]) {
+      for (const name of Object.getOwnPropertyNames(ctrl.prototype)) {
+        const handler = (ctrl.prototype as unknown as Record<string, unknown>)[name];
+        if (name === 'constructor' || typeof handler !== 'function' || Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;
+        if (!reflector.getAllAndOverride(MIN_ROLE, [handler, ctrl])) missing.push(`${ctrl.name}.${name}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN') => {
+    class Probe {
+      handler() {}
+    }
+    if (declared) MinRole(declared)(Probe.prototype, 'handler', Object.getOwnPropertyDescriptor(Probe.prototype, 'handler')!);
+    const req = { headers: { authorization: 'Bearer t' }, path: '/v1/admin/x' } as unknown as Request & { auth?: { role: string } };
+    const tokens = { verify: async () => ({ sub: 'u1', ver: 1, typ: 'access', amr: ['pwd', 'otp'] }) };
+    const prisma = { user: { findUnique: async () => ({ id: 'u1', role, status: 'ACTIVE', tokenVersion: 1 }) } };
+    const guard = new AdminGuard(tokens as never, prisma as never, new Reflector());
+    const ctx = { switchToHttp: () => ({ getRequest: () => req }), getHandler: () => Probe.prototype.handler, getClass: () => Probe };
+    return { run: () => guard.canActivate(ctx as never), req };
+  };
+
+  it('re-checks the role from the database on each request', async () => {
+    await expect(guardFor('SUPPORT', 'ADMIN').run()).rejects.toMatchObject({ status: 403 });
+    await expect(guardFor('USER', 'SUPPORT').run()).rejects.toMatchObject({ status: 403 });
+    const ok = guardFor('SUPER_ADMIN', 'ADMIN');
+    await expect(ok.run()).resolves.toBe(true);
+    expect(ok.req.auth?.role).toBe('SUPER_ADMIN');
+  });
+
+  it('denies a route that declares no role (fail closed)', async () => {
+    await expect(guardFor('SUPER_ADMIN').run()).rejects.toMatchObject({ status: 403 });
+  });
+});
+

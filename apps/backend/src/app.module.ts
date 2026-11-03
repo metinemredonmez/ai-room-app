@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AdminController } from './admin/admin.controller.js';
 import { AuditService } from './admin/audit.service.js';
+import { AdminSecurityService } from './admin/admin-security.service.js';
+import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
 import { AiClient } from './ai/ai.client.js';
 import { PublicController, UserController } from './app.controller.js';
 import { AdminAuthController, AuthController } from './auth/auth.controller.js';
@@ -25,7 +27,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, BillingController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -46,6 +48,7 @@ import { UsersService } from './users/users.service.js';
     AdminGuard,
     UsersService,
     AuditService,
+    AdminSecurityService,
     CatalogService,
     ImagesService,
     AiClient,

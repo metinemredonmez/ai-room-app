@@ -1,5 +1,5 @@
 import { hash, verify } from '@node-rs/argon2';
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 
 // Passwords: Argon2id with library defaults (m=19 MiB, t=2, p=1 — OWASP baseline).
 export const hashPassword = (password: string) => hash(password);
@@ -90,3 +90,26 @@ export function verifyTotp(secret: string, code: string, now = Date.now()): numb
 
 export const otpauthUri = (secret: string, account: string) =>
   `otpauth://totp/AI%20Room%20Admin:${encodeURIComponent(account)}?secret=${secret}&issuer=AI%20Room&algorithm=SHA1&digits=6&period=30`;
+
+// ----------------------------------------------------------------------- MFA recovery codes
+// AUT-04: single-use codes of 10 characters (~49 bits; no 0/O/1/I/L/U), shown once. Only an HMAC
+// with the server pepper is stored, so a copy of the database alone can't be brute-forced offline.
+
+const RECOVERY_ALPHABET = 'ABCDEFGHJKMNPQRSTVWXYZ23456789';
+export const BACKUP_CODE_COUNT = 10;
+
+export function newBackupCode(): string {
+  let s = '';
+  for (let i = 0; i < 10; i++) s += RECOVERY_ALPHABET[randomInt(RECOVERY_ALPHABET.length)];
+  return `${s.slice(0, 5)}-${s.slice(5)}`;
+}
+
+/** Uppercase, spaces/dashes dropped; null when the input can't be a code (rejected before hashing). */
+export function normalizeBackupCode(input: string): string | null {
+  const s = input.toUpperCase().replace(/[\s-]/g, '');
+  return /^[A-HJKMNP-TV-Z2-9]{10}$/.test(s) ? s : null;
+}
+
+export const hashBackupCode = (pepper: string, normalized: string) =>
+  createHmac('sha256', pepper).update(`admin-backup:${normalized}`).digest('hex');
+

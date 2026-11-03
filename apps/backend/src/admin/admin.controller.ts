@@ -16,6 +16,7 @@ import { ImagesService, isUuid } from '../images/images.service.js';
 import { PushService } from '../push/push.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AuditService } from './audit.service.js';
+import { MinRole, atLeast, isAdminRole } from './roles.js';
 import { BillingService } from '../billing/billing.service.js';
 import { JobsService } from '../jobs/jobs.service.js';
 import { SettingsService } from '../settings/settings.service.js';
@@ -50,7 +51,10 @@ const StyleInput = z
   })
   .strict();
 
-/** Every route here requires an MFA-complete admin token (AdminGuard), and every write is audited. */
+/**
+ * Every route here requires an MFA-complete admin token (AdminGuard) and declares its least role
+ * (@MinRole; undeclared → 403). Every write is audited.
+ */
 @ApiTags('admin')
 @ApiBearerAuth('admin')
 @Controller('v1/admin')
@@ -78,6 +82,7 @@ export class AdminController {
     return { ...this.users.toDto(u), status: u.status, designsCount, lastSeenAt: u.lastSeenAt?.toISOString() ?? null };
   }
 
+  @MinRole('SUPPORT')
   @Get('stats')
   @Doc('KPI ve günlük seriler', { errors: [401, 403] })
   async stats(@Query('days') daysRaw?: string) {
@@ -123,6 +128,7 @@ export class AdminController {
     };
   }
 
+  @MinRole('SUPPORT')
   @Get('users')
   @Doc('Kullanıcılar (arama, sayfalı)', { errors: [401, 403] })
   async listUsers(@Query() query: unknown) {
@@ -137,6 +143,7 @@ export class AdminController {
     return { items: await Promise.all(page.map((u) => this.adminUser(u))), nextCursor: rows.length > q.limit ? page[page.length - 1].id : null };
   }
 
+  @MinRole('SUPPORT')
   @Get('users/:id')
   @Doc('Kullanıcı detayı + son tasarımlar + kredi hareketleri', { errors: [401, 403, 404] })
   async getUser(@Param('id') id: string) {
@@ -159,6 +166,7 @@ export class AdminController {
     };
   }
 
+  @MinRole('ADMIN')
   @Patch('users/:id')
   @Doc('Durum / plan güncelle (ban → tüm oturumlar iptal)', { body: PatchUser, errors: [400, 401, 403, 404] })
   async patchUser(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -167,6 +175,9 @@ export class AdminController {
     const before = await this.prisma.user.findUnique({ where: { id } });
     if (!before) throw notFound();
     if (id === auth.userId && input.status === 'BANNED') throw new AppError(400, 'bad_request', 'Kendi hesabınızı askıya alamazsınız');
+    // AZ-05: admin accounts change only through /admin/admins (SUPER_ADMIN, last-SUPER_ADMIN guard).
+    if (isAdminRole(before.role) && input.status === 'BANNED') throw new AppError(400, 'bad_request', 'Yönetici hesabı askıya alınamaz; önce rolünü kaldırın');
+    if (isAdminRole(before.role) && !atLeast(auth.role, 'SUPER_ADMIN')) throw new AppError(403, 'forbidden', 'Yönetici hesaplarını yalnız SUPER_ADMIN değiştirebilir');
     const user = await this.prisma.user.update({
       where: { id },
       data: {
@@ -180,6 +191,7 @@ export class AdminController {
     return this.adminUser(await this.users.get(user.id));
   }
 
+  @MinRole('ADMIN')
   @Post('users/:id/credits')
   @Doc('Gerekçeli kredi ekle/çıkar', { body: Credits, status: 201, errors: [400, 401, 403, 404] })
   async credits(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -188,6 +200,7 @@ export class AdminController {
     const user = await this.prisma.$transaction(async (tx) => {
       const u = await tx.user.findUnique({ where: { id } });
       if (!u) throw notFound();
+      if (isAdminRole(u.role) && !atLeast(auth.role, 'SUPER_ADMIN')) throw new AppError(403, 'forbidden', 'Yönetici hesaplarını yalnız SUPER_ADMIN değiştirebilir');
       if (u.credits + input.delta < 0) throw new AppError(400, 'bad_request', 'Kredi negatif olamaz');
       await tx.creditLedger.create({ data: { userId: id, delta: input.delta, reason: `admin: ${input.reason}`, refId: auth.userId } });
       return tx.user.update({ where: { id }, data: { credits: { increment: input.delta } } });
@@ -196,6 +209,7 @@ export class AdminController {
     return this.adminUser(user);
   }
 
+  @MinRole('SUPPORT')
   @Get('designs')
   @Doc('Tasarım moderasyonu listesi', { errors: [401, 403] })
   async listDesigns(@Query() query: unknown) {
@@ -217,6 +231,7 @@ export class AdminController {
     };
   }
 
+  @MinRole('EDITOR')
   @Patch('designs/:id')
   @Doc('Öne çıkar / kaldır', { errors: [400, 401, 403, 404] })
   async patchDesign(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -230,6 +245,7 @@ export class AdminController {
     return this.designs.toDto(d);
   }
 
+  @MinRole('ADMIN')
   @Delete('designs/:id')
   @HttpCode(204)
   @Doc('Tasarımı sil (denetlenir)', { status: 204, errors: [401, 403, 404] })
@@ -252,12 +268,14 @@ export class AdminController {
     }));
   }
 
+  @MinRole('SUPPORT')
   @Get('styles')
   @Doc('Stil kataloğu (kullanım sayısıyla)', { errors: [401, 403] })
   async styles() {
     return this.styleDtos();
   }
 
+  @MinRole('EDITOR')
   @Post('styles')
   @Doc('Stil ekle', { body: StyleInput, status: 201, errors: [400, 401, 403, 409] })
   async createStyle(@Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -269,6 +287,7 @@ export class AdminController {
     return (await this.styleDtos()).find((s) => s.id === input.id);
   }
 
+  @MinRole('EDITOR')
   @Patch('styles/:id')
   @Doc('Stil güncelle', { body: StyleInput.omit({ id: true }).partial(), errors: [400, 401, 403, 404] })
   async patchStyle(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -280,6 +299,7 @@ export class AdminController {
     return (await this.styleDtos()).find((s) => s.id === id);
   }
 
+  @MinRole('ADMIN')
   @Get('audit')
   @Doc('Denetim kaydı', { errors: [401, 403] })
   async auditLog(@Query() query: unknown) {
@@ -298,6 +318,7 @@ export class AdminController {
     };
   }
 
+  @MinRole('SUPPORT')
   @Get('settings')
   @Doc('Çalışma zamanı ayarları (değerler + varsayılanlar)', { errors: [401, 403] })
   async getSettings() {
@@ -305,6 +326,7 @@ export class AdminController {
   }
 
   /** Every change needs a reason and lands in the audit log (palemi admin `reason` pattern). */
+  @MinRole('ADMIN')
   @Patch('settings')
   @Doc('Ayarları değiştir (gerekçe zorunlu, denetlenir)', { body: z.object({ values: SettingsSchema.partial(), reason: z.string().min(3).max(200) }), errors: [400, 401, 403] })
   async patchSettings(@Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -316,12 +338,14 @@ export class AdminController {
     return { values };
   }
 
+  @MinRole('ADMIN')
   @Get('ai/usage')
   @Doc('AI maliyet defteri ve bütçe durumu', { errors: [401, 403] })
   async aiUsage(@Query('days') daysRaw?: string) {
     return this.usage.stats(Math.min(90, Math.max(1, Number(daysRaw) || 30)));
   }
 
+  @MinRole('SUPPORT')
   @Get('reports')
   @Doc('İçerik bildirimleri', { errors: [401, 403] })
   async listReports(@Query() query: unknown) {
@@ -344,6 +368,7 @@ export class AdminController {
     };
   }
 
+  @MinRole('SUPPORT')
   @Patch('reports/:id')
   @Doc('Bildirimi sonuçlandır (isteğe bağlı: öne çıkarmayı kaldır / tasarımı sil)', { errors: [400, 401, 403, 404] })
   async resolveReport(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
@@ -357,6 +382,8 @@ export class AdminController {
       body,
     );
     if (!isUuid(id)) throw notFound();
+    if (input.unfeature && !atLeast(auth.role, 'EDITOR')) throw new AppError(403, 'forbidden', 'Öne çıkarmayı kaldırmak EDITOR yetkisi ister');
+    if (input.deleteDesign && !atLeast(auth.role, 'ADMIN')) throw new AppError(403, 'forbidden', 'Tasarım silmek ADMIN yetkisi ister');
     const report = await this.prisma.contentReport.findUnique({ where: { id } });
     if (!report) throw notFound();
     if (input.unfeature) await this.prisma.design.update({ where: { id: report.designId }, data: { featured: false } });
@@ -374,6 +401,7 @@ export class AdminController {
   }
 
   @Doc('Ödeme olayları (RevenueCat webhook kutusu)', { errors: [401, 403] })
+  @MinRole('SUPPORT')
   @Get('billing/events')
   async billingEvents(@Query() query: unknown) {
     const q = parse(z.object({ ...Page, status: z.enum(['queued', 'processed', 'unmatched', 'ignored', 'failed']).optional() }), query);
@@ -397,6 +425,7 @@ export class AdminController {
   }
 
   @Doc('Ödeme olayını yeniden işle (eşleşmeyen / başarısız)', { status: 201, errors: [401, 403, 404] })
+  @MinRole('ADMIN')
   @Post('billing/events/:id/retry')
   async retryBillingEvent(@Param('id') id: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const ev = await this.prisma.webhookEvent.findUnique({ where: { id } });
@@ -408,12 +437,14 @@ export class AdminController {
     return { id, status: after?.status };
   }
 
+  @MinRole('ADMIN')
   @Get('jobs')
   @Doc('Zamanlı işler ve kuyruk durumu', { errors: [401, 403] })
   async jobRuns(@Query('limit') limitRaw?: string) {
     return this.jobs.overview(Math.min(200, Math.max(1, Number(limitRaw) || 50)));
   }
 
+  @MinRole('ADMIN')
   @Get('system')
   @Doc('Sistem durumu (AI, DB, Redis)', { errors: [401, 403] })
   async system() {

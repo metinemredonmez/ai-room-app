@@ -8,8 +8,10 @@ import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js'
 import { LIMITS, PrismaService, RateLimiter } from '../common/infra.js';
 import { log } from '../common/log.js';
 import { AuditService } from '../admin/audit.service.js';
+import { AdminSecurityService } from '../admin/admin-security.service.js';
+import { isAdminRole } from '../admin/roles.js';
 import { UsersService } from '../users/users.service.js';
-import { hashPassword, sha256, verifyPassword, verifyTotp } from './crypto.js';
+import { hashPassword, newTotpSecret, otpauthUri, sha256, verifyPassword, verifyTotp } from './crypto.js';
 import { EmailTokensService } from './email-tokens.service.js';
 import { AUD_APP, TokensService, UserGuard } from './tokens.service.js';
 
@@ -25,7 +27,13 @@ const emailToken = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 const ForgotSchema = z.object({ email }).strict();
 const ResetSchema = z.object({ token: emailToken, password }).strict();
 const VerifySchema = z.object({ token: emailToken }).strict();
-const AdminLoginSchema = z.object({ email, password: z.string().min(1).max(128), otp: z.string().regex(/^\d{6}$/) }).strict();
+const otp = z.string().regex(/^\d{6}$/);
+const AdminLoginSchema = z
+  .object({ email, password: z.string().min(1).max(128), otp: otp.optional(), backupCode: z.string().min(10).max(16).optional() })
+  .strict()
+  .refine((v) => !!v.otp !== !!v.backupCode, { message: 'otp veya backupCode (yalnız biri)', path: ['otp'] });
+const AdminEnrollSchema = z.object({ email, password: z.string().min(1).max(128) }).strict();
+const AdminConfirmSchema = z.object({ email, password: z.string().min(1).max(128), otp }).strict();
 
 const INVALID = () => new AppError(401, 'unauthorized', 'E-posta veya şifre hatalı');
 
@@ -162,7 +170,7 @@ export class AuthController {
     await this.tokens.revokeAll(user.id);
     await this.prisma.emailToken.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
     if (user.email) await this.limiter.reset(LIMITS.loginAccount, sha256(user.email));
-    if (user.role === 'ADMIN') await this.audit.record(user.id, 'auth.password_reset', 'user', user.id, {}, req.clientIp);
+    if (isAdminRole(user.role)) await this.audit.record(user.id, 'auth.password_reset', 'user', user.id, {}, req.clientIp);
     log.info('password_reset_completed', { userId: user.id });
   }
 
@@ -201,31 +209,98 @@ export class AdminAuthController {
     private users: UsersService,
     private limiter: RateLimiter,
     private audit: AuditService,
+    private security: AdminSecurityService,
   ) {}
 
-  /** AUT-01: password + TOTP in one step; codes are single-use (step must advance). */
+  /**
+   * AUT-01: password + second factor in one step, for every admin role. The factor is a TOTP code
+   * (its time step must advance, so a code works once) or a single-use recovery code (AUT-04).
+   */
   @Post('login')
-  @Doc('Admin girişi: parola + TOTP (AUT-01); kod tekrar kullanılamaz', { body: AdminLoginSchema, status: 201, response: { type: 'object', properties: { accessToken: { type: 'string' }, expiresIn: { type: 'number' }, admin: { $ref: '#/components/schemas/User' } } }, errors: [400, 401, 429] })
+  @Doc('Admin girişi: parola + TOTP **veya** tek kullanımlık yedek kod (AUT-01/AUT-04)', { body: AdminLoginSchema, status: 201, description: 'Doğrulayıcısı kayıtlı olmayan, kayıt süresi açık bir yönetici doğru parolayla 403 `mfa_enrollment_required` alır → `/mfa/enroll`.', response: { type: 'object', properties: { accessToken: { type: 'string' }, expiresIn: { type: 'number' }, admin: { $ref: '#/components/schemas/User' }, backupCodesRemaining: { type: 'number' } } }, errors: [400, 401, 403, 429] })
   async login(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(AdminLoginSchema, body);
     await this.limiter.hit(LIMITS.adminLogin, req.clientIp);
     await this.limiter.hit(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
     const ok = await verifyPassword(user?.passwordHash, input.password);
-    const step = user?.totpSecret ? verifyTotp(user.totpSecret, input.otp) : null;
-    const fresh = step !== null && (user?.totpLastStep == null || BigInt(step) > user.totpLastStep);
-    if (!user || !ok || user.role !== 'ADMIN' || user.status !== 'ACTIVE' || !fresh) {
+    const fail = async () => {
       await this.audit.record(null, 'admin.login_failed', 'user', user?.id ?? null, { email: sha256(input.email).slice(0, 12) }, req.clientIp);
-      throw new AppError(401, 'unauthorized', 'Giriş bilgileri hatalı');
+      return new AppError(401, 'unauthorized', 'Giriş bilgileri hatalı');
+    };
+    if (!user || !ok || !isAdminRole(user.role) || user.status !== 'ACTIVE') throw await fail();
+    if (!user.totpSecret) {
+      // Password is right but no authenticator yet: only inside the enrollment window.
+      if (user.mfaEnrollBefore && user.mfaEnrollBefore > new Date()) {
+        throw new AppError(403, 'mfa_enrollment_required', 'Doğrulayıcı uygulamanı kaydetmen gerekiyor');
+      }
+      throw await fail();
     }
-    const claimed = await this.prisma.user.updateMany({
-      where: { id: user.id, OR: [{ totpLastStep: null }, { totpLastStep: { lt: BigInt(step!) } }] },
-      data: { totpLastStep: BigInt(step!), lastSeenAt: new Date() },
-    });
-    if (claimed.count !== 1) throw unauthorized('Kod zaten kullanıldı');
+    // Recovery codes are only spent after the password checked out.
+    const remaining = input.backupCode ? await this.security.consumeBackupCode(user.id, input.backupCode) : null;
+    const passed = input.backupCode ? remaining !== null : await this.security.claimTotp(user, input.otp!);
+    if (!passed) throw await fail();
     await this.limiter.reset(LIMITS.loginAccount, sha256(`admin:${input.email}`));
-    await this.audit.record(user.id, 'admin.login', 'user', user.id, {}, req.clientIp);
-    const tokens = await this.tokens.issueAdmin(user);
-    return { ...tokens, admin: this.users.toDto(user) };
+    await this.audit.record(user.id, 'admin.login', 'user', user.id, { factor: input.backupCode ? 'backup' : 'otp', ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) }, req.clientIp);
+    if (remaining !== null) {
+      log.warn('admin_backup_code_used', { userId: user.id, remaining });
+      this.security.notify(user, 'Yedek kodla giriş yapıldı', [
+        'AI Room yönetim hesabına tek kullanımlık bir yedek kodla giriş yapıldı.',
+        `Kalan yedek kod: ${remaining}. ${remaining <= 3 ? 'Panelden yeni kodlar oluşturmanı öneririz.' : ''}`.trim(),
+      ]);
+    }
+    const tokens = await this.tokens.issueAdmin(user, input.backupCode ? 'backup' : 'otp');
+    return { ...tokens, admin: this.users.toDto(user), ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) };
+  }
+
+  /** Step 1 for a promoted / MFA-reset admin: password → a fresh secret to add to the authenticator. */
+  @Post('mfa/enroll')
+  @Doc('Doğrulayıcı kaydı 1/2: parola → TOTP sırrı (yalnız 72 saatlik kayıt penceresinde)', { body: AdminEnrollSchema, status: 201, response: { type: 'object', properties: { secret: { type: 'string' }, otpauth: { type: 'string' } } }, errors: [400, 401, 429] })
+  async enroll(@Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(AdminEnrollSchema, body);
+    const user = await this.enrollable(input.email, input.password, req);
+    const secret = newTotpSecret();
+    await this.prisma.user.update({ where: { id: user.id }, data: { totpPendingSecret: secret } });
+    await this.audit.record(user.id, 'admin.mfa_enroll_started', 'user', user.id, {}, req.clientIp);
+    return { secret, otpauth: otpauthUri(secret, user.email!) };
+  }
+
+  /** Step 2: the first code proves the authenticator works; MFA is complete only now, so tokens come only now. */
+  @Post('mfa/confirm')
+  @Doc('Doğrulayıcı kaydı 2/2: ilk kod → oturum + 10 yedek kod (bir kez gösterilir)', { body: AdminConfirmSchema, status: 201, response: { type: 'object', properties: { accessToken: { type: 'string' }, expiresIn: { type: 'number' }, admin: { $ref: '#/components/schemas/User' }, backupCodes: { type: 'array', items: { type: 'string' } } } }, errors: [400, 401, 429] })
+  async confirm(@Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(AdminConfirmSchema, body);
+    const user = await this.enrollable(input.email, input.password, req);
+    const pending = user.totpPendingSecret;
+    const step = pending ? verifyTotp(pending, input.otp) : null;
+    const done = step === null ? { count: 0 } : await this.prisma.user.updateMany({
+      where: { id: user.id, totpPendingSecret: pending, totpSecret: null },
+      data: { totpSecret: pending, totpPendingSecret: null, totpLastStep: BigInt(step), mfaEnrollBefore: null, lastSeenAt: new Date() },
+    });
+    if (done.count !== 1) {
+      await this.audit.record(null, 'admin.mfa_enroll_failed', 'user', user.id, {}, req.clientIp);
+      throw new AppError(401, 'unauthorized', 'Kod hatalı ya da kayıt başlatılmadı');
+    }
+    const backupCodes = await this.security.regenerateBackupCodes(user.id);
+    await this.audit.record(user.id, 'admin.mfa_enrolled', 'user', user.id, {}, req.clientIp);
+    this.security.notify(user, 'Doğrulayıcı uygulaman kaydedildi', [
+      'AI Room yönetim hesabına yeni bir doğrulayıcı uygulama ve 10 yedek kod tanımlandı.',
+    ]);
+    const fresh = await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    return { ...(await this.tokens.issueAdmin(fresh)), admin: this.users.toDto(fresh), backupCodes };
+  }
+
+  /** Same checks for both enrollment steps; one generic error so nothing about the account leaks. */
+  private async enrollable(email: string, password: string, req: AppRequest) {
+    await this.limiter.hit(LIMITS.adminEnroll, req.clientIp);
+    await this.limiter.hit(LIMITS.loginAccount, sha256(`admin:${email}`));
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    const ok = await verifyPassword(user?.passwordHash, password);
+    const open = !!user && ok && isAdminRole(user.role) && user.status === 'ACTIVE' && !user.totpSecret && !!user.mfaEnrollBefore && user.mfaEnrollBefore > new Date();
+    if (!open) {
+      await this.audit.record(null, 'admin.mfa_enroll_failed', 'user', user?.id ?? null, { email: sha256(email).slice(0, 12) }, req.clientIp);
+      throw new AppError(401, 'unauthorized', 'Giriş bilgileri hatalı ya da kayıt süresi doldu');
+    }
+    return user;
   }
 }

@@ -11,9 +11,13 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Admin roles are hierarchical: SUPPORT < EDITOR < ADMIN < SUPER_ADMIN (src/admin/roles.ts).
 enum Role {
   USER
+  SUPPORT
+  EDITOR
   ADMIN
+  SUPER_ADMIN
 }
 
 enum Plan {
@@ -74,6 +78,8 @@ model User {
   locale        String     @default("tr")
   totpSecret    String?
   totpLastStep  BigInt?
+  totpPendingSecret String? // TOTP enrollment in progress (confirmed with a first code)
+  mfaEnrollBefore   DateTime? // set on promotion / MFA reset: enrollment window (AUT-04)
   tokenVersion  Int        @default(0) // bumped to revoke every access token (SES-04)
   lastSeenAt    DateTime?
   createdAt     DateTime   @default(now())
@@ -86,6 +92,7 @@ model User {
   subscriptions Subscription[]
   purchases     StorePurchase[]
   pushTokens    PushToken[]
+  backupCodes   AdminBackupCode[]
   images        Image[]
   designs       Design[]
   ledger        CreditLedger[]
@@ -354,6 +361,18 @@ model PushToken {
   createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Single-use admin MFA recovery codes; only an HMAC (DEVICE_PEPPER) of each code is stored.
+model AdminBackupCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

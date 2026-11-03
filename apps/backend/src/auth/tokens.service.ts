@@ -1,4 +1,5 @@
 import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { randomUUID } from 'node:crypto';
 import { jwtVerify, SignJWT } from 'jose';
 import { CONFIG, type Config } from '../config.js';
@@ -6,6 +7,8 @@ import { unauthorized, AppError } from '../common/errors.js';
 import type { AppRequest } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
 import type { User } from '../generated/prisma/client.js';
+import { MIN_ROLE, atLeast, isAdminRole, type AdminRole } from '../admin/roles.js';
+import { log } from '../common/log.js';
 import { randomToken, sha256 } from './crypto.js';
 
 // TOK-01 / TOK-02: HS256 only, fixed issuer, one audience per purpose, explicit token type.
@@ -63,8 +66,10 @@ export class TokensService {
     return { accessToken: await this.sign(user, AUD_APP, ACCESS_TTL_SEC), refreshToken, expiresIn: ACCESS_TTL_SEC };
   }
 
-  async issueAdmin(user: User) {
-    return { accessToken: await this.sign(user, AUD_ADMIN, ADMIN_TTL_SEC, ['pwd', 'otp']), expiresIn: ADMIN_TTL_SEC };
+  /** amr records the second factor: `otp` (TOTP) or `mfa` (single-use recovery code). */
+  async issueAdmin(user: User, factor: 'otp' | 'backup' = 'otp') {
+    const amr = ['pwd', factor === 'otp' ? 'otp' : 'mfa'];
+    return { accessToken: await this.sign(user, AUD_ADMIN, ADMIN_TTL_SEC, amr), expiresIn: ADMIN_TTL_SEC };
   }
 
   /** SES-05: single-use rotation; presenting a used token revokes the whole family. */
@@ -132,22 +137,30 @@ export class UserGuard implements CanActivate {
   }
 }
 
-/** AUT-01 / AZ-05: admin audience, MFA-complete token, ADMIN role re-checked on every request. */
+/**
+ * AUT-01 / AZ-05: admin audience, MFA-complete token, and the role re-read from the database on every
+ * request — a demotion or MFA reset takes effect on the very next call, not when the token expires.
+ */
 @Injectable()
 export class AdminGuard implements CanActivate {
-  constructor(private tokens: TokensService, private prisma: PrismaService) {}
+  constructor(private tokens: TokensService, private prisma: PrismaService, private reflector: Reflector) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<AppRequest>();
     const claims = await this.tokens.verify(bearer(req), AUD_ADMIN);
-    if (!claims.amr?.includes('otp')) throw unauthorized();
+    if (!claims.amr?.some((m) => m === 'otp' || m === 'mfa')) throw unauthorized();
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
       select: { id: true, role: true, status: true, tokenVersion: true },
     });
     if (!user || user.tokenVersion !== claims.ver || user.status !== 'ACTIVE') throw unauthorized();
-    if (user.role !== 'ADMIN') throw new AppError(403, 'forbidden', 'Yönetici yetkisi gerekli');
-    req.auth = { userId: user.id, role: 'ADMIN', isGuest: false, admin: true };
+    if (!isAdminRole(user.role)) throw new AppError(403, 'forbidden', 'Yönetici yetkisi gerekli');
+    const need = this.reflector.getAllAndOverride<AdminRole | undefined>(MIN_ROLE, [ctx.getHandler(), ctx.getClass()]);
+    if (!need || !atLeast(user.role, need)) {
+      log.warn('admin_forbidden', { userId: user.id, role: user.role, need: need ?? 'undeclared', path: req.path });
+      throw new AppError(403, 'forbidden', 'Bu işlem için yetkiniz yok');
+    }
+    req.auth = { userId: user.id, role: user.role, isGuest: false, admin: true };
     return true;
   }
 }

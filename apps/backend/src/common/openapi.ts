@@ -54,7 +54,7 @@ const iso = z.string().describe('ISO-8601');
 const ImageRef = z.object({ id: z.uuid(), url: z.url().describe('İmzalı, 24 saat geçerli'), width: z.number(), height: z.number() });
 const User = z.object({
   id: z.uuid(), email: z.string().nullable(), emailVerified: z.boolean(), name: z.string().nullable(),
-  role: z.enum(['USER', 'ADMIN']), isGuest: z.boolean(), plan: z.enum(['FREE', 'PRO']), planExpiresAt: iso.nullable(),
+  role: z.enum(['USER', 'SUPPORT', 'EDITOR', 'ADMIN', 'SUPER_ADMIN']), isGuest: z.boolean(), plan: z.enum(['FREE', 'PRO']), planExpiresAt: iso.nullable(),
   credits: z.number(), dailyFreeRemaining: z.number(), locale: z.enum(['tr', 'en']), createdAt: iso,
 });
 const Design = z.object({

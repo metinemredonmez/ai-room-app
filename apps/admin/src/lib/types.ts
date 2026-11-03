@@ -1,3 +1,6 @@
+export const ADMIN_ROLES = ["SUPPORT", "EDITOR", "ADMIN", "SUPER_ADMIN"] as const;
+export type AdminRole = (typeof ADMIN_ROLES)[number];
+
 // Mirrors docs/API.md §2 and §4 (camelCase backend contract).
 
 export type ToolId =
@@ -16,7 +19,7 @@ export type User = {
   id: string;
   email: string | null;
   name: string | null;
-  role: "USER" | "ADMIN";
+  role: "USER" | AdminRole;
   isGuest: boolean;
   plan: "FREE" | "PRO";
   planExpiresAt: string | null;

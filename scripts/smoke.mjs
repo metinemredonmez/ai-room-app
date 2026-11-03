@@ -312,10 +312,65 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
     ok(orphan.status === 200 && unmatched?.items?.length >= 1, 'event for an unknown app user lands in admin "unmatched" list');
   }
 }
+// #6 admin roles + MFA recovery (AZ-05, AUT-01, AUT-04). Admin login is limited to 5 / 15 min per IP,
+// so this block uses at most two more login calls.
+if (adminToken) {
+  const meAdmin = await call('GET', '/admin/me', { token: adminToken });
+  ok(meAdmin.status === 200 && meAdmin.json?.role === 'SUPER_ADMIN' && meAdmin.json.mfa?.enrolled === true, 'seed admin is SUPER_ADMIN with MFA');
+  const selfRole = await call('PATCH', `/admin/admins/${meAdmin.json.id}`, { token: adminToken, body: { role: 'ADMIN', reason: 'smoke self change' } });
+  ok(selfRole.status === 400, 'SUPER_ADMIN cannot change own role (AZ-05)');
+  const guestPromote = await call('PATCH', `/admin/admins/${other.json.user.id}`, { token: adminToken, body: { role: 'SUPPORT', reason: 'smoke guest promote' } });
+  ok(guestPromote.status === 400, 'guest accounts cannot become admins');
+  const staffId = newPw.json.user.id;
+  const promote = await call('PATCH', `/admin/admins/${staffId}`, { token: adminToken, body: { role: 'SUPPORT', reason: 'smoke support agent' } });
+  ok(promote.status === 200 && promote.json?.role === 'SUPPORT' && promote.json.mfa?.enrolled === false && !!promote.json.mfa.enrollBefore, 'verified user promoted to SUPPORT with a 72 h enrollment window');
+  const roleMail = await lastMailTo(userEmail, 'rolün değişti');
+  ok(!!roleMail, 'promoted admin is notified by e-mail (AUT-04)');
+
+  const pw = 'second-password-456';
+  const enroll = await call('POST', '/admin/auth/mfa/enroll', { body: { email: userEmail, password: pw } });
+  ok(enroll.status === 201 && /^otpauth:\/\/totp\//.test(enroll.json?.otpauth ?? ''), 'promoted admin starts TOTP enrollment');
+  const badConfirm = await call('POST', '/admin/auth/mfa/confirm', { body: { email: userEmail, password: pw, otp: '000000' } });
+  const firstCode = totp(enroll.json.secret);
+  const confirm = await call('POST', '/admin/auth/mfa/confirm', { body: { email: userEmail, password: pw, otp: firstCode } });
+  ok(badConfirm.status === 401 && confirm.status === 201 && confirm.json?.backupCodes?.length === 10 && !!confirm.json.accessToken,
+    'enrollment needs a valid first code → session + 10 recovery codes');
+  const staffToken = confirm.json?.accessToken;
+
+  const sRead = await call('GET', '/admin/users?limit=1', { token: staffToken });
+  const sSettings = await call('PATCH', '/admin/settings', { token: staffToken, body: {} });
+  const sAdmins = await call('GET', '/admin/admins', { token: staffToken });
+  const sEscalate = await call('PATCH', `/admin/admins/${staffId}`, { token: staffToken, body: { role: 'SUPER_ADMIN', reason: 'self escalation' } });
+  ok(sRead.status === 200 && sSettings.status === 403 && sAdmins.status === 403 && sEscalate.status === 403,
+    'SUPPORT reads, but cannot change settings, list admins or escalate itself (AZ-01/AZ-05)', `${sRead.status}/${sSettings.status}/${sAdmins.status}/${sEscalate.status}`);
+
+  const recovery = confirm.json.backupCodes[0];
+  const bLogin = await call('POST', '/admin/auth/login', { body: { email: userEmail, password: pw, backupCode: recovery.toLowerCase() } });
+  const bReuse = await call('POST', '/admin/auth/login', { body: { email: userEmail, password: pw, backupCode: recovery } });
+  ok(bLogin.status === 201 && bLogin.json?.backupCodesRemaining === 9 && bReuse.status === 401, 'recovery code signs in once, then is spent (AUT-04)', `${bLogin.status}/${bReuse.status}`);
+
+  const replayStepUp = await call('POST', '/admin/me/backup-codes', { token: bLogin.json?.accessToken, body: { otp: firstCode } });
+  const step = Math.floor(Date.now() / 30000);
+  while (Math.floor(Date.now() / 30000) === step) await new Promise((r) => setTimeout(r, 250)); // next TOTP window (≤ 30 s)
+  const regen = await call('POST', '/admin/me/backup-codes', { token: bLogin.json?.accessToken, body: { otp: totp(enroll.json.secret) } });
+  const staffMe = await call('GET', '/admin/me', { token: bLogin.json?.accessToken });
+  ok(replayStepUp.status === 401 && regen.status === 201 && regen.json?.backupCodes?.length === 10 && staffMe.json?.mfa?.backupCodesRemaining === 10,
+    'regenerating recovery codes needs a fresh TOTP code (step-up)');
+
+  const mfaReset = await call('POST', `/admin/admins/${staffId}/mfa-reset`, { token: adminToken, body: { reason: 'smoke lost phone' } });
+  const afterReset = await call('GET', '/admin/me', { token: bLogin.json?.accessToken });
+  ok(mfaReset.status === 201 && mfaReset.json?.mfa?.enrolled === false && afterReset.status === 401, 'SUPER_ADMIN MFA reset ends the admin\'s sessions');
+  const demote = await call('PATCH', `/admin/admins/${staffId}`, { token: adminToken, body: { role: 'USER', reason: 'smoke cleanup' } });
+  ok(demote.status === 200 && demote.json?.role === 'USER', 'admin role removed (back to USER)');
+  const roleAudit = await call('GET', '/admin/audit?limit=30', { token: adminToken });
+  const actions = new Set((roleAudit.json?.items ?? []).map((a) => a.action));
+  ok(['admin.role_change', 'admin.mfa_reset', 'admin.mfa_enrolled'].every((a) => actions.has(a)), 'role and MFA changes are audited (LOG-01)');
+}
+
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });
