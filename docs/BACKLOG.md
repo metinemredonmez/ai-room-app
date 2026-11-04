@@ -18,9 +18,13 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
 - Gemini ile maske denendi (4 Kasım, `gemini-3.8-flash`, örnek salon): nesneyi ve kutusunu doğru buluyor ama piksel
   maskesi yok, çokgen maske kayık ya da tamamen yanlış (koltuğa dokununca duvarı seçti). Bölge kilidi için **kullanılamaz**;
   `gemini-2.5-flash` yeni hesaplara kapalı.
-- [ ] Kendi segmentasyon motorumuz (fal.ai’ye yedek, veri bizde kalır): SAM 2.1 (Apache 2.0, nokta istemi doğal) ONNX ile.
-  hazal 2 çekirdek / 5 GB paylaşımlı: fotoğraf başına bir kez kodlayıcı (birkaç sn, CPU dolu), sonraki dokunuşlar anlık.
-  Daha iyisi Kaptan GPU’su (palemi’deki gibi). Model dosyası indirilmeden önce onay alınır.
+- [ ] Kendi segmentasyon motorumuz (fal.ai’ye yedek, veri bizde kalır). Karar: ikisi birden — fal.ai SAM 3 birincil, bu yedek.
+  Adaylar, önce denenecek:
+  - Google MediaPipe Interactive Segmenter: dokunulan noktadan maske, ücretsiz, hafif (hazal’ı yormaz; tarayıcı/telefonda da çalışır).
+  - SAM 2.1 (Apache 2.0) ONNX: daha keskin ama hazal’da (2 çekirdek / 5 GB paylaşımlı) ilk dokunuşta birkaç sn CPU dolu;
+    daha iyisi Kaptan GPU’su.
+  - Vertex AI `image-segmentation-001`: servis hesabı ister, izin listesine bağlı görünüyor (Kasım 2026) — şimdilik değil.
+  Paket ve model dosyası indirilmeden önce onay alınır.
 - [ ] Nesneye komut: renk, kumaş/malzeme, stil, kaldır, başka ürünle değiştir (referans görsel), varyant karşılaştırma.
 - [ ] Kalite ölçümü: maske dışı fark ≈ 0 (bugünkü `masked_mean_abs_diff`), maske içi gerçekten değişmiş; değerlendirme setine nesne vakaları.
 
