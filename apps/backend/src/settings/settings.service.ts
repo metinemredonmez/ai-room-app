@@ -37,7 +37,13 @@ export const SettingsSchema = z
     appVersions: z.object({ ios: appVersion('apps.apple.com'), android: appVersion('play.google.com') }).strict(),
     // Toplu Gönderim: marketing pushes per user per 7 days, and the Istanbul quiet window for marketing.
     broadcast: z
-      .object({ weeklyMarketingCap: z.number().int().min(1).max(14), quietStart: z.string().regex(HHMM_RE), quietEnd: z.string().regex(HHMM_RE) })
+      .object({
+        weeklyMarketingCap: z.number().int().min(1).max(14),
+        quietStart: z.string().regex(HHMM_RE),
+        quietEnd: z.string().regex(HHMM_RE),
+        /** E-mails a day across all broadcasts: our own mail server is shared, its reputation must hold. */
+        emailDailyCap: z.number().int().min(1).max(10_000),
+      })
       .strict(),
   })
   .strict();
@@ -71,7 +77,7 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
         ios: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
         android: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
       },
-      broadcast: { weeklyMarketingCap: 2, quietStart: '21:00', quietEnd: '09:00' },
+      broadcast: { weeklyMarketingCap: 2, quietStart: '21:00', quietEnd: '09:00', emailDailyCap: 300 },
     };
     this.values = this.defaults;
   }

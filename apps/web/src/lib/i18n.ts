@@ -34,6 +34,14 @@ const tr = {
     loadMore: "Daha fazla",
     open: "Aç",
   },
+  unsubscribe: {
+    title: "Kampanya e-postaları",
+    text: "Casalume'un kampanya ve fırsat e-postalarını artık almak istemiyorsan aşağıdaki düğmeye bas. Hesabınla ilgili zorunlu bilgilendirmeler gelmeye devam eder.",
+    button: "Abonelikten çık",
+    done: "Tamam, artık kampanya e-postası almayacaksın. Fikrin değişirse uygulamadaki izinlerden yeniden açabilirsin.",
+    invalid: "Bu bağlantı geçersiz ya da eksik. E-postadaki bağlantıyı yeniden açmayı dene.",
+    home: "Ana sayfaya dön",
+  },
   errors: {
     insufficient_credits: "Bugünkü ücretsiz hakkın ve kredin bitti.",
     seePlans: "Planları gör",
@@ -372,6 +380,14 @@ const en: Dict = {
     favorites: "Favorites",
     loadMore: "Load more",
     open: "Open",
+  },
+  unsubscribe: {
+    title: "Campaign e-mails",
+    text: "Press the button below to stop receiving Casalume offers and campaign e-mails. Required messages about your account will still arrive.",
+    button: "Unsubscribe",
+    done: "Done, you won't receive campaign e-mails any more. You can turn them back on in the app's permissions.",
+    invalid: "This link is invalid or incomplete. Try opening the link in the e-mail again.",
+    home: "Back to home",
   },
   errors: {
     insufficient_credits: "You've used today's free designs and credits.",

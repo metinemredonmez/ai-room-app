@@ -354,7 +354,7 @@ if (adminToken) {
   const estMkt = await call('POST', '/admin/broadcasts/estimate', { ...A, body: { audience: svc.audience, kind: 'MARKETING' } });
   ok(est.status === 200 && est.json?.withDevice >= 1 && estMkt.json?.eligible <= estMkt.json?.withDevice, 'audience estimate (marketing counts consented users only)', `${est.json?.withDevice} / ${estMkt.json?.eligible}`);
   const bDraft = await call('POST', '/admin/broadcasts', { ...A, body: svc });
-  ok(bDraft.status === 201 && bDraft.json?.status === 'DRAFT', 'broadcast bDraft created', `status ${bDraft.status}`);
+  ok(bDraft.status === 201 && bDraft.json?.status === 'DRAFT', 'broadcast draft created', `status ${bDraft.status}`);
   const send1 = await call('POST', `/admin/broadcasts/${bDraft.json?.id}/send`, A);
   const send2 = await call('POST', `/admin/broadcasts/${bDraft.json?.id}/send`, A);
   ok(send1.status === 200 && ['SENDING', 'SENT'].includes(send1.json?.status) && send2.status === 409, 'a broadcast is claimed for sending once', `${send1.status} / ${send2.status}`);
@@ -377,6 +377,34 @@ if (adminToken) {
   ok(open1.status === 204 && open2.status === 204 && reportAfter.json?.counts?.opened === 1, 'opened is counted once per user', `opened ${reportAfter.json?.counts?.opened}`);
   const removed = await call('DELETE', `/admin/broadcasts/${bDraft.json?.id}`, A);
   ok(removed.status === 204, 'finished broadcast deleted (text kept in the audit log)', `status ${removed.status}`);
+
+  // E-mail channel (maeyja campaign pattern): verified addresses only, admin text escaped, signed unsubscribe.
+  const mailAudience = { emails: [userEmail] };
+  const mailEst = await call('POST', '/admin/broadcasts/estimate', { ...A, body: { audience: mailAudience, kind: 'SERVICE', channel: 'EMAIL' } });
+  ok(mailEst.status === 200 && mailEst.json?.withDevice === 1, 'e-mail audience counts the verified address', `${mailEst.json?.withDevice}`);
+  const mailB = await call('POST', '/admin/broadcasts', {
+    ...A, body: { title: 'Casalume haberleri', body: 'Merhaba\n\n<b>yeni</b> stiller geldi.', link: '/studio', kind: 'SERVICE', channel: 'EMAIL', audience: mailAudience },
+  });
+  await call('POST', `/admin/broadcasts/${mailB.json?.id}/send`, A);
+  let mailReport = null;
+  for (let i = 0; i < 40; i++) {
+    mailReport = await call('GET', `/admin/broadcasts/${mailB.json?.id}`, A);
+    if (mailReport.json?.status !== 'SENDING') break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  const bMail = await lastMailTo(userEmail, 'Casalume haberleri');
+  ok(mailReport?.json?.status === 'SENT' && bMail?.html.includes('&lt;b&gt;yeni&lt;/b&gt;') && bMail.html.includes('http://localhost:3000/studio') && !bMail.headers,
+    'e-mail broadcast delivered: text escaped, button to the web, no unsubscribe on service mail', mailReport?.json?.status);
+  const mTest = await call('POST', '/admin/broadcasts/test', { ...A, body: { title: 'Kampanya denemesi', body: 'Yeni koleksiyon geldi', kind: 'MARKETING', channel: 'EMAIL', email: userEmail } });
+  const tMail = await lastMailTo(userEmail, '[Test] Kampanya denemesi');
+  const unsubLink = tMail?.text.match(/https?:\/\/\S+\/abonelikten-cik\?\S+/)?.[0];
+  const unsubUrl = unsubLink ? new URL(unsubLink) : null;
+  const unsubOk = unsubUrl ? await call('POST', '/unsubscribe', { body: { r: unsubUrl.searchParams.get('r'), t: unsubUrl.searchParams.get('t') } }) : null;
+  ok(mTest.status === 200 && tMail?.headers?.['List-Unsubscribe-Post'] === 'List-Unsubscribe=One-Click' && unsubOk?.status === 200,
+    'marketing mail: signed unsubscribe link and one-click header work', `${mTest.status} / ${unsubOk?.status}`);
+  const forged = await call('POST', '/unsubscribe', { body: { r: 'test', t: 'forged-signature' } });
+  ok(forged.status === 400, 'forged unsubscribe link refused', `status ${forged.status}`);
+  await call('DELETE', `/admin/broadcasts/${mailB.json?.id}`, A);
 
   const texts = await call('GET', '/admin/legal', A);
   ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');

@@ -226,6 +226,7 @@ export type DataRequestDetail = DataRequest & {
 
 // --- Toplu Gönderim (API.md §7.16) ---
 export type BroadcastKind = "SERVICE" | "MARKETING";
+export type BroadcastChannel = "PUSH" | "EMAIL";
 export type BroadcastStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED" | "FAILED";
 export type BroadcastAudience = {
   plan?: "FREE" | "PRO";
@@ -244,6 +245,7 @@ export type Broadcast = {
   body: string;
   link: string | null;
   kind: BroadcastKind;
+  channel: BroadcastChannel;
   audience: BroadcastAudience;
   status: BroadcastStatus;
   scheduledAt: string | null;

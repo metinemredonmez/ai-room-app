@@ -1,23 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CONFIG, type Config } from '../config.js';
 import { AppError, notFound } from '../common/errors.js';
+import { todayInIstanbul } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
 import { log } from '../common/log.js';
 import type { Broadcast, DeliveryStatus, Prisma } from '../generated/prisma/client.js';
 import { isUuid } from '../images/images.service.js';
 import { QueuesService } from '../jobs/queues.service.js';
+import { ConsentsService } from '../kvkk/consents.service.js';
 import { LegalService } from '../kvkk/legal.service.js';
+import { MailerService } from '../mail/mailer.service.js';
 import { PushRetryableError, PushService, type PushMessage } from '../push/push.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import {
-  AudienceSchema, commercialSignals, inQuietHours, nextSendableTime,
+  AudienceSchema, PUSH_BODY_MAX, commercialSignals, inQuietHours, nextSendableTime,
   type Audience, type BroadcastInput, type Content,
 } from './broadcast.rules.js';
+import { TEST_DELIVERY, renderBroadcastMail, unsubscribeKey, unsubscribeSignature, verifyUnsubscribeSignature } from './broadcast.mail.js';
 
 const DAY = 86_400_000;
 const BATCH = 50; // users per send round; ≤ 10 devices each keeps one round within a few Expo requests
 const MAX_AUDIENCE = 100_000;
 const INSERT_CHUNK = 5_000;
 const KEEP_DELIVERIES_DAYS = 180;
+const EMAIL_INTERVAL_MS = 1_000; // one mail a second keeps the shared mail server's reputation safe
+
+type Channel = 'PUSH' | 'EMAIL';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -32,35 +40,47 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 @Injectable()
 export class BroadcastsService {
+  private unsubKey: Buffer;
+
   constructor(
     private prisma: PrismaService,
     private push: PushService,
+    private mailer: MailerService,
     private settings: SettingsService,
     private queues: QueuesService,
     private legal: LegalService,
-  ) {}
+    private consents: ConsentsService,
+    @Inject(CONFIG) private cfg: Config,
+  ) {
+    this.unsubKey = unsubscribeKey(cfg.JWT_SECRET);
+  }
 
   // --- content and audience ---
 
-  precheck(content: Pick<Content, 'title' | 'body' | 'link' | 'kind'>) {
+  precheck(content: Pick<Content, 'title' | 'body' | 'link' | 'kind'> & { channel?: Channel }) {
     const signals = commercialSignals(content);
     return { signals, blocked: content.kind === 'SERVICE' && signals.length > 0 };
   }
 
-  private assertContent(content: Pick<Content, 'title' | 'body' | 'link' | 'kind'>) {
+  private assertContent(content: Pick<Content, 'title' | 'body' | 'link' | 'kind'> & { channel?: Channel }) {
+    if (content.channel !== 'EMAIL' && content.body.length > PUSH_BODY_MAX) {
+      throw new AppError(400, 'validation_failed', `Bildirim metni en çok ${PUSH_BODY_MAX} karakter olabilir`);
+    }
     const check = this.precheck(content);
     if (check.blocked) {
       throw new AppError(422, 'looks_commercial', `Bu metin ticari ileti gibi görünüyor (${check.signals.join(', ')}); türünü "Kampanya" seç`);
     }
   }
 
-  private where(a: Audience, now = new Date()): Prisma.UserWhereInput {
+  private where(a: Audience, channel: Channel, now = new Date()): Prisma.UserWhereInput {
     const pro: Prisma.UserWhereInput = {
       OR: [{ plan: 'PRO', OR: [{ planExpiresAt: null }, { planExpiresAt: { gt: now } }] }, { storeProUntil: { gt: now } }],
     };
     const and: Prisma.UserWhereInput[] = [
       { status: 'ACTIVE', role: 'USER' },
-      { pushTokens: { some: a.platform ? { platform: a.platform } : {} } },
+      channel === 'EMAIL'
+        ? { isGuest: false, email: { not: null }, emailVerifiedAt: { not: null } }
+        : { pushTokens: { some: a.platform ? { platform: a.platform } : {} } },
     ];
     if (a.plan === 'PRO') and.push(pro);
     if (a.plan === 'FREE') and.push({ NOT: pro });
@@ -107,9 +127,9 @@ export class BroadcastsService {
     return new Map(rows.map((r) => [r.userId, r._count._all]));
   }
 
-  async estimate(audienceIn: unknown, kind: 'SERVICE' | 'MARKETING') {
+  async estimate(audienceIn: unknown, kind: 'SERVICE' | 'MARKETING', channel: Channel = 'PUSH') {
     const audience = AudienceSchema.parse(audienceIn);
-    const where = this.where(audience);
+    const where = this.where(audience, channel);
     const withDevice = await this.prisma.user.count({ where });
     if (kind === 'SERVICE') return { withDevice, eligible: withDevice };
     const ids = (await this.prisma.user.findMany({ where, select: { id: true }, take: MAX_AUDIENCE })).map((u) => u.id);
@@ -122,7 +142,7 @@ export class BroadcastsService {
     this.assertContent(input);
     const b = await this.prisma.broadcast.create({
       data: {
-        title: input.title, body: input.body, link: input.link ?? null, kind: input.kind,
+        title: input.title, body: input.body, link: input.link ?? null, kind: input.kind, channel: input.channel,
         audience: input.audience as Prisma.InputJsonValue, createdById: actorId,
       },
     });
@@ -133,7 +153,7 @@ export class BroadcastsService {
     this.assertContent(input);
     const changed = await this.prisma.broadcast.updateMany({
       where: { id: this.uuid(id), status: { in: ['DRAFT', 'SCHEDULED'] } },
-      data: { title: input.title, body: input.body, link: input.link ?? null, kind: input.kind, audience: input.audience as Prisma.InputJsonValue },
+      data: { title: input.title, body: input.body, link: input.link ?? null, kind: input.kind, channel: input.channel, audience: input.audience as Prisma.InputJsonValue },
     });
     if (changed.count !== 1) throw await this.notEditable(id);
     return this.toDto(await this.get(id));
@@ -231,14 +251,15 @@ export class BroadcastsService {
     if (claimed.count !== 1) throw await this.notEditable(id);
     try {
       const audience = AudienceSchema.parse(b.audience);
-      let ids = (await this.prisma.user.findMany({ where: this.where(audience), select: { id: true }, take: MAX_AUDIENCE + 1 })).map((u) => u.id);
+      let ids = (await this.prisma.user.findMany({ where: this.where(audience, b.channel), select: { id: true }, take: MAX_AUDIENCE + 1 })).map((u) => u.id);
       if (ids.length > MAX_AUDIENCE) throw new AppError(422, 'audience_too_large', `Kitle ${MAX_AUDIENCE} kişiyi aşıyor; daralt`);
       if (b.kind === 'MARKETING') {
         const consented = await this.withMarketingConsent(ids);
         ids = ids.filter((u) => consented.has(u));
       }
       if (!ids.length) {
-        await this.finish(b.id, 'FAILED', b.kind === 'MARKETING' ? 'Kitlede pazarlama izni veren ve cihazı kayıtlı kullanıcı yok' : 'Kitlede cihazı kayıtlı kullanıcı yok');
+        const reach = b.channel === 'EMAIL' ? 'e-postası doğrulanmış' : 'cihazı kayıtlı';
+        await this.finish(b.id, 'FAILED', b.kind === 'MARKETING' ? `Kitlede pazarlama izni veren ve ${reach} kullanıcı yok` : `Kitlede ${reach} kullanıcı yok`);
         return this.toDto(await this.get(id));
       }
       for (let i = 0; i < ids.length; i += INSERT_CHUNK) {
@@ -274,7 +295,12 @@ export class BroadcastsService {
       if (!batch.length) break;
       await this.prisma.broadcastDelivery.updateMany({ where: { id: { in: batch.map((d) => d.id) }, status: 'PENDING' }, data: { status: 'SENDING' } });
       try {
-        await this.sendRound(b, batch);
+        if (b.channel === 'EMAIL') {
+          const paused = await this.emailRound(b, batch);
+          if (paused) return { paused: 'email_daily_cap' };
+        } else {
+          await this.sendRound(b, batch);
+        }
       } catch (e) {
         // Expo is rate limiting or down: give the round back and let BullMQ retry with backoff.
         if (e instanceof PushRetryableError) {
@@ -288,6 +314,84 @@ export class BroadcastsService {
     return this.complete(broadcastId);
   }
 
+  /** Who may receive this marketing round, as skip reasons; SERVICE rounds skip nobody here. */
+  private async marketingGate(b: Broadcast, userIds: string[]) {
+    if (b.kind !== 'MARKETING') return () => null;
+    const consented = await this.withMarketingConsent(userIds);
+    const thisWeek = await this.marketingThisWeek(userIds, b.id);
+    const cap = this.settings.current.broadcast.weeklyMarketingCap;
+    return (userId: string) => (!consented.has(userId) ? 'consent_missing' : (thisWeek.get(userId) ?? 0) >= cap ? 'weekly_cap' : null);
+  }
+
+  private async emailSentToday() {
+    return this.prisma.broadcastDelivery.count({
+      where: { status: 'SENT', broadcast: { channel: 'EMAIL' }, sentAt: { gte: new Date(`${todayInIstanbul()}T00:00:00+03:00`) } },
+    });
+  }
+
+  /**
+   * E-mail round: one message a second through our own mail server, never more than `emailDailyCap` a day across
+   * all broadcasts. Returns true when the daily cap stopped the round (the rows go back to PENDING and the
+   * every-minute scheduler resumes the send once the day turns).
+   */
+  private async emailRound(b: Broadcast, batch: Array<{ id: string; userId: string }>): Promise<boolean> {
+    const left = this.settings.current.broadcast.emailDailyCap - (await this.emailSentToday());
+    const now = batch.slice(0, Math.max(0, left));
+    const later = batch.slice(now.length).map((d) => d.id);
+    if (later.length) await this.prisma.broadcastDelivery.updateMany({ where: { id: { in: later }, status: 'SENDING' }, data: { status: 'PENDING' } });
+    if (!now.length) return true;
+    const users = new Map(
+      (await this.prisma.user.findMany({
+        where: { id: { in: now.map((d) => d.userId) } },
+        select: { id: true, status: true, email: true, emailVerifiedAt: true, locale: true },
+      })).map((u) => [u.id, u]),
+    );
+    const gate = await this.marketingGate(b, now.map((d) => d.userId));
+    for (const d of now) {
+      const u = users.get(d.userId);
+      const reason = !u || u.status !== 'ACTIVE' ? 'inactive' : !u.email || !u.emailVerifiedAt ? 'no_email' : gate(u.id);
+      if (reason) {
+        await this.prisma.broadcastDelivery.update({ where: { id: d.id }, data: { status: 'SKIPPED', reason } });
+        continue;
+      }
+      try {
+        await this.mailer.send(this.mailFor(b, { email: u!.email!, locale: u!.locale }, d.id));
+        await this.prisma.broadcastDelivery.update({ where: { id: d.id }, data: { status: 'SENT', devices: 1, sentAt: new Date() } });
+      } catch (e) {
+        log.warn('broadcast_mail_failed', { broadcastId: b.id, error: (e as Error).name });
+        await this.prisma.broadcastDelivery.update({ where: { id: d.id }, data: { status: 'FAILED', reason: 'provider_error' } });
+      }
+      await sleep(EMAIL_INTERVAL_MS);
+    }
+    return later.length > 0;
+  }
+
+  private mailFor(b: Pick<Broadcast, 'kind' | 'title' | 'body' | 'link'>, to: { email: string; locale: string }, deliveryId: string) {
+    const sig = unsubscribeSignature(deliveryId, this.unsubKey);
+    const q = `r=${encodeURIComponent(deliveryId)}&t=${encodeURIComponent(sig)}`;
+    const marketing = b.kind === 'MARKETING';
+    return renderBroadcastMail({
+      to: to.email, locale: to.locale, kind: b.kind, subject: b.title, body: b.body,
+      ctaUrl: b.link ? `${this.cfg.WEB_APP_URL}${b.link}` : null,
+      unsubscribeUrl: marketing ? `${this.cfg.WEB_APP_URL}/abonelikten-cik?${q}` : null,
+      oneClickUrl: marketing ? `${this.cfg.PUBLIC_BASE_URL}/v1/unsubscribe/one-click?${q}` : null,
+      sender: { name: this.cfg.LEGAL_CONTROLLER_NAME, address: this.cfg.LEGAL_CONTROLLER_ADDRESS, email: this.cfg.LEGAL_CONTACT_EMAIL },
+    });
+  }
+
+  /** Link in a marketing e-mail (web page or RFC 8058 one-click): withdraws the user's marketing consent. */
+  async unsubscribe(deliveryId: string, signature: string, ip?: string) {
+    if (typeof deliveryId !== 'string' || typeof signature !== 'string' || !verifyUnsubscribeSignature(deliveryId, signature, this.unsubKey)) {
+      throw new AppError(400, 'invalid_link', 'Bağlantı geçersiz');
+    }
+    if (deliveryId === TEST_DELIVERY) return { ok: true };
+    const d = isUuid(deliveryId) ? await this.prisma.broadcastDelivery.findUnique({ where: { id: deliveryId }, select: { userId: true } }) : null;
+    // The delivery row may be gone (180-day purge, account deleted): the link still answers "done".
+    if (d) await this.consents.record(d.userId, 'marketing', this.legal.versionOf('marketing').version, false, ip);
+    log.info('broadcast_unsubscribe', { found: Boolean(d) });
+    return { ok: true };
+  }
+
   private async sendRound(b: Broadcast, batch: Array<{ id: string; userId: string }>) {
     const audience = AudienceSchema.parse(b.audience);
     const userIds = batch.map((d) => d.userId);
@@ -297,10 +401,7 @@ export class BroadcastsService {
         select: { id: true, status: true, pushTokens: { select: { token: true, platform: true } } },
       })).map((u) => [u.id, u]),
     );
-    const marketing = b.kind === 'MARKETING';
-    const consented = marketing ? await this.withMarketingConsent(userIds) : null;
-    const thisWeek = marketing ? await this.marketingThisWeek(userIds, b.id) : null;
-    const cap = this.settings.current.broadcast.weeklyMarketingCap;
+    const gate = await this.marketingGate(b, userIds);
 
     const skipped = new Map<string, string>(); // delivery id → reason
     const tokensOf = new Map<string, string[]>(); // delivery id → tokens
@@ -311,8 +412,7 @@ export class BroadcastsService {
       const tokens = (u?.pushTokens ?? []).filter((t) => !audience.platform || t.platform === audience.platform).map((t) => t.token);
       if (!u || u.status !== 'ACTIVE') skipped.set(d.id, 'inactive');
       else if (!tokens.length) skipped.set(d.id, 'no_device');
-      else if (consented && !consented.has(u.id)) skipped.set(d.id, 'consent_missing');
-      else if (thisWeek && (thisWeek.get(u.id) ?? 0) >= cap) skipped.set(d.id, 'weekly_cap');
+      else if (gate(u.id)) skipped.set(d.id, gate(u.id)!);
       else {
         tokensOf.set(d.id, tokens);
         for (const to of tokens) messages.push({ to, title: b.title, body: b.body, data, sound: 'default', priority: 'high', channelId: 'news' });
@@ -412,9 +512,13 @@ export class BroadcastsService {
     this.assertContent(content);
     const user = await this.prisma.user.findFirst({
       where: { email: email.trim().toLowerCase(), status: 'ACTIVE' },
-      select: { id: true, pushTokens: { select: { token: true } } },
+      select: { id: true, email: true, locale: true, pushTokens: { select: { token: true } } },
     });
     if (!user) throw new AppError(404, 'not_found', 'Bu e-postayla bir uygulama hesabı yok');
+    if (content.channel === 'EMAIL') {
+      await this.mailer.send(this.mailFor({ ...content, title: `[Test] ${content.title}`, link: content.link ?? null }, { email: user.email!, locale: user.locale }, TEST_DELIVERY));
+      return { userId: user.id, devices: 1, accepted: 1 };
+    }
     if (!user.pushTokens.length) throw new AppError(422, 'no_device', 'Bu hesapta bildirim izni verilmiş bir cihaz yok');
     const data: Record<string, string> = { type: 'broadcast', test: '1', ...(content.link ? { url: `casalume:/${content.link}`, path: content.link } : {}) };
     const messages: PushMessage[] = user.pushTokens.map(({ token }) => ({
@@ -450,7 +554,7 @@ export class BroadcastsService {
 
   toDto(b: Broadcast, createdBy: string | null = null) {
     return {
-      id: b.id, title: b.title, body: b.body, link: b.link, kind: b.kind, audience: b.audience, status: b.status,
+      id: b.id, title: b.title, body: b.body, link: b.link, kind: b.kind, channel: b.channel, audience: b.audience, status: b.status,
       scheduledAt: b.scheduledAt?.toISOString() ?? null, startedAt: b.startedAt?.toISOString() ?? null,
       finishedAt: b.finishedAt?.toISOString() ?? null,
       counts: { target: b.targetCount, sent: b.sentCount, skipped: b.skippedCount, failed: b.failedCount, opened: b.openedCount },

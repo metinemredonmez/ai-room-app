@@ -667,3 +667,22 @@ fal-app'teki toplu gönderim modülünün Casalume'a uyarlanmış hali; gönderi
 | GET | `/admin/broadcasts/:id` | — | Sayaçlar, durum/neden dağılımı, son 50 alıcı |
 | POST | `/admin/broadcasts/test` | `{ title, body, link?, kind, email }` | Yalnız o hesabın cihazlarına "[Test]" önekiyle; rapora yazılmaz. 10 dakikada 20 |
 | POST | `/broadcasts/:id/opened` | — (kullanıcı oturumu) | 204; mobil uygulama bildirime dokunulunca çağırır, kişi başına bir kez sayılır |
+
+#### 7.16.1 E-posta kanalı (maeyja kampanya modülü)
+- `channel: 'PUSH' | 'EMAIL'` (varsayılan PUSH) gövdeye, tahmine ve teste eklenir. E-postada kitle, e-postası doğrulanmış
+  kayıtlı kullanıcılardır (misafir yok); `platform` yok sayılır. Metin en çok 2.000 karakterdir (push'ta 300).
+  Düz yazıdır: kaçışlanır, boş satır paragraf açar. `link` web'de `WEB_APP_URL + yol` düğmesi olur.
+- Gönderim kendi posta sunucumuzdan saniyede bir e-postayla yapılır. Bütün gönderimlerde günde en çok
+  `settings.broadcast.emailDailyCap` (varsayılan 300) e-posta gider; sınıra gelen gönderim ertesi gün kaldığı yerden sürer.
+  E-postası doğrulanmamış alıcı `no_email` olarak atlanır.
+- Kampanya e-postasında alt bilgide gönderen kimliği (`LEGAL_CONTROLLER_*`) ve imzalı **abonelikten çık** bağlantısı
+  (`WEB_APP_URL/abonelikten-cik?r=<teslim>&t=<HMAC>`) bulunur. `List-Unsubscribe` ve `List-Unsubscribe-Post: One-Click`
+  başlıkları eklenir (RFC 8058, Gmail/Yahoo toplu gönderici kuralı). Bağlantıda e-posta adresi geçmez.
+  İmza anahtarı `JWT_SECRET`'tan alan ayrımıyla türetilir.
+- Abonelikten çıkmak pazarlama iznini geri çekme olarak kaydedilir (`Consent kind=marketing granted=false`). Sonraki
+  kampanyalar, gönderim anındaki izin kontrolünde bu kişiyi atlar.
+
+| Yöntem | Yol | Gövde | Not |
+|---|---|---|---|
+| POST | `/unsubscribe` | `{ r, t }` | Herkese açık; web sayfası tıklamayla çağırır (bağlantı tarayıcıları açınca bir şey olmaz). 10 dakikada IP başına 30 |
+| POST | `/unsubscribe/one-click?r=&t=` | — | Herkese açık; e-posta sağlayıcısının tek tık düğmesi |

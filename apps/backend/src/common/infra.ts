@@ -98,6 +98,7 @@ export const LIMITS = {
   selection: { name: 'selection', max: 60, windowSec: 600 },
   broadcastTest: { name: 'broadcast-test', max: 20, windowSec: 600 },
   broadcastOpened: { name: 'broadcast-opened', max: 120, windowSec: 3600 },
+  unsubscribe: { name: 'unsubscribe-ip', max: 30, windowSec: 600 },
   analysis: { name: 'analysis', max: 30, windowSec: 3600 },
   chatUser: { name: 'chat-user', max: 40, windowSec: 3600 },
   chatIp: { name: 'chat-ip', max: 150, windowSec: 3600 },

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CalendarClock, Megaphone, Plus, Send, Smartphone } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, Mail, Megaphone, Plus, Send, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EmptyState, ErrorState, LoadMore, PageHeader } from "@/components/common";
 import { useFeedback } from "@/components/feedback";
@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api, ApiError, useApi, usePaged } from "@/lib/api";
 import { fmtDateTime, fmtInt } from "@/lib/format";
-import type { AdminMe, Broadcast, BroadcastAudience, BroadcastDetail, BroadcastKind, BroadcastStatus } from "@/lib/types";
+import type { AdminMe, Broadcast, BroadcastAudience, BroadcastChannel, BroadcastDetail, BroadcastKind, BroadcastStatus } from "@/lib/types";
 
 const KIND: Record<BroadcastKind, { label: string; hint: string; className: string }> = {
   SERVICE: {
@@ -31,6 +31,10 @@ const KIND: Record<BroadcastKind, { label: string; hint: string; className: stri
     className: "text-warn",
   },
 };
+const CHANNEL: Record<BroadcastChannel, { label: string; hint: string }> = {
+  PUSH: { label: "Bildirim", hint: "Uygulamada bildirim izni veren cihazlara gider; metin kısa olmalı." },
+  EMAIL: { label: "E-posta", hint: "E-postası doğrulanmış kayıtlı kullanıcılara gider; kampanyada alt bilgide abonelikten çık bağlantısı bulunur. Günlük gönderim sınırı vardır." },
+};
 const STATUS: Record<BroadcastStatus, { label: string; className: string }> = {
   DRAFT: { label: "Taslak", className: "bg-secondary text-secondary-foreground" },
   SCHEDULED: { label: "Zamanlandı", className: "bg-primary/10 text-primary" },
@@ -41,6 +45,7 @@ const STATUS: Record<BroadcastStatus, { label: string; className: string }> = {
 };
 const REASONS: Record<string, string> = {
   no_device: "Cihaz yok",
+  no_email: "E-posta doğrulanmamış",
   consent_missing: "Pazarlama izni yok",
   weekly_cap: "Haftalık sınır doldu",
   provider_error: "Bildirim servisi reddetti",
@@ -58,18 +63,18 @@ const NONE = "all";
 
 const canWrite = (role?: string) => role === "ADMIN" || role === "SUPER_ADMIN";
 
-function audienceSummary(a: BroadcastAudience): string {
+function audienceSummary(a: BroadcastAudience, channel: BroadcastChannel = "PUSH"): string {
   const parts: string[] = [];
   if (a.emails?.length) parts.push(`${a.emails.length} seçili kişi`);
   if (a.plan) parts.push(a.plan === "PRO" ? "PRO" : "Ücretsiz");
-  if (a.platform) parts.push(a.platform === "ios" ? "iOS" : "Android");
+  if (a.platform && channel === "PUSH") parts.push(a.platform === "ios" ? "iOS" : "Android");
   if (a.locale) parts.push(a.locale.toUpperCase());
   if (a.accounts === "registered") parts.push("kayıtlı");
   if (a.accounts === "guests") parts.push("misafir");
   if (a.activeDays) parts.push(`son ${a.activeDays} günde aktif`);
   if (a.inactiveDays) parts.push(`${a.inactiveDays}+ gündür girmeyen`);
   if (a.registeredAfter || a.registeredBefore) parts.push(`kayıt ${a.registeredAfter ?? "…"} – ${a.registeredBefore ?? "…"}`);
-  return parts.length ? parts.join(" · ") : "Cihazı kayıtlı herkes";
+  return parts.length ? parts.join(" · ") : channel === "EMAIL" ? "E-postası doğrulanmış herkes" : "Cihazı kayıtlı herkes";
 }
 
 export default function BroadcastsPage() {
@@ -134,9 +139,12 @@ export default function BroadcastsPage() {
                       </button>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={KIND[b.kind].className}>
-                        {KIND[b.kind].label}
-                      </Badge>
+                      <span className="flex items-center gap-1.5">
+                        {b.channel === "EMAIL" ? <Mail className="size-4 text-muted-foreground" aria-label="E-posta" /> : <Bell className="size-4 text-muted-foreground" aria-label="Bildirim" />}
+                        <Badge variant="outline" className={KIND[b.kind].className}>
+                          {KIND[b.kind].label}
+                        </Badge>
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge className={STATUS[b.status].className}>{STATUS[b.status].label}</Badge>
@@ -205,6 +213,22 @@ function PhonePreview({ title, body }: { title: string; body: string }) {
   );
 }
 
+function EmailPreview({ title, body, link }: { title: string; body: string; link: string | null }) {
+  return (
+    <div className="rounded-2xl border bg-[#F6F1EA] p-4 text-[#1C1714]">
+      <div className="mb-3 font-serif text-lg">
+        Casa<span className="text-[#A9532E]">lume</span>
+      </div>
+      <div className="rounded-xl border border-[#E7DDD1] bg-white p-4">
+        <div className="font-serif text-lg">{title || "Konu"}</div>
+        {/* Admin text stays plain text (WEB-01). */}
+        <div className="mt-2 text-sm whitespace-pre-wrap">{body || "E-posta metni"}</div>
+        {link && <span className="mt-3 inline-block rounded-full bg-[#A9532E] px-4 py-2 text-xs font-semibold text-white">Casalume&apos;da aç</span>}
+      </div>
+    </div>
+  );
+}
+
 function BroadcastReport({
   id, writer, onChanged, onDeleted, onEdit,
 }: {
@@ -252,7 +276,7 @@ function BroadcastReport({
   }
 
   async function send() {
-    const est = await api<{ withDevice: number; eligible: number }>("/broadcasts/estimate", { method: "POST", body: { audience: b!.audience, kind: b!.kind } }).catch(() => null);
+    const est = await api<{ withDevice: number; eligible: number }>("/broadcasts/estimate", { method: "POST", body: { audience: b!.audience, kind: b!.kind, channel: b!.channel } }).catch(() => null);
     const ok = await confirm({
       title: "Bildirim şimdi gönderilsin mi?",
       description: `${est ? `${fmtInt(est.eligible)} kişiye` : "Seçili kitleye"} “${b!.title}” gidecek. Gönderilen bildirim geri alınamaz.`,
@@ -296,7 +320,7 @@ function BroadcastReport({
       </SheetHeader>
 
       <div className="flex flex-col gap-5 p-4">
-        <PhonePreview title={b.title} body={b.body} />
+        {b.channel === "EMAIL" ? <EmailPreview title={b.title} body={b.body} link={b.link} /> : <PhonePreview title={b.title} body={b.body} />}
 
         {b.error && (
           <p className="flex items-start gap-2 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -317,7 +341,9 @@ function BroadcastReport({
 
         <dl className="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-2.5 text-sm">
           <dt className="text-muted-foreground">Kitle</dt>
-          <dd>{audienceSummary(b.audience)}</dd>
+          <dd>{audienceSummary(b.audience, b.channel)}</dd>
+          <dt className="text-muted-foreground">Kanal</dt>
+          <dd>{CHANNEL[b.channel].label}</dd>
           <dt className="text-muted-foreground">Bağlantı</dt>
           <dd>{b.link ?? "—"}</dd>
           <dt className="text-muted-foreground">Hazırlayan</dt>
@@ -412,6 +438,9 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
   const { toast } = useFeedback();
   const a0 = initial?.audience ?? {};
   const [kind, setKind] = useState<BroadcastKind>(initial?.kind ?? "SERVICE");
+  const [channel, setChannel] = useState<BroadcastChannel>(initial?.channel ?? "PUSH");
+  const email = channel === "EMAIL";
+  const bodyMax = email ? 2000 : 300;
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [link, setLink] = useState(initial?.link ?? NONE);
@@ -434,7 +463,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
   const dayCount = Math.min(365, Math.max(1, Number.parseInt(days, 10) || 1));
   const audience: BroadcastAudience = {
     ...(plan !== NONE ? { plan: plan as "FREE" | "PRO" } : {}),
-    ...(platform !== NONE ? { platform: platform as "ios" | "android" } : {}),
+    ...(platform !== NONE && !email ? { platform: platform as "ios" | "android" } : {}),
     ...(locale !== NONE ? { locale: locale as "tr" | "en" } : {}),
     accounts: accounts as "all" | "registered" | "guests",
     ...(activity === "active" ? { activeDays: dayCount } : activity === "inactive" ? { inactiveDays: dayCount } : {}),
@@ -443,18 +472,18 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
     ...(emailList.length ? { emails: emailList } : {}),
   };
   const audienceKey = JSON.stringify(audience);
-  const content = { title: title.trim(), body: body.trim(), link: link === NONE ? null : link, kind };
+  const content = { title: title.trim(), body: body.trim(), link: link === NONE ? null : link, kind, channel };
   const contentKey = JSON.stringify(content);
 
   // Live audience size and commercial-text check, debounced while typing.
   useEffect(() => {
     const t = setTimeout(() => {
-      api<{ withDevice: number; eligible: number }>("/broadcasts/estimate", { method: "POST", body: { audience: JSON.parse(audienceKey), kind } })
+      api<{ withDevice: number; eligible: number }>("/broadcasts/estimate", { method: "POST", body: { audience: JSON.parse(audienceKey), kind, channel } })
         .then(setEstimate)
         .catch(() => setEstimate(null));
     }, 500);
     return () => clearTimeout(t);
-  }, [audienceKey, kind]);
+  }, [audienceKey, kind, channel]);
   useEffect(() => {
     const c = JSON.parse(contentKey) as typeof content;
     if (c.title.length < 3 || c.body.length < 5) return;
@@ -466,7 +495,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
     return () => clearTimeout(t);
   }, [contentKey]);
 
-  const tooShort = content.title.length < 3 || content.body.length < 5;
+  const tooShort = content.title.length < 3 || content.body.length < 5 || content.body.length > bodyMax;
   const blocked = Boolean(check?.blocked && kind === "SERVICE");
 
   async function save() {
@@ -506,6 +535,19 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
 
       <div className="flex flex-col gap-5 p-4">
         <div className="grid gap-2">
+          <Label>Kanal</Label>
+          <ToggleGroup type="single" variant="outline" size="sm" value={channel} onValueChange={(v) => v && setChannel(v as BroadcastChannel)} aria-label="Kanal" className="justify-start">
+            <ToggleGroupItem value="PUSH" className="px-3">
+              <Bell aria-hidden /> {CHANNEL.PUSH.label}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="EMAIL" className="px-3">
+              <Mail aria-hidden /> {CHANNEL.EMAIL.label}
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <p className="text-xs text-muted-foreground">{CHANNEL[channel].hint}</p>
+        </div>
+
+        <div className="grid gap-2">
           <Label>Tür</Label>
           <ToggleGroup type="single" variant="outline" size="sm" value={kind} onValueChange={(v) => v && setKind(v as BroadcastKind)} aria-label="Tür" className="justify-start">
             {(Object.keys(KIND) as BroadcastKind[]).map((k) => (
@@ -520,23 +562,25 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
         <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
           <div className="flex flex-col gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="b-title">Başlık</Label>
+              <Label htmlFor="b-title">{email ? "Konu" : "Başlık"}</Label>
               <Input id="b-title" maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. Yeni stiller geldi" />
               <p className="text-xs text-muted-foreground">{title.trim().length}/80</p>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="b-body">Mesaj</Label>
-              <Textarea id="b-body" rows={3} maxLength={300} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Örn. Kapadokya ve Ege stillerini stüdyoda dene." />
-              <p className="text-xs text-muted-foreground">{body.trim().length}/300 · telefonda ilk ~120 karakter görünür</p>
+              <Label htmlFor="b-body">{email ? "E-posta metni" : "Mesaj"}</Label>
+              <Textarea id="b-body" rows={email ? 8 : 3} maxLength={bodyMax} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Örn. Kapadokya ve Ege stillerini stüdyoda dene." />
+              <p className="text-xs text-muted-foreground">
+                {body.trim().length}/{bodyMax} · {email ? "boş satır yeni paragraf açar; metin düz yazı olarak gönderilir" : "telefonda ilk ~120 karakter görünür"}
+              </p>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="b-link">Dokununca açılacak yer</Label>
+              <Label htmlFor="b-link">{email ? "Düğmenin açacağı sayfa (web)" : "Dokununca açılacak yer"}</Label>
               <Select value={link} onValueChange={setLink}>
                 <SelectTrigger id="b-link" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>Uygulamanın ana ekranı</SelectItem>
+                  <SelectItem value={NONE}>{email ? "Düğme olmasın" : "Uygulamanın ana ekranı"}</SelectItem>
                   {(links.data?.items ?? []).map((l) => (
                     <SelectItem key={l.path} value={l.path}>
                       {l.label}
@@ -548,7 +592,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">Önizleme</span>
-            <PhonePreview title={title.trim()} body={body.trim()} />
+            {email ? <EmailPreview title={title.trim()} body={body.trim()} link={link === NONE ? null : link} /> : <PhonePreview title={title.trim()} body={body.trim()} />}
           </div>
         </div>
 
@@ -566,7 +610,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
           <legend className="px-1 text-sm font-medium">Kitle</legend>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Choice id="a-plan" label="Plan" value={plan} onChange={setPlan} options={[[NONE, "Hepsi"], ["FREE", "Ücretsiz"], ["PRO", "PRO"]]} />
-            <Choice id="a-platform" label="Platform" value={platform} onChange={setPlatform} options={[[NONE, "Hepsi"], ["ios", "iOS"], ["android", "Android"]]} />
+            {!email && <Choice id="a-platform" label="Platform" value={platform} onChange={setPlatform} options={[[NONE, "Hepsi"], ["ios", "iOS"], ["android", "Android"]]} />}
             <Choice id="a-locale" label="Dil" value={locale} onChange={setLocale} options={[[NONE, "Hepsi"], ["tr", "Türkçe"], ["en", "İngilizce"]]} />
             <Choice id="a-accounts" label="Hesap" value={accounts} onChange={setAccounts} options={[["all", "Hepsi"], ["registered", "Kayıtlı"], ["guests", "Misafir"]]} />
           </div>
@@ -598,15 +642,15 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
             <Textarea id="a-emails" rows={2} value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="ornek@eposta.com, ikinci@eposta.com" />
           </div>
           <p className="flex items-center gap-1.5 text-sm">
-            <Smartphone className="size-4 text-muted-foreground" aria-hidden />
+            {email ? <Mail className="size-4 text-muted-foreground" aria-hidden /> : <Smartphone className="size-4 text-muted-foreground" aria-hidden />}
             {estimate ? (
               kind === "MARKETING" ? (
                 <span>
-                  <strong className="tabular-nums">{fmtInt(estimate.eligible)}</strong> kişi pazarlama izni vermiş · cihazı kayıtlı {fmtInt(estimate.withDevice)} kişi
+                  <strong className="tabular-nums">{fmtInt(estimate.eligible)}</strong> kişi pazarlama izni vermiş · {email ? "e-postası doğrulanmış" : "cihazı kayıtlı"} {fmtInt(estimate.withDevice)} kişi
                 </span>
               ) : (
                 <span>
-                  Cihazı kayıtlı <strong className="tabular-nums">{fmtInt(estimate.withDevice)}</strong> kişi
+                  {email ? "E-postası doğrulanmış" : "Cihazı kayıtlı"} <strong className="tabular-nums">{fmtInt(estimate.withDevice)}</strong> kişi
                 </span>
               )
             ) : (
@@ -623,7 +667,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
               Test gönder
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Yalnız o hesabın cihazlarına “[Test]” önekiyle gider; rapora yazılmaz.</p>
+          <p className="text-xs text-muted-foreground">Yalnız o hesabın {email ? "e-posta adresine" : "cihazlarına"} “[Test]” önekiyle gider; rapora yazılmaz.</p>
         </div>
       </div>
 

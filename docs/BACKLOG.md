@@ -97,6 +97,8 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - [ ] Malzeme ve ürün listesi marka/ürün koduyla; ölçü ve kat planı (araştırılacak).
 
 ## Çok dilli sürüm
+Örnek: maeyja (11 dil): `/[locale]/…` yolları, dil başına SEO (hreflang, sitemap), içerik çevirisini AI ile doldurup
+insan onayıyla yayınlama (`translation-fill`). Casalume’a aynı desenle taşınacak.
 Bugün: web TR/EN (dil uygulama içinde seçiliyor, adreste değil), admin TR, kullanıcıda `locale` alanı ve TR/EN sürümlü
 yasal metin altyapısı var. Görsel talimatları İngilizce kalır (modelin en iyi anladığı dil); kullanıcı dili ayrı.
 - [ ] Dil sırası önerisi: TR, EN (var) → DE (Almanya’daki Türkiye kökenli kitle, büyük dekorasyon pazarı) → AR (Körfez,
@@ -122,12 +124,17 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Panelden toplu push/kampanya (API.md §7.16): pazarlama izni, haftalık sınır, sessiz saatler, ticari ifade kontrolü,
   test gönderimi, teslim ve açılma raporu (fal-app). Mobil (sen): bildirime dokununca `POST /v1/broadcasts/:id/opened`,
   Android `news` kanalı.
-- [ ] Toplu e-posta kanalı (maeyja kampanya modülü): imzalı abonelikten çık, List-Unsubscribe, günlük sınır — sırada.
+- [x] Toplu e-posta kanalı (maeyja kampanya modülü, API.md §7.16): doğrulanmış adreslere, kampanyada imzalı abonelikten çık
+  (web `/abonelikten-cik`) + RFC 8058 tek tık, gönderen kimliği alt bilgide, günlük sınır (`emailDailyCap`, varsayılan 300),
+  saniyede bir e-posta. E-posta şablonları eski “AI Room” markasından Casalume’a çevrildi.
+- [ ] Toplu e-postayı büyük listelerde Brevo gibi bir sağlayıcıya taşımak (hazal paylaşımlı; itibar riski) — liste büyüyünce.
 - [ ] Yaşam döngüsü e-postaları ve geri çağırma (fal-app).
 - [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
 - [ ] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi), admin CMS (SSS, ana sayfa) (fal-app, maeyja).
+- [ ] Admin’de `support@casalume.app` gelen kutusu (maeyja `mailbox`, IMAP): kullanıcı e-postalarını panelden okuyup yanıtlamak.
+- [ ] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — kredi paketleriyle birleşir.
 - [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).
 - [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
   Keychain temizliği, uygulama içi değerlendirme istemi.

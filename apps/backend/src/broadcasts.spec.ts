@@ -1,6 +1,10 @@
 import {
+  TEST_DELIVERY, renderBroadcastMail, unsubscribeKey, unsubscribeSignature, verifyUnsubscribeSignature,
+} from './broadcasts/broadcast.mail.js';
+import {
   AudienceSchema, BroadcastInputSchema, ContentSchema, commercialSignals, fold, inQuietHours, nextSendableTime,
 } from './broadcasts/broadcast.rules.js';
+import { renderActionMail } from './mail/mailer.service.js';
 
 // API.md §7.16: Toplu Gönderim rules. INP-01 (bounded input), EXT-02 (in-app links only), 6563/İYS (commercial text).
 
@@ -70,5 +74,55 @@ describe('marketing quiet hours (Europe/Istanbul)', () => {
     expect(nextSendableTime(at('2026-11-05T02:10:00Z'), '21:00', '09:00').toISOString()).toBe('2026-11-05T06:00:00.000Z');
     const noon = at('2026-11-04T09:00:00Z');
     expect(nextSendableTime(noon, '21:00', '09:00')).toBe(noon);
+  });
+});
+
+describe('broadcast e-mail (maeyja campaign pattern)', () => {
+  const sender = { name: 'Casalume', address: 'Maltepe, İstanbul', email: 'kvkk@casalume.app' };
+  const base = { to: 'a@example.com', locale: 'tr', subject: 'Yeni stiller', body: 'Merhaba\n\n<script>alert(1)</script>\nikinci satır', sender };
+
+  it('defaults to push and allows longer e-mail bodies', () => {
+    expect(ContentSchema.parse({ title: 'Merhaba', body: 'Yeni stiller geldi', kind: 'SERVICE' }).channel).toBe('PUSH');
+    expect(ContentSchema.safeParse({ title: 'Merhaba', body: 'x'.repeat(1500), kind: 'SERVICE', channel: 'EMAIL' }).success).toBe(true);
+    expect(ContentSchema.safeParse({ title: 'Merhaba', body: 'x'.repeat(2001), kind: 'SERVICE', channel: 'EMAIL' }).success).toBe(false);
+  });
+
+  it('escapes the admin text and keeps paragraphs (WEB-01)', () => {
+    const m = renderBroadcastMail({ ...base, kind: 'SERVICE', ctaUrl: 'https://casalume.app/studio', unsubscribeUrl: null, oneClickUrl: null });
+    expect(m.html).not.toContain('<script>');
+    expect(m.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;<br>ikinci satır');
+    expect(m.html).toContain('href="https://casalume.app/studio"');
+    expect(m.html).toContain('Casa<span style="color:#A9532E">lume</span>');
+    expect(m.headers).toBeUndefined();
+    expect(m.text).toContain('Maltepe, İstanbul');
+  });
+
+  it('marketing mail carries the sender, an unsubscribe link and RFC 8058 headers', () => {
+    const m = renderBroadcastMail({
+      ...base, kind: 'MARKETING', ctaUrl: null,
+      unsubscribeUrl: 'https://casalume.app/abonelikten-cik?r=x&t=y', oneClickUrl: 'https://api.casalume.app/v1/unsubscribe/one-click?r=x&t=y',
+    });
+    expect(m.html).toContain('Abonelikten çık');
+    expect(m.html).toContain('href="https://casalume.app/abonelikten-cik?r=x&amp;t=y"');
+    expect(m.headers).toEqual({
+      'List-Unsubscribe': '<https://api.casalume.app/v1/unsubscribe/one-click?r=x&t=y>',
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    });
+  });
+
+  it('unsubscribe links cannot be forged or replayed for another delivery', () => {
+    const key = unsubscribeKey('a-long-jwt-secret-for-tests-only-0123456789');
+    const sig = unsubscribeSignature('d1', key);
+    expect(verifyUnsubscribeSignature('d1', sig, key)).toBe(true);
+    expect(verifyUnsubscribeSignature('d2', sig, key)).toBe(false);
+    expect(verifyUnsubscribeSignature('d1', `${sig.slice(0, -1)}A`, key)).toBe(sig.endsWith('A'));
+    expect(verifyUnsubscribeSignature('d1', '', key)).toBe(false);
+    expect(verifyUnsubscribeSignature(TEST_DELIVERY, unsubscribeSignature(TEST_DELIVERY, unsubscribeKey('other-secret')), key)).toBe(false);
+  });
+
+  it('account e-mails use the Casalume brand, not the old name', () => {
+    const m = renderActionMail({ to: 'a@example.com', subject: 's', heading: 'h', lines: ['l'], cta: 'c', url: 'https://casalume.app', footer: 'f' });
+    expect(m.html).toContain('Casa<span style="color:#A9532E">lume</span>');
+    expect(m.html).not.toContain('AI <span');
   });
 });

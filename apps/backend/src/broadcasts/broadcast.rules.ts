@@ -37,12 +37,16 @@ export const LINKS = [
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
 
+/** A push shows ~120 characters; an e-mail may carry a few paragraphs. */
+export const PUSH_BODY_MAX = 300;
+
 export const ContentSchema = z
   .object({
     title: text(3, 80),
-    body: text(5, 300),
+    body: text(5, 2000),
     link: z.string().regex(LINK_RE, 'Yalnız uygulama içi bir bağlantı').nullable().optional(),
     kind: z.enum(['SERVICE', 'MARKETING']),
+    channel: z.enum(['PUSH', 'EMAIL']).default('PUSH'),
   })
   .strict();
 export type Content = z.infer<typeof ContentSchema>;

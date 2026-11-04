@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { AuditService } from '../admin/audit.service.js';
 import { MinRole } from '../admin/roles.js';
 import { AdminGuard, UserGuard } from '../auth/tokens.service.js';
+import { SkipVersionGate } from '../common/app-version.js';
 import { parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { LIMITS, RateLimiter } from '../common/infra.js';
@@ -12,7 +13,8 @@ import { AudienceSchema, BroadcastInputSchema, ContentSchema, LINKS } from './br
 import { BroadcastsService } from './broadcasts.service.js';
 
 const ListQuery = z.object({ cursor: z.string().max(64).optional(), limit: z.coerce.number().int().min(1).max(100).default(25) });
-const EstimateBody = z.object({ audience: AudienceSchema, kind: z.enum(['SERVICE', 'MARKETING']) }).strict();
+const EstimateBody = z.object({ audience: AudienceSchema, kind: z.enum(['SERVICE', 'MARKETING']), channel: z.enum(['PUSH', 'EMAIL']).default('PUSH') }).strict();
+const UnsubscribeInput = z.object({ r: z.string().min(1).max(64), t: z.string().min(1).max(64) }).strict();
 const ScheduleBody = z.object({ at: z.iso.datetime({ offset: true }) }).strict();
 const TestBody = ContentSchema.extend({ email: z.email().max(254) }).strict();
 
@@ -44,10 +46,10 @@ export class AdminBroadcastsController {
   @Post('estimate')
   @HttpCode(200)
   @MinRole('EDITOR')
-  @Doc('Kitle tahmini', { body: EstimateBody, description: '`withDevice`: cihazı kayıtlı eşleşen kullanıcı; `eligible`: kampanyada pazarlama izni de olanlar.', errors: [400, 401, 403] })
+  @Doc('Kitle tahmini', { body: EstimateBody, description: '`withDevice`: ulaşılabilir eşleşen kullanıcı (PUSH: cihazı kayıtlı, EMAIL: e-postası doğrulanmış); `eligible`: kampanyada pazarlama izni de olanlar.', errors: [400, 401, 403] })
   estimate(@Body() body: unknown) {
     const input = parse(EstimateBody, body);
-    return this.broadcasts.estimate(input.audience, input.kind);
+    return this.broadcasts.estimate(input.audience, input.kind, input.channel);
   }
 
   @Post('precheck')
@@ -155,5 +157,34 @@ export class BroadcastsController {
   async opened(@Auth() auth: AuthContext, @Param('id') id: string) {
     await this.limiter.hit(LIMITS.broadcastOpened, auth.userId);
     await this.broadcasts.opened(id, auth.userId);
+  }
+}
+
+/**
+ * Public: the unsubscribe link of a marketing e-mail (web page `/abonelikten-cik` posts here) and the RFC 8058
+ * one-click endpoint mail providers call from the List-Unsubscribe header. Both only ever withdraw consent.
+ */
+@ApiTags('public')
+@Controller('v1/unsubscribe')
+@SkipVersionGate()
+export class UnsubscribeController {
+  constructor(private broadcasts: BroadcastsService, private limiter: RateLimiter) {}
+
+  @Post()
+  @HttpCode(200)
+  @Doc('Kampanya e-postalarından çık', { body: UnsubscribeInput, description: 'E-postadaki bağlantının `r` (teslim kimliği) ve `t` (imza) değerleri; pazarlama izni geri çekilir.', errors: [400, 429] })
+  async unsubscribe(@Body() body: unknown, @Req() req: AppRequest) {
+    const { r, t } = parse(UnsubscribeInput, body);
+    await this.limiter.hit(LIMITS.unsubscribe, req.clientIp);
+    return this.broadcasts.unsubscribe(r, t, req.clientIp);
+  }
+
+  @Post('one-click')
+  @HttpCode(200)
+  @Doc('Tek tıkla abonelikten çık (RFC 8058)', { description: 'E-posta sağlayıcısı List-Unsubscribe-Post ile çağırır; `r` ve `t` sorgu parametresidir.', errors: [400, 429] })
+  async oneClick(@Query() query: unknown, @Req() req: AppRequest) {
+    const { r, t } = parse(UnsubscribeInput, query);
+    await this.limiter.hit(LIMITS.unsubscribe, req.clientIp);
+    return this.broadcasts.unsubscribe(r, t, req.clientIp);
   }
 }

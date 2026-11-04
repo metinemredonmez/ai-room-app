@@ -72,6 +72,12 @@ enum BroadcastKind {
   MARKETING
 }
 
+/// PUSH: Expo notification to the user's devices; EMAIL: e-mail to the user's verified address.
+enum BroadcastChannel {
+  PUSH
+  EMAIL
+}
+
 enum BroadcastStatus {
   DRAFT
   SCHEDULED
@@ -483,6 +489,7 @@ model Broadcast {
   body         String
   link         String? // in-app path, e.g. /studio
   kind         BroadcastKind       @default(SERVICE)
+  channel      BroadcastChannel    @default(PUSH)
   audience     Json // AudienceSchema (src/broadcasts/broadcast.rules.ts)
   status       BroadcastStatus     @default(DRAFT)
   scheduledAt  DateTime?
