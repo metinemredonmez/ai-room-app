@@ -156,8 +156,10 @@ Sıra:
 
 ## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
 Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)” = mobil tarafı sahibinde.
-- [ ] Web hesap sayfası (hesap silme, veri indirme, izinler) + yasal sayfalar + robots/sitemap/OG — Google Play hesap
-  silme için web bağlantısı ister; backend (`DELETE /me`, `/me/export`) hazır. Kaynak: palemi `hesap/`, fal-app `legal/`.
+- [x] Web hesap sayfası `/hesap` (profil, yapay zekâ ve pazarlama izni, verilerimi indir, KVKK başvurusu ve durumu,
+  hesabı sil) + yasal sayfalar `/yasal/kvkk|kosullar|yapay-zeka|pazarlama` (yönetimden yayımlanan metin, tablolar
+  dahil) + herkese açık `/hesap-silme` (Google Play hesap silme bağlantısı: https://casalume.app/hesap-silme); 11 dil,
+  site haritasında; `/hesap` arama motorlarına kapalı. Kaynak: palemi `hesap/`, fal-app `legal/`.
 - [ ] Mobilde KVKK başvurusu ve veri indirme ekranı (sen) — backend hazır.
 - [ ] Destek talebi: kullanıcı formu (hata ekranındaki istek/iş kimliğiyle) + admin destek kutusu + yanıt bildirimi (palemi, fal-app).
 - [ ] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının

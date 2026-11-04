@@ -12,7 +12,10 @@
       "unsubscribe": "Se désabonner",
       "chat": "Chat IA",
       "forgotPassword": "Mot de passe oublié",
-      "blog": "Blog"
+      "blog": "Blog",
+      "profile": "Mon compte",
+      "legal": "Mentions légales",
+      "deletion": "Suppression du compte"
     }
   },
   "brandTagline": "Réinventez votre pièce en quelques secondes",
@@ -26,7 +29,8 @@
     "tryFree": "Essai gratuit",
     "menu": "Menu",
     "guest": "Invité",
-    "blog": "Blog"
+    "blog": "Blog",
+    "profile": "Mon compte"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité",
     "rights": "Tous droits réservés.",
-    "note": "Les estimations de prix et de budget sont générées par l'IA et fournies à titre indicatif."
+    "note": "Les estimations de prix et de budget sont générées par l'IA et fournies à titre indicatif.",
+    "aiConsent": "Consentement au traitement par IA",
+    "deleteAccount": "Supprimer le compte"
   },
   "notFound": {
     "title": "Page introuvable",
@@ -466,5 +472,87 @@
     "ctaButton": "Ouvrir le studio",
     "minutes": "{n} min de lecture",
     "otherLanguages": "Aussi en"
+  },
+  "profile": {
+    "title": "Mon compte",
+    "signInTitle": "Connectez-vous pour voir votre compte",
+    "signInBody": "Vos paramètres de confidentialité, vos données et vos demandes KVKK sont ici.",
+    "guestTitle": "Vous utilisez Casalume en tant qu'invité",
+    "guestBody": "Vos designs sont conservés dans ce navigateur. Inscrivez-vous pour y accéder aussi depuis d'autres appareils.",
+    "signUp": "S'inscrire",
+    "email": "E-mail",
+    "name": "Nom",
+    "save": "Enregistrer",
+    "saved": "Enregistré.",
+    "verified": "Vérifié",
+    "notVerified": "Non vérifié",
+    "plan": "Formule",
+    "credits": "Crédits",
+    "freeLeft": "Designs gratuits restants aujourd'hui",
+    "privacyTitle": "Confidentialité et consentements",
+    "aiConsent": "Traitement par IA et transfert à l'étranger",
+    "aiConsentHint": "Nécessaire pour créer des designs. Si vous le retirez, vous ne pourrez plus créer de nouveaux designs ; votre compte et vos designs enregistrés sont conservés.",
+    "marketing": "Offres et nouveautés",
+    "marketingHint": "Par e-mail et notification. Vous pouvez les désactiver à tout moment.",
+    "readText": "Lire le texte",
+    "on": "Activé",
+    "off": "Désactivé",
+    "consentSaved": "Votre choix a été enregistré.",
+    "dataTitle": "Mes données",
+    "exportBody": "Téléchargez toutes les données de votre compte (designs, consentements, demandes) sous forme de fichier JSON.",
+    "export": "Télécharger mes données",
+    "kvkkTitle": "Demande KVKK",
+    "kvkkBody": "Exercez vos droits sur vos données (KVKK, art. 11). Nous répondons sous 30 jours maximum.",
+    "kvkkType": "Objet",
+    "kvkkDetails": "Description",
+    "kvkkDetailsHint": "10 caractères minimum.",
+    "kvkkSend": "Envoyer la demande",
+    "kvkkSent": "Demande reçue : {ref}",
+    "kvkkDue": "Réponse au plus tard le {date}",
+    "kvkkTypes": {
+      "access": "Je souhaite accéder à mes données",
+      "rectification": "Je souhaite faire rectifier mes données",
+      "erasure": "Je souhaite faire supprimer mes données",
+      "objection": "Je m'oppose au traitement",
+      "other": "Autre"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "Reçue",
+      "IN_PROGRESS": "En cours d'examen",
+      "COMPLETED": "Traitée",
+      "REJECTED": "Refusée"
+    },
+    "deleteTitle": "Supprimer le compte",
+    "deleteBody": "Votre compte, vos designs et vos photos seront supprimés définitivement ; cette action est irréversible. Si vous avez un abonnement, résiliez-le d'abord sur l'App Store ou Google Play.",
+    "deleteConfirm": "Saisissez {word} pour confirmer",
+    "deleteWord": "SUPPRIMER",
+    "deleteButton": "Supprimer définitivement mon compte",
+    "deleted": "Votre compte a été supprimé."
+  },
+  "legal": {
+    "title": "Mentions légales",
+    "englishOnly": "Ce texte est pour l'instant publié en turc et en anglais ; nous affichons la version anglaise. La version turque fait foi.",
+    "version": "Version {v}",
+    "unavailable": "Le texte n'a pas pu être chargé. Veuillez réessayer dans un instant.",
+    "others": "Autres textes",
+    "names": {
+      "kvkk": "Avis d'information KVKK",
+      "kosullar": "Conditions d'utilisation",
+      "yapay-zeka": "Consentement au traitement par IA",
+      "pazarlama": "Consentement aux communications commerciales"
+    }
+  },
+  "deletion": {
+    "title": "Comment supprimer votre compte ?",
+    "intro": "Vous pouvez supprimer votre compte Casalume et toutes vos données à tout moment.",
+    "inApp": "Dans l'application : Profil → Supprimer le compte.",
+    "onWeb": "Sur le web : connectez-vous, puis Mon compte → Supprimer le compte.",
+    "byMail": "Si vous ne pouvez pas accéder à votre compte, écrivez « Veuillez supprimer mon compte » à {email} depuis l'adresse e-mail de votre compte ; nous le supprimerons sous 30 jours maximum.",
+    "whatTitle": "Qu'est-ce qui est supprimé ?",
+    "what": "Votre compte, vos designs, les photos importées, vos crédits, vos appareils enregistrés et l'historique de vos consentements.",
+    "keepTitle": "Qu'est-ce qui est conservé ?",
+    "keep": "Seuls les enregistrements exigés par la loi sont conservés pendant la durée requise (p. ex. les dossiers de demandes KVKK, 2 ans après leur clôture). Les données de paiement sont conservées par l'App Store et Google Play.",
+    "subscription": "Si vous avez un abonnement actif, résiliez-le d'abord sur l'App Store ou Google Play ; supprimer le compte n'arrête pas l'abonnement.",
+    "cta": "Accéder à mon compte"
   }
 }

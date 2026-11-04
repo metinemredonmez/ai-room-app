@@ -26,9 +26,10 @@ export function SiteFooter() {
     {
       title: t.footer.legal,
       links: [
-        { href: "/#sss", label: t.footer.kvkk },
-        { href: "/#sss", label: t.footer.terms },
-        { href: "/#sss", label: t.footer.privacy },
+        { href: "/yasal/kvkk", label: t.footer.kvkk },
+        { href: "/yasal/kosullar", label: t.footer.terms },
+        { href: "/yasal/yapay-zeka", label: t.footer.aiConsent },
+        { href: "/hesap-silme", label: t.footer.deleteAccount },
       ],
     },
   ];

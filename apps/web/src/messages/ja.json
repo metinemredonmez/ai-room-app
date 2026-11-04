@@ -12,7 +12,10 @@
       "unsubscribe": "配信停止",
       "chat": "AIチャット",
       "forgotPassword": "パスワードをお忘れの方",
-      "blog": "ブログ"
+      "blog": "ブログ",
+      "profile": "アカウント",
+      "legal": "規約・ポリシー",
+      "deletion": "アカウントの削除"
     }
   },
   "brandTagline": "お部屋を数秒でリデザイン",
@@ -26,7 +29,8 @@
     "tryFree": "無料で試す",
     "menu": "メニュー",
     "guest": "ゲスト",
-    "blog": "ブログ"
+    "blog": "ブログ",
+    "profile": "アカウント"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "利用規約",
     "privacy": "プライバシーポリシー",
     "rights": "All rights reserved.",
-    "note": "価格および予算の見積もりはAIによって生成されたもので、参考情報です。"
+    "note": "価格および予算の見積もりはAIによって生成されたもので、参考情報です。",
+    "aiConsent": "AI処理への同意",
+    "deleteAccount": "アカウント削除"
   },
   "notFound": {
     "title": "ページが見つかりません",
@@ -466,5 +472,87 @@
     "ctaButton": "スタジオを開く",
     "minutes": "{n}分で読めます",
     "otherLanguages": "ほかの言語"
+  },
+  "profile": {
+    "title": "アカウント",
+    "signInTitle": "ログインしてアカウントを確認しましょう",
+    "signInBody": "プライバシー設定、データ、KVKKに基づく申請はこちらで確認できます。",
+    "guestTitle": "ゲストとしてご利用中です",
+    "guestBody": "デザインはこのブラウザに保存されています。登録すると、ほかの端末からもアクセスできます。",
+    "signUp": "新規登録",
+    "email": "メールアドレス",
+    "name": "名前",
+    "save": "保存",
+    "saved": "保存しました。",
+    "verified": "認証済み",
+    "notVerified": "未認証",
+    "plan": "プラン",
+    "credits": "クレジット",
+    "freeLeft": "本日の無料デザイン残り回数",
+    "privacyTitle": "プライバシーと同意",
+    "aiConsent": "AIによる処理と国外への移転",
+    "aiConsentHint": "デザインの作成に必要です。同意を撤回すると新しいデザインは作成できなくなりますが、アカウントと保存済みのデザインはそのまま残ります。",
+    "marketing": "キャンペーン・お知らせ",
+    "marketingHint": "メールと通知でお届けします。いつでもオフにできます。",
+    "readText": "本文を読む",
+    "on": "オン",
+    "off": "オフ",
+    "consentSaved": "設定を保存しました。",
+    "dataTitle": "マイデータ",
+    "exportBody": "アカウント内のすべてのデータ(デザイン、同意、申請)をJSONファイルでダウンロードできます。",
+    "export": "データをダウンロード",
+    "kvkkTitle": "KVKKに基づく申請",
+    "kvkkBody": "ご自身のデータに関する権利(トルコ個人データ保護法 KVKK 第11条)を行使するための申請です。30日以内に回答いたします。",
+    "kvkkType": "件名",
+    "kvkkDetails": "詳細",
+    "kvkkDetailsHint": "10文字以上で入力してください。",
+    "kvkkSend": "申請を送信",
+    "kvkkSent": "申請を受け付けました:{ref}",
+    "kvkkDue": "回答期限:{date}",
+    "kvkkTypes": {
+      "access": "自分のデータを確認したい",
+      "rectification": "データを訂正してほしい",
+      "erasure": "データを削除してほしい",
+      "objection": "データの処理に異議を申し立てる",
+      "other": "その他"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "受付済み",
+      "IN_PROGRESS": "確認中",
+      "COMPLETED": "完了",
+      "REJECTED": "却下"
+    },
+    "deleteTitle": "アカウントを削除",
+    "deleteBody": "アカウント、デザイン、写真は完全に削除され、元に戻すことはできません。サブスクリプションをご利用中の場合は、先にApp StoreまたはGoogle Playで解約してください。",
+    "deleteConfirm": "確認のため「{word}」と入力してください",
+    "deleteWord": "削除",
+    "deleteButton": "アカウントを完全に削除",
+    "deleted": "アカウントを削除しました。"
+  },
+  "legal": {
+    "title": "規約・ポリシー",
+    "englishOnly": "この文書は現在トルコ語と英語で公開されており、ここでは英語版を表示しています。トルコ語版が正式な文書となります。",
+    "version": "バージョン {v}",
+    "unavailable": "現在、文書を読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "others": "その他の文書",
+    "names": {
+      "kvkk": "KVKKに基づく個人情報に関する通知",
+      "kosullar": "利用規約",
+      "yapay-zeka": "AI処理への同意",
+      "pazarlama": "広告メッセージ受信への同意"
+    }
+  },
+  "deletion": {
+    "title": "アカウントの削除方法",
+    "intro": "Casalumeのアカウントとご自身のすべてのデータは、いつでも削除できます。",
+    "inApp": "アプリの場合:プロフィール → アカウントを削除",
+    "onWeb": "Webの場合:ログインして、アカウント → アカウントを削除",
+    "byMail": "アカウントにアクセスできない場合は、アカウントに登録したメールアドレスから{email}宛てに「アカウントを削除してください」とお送りください。30日以内に削除いたします。",
+    "whatTitle": "削除されるもの",
+    "what": "アカウント、デザイン、アップロードした写真、クレジット、端末の登録情報、同意の履歴。",
+    "keepTitle": "保管されるもの",
+    "keep": "法的義務により必要な記録のみ、定められた期間保管されます(例:KVKKに基づく申請の記録は完了後2年間)。支払いの記録はApp StoreおよびGoogle Playで管理されます。",
+    "subscription": "有効なサブスクリプションがある場合は、先にApp StoreまたはGoogle Playで解約してください。アカウントを削除してもサブスクリプションは停止されません。",
+    "cta": "アカウントへ移動"
   }
 }

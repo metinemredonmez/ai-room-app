@@ -12,7 +12,10 @@
       "unsubscribe": "수신 거부",
       "chat": "AI 채팅",
       "forgotPassword": "비밀번호 찾기",
-      "blog": "블로그"
+      "blog": "블로그",
+      "profile": "내 계정",
+      "legal": "법적 고지",
+      "deletion": "계정 삭제"
     }
   },
   "brandTagline": "몇 초 만에 방을 새롭게 디자인해 보세요",
@@ -26,7 +29,8 @@
     "tryFree": "무료로 체험하기",
     "menu": "메뉴",
     "guest": "게스트",
-    "blog": "블로그"
+    "blog": "블로그",
+    "profile": "내 계정"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "이용약관",
     "privacy": "개인정보 처리방침",
     "rights": "All rights reserved.",
-    "note": "가격 및 예산 추정치는 AI가 생성하며 참고용이에요."
+    "note": "가격 및 예산 추정치는 AI가 생성하며 참고용이에요.",
+    "aiConsent": "AI 처리 동의",
+    "deleteAccount": "계정 삭제"
   },
   "notFound": {
     "title": "페이지를 찾을 수 없어요",
@@ -466,5 +472,87 @@
     "ctaButton": "스튜디오 열기",
     "minutes": "{n}분 읽기",
     "otherLanguages": "다른 언어"
+  },
+  "profile": {
+    "title": "내 계정",
+    "signInTitle": "계정을 보려면 로그인하세요",
+    "signInBody": "개인정보 설정, 내 데이터, KVKK 신청 내역을 여기에서 확인할 수 있어요.",
+    "guestTitle": "게스트로 이용 중이에요",
+    "guestBody": "디자인은 이 브라우저에 저장돼 있어요. 가입하면 다른 기기에서도 볼 수 있어요.",
+    "signUp": "가입하기",
+    "email": "이메일",
+    "name": "이름",
+    "save": "저장",
+    "saved": "저장됐어요.",
+    "verified": "인증됨",
+    "notVerified": "미인증",
+    "plan": "요금제",
+    "credits": "크레딧",
+    "freeLeft": "오늘 남은 무료 디자인",
+    "privacyTitle": "개인정보 및 동의",
+    "aiConsent": "AI 처리 및 해외 이전",
+    "aiConsentHint": "디자인을 만들려면 필요해요. 동의를 철회하면 새 디자인은 만들 수 없지만, 계정과 저장된 디자인은 그대로 남아요.",
+    "marketing": "이벤트 및 새 소식 알림",
+    "marketingHint": "이메일과 알림으로 보내드려요. 언제든지 끌 수 있어요.",
+    "readText": "전문 보기",
+    "on": "켜짐",
+    "off": "꺼짐",
+    "consentSaved": "선택이 저장됐어요.",
+    "dataTitle": "내 데이터",
+    "exportBody": "계정의 모든 데이터(디자인, 동의, 신청 내역)를 JSON 파일로 내려받으세요.",
+    "export": "내 데이터 내려받기",
+    "kvkkTitle": "KVKK 신청",
+    "kvkkBody": "내 데이터에 관한 권리(KVKK 제11조)를 행사하려면 신청하세요. 늦어도 30일 이내에 답변드려요.",
+    "kvkkType": "주제",
+    "kvkkDetails": "상세 내용",
+    "kvkkDetailsHint": "10자 이상 입력하세요.",
+    "kvkkSend": "신청 보내기",
+    "kvkkSent": "신청이 접수됐어요: {ref}",
+    "kvkkDue": "답변 기한: {date}",
+    "kvkkTypes": {
+      "access": "내 데이터를 열람하고 싶어요",
+      "rectification": "내 데이터를 정정하고 싶어요",
+      "erasure": "내 데이터를 삭제하고 싶어요",
+      "objection": "데이터 처리에 반대해요",
+      "other": "기타"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "접수됨",
+      "IN_PROGRESS": "검토 중",
+      "COMPLETED": "처리 완료",
+      "REJECTED": "거절됨"
+    },
+    "deleteTitle": "계정 삭제",
+    "deleteBody": "계정, 디자인, 사진이 영구적으로 삭제되며 되돌릴 수 없어요. 구독 중이라면 먼저 App Store 또는 Google Play에서 해지하세요.",
+    "deleteConfirm": "확인하려면 {word}를 입력하세요",
+    "deleteWord": "삭제",
+    "deleteButton": "내 계정 영구 삭제",
+    "deleted": "계정이 삭제됐어요."
+  },
+  "legal": {
+    "title": "법적 고지",
+    "englishOnly": "이 문서는 현재 튀르키예어와 영어로만 제공되어 영어 버전을 보여드려요. 튀르키예어 버전이 우선해요.",
+    "version": "버전 {v}",
+    "unavailable": "지금은 문서를 불러올 수 없어요. 잠시 후 다시 시도하세요.",
+    "others": "다른 문서",
+    "names": {
+      "kvkk": "KVKK 개인정보 처리 고지",
+      "kosullar": "이용약관",
+      "yapay-zeka": "AI 처리 동의",
+      "pazarlama": "광고성 정보 수신 동의"
+    }
+  },
+  "deletion": {
+    "title": "계정 삭제 방법",
+    "intro": "Casalume 계정과 모든 데이터는 언제든지 삭제할 수 있어요.",
+    "inApp": "앱에서: 프로필 → 계정 삭제",
+    "onWeb": "웹에서: 로그인 후 내 계정 → 계정 삭제",
+    "byMail": "계정에 접속할 수 없다면 계정 이메일 주소로 {email}에 “계정을 삭제해 주세요”라고 보내 주세요. 늦어도 30일 이내에 삭제해 드려요.",
+    "whatTitle": "무엇이 삭제되나요?",
+    "what": "계정, 디자인, 업로드한 사진, 크레딧, 기기 등록 정보, 동의 이력이 삭제돼요.",
+    "keepTitle": "무엇이 보관되나요?",
+    "keep": "법적 의무에 필요한 기록만 해당 기간 동안 보관돼요(예: KVKK 신청 기록은 종료 후 2년). 결제 기록은 App Store와 Google Play에서 보관해요.",
+    "subscription": "구독 중이라면 먼저 App Store 또는 Google Play에서 해지하세요. 계정을 삭제해도 구독은 해지되지 않아요.",
+    "cta": "내 계정으로 가기"
   }
 }

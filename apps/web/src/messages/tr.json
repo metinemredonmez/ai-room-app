@@ -12,7 +12,10 @@
       "unsubscribe": "Abonelikten çık",
       "chat": "AI Sohbet",
       "forgotPassword": "Şifremi unuttum",
-      "blog": "Blog"
+      "blog": "Blog",
+      "profile": "Hesabım",
+      "legal": "Yasal metinler",
+      "deletion": "Hesap silme"
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
@@ -26,7 +29,8 @@
     "tryFree": "Ücretsiz dene",
     "menu": "Menü",
     "guest": "Misafir",
-    "blog": "Blog"
+    "blog": "Blog",
+    "profile": "Hesabım"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "Kullanım Koşulları",
     "privacy": "Gizlilik Politikası",
     "rights": "Tüm hakları saklıdır.",
-    "note": "Fiyat ve bütçe tahminleri yapay zekâ tarafından üretilir ve bilgilendirme amaçlıdır."
+    "note": "Fiyat ve bütçe tahminleri yapay zekâ tarafından üretilir ve bilgilendirme amaçlıdır.",
+    "aiConsent": "Yapay Zekâ İşleme Onayı",
+    "deleteAccount": "Hesap Silme"
   },
   "notFound": {
     "title": "Sayfa bulunamadı",
@@ -466,5 +472,87 @@
     "ctaButton": "Stüdyoyu aç",
     "minutes": "{n} dk okuma",
     "otherLanguages": "Bu yazı başka dillerde"
+  },
+  "profile": {
+    "title": "Hesabım",
+    "signInTitle": "Hesabını görmek için giriş yap",
+    "signInBody": "Gizlilik ayarların, verilerin ve KVKK başvuruların burada.",
+    "guestTitle": "Misafir olarak kullanıyorsun",
+    "guestBody": "Tasarımların bu tarayıcıda duruyor. Kaydolursan başka cihazlardan da erişebilirsin.",
+    "signUp": "Kaydol",
+    "email": "E-posta",
+    "name": "Ad",
+    "save": "Kaydet",
+    "saved": "Kaydedildi.",
+    "verified": "Doğrulandı",
+    "notVerified": "Doğrulanmadı",
+    "plan": "Plan",
+    "credits": "Kredi",
+    "freeLeft": "Bugün kalan ücretsiz tasarım",
+    "privacyTitle": "Gizlilik ve izinler",
+    "aiConsent": "Yapay zekâ ile işleme ve yurt dışına aktarım",
+    "aiConsentHint": "Tasarım üretmek için gerekli. Geri çekersen yeni tasarım üretemezsin; hesabın ve kayıtlı tasarımların durur.",
+    "marketing": "Kampanya ve yenilik iletileri",
+    "marketingHint": "E-posta ve bildirimle. İstediğin zaman kapatabilirsin.",
+    "readText": "Metni oku",
+    "on": "Açık",
+    "off": "Kapalı",
+    "consentSaved": "Tercihin kaydedildi.",
+    "dataTitle": "Verilerim",
+    "exportBody": "Hesabındaki bütün verileri (tasarımlar, onaylar, başvurular) bir JSON dosyası olarak indir.",
+    "export": "Verilerimi indir",
+    "kvkkTitle": "KVKK başvurusu",
+    "kvkkBody": "Verilerinle ilgili haklarını (KVKK m.11) kullanmak için başvur. En geç 30 gün içinde yanıtlanır.",
+    "kvkkType": "Konu",
+    "kvkkDetails": "Açıklama",
+    "kvkkDetailsHint": "En az 10 karakter.",
+    "kvkkSend": "Başvuruyu gönder",
+    "kvkkSent": "Başvurun alındı: {ref}",
+    "kvkkDue": "Son yanıt tarihi: {date}",
+    "kvkkTypes": {
+      "access": "Verilerime erişmek istiyorum",
+      "rectification": "Verilerimin düzeltilmesini istiyorum",
+      "erasure": "Verilerimin silinmesini istiyorum",
+      "objection": "İşlemeye itiraz ediyorum",
+      "other": "Diğer"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "Alındı",
+      "IN_PROGRESS": "İnceleniyor",
+      "COMPLETED": "Sonuçlandı",
+      "REJECTED": "Reddedildi"
+    },
+    "deleteTitle": "Hesabı sil",
+    "deleteBody": "Hesabın, tasarımların ve fotoğrafların kalıcı olarak silinir; geri alınamaz. Aboneliğin varsa önce App Store ya da Google Play'den iptal et.",
+    "deleteConfirm": "Onaylamak için {word} yaz",
+    "deleteWord": "SİL",
+    "deleteButton": "Hesabımı kalıcı olarak sil",
+    "deleted": "Hesabın silindi."
+  },
+  "legal": {
+    "title": "Yasal metinler",
+    "englishOnly": "Bu metin şimdilik Türkçe ve İngilizce yayımlanıyor; İngilizce sürümünü gösteriyoruz. Türkçe sürüm esastır.",
+    "version": "Sürüm {v}",
+    "unavailable": "Metin şu an yüklenemedi. Biraz sonra tekrar dene.",
+    "others": "Diğer metinler",
+    "names": {
+      "kvkk": "KVKK Aydınlatma Metni",
+      "kosullar": "Kullanım Koşulları",
+      "yapay-zeka": "Yapay Zekâ İşleme Onayı",
+      "pazarlama": "Ticari İleti İzni"
+    }
+  },
+  "deletion": {
+    "title": "Hesabını nasıl silersin?",
+    "intro": "Casalume hesabını ve sana ait bütün verileri istediğin zaman silebilirsin.",
+    "inApp": "Uygulamada: Profil → Hesabı sil.",
+    "onWeb": "Web'de: giriş yap, Hesabım → Hesabı sil.",
+    "byMail": "Hesabına erişemiyorsan hesabının e-posta adresinden {email} adresine “Hesabımı silin” diye yaz; en geç 30 gün içinde sileriz.",
+    "whatTitle": "Neler silinir?",
+    "what": "Hesabın, tasarımların, yüklediğin fotoğraflar, kredilerin, cihaz kayıtların ve onay geçmişin.",
+    "keepTitle": "Neler saklanır?",
+    "keep": "Yalnız yasal yükümlülük için gereken kayıtlar ilgili süre boyunca saklanır (ör. KVKK başvuru kayıtları kapanıştan sonra 2 yıl). Ödeme kayıtları App Store ve Google Play'de tutulur.",
+    "subscription": "Aktif aboneliğin varsa önce App Store ya da Google Play'den iptal et; hesabı silmek aboneliği durdurmaz.",
+    "cta": "Hesabıma git"
   }
 }

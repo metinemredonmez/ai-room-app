@@ -96,10 +96,10 @@ export function SiteHeader() {
           <LanguagePicker />
           {signedIn ? (
             <div className="hidden items-center gap-1 lg:flex">
-              <span className="inline-flex max-w-40 items-center gap-1.5 truncate px-2 text-sm text-muted">
+              <Link href="/hesap" className="inline-flex max-w-40 items-center gap-1.5 truncate rounded-full px-2 py-1.5 text-sm text-muted hover:bg-surface-2 hover:text-text" title={t.nav.profile}>
                 <UserIcon className="h-4 w-4 shrink-0" aria-hidden />
                 <span className="truncate">{user.name || user.email}</span>
-              </span>
+              </Link>
               <button type="button" onClick={onLogout} className={`${btn.base} ${btn.subtle} ${btn.sm}`}>
                 <LogOut className="h-4 w-4" aria-hidden /> {t.nav.logout}
               </button>
@@ -142,6 +142,11 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="mt-3 flex gap-2">
+            {signedIn && (
+              <Link href="/hesap" onClick={() => setOpen(false)} className={`${btn.base} ${btn.ghost} ${btn.md} flex-1`}>
+                <UserIcon className="h-4 w-4" aria-hidden /> {t.nav.profile}
+              </Link>
+            )}
             {signedIn ? (
               <button type="button" onClick={onLogout} className={`${btn.base} ${btn.ghost} ${btn.md} flex-1`}>
                 <LogOut className="h-4 w-4" aria-hidden /> {t.nav.logout}

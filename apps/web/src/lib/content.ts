@@ -65,3 +65,14 @@ export function readingMinutes(body: string): number {
   const words = body.replace(/[぀-ヿ㐀-鿿가-힯]/g, " ").split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 220 + cjk / 400));
 }
+
+export type LegalKind = "privacy" | "terms" | "ai_processing" | "marketing";
+export type LegalDoc = { kind: LegalKind; version: string; locale: "tr" | "en"; title: string; body: string; publishedAt: string };
+
+/** Published legal text (Turkish or English; the other languages get English). Null when the API is down. */
+export async function legalDoc(kind: LegalKind, locale: Locale): Promise<LegalDoc | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("legal");
+  return get<LegalDoc>(`/legal/${kind}?locale=${locale}`);
+}

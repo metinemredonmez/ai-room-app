@@ -12,7 +12,10 @@
       "unsubscribe": "Afmelden",
       "chat": "AI-chat",
       "forgotPassword": "Wachtwoord vergeten",
-      "blog": "Blog"
+      "blog": "Blog",
+      "profile": "Mijn account",
+      "legal": "Juridische teksten",
+      "deletion": "Account verwijderen"
     }
   },
   "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
@@ -26,7 +29,8 @@
     "tryFree": "Gratis proberen",
     "menu": "Menu",
     "guest": "Gast",
-    "blog": "Blog"
+    "blog": "Blog",
+    "profile": "Mijn account"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "Gebruiksvoorwaarden",
     "privacy": "Privacybeleid",
     "rights": "Alle rechten voorbehouden.",
-    "note": "Prijs- en budgetschattingen worden door AI gegenereerd en zijn alleen bedoeld ter informatie."
+    "note": "Prijs- en budgetschattingen worden door AI gegenereerd en zijn alleen bedoeld ter informatie.",
+    "aiConsent": "Toestemming voor AI-verwerking",
+    "deleteAccount": "Account verwijderen"
   },
   "notFound": {
     "title": "Pagina niet gevonden",
@@ -466,5 +472,87 @@
     "ctaButton": "Studio openen",
     "minutes": "{n} min lezen",
     "otherLanguages": "Ook in"
+  },
+  "profile": {
+    "title": "Mijn account",
+    "signInTitle": "Log in om je account te bekijken",
+    "signInBody": "Hier vind je je privacyinstellingen, je gegevens en je KVKK-verzoeken.",
+    "guestTitle": "Je gebruikt Casalume als gast",
+    "guestBody": "Je ontwerpen staan in deze browser. Meld je aan om ze ook op andere apparaten te openen.",
+    "signUp": "Aanmelden",
+    "email": "E-mail",
+    "name": "Naam",
+    "save": "Opslaan",
+    "saved": "Opgeslagen.",
+    "verified": "Geverifieerd",
+    "notVerified": "Niet geverifieerd",
+    "plan": "Abonnement",
+    "credits": "Credits",
+    "freeLeft": "Gratis ontwerpen over vandaag",
+    "privacyTitle": "Privacy en toestemmingen",
+    "aiConsent": "Verwerking met AI en doorgifte naar het buitenland",
+    "aiConsentHint": "Nodig om ontwerpen te maken. Trek je dit in, dan kun je geen nieuwe ontwerpen maken; je account en opgeslagen ontwerpen blijven bestaan.",
+    "marketing": "Aanbiedingen en nieuws",
+    "marketingHint": "Per e-mail en melding. Je kunt het altijd uitzetten.",
+    "readText": "Lees de tekst",
+    "on": "Aan",
+    "off": "Uit",
+    "consentSaved": "Je keuze is opgeslagen.",
+    "dataTitle": "Mijn gegevens",
+    "exportBody": "Download alle gegevens in je account (ontwerpen, toestemmingen, verzoeken) als JSON-bestand.",
+    "export": "Mijn gegevens downloaden",
+    "kvkkTitle": "KVKK-verzoek",
+    "kvkkBody": "Dien een verzoek in om je rechten over je gegevens uit te oefenen (KVKK art. 11). Je krijgt uiterlijk binnen 30 dagen antwoord.",
+    "kvkkType": "Onderwerp",
+    "kvkkDetails": "Toelichting",
+    "kvkkDetailsHint": "Minstens 10 tekens.",
+    "kvkkSend": "Verzoek versturen",
+    "kvkkSent": "Je verzoek is ontvangen: {ref}",
+    "kvkkDue": "Uiterste antwoorddatum: {date}",
+    "kvkkTypes": {
+      "access": "Ik wil mijn gegevens inzien",
+      "rectification": "Ik wil mijn gegevens laten corrigeren",
+      "erasure": "Ik wil mijn gegevens laten verwijderen",
+      "objection": "Ik maak bezwaar tegen de verwerking",
+      "other": "Overig"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "Ontvangen",
+      "IN_PROGRESS": "In behandeling",
+      "COMPLETED": "Afgehandeld",
+      "REJECTED": "Afgewezen"
+    },
+    "deleteTitle": "Account verwijderen",
+    "deleteBody": "Je account, ontwerpen en foto's worden definitief verwijderd; dit kan niet ongedaan worden gemaakt. Heb je een abonnement, zeg dat dan eerst op via de App Store of Google Play.",
+    "deleteConfirm": "Typ {word} om te bevestigen",
+    "deleteWord": "VERWIJDER",
+    "deleteButton": "Mijn account definitief verwijderen",
+    "deleted": "Je account is verwijderd."
+  },
+  "legal": {
+    "title": "Juridische teksten",
+    "englishOnly": "Deze tekst is voorlopig alleen in het Turks en Engels beschikbaar; we tonen de Engelse versie. De Turkse versie is leidend.",
+    "version": "Versie {v}",
+    "unavailable": "De tekst kon nu niet worden geladen. Probeer het zo nog eens.",
+    "others": "Andere teksten",
+    "names": {
+      "kvkk": "KVKK-privacyverklaring",
+      "kosullar": "Gebruiksvoorwaarden",
+      "yapay-zeka": "Toestemming voor AI-verwerking",
+      "pazarlama": "Toestemming voor commerciële berichten"
+    }
+  },
+  "deletion": {
+    "title": "Hoe verwijder je je account?",
+    "intro": "Je kunt je Casalume-account en al je gegevens op elk moment verwijderen.",
+    "inApp": "In de app: Profiel → Account verwijderen.",
+    "onWeb": "Op het web: log in, dan Mijn account → Account verwijderen.",
+    "byMail": "Kun je niet bij je account, stuur dan vanaf het e-mailadres van je account “Verwijder mijn account” naar {email}; we verwijderen het uiterlijk binnen 30 dagen.",
+    "whatTitle": "Wat wordt verwijderd?",
+    "what": "Je account, ontwerpen, geüploade foto's, credits, apparaatregistraties en toestemmingsgeschiedenis.",
+    "keepTitle": "Wat wordt bewaard?",
+    "keep": "Alleen gegevens die we wettelijk moeten bewaren, blijven de vereiste periode bewaard (bijv. KVKK-verzoeken tot 2 jaar na afhandeling). Betaalgegevens worden bewaard door de App Store en Google Play.",
+    "subscription": "Heb je een actief abonnement, zeg dat dan eerst op via de App Store of Google Play; je account verwijderen stopt het abonnement niet.",
+    "cta": "Naar mijn account"
   }
 }

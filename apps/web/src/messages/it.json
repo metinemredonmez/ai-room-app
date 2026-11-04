@@ -12,7 +12,10 @@
       "unsubscribe": "Annulla iscrizione",
       "chat": "Chat AI",
       "forgotPassword": "Password dimenticata",
-      "blog": "Blog"
+      "blog": "Blog",
+      "profile": "Il mio account",
+      "legal": "Documenti legali",
+      "deletion": "Eliminazione dell'account"
     }
   },
   "brandTagline": "Riprogetta la tua stanza in pochi secondi",
@@ -26,7 +29,8 @@
     "tryFree": "Prova gratis",
     "menu": "Menu",
     "guest": "Ospite",
-    "blog": "Blog"
+    "blog": "Blog",
+    "profile": "Il mio account"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "Condizioni d'uso",
     "privacy": "Informativa sulla privacy",
     "rights": "Tutti i diritti riservati.",
-    "note": "Le stime di prezzi e budget sono generate dall'intelligenza artificiale e hanno solo scopo informativo."
+    "note": "Le stime di prezzi e budget sono generate dall'intelligenza artificiale e hanno solo scopo informativo.",
+    "aiConsent": "Consenso al trattamento con l'IA",
+    "deleteAccount": "Elimina account"
   },
   "notFound": {
     "title": "Pagina non trovata",
@@ -466,5 +472,87 @@
     "ctaButton": "Apri lo studio",
     "minutes": "{n} min di lettura",
     "otherLanguages": "Anche in"
+  },
+  "profile": {
+    "title": "Il mio account",
+    "signInTitle": "Accedi per vedere il tuo account",
+    "signInBody": "Qui trovi le impostazioni sulla privacy, i tuoi dati e le tue richieste KVKK.",
+    "guestTitle": "Stai usando Casalume come ospite",
+    "guestBody": "I tuoi progetti sono salvati in questo browser. Registrati per ritrovarli anche su altri dispositivi.",
+    "signUp": "Registrati",
+    "email": "E-mail",
+    "name": "Nome",
+    "save": "Salva",
+    "saved": "Salvato.",
+    "verified": "Verificato",
+    "notVerified": "Non verificato",
+    "plan": "Piano",
+    "credits": "Crediti",
+    "freeLeft": "Progetti gratuiti rimasti oggi",
+    "privacyTitle": "Privacy e consensi",
+    "aiConsent": "Trattamento con l'IA e trasferimento all'estero",
+    "aiConsentHint": "Necessario per creare progetti. Se lo revochi non potrai crearne di nuovi; il tuo account e i progetti salvati restano.",
+    "marketing": "Offerte e novità",
+    "marketingHint": "Via e-mail e notifiche. Puoi disattivarle quando vuoi.",
+    "readText": "Leggi il testo",
+    "on": "Attivo",
+    "off": "Disattivo",
+    "consentSaved": "La tua scelta è stata salvata.",
+    "dataTitle": "I miei dati",
+    "exportBody": "Scarica tutti i dati del tuo account (progetti, consensi, richieste) in un file JSON.",
+    "export": "Scarica i miei dati",
+    "kvkkTitle": "Richiesta KVKK",
+    "kvkkBody": "Fai richiesta per esercitare i tuoi diritti sui dati (KVKK art. 11). Ti rispondiamo entro 30 giorni.",
+    "kvkkType": "Oggetto",
+    "kvkkDetails": "Descrizione",
+    "kvkkDetailsHint": "Almeno 10 caratteri.",
+    "kvkkSend": "Invia richiesta",
+    "kvkkSent": "Richiesta ricevuta: {ref}",
+    "kvkkDue": "Risposta entro il {date}",
+    "kvkkTypes": {
+      "access": "Voglio accedere ai miei dati",
+      "rectification": "Voglio correggere i miei dati",
+      "erasure": "Voglio cancellare i miei dati",
+      "objection": "Mi oppongo al trattamento",
+      "other": "Altro"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "Ricevuta",
+      "IN_PROGRESS": "In esame",
+      "COMPLETED": "Conclusa",
+      "REJECTED": "Respinta"
+    },
+    "deleteTitle": "Elimina account",
+    "deleteBody": "Il tuo account, i progetti e le foto verranno eliminati definitivamente; l'operazione è irreversibile. Se hai un abbonamento, annullalo prima su App Store o Google Play.",
+    "deleteConfirm": "Scrivi {word} per confermare",
+    "deleteWord": "ELIMINA",
+    "deleteButton": "Elimina definitivamente il mio account",
+    "deleted": "Il tuo account è stato eliminato."
+  },
+  "legal": {
+    "title": "Documenti legali",
+    "englishOnly": "Per ora questo testo è pubblicato in turco e in inglese; ti mostriamo la versione inglese. Fa fede la versione turca.",
+    "version": "Versione {v}",
+    "unavailable": "Al momento non è stato possibile caricare il testo. Riprova tra poco.",
+    "others": "Altri documenti",
+    "names": {
+      "kvkk": "Informativa sulla privacy KVKK",
+      "kosullar": "Condizioni d'uso",
+      "yapay-zeka": "Consenso al trattamento con l'IA",
+      "pazarlama": "Consenso alle comunicazioni commerciali"
+    }
+  },
+  "deletion": {
+    "title": "Come eliminare il tuo account",
+    "intro": "Puoi eliminare il tuo account Casalume e tutti i tuoi dati in qualsiasi momento.",
+    "inApp": "Nell'app: Profilo → Elimina account.",
+    "onWeb": "Sul web: accedi, poi Il mio account → Elimina account.",
+    "byMail": "Se non riesci ad accedere al tuo account, scrivi “Eliminate il mio account” a {email} dall'indirizzo e-mail del tuo account; lo eliminiamo entro 30 giorni.",
+    "whatTitle": "Cosa viene eliminato?",
+    "what": "Il tuo account, i progetti, le foto caricate, i crediti, i dispositivi registrati e la cronologia dei consensi.",
+    "keepTitle": "Cosa viene conservato?",
+    "keep": "Conserviamo solo i dati richiesti dalla legge, per il periodo previsto (ad es. i registri delle richieste KVKK per 2 anni dalla chiusura). I dati di pagamento sono conservati da App Store e Google Play.",
+    "subscription": "Se hai un abbonamento attivo, annullalo prima su App Store o Google Play: eliminare l'account non lo interrompe.",
+    "cta": "Vai al mio account"
   }
 }

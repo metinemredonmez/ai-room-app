@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE, LOCALES, LOCALE_TAGS, localePath } from "@/lib/i18n";
 
 const BASE = (process.env.NEXT_PUBLIC_APP_URL ?? "https://casalume.app").replace(/\/$/, "");
 // Public pages only; account, sign-in and one-time link pages stay out of search.
-const PAGES = ["/", "/studio", "/fiyatlar", "/sohbet", "/blog"];
+const PAGES = ["/", "/studio", "/fiyatlar", "/sohbet", "/blog", "/yasal/kvkk", "/yasal/kosullar", "/yasal/yapay-zeka", "/yasal/pazarlama", "/hesap-silme"];
 
 /** Every page in every language with its alternates (hreflang) and x-default (Turkish), then every blog article. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

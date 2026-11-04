@@ -12,7 +12,10 @@
       "unsubscribe": "Abmelden",
       "chat": "KI-Chat",
       "forgotPassword": "Passwort vergessen",
-      "blog": "Blog"
+      "blog": "Blog",
+      "profile": "Mein Konto",
+      "legal": "Rechtliches",
+      "deletion": "Konto löschen"
     }
   },
   "brandTagline": "Gestalte deinen Raum in Sekunden neu",
@@ -26,7 +29,8 @@
     "tryFree": "Kostenlos testen",
     "menu": "Menü",
     "guest": "Gast",
-    "blog": "Blog"
+    "blog": "Blog",
+    "profile": "Mein Konto"
   },
   "credits": {
     "pro": "PRO",
@@ -449,7 +453,9 @@
     "terms": "Nutzungsbedingungen",
     "privacy": "Datenschutzerklärung",
     "rights": "Alle Rechte vorbehalten.",
-    "note": "Preis- und Budgetschätzungen werden von AI erstellt und dienen nur zur Information."
+    "note": "Preis- und Budgetschätzungen werden von AI erstellt und dienen nur zur Information.",
+    "aiConsent": "Einwilligung zur KI-Verarbeitung",
+    "deleteAccount": "Konto löschen"
   },
   "notFound": {
     "title": "Seite nicht gefunden",
@@ -466,5 +472,87 @@
     "ctaButton": "Studio öffnen",
     "minutes": "{n} Min. Lesezeit",
     "otherLanguages": "Auch auf"
+  },
+  "profile": {
+    "title": "Mein Konto",
+    "signInTitle": "Melde dich an, um dein Konto zu sehen",
+    "signInBody": "Hier findest du deine Datenschutzeinstellungen, deine Daten und deine KVKK-Anträge.",
+    "guestTitle": "Du nutzt Casalume als Gast",
+    "guestBody": "Deine Designs werden in diesem Browser gespeichert. Registriere dich, um auch von anderen Geräten darauf zuzugreifen.",
+    "signUp": "Registrieren",
+    "email": "E-Mail",
+    "name": "Name",
+    "save": "Speichern",
+    "saved": "Gespeichert.",
+    "verified": "Bestätigt",
+    "notVerified": "Nicht bestätigt",
+    "plan": "Tarif",
+    "credits": "Credits",
+    "freeLeft": "Heute verbleibende kostenlose Designs",
+    "privacyTitle": "Datenschutz und Einwilligungen",
+    "aiConsent": "KI-Verarbeitung und Übermittlung ins Ausland",
+    "aiConsentHint": "Wird zum Erstellen von Designs benötigt. Wenn du sie widerrufst, kannst du keine neuen Designs erstellen; dein Konto und deine gespeicherten Designs bleiben erhalten.",
+    "marketing": "Angebote und Neuigkeiten",
+    "marketingHint": "Per E-Mail und Benachrichtigung. Du kannst das jederzeit abschalten.",
+    "readText": "Text lesen",
+    "on": "An",
+    "off": "Aus",
+    "consentSaved": "Deine Auswahl wurde gespeichert.",
+    "dataTitle": "Meine Daten",
+    "exportBody": "Lade alle Daten deines Kontos (Designs, Einwilligungen, Anträge) als JSON-Datei herunter.",
+    "export": "Meine Daten herunterladen",
+    "kvkkTitle": "KVKK-Antrag",
+    "kvkkBody": "Stelle einen Antrag, um deine Rechte an deinen Daten (KVKK Art. 11) wahrzunehmen. Wir antworten spätestens innerhalb von 30 Tagen.",
+    "kvkkType": "Betreff",
+    "kvkkDetails": "Beschreibung",
+    "kvkkDetailsHint": "Mindestens 10 Zeichen.",
+    "kvkkSend": "Antrag senden",
+    "kvkkSent": "Dein Antrag ist eingegangen: {ref}",
+    "kvkkDue": "Antwort spätestens bis: {date}",
+    "kvkkTypes": {
+      "access": "Ich möchte Auskunft über meine Daten",
+      "rectification": "Ich möchte meine Daten berichtigen lassen",
+      "erasure": "Ich möchte meine Daten löschen lassen",
+      "objection": "Ich widerspreche der Verarbeitung",
+      "other": "Sonstiges"
+    },
+    "kvkkStatus": {
+      "RECEIVED": "Eingegangen",
+      "IN_PROGRESS": "In Prüfung",
+      "COMPLETED": "Abgeschlossen",
+      "REJECTED": "Abgelehnt"
+    },
+    "deleteTitle": "Konto löschen",
+    "deleteBody": "Dein Konto, deine Designs und Fotos werden endgültig gelöscht; das kann nicht rückgängig gemacht werden. Wenn du ein Abo hast, kündige es zuerst im App Store oder bei Google Play.",
+    "deleteConfirm": "Gib zur Bestätigung {word} ein",
+    "deleteWord": "LÖSCHEN",
+    "deleteButton": "Mein Konto endgültig löschen",
+    "deleted": "Dein Konto wurde gelöscht."
+  },
+  "legal": {
+    "title": "Rechtliches",
+    "englishOnly": "Dieser Text wird derzeit auf Türkisch und Englisch veröffentlicht; wir zeigen dir die englische Fassung. Maßgeblich ist die türkische Fassung.",
+    "version": "Version {v}",
+    "unavailable": "Der Text konnte gerade nicht geladen werden. Versuch es gleich noch einmal.",
+    "others": "Weitere Texte",
+    "names": {
+      "kvkk": "KVKK-Datenschutzhinweis",
+      "kosullar": "Nutzungsbedingungen",
+      "yapay-zeka": "Einwilligung zur KI-Verarbeitung",
+      "pazarlama": "Einwilligung in Werbenachrichten"
+    }
+  },
+  "deletion": {
+    "title": "So löschst du dein Konto",
+    "intro": "Du kannst dein Casalume-Konto und alle deine Daten jederzeit löschen.",
+    "inApp": "In der App: Profil → Konto löschen.",
+    "onWeb": "Im Web: Melde dich an, dann Mein Konto → Konto löschen.",
+    "byMail": "Wenn du nicht auf dein Konto zugreifen kannst, schreib von der E-Mail-Adresse deines Kontos „Bitte löscht mein Konto“ an {email}; wir löschen es spätestens innerhalb von 30 Tagen.",
+    "whatTitle": "Was wird gelöscht?",
+    "what": "Dein Konto, deine Designs, hochgeladenen Fotos, Credits, Geräteregistrierungen und dein Einwilligungsverlauf.",
+    "keepTitle": "Was wird aufbewahrt?",
+    "keep": "Nur gesetzlich vorgeschriebene Aufzeichnungen werden für die jeweilige Frist aufbewahrt (z. B. KVKK-Antragsunterlagen 2 Jahre nach Abschluss). Zahlungsdaten liegen beim App Store und bei Google Play.",
+    "subscription": "Wenn du ein aktives Abo hast, kündige es zuerst im App Store oder bei Google Play; das Löschen des Kontos beendet das Abo nicht.",
+    "cta": "Zu meinem Konto"
   }
 }
