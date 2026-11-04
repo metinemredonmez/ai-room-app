@@ -314,3 +314,27 @@ export type WeeklyReport = {
   };
   text: { summary: string; highlights: string[]; actions: string[] } | null;
 };
+
+/** Destek (API.md §7.19). */
+export type SupportStatus = "OPEN" | "ANSWERED" | "CLOSED";
+export type SupportTicket = {
+  id: string;
+  reference: string;
+  category: string;
+  subject: string;
+  status: SupportStatus;
+  userUnread: boolean;
+  platform: string | null;
+  lastMessageAt: string;
+  createdAt: string;
+  closedAt: string | null;
+  user?: { email: string | null; isGuest: boolean; plan: string };
+};
+export type SupportDetail = SupportTicket & {
+  requestId: string | null;
+  designId: string | null;
+  appVersion: string | null;
+  locale: string;
+  messages: Array<{ id: string; author: "USER" | "STAFF"; body: string; createdAt: string }>;
+  user: { id: string; email: string | null; name: string | null; isGuest: boolean; plan: string; locale: string; createdAt: string };
+};

@@ -20,6 +20,7 @@ export function SiteFooter() {
       title: t.footer.company,
       links: [
         { href: "/#nasil", label: t.footer.about },
+        { href: "/destek", label: t.footer.support },
         { href: "mailto:support@casalume.app", label: t.footer.contact },
       ],
     },

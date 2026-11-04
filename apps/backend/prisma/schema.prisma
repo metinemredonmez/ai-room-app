@@ -132,6 +132,7 @@ model User {
   backupCodes         AdminBackupCode[]
   identities          AuthIdentity[]
   dataRequests        DataRequest[]
+  supportTickets      SupportTicket[]
   images              Image[]
   designs             Design[]
   ledger              CreditLedger[]
@@ -586,4 +587,48 @@ model BlogPost {
   @@unique([locale, slug])
   @@unique([groupId, locale])
   @@index([locale, status, publishedAt])
+}
+
+enum SupportStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+/// Support request from the app or the web (API.md §7.19). Deleted with the account (it holds personal data);
+/// closed tickets are purged after 2 years. `requestId` links the error screen the user wrote from.
+model SupportTicket {
+  id            String           @id @default(uuid()) @db.Uuid
+  reference     String           @unique
+  userId        String           @db.Uuid
+  category      String // bug | billing | account | design | idea | other
+  subject       String
+  status        SupportStatus    @default(OPEN)
+  requestId     String?
+  designId      String?          @db.Uuid
+  platform      String? // web | ios | android
+  appVersion    String?
+  locale        String           @default("tr")
+  userUnread    Boolean          @default(false) // a staff reply the user hasn't opened yet
+  lastMessageAt DateTime         @default(now())
+  closedAt      DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      SupportMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([userId, createdAt])
+}
+
+model SupportMessage {
+  id        String        @id @default(uuid()) @db.Uuid
+  ticketId  String        @db.Uuid
+  author    String // USER | STAFF
+  staffId   String?       @db.Uuid
+  body      String
+  createdAt DateTime      @default(now())
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
 }

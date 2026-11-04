@@ -51,6 +51,9 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () =
   const { t } = useApp();
   const text = useErrorText()(error);
   const needsPlan = error instanceof ApiError && (error.code === "insufficient_credits" || error.status === 402);
+  // A failure on our side: offer support, with the request id so the team can find it in the logs.
+  const ours = error instanceof ApiError && (error.status >= 500 || error.code === "internal");
+  const supportHref = `/destek${error instanceof ApiError && error.requestId ? `?rid=${encodeURIComponent(error.requestId)}` : ""}`;
   return (
     <div role="alert" className="flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/5 p-4 text-sm text-text">
       <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden />
@@ -66,6 +69,11 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () =
             <button type="button" onClick={onRetry} className="font-medium text-primary underline-offset-4 hover:underline">
               {t.common.retry}
             </button>
+          )}
+          {ours && (
+            <Link href={supportHref} className="font-medium text-primary underline-offset-4 hover:underline">
+              {t.support.reportProblem} →
+            </Link>
           )}
         </div>
       </div>

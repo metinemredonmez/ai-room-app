@@ -15,7 +15,8 @@
       "blog": "Blog",
       "profile": "Mein Konto",
       "legal": "Rechtliches",
-      "deletion": "Konto löschen"
+      "deletion": "Konto löschen",
+      "support": "Support"
     }
   },
   "brandTagline": "Gestalte deinen Raum in Sekunden neu",
@@ -455,7 +456,8 @@
     "rights": "Alle Rechte vorbehalten.",
     "note": "Preis- und Budgetschätzungen werden von AI erstellt und dienen nur zur Information.",
     "aiConsent": "Einwilligung zur KI-Verarbeitung",
-    "deleteAccount": "Konto löschen"
+    "deleteAccount": "Konto löschen",
+    "support": "Support"
   },
   "notFound": {
     "title": "Seite nicht gefunden",
@@ -554,5 +556,42 @@
     "keep": "Nur gesetzlich vorgeschriebene Aufzeichnungen werden für die jeweilige Frist aufbewahrt (z. B. KVKK-Antragsunterlagen 2 Jahre nach Abschluss). Zahlungsdaten liegen beim App Store und bei Google Play.",
     "subscription": "Wenn du ein aktives Abo hast, kündige es zuerst im App Store oder bei Google Play; das Löschen des Kontos beendet das Abo nicht.",
     "cta": "Zu meinem Konto"
+  },
+  "support": {
+    "title": "Support",
+    "intro": "Ein Problem oder eine Idee? Schreib uns, unser Team antwortet dir. Die Antwort erscheint hier und, wenn deine E-Mail-Adresse bestätigt ist, auch per E-Mail.",
+    "newTitle": "Neue Anfrage",
+    "category": "Thema",
+    "categories": {
+      "bug": "Fehler / funktioniert nicht",
+      "billing": "Zahlung und Abo",
+      "account": "Konto und Anmeldung",
+      "design": "Designergebnis",
+      "idea": "Vorschlag",
+      "other": "Sonstiges"
+    },
+    "subject": "Betreff",
+    "message": "Deine Nachricht",
+    "messageHint": "Mindestens 10 Zeichen. Wenn du schreibst, was du gemacht hast und was passiert ist, können wir schneller helfen.",
+    "send": "Anfrage senden",
+    "sent": "Deine Anfrage ist eingegangen: {ref}",
+    "myTickets": "Meine Anfragen",
+    "empty": "Du hast noch keine Anfragen.",
+    "status": {
+      "OPEN": "Offen",
+      "ANSWERED": "Beantwortet",
+      "CLOSED": "Geschlossen"
+    },
+    "unread": "Neue Antwort",
+    "you": "Du",
+    "team": "Support-Team",
+    "replyLabel": "Antworten",
+    "replySend": "Senden",
+    "guestNote": "Du schreibst als Gast: Die Antwort siehst du auf dieser Seite in diesem Browser. Melde dich an, um sie per E-Mail zu erhalten.",
+    "errorRef": "Die Fehler-ID wird der Anfrage beigefügt: {id}",
+    "reportProblem": "Support kontaktieren",
+    "back": "Alle Anfragen",
+    "newButton": "Neue Anfrage stellen",
+    "closedNote": "Diese Anfrage ist geschlossen. Wenn du antwortest, wird sie wieder geöffnet."
   }
 }

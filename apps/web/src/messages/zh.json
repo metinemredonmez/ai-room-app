@@ -15,7 +15,8 @@
       "blog": "博客",
       "profile": "我的账户",
       "legal": "法律文件",
-      "deletion": "删除账户"
+      "deletion": "删除账户",
+      "support": "帮助与支持"
     }
   },
   "brandTagline": "几秒钟，重新设计你的房间",
@@ -455,7 +456,8 @@
     "rights": "保留所有权利。",
     "note": "价格和预算估算由人工智能生成，仅供参考。",
     "aiConsent": "AI 处理同意书",
-    "deleteAccount": "删除账户"
+    "deleteAccount": "删除账户",
+    "support": "帮助与支持"
   },
   "notFound": {
     "title": "页面未找到",
@@ -554,5 +556,42 @@
     "keep": "仅保留履行法定义务所需的记录，并在规定期限内保存（例如 KVKK 申请记录在结案后保存 2 年）。付款记录由 App Store 和 Google Play 保存。",
     "subscription": "如有生效中的订阅，请先在 App Store 或 Google Play 中取消；删除账户并不会停止订阅。",
     "cta": "前往我的账户"
+  },
+  "support": {
+    "title": "帮助与支持",
+    "intro": "遇到问题或有好建议？写下来，我们的团队会回复你。回复会显示在这里；如果你的邮箱已验证，也会通过邮件发送给你。",
+    "newTitle": "新建工单",
+    "category": "问题类型",
+    "categories": {
+      "bug": "故障 / 无法使用",
+      "billing": "支付与订阅",
+      "account": "账号与登录",
+      "design": "设计结果",
+      "idea": "建议",
+      "other": "其他"
+    },
+    "subject": "标题",
+    "message": "你的留言",
+    "messageHint": "至少 10 个字符。写清你做了什么、发生了什么，我们能更快解决。",
+    "send": "提交工单",
+    "sent": "已收到你的工单：{ref}",
+    "myTickets": "我的工单",
+    "empty": "暂无工单。",
+    "status": {
+      "OPEN": "处理中",
+      "ANSWERED": "已回复",
+      "CLOSED": "已关闭"
+    },
+    "unread": "新回复",
+    "you": "你",
+    "team": "支持团队",
+    "replyLabel": "写回复",
+    "replySend": "发送",
+    "guestNote": "你正以访客身份留言：回复将显示在此浏览器的本页面中。登录后可通过邮件接收回复。",
+    "errorRef": "错误 ID 将附加到工单中：{id}",
+    "reportProblem": "联系客服",
+    "back": "全部工单",
+    "newButton": "新建工单",
+    "closedNote": "此工单已关闭。回复后将重新开启。"
   }
 }

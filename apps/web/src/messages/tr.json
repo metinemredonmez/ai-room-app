@@ -15,7 +15,8 @@
       "blog": "Blog",
       "profile": "Hesabım",
       "legal": "Yasal metinler",
-      "deletion": "Hesap silme"
+      "deletion": "Hesap silme",
+      "support": "Destek"
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
@@ -455,7 +456,8 @@
     "rights": "Tüm hakları saklıdır.",
     "note": "Fiyat ve bütçe tahminleri yapay zekâ tarafından üretilir ve bilgilendirme amaçlıdır.",
     "aiConsent": "Yapay Zekâ İşleme Onayı",
-    "deleteAccount": "Hesap Silme"
+    "deleteAccount": "Hesap Silme",
+    "support": "Destek"
   },
   "notFound": {
     "title": "Sayfa bulunamadı",
@@ -554,5 +556,42 @@
     "keep": "Yalnız yasal yükümlülük için gereken kayıtlar ilgili süre boyunca saklanır (ör. KVKK başvuru kayıtları kapanıştan sonra 2 yıl). Ödeme kayıtları App Store ve Google Play'de tutulur.",
     "subscription": "Aktif aboneliğin varsa önce App Store ya da Google Play'den iptal et; hesabı silmek aboneliği durdurmaz.",
     "cta": "Hesabıma git"
+  },
+  "support": {
+    "title": "Destek",
+    "intro": "Bir sorun mu var, bir önerin mi? Yaz, ekibimiz yanıtlasın. Yanıt burada görünür; e-postan doğrulanmışsa e-postayla da gelir.",
+    "newTitle": "Yeni talep",
+    "category": "Konu türü",
+    "categories": {
+      "bug": "Hata / çalışmıyor",
+      "billing": "Ödeme ve abonelik",
+      "account": "Hesap ve giriş",
+      "design": "Tasarım sonucu",
+      "idea": "Öneri",
+      "other": "Diğer"
+    },
+    "subject": "Başlık",
+    "message": "Mesajın",
+    "messageHint": "En az 10 karakter. Ne yaptığını ve ne olduğunu yazarsan daha hızlı çözeriz.",
+    "send": "Talebi gönder",
+    "sent": "Talebin alındı: {ref}",
+    "myTickets": "Taleplerim",
+    "empty": "Henüz talebin yok.",
+    "status": {
+      "OPEN": "Açık",
+      "ANSWERED": "Yanıtlandı",
+      "CLOSED": "Kapandı"
+    },
+    "unread": "Yeni yanıt",
+    "you": "Sen",
+    "team": "Destek ekibi",
+    "replyLabel": "Cevap yaz",
+    "replySend": "Gönder",
+    "guestNote": "Misafir olarak yazıyorsun: yanıtı bu tarayıcıda, bu sayfada görürsün. E-postayla almak için giriş yap.",
+    "errorRef": "Hata kimliği talebe eklenecek: {id}",
+    "reportProblem": "Destek'e yaz",
+    "back": "Tüm talepler",
+    "newButton": "Yeni talep aç",
+    "closedNote": "Bu talep kapandı. Cevap yazarsan yeniden açılır."
   }
 }

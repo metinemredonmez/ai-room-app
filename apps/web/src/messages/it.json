@@ -15,7 +15,8 @@
       "blog": "Blog",
       "profile": "Il mio account",
       "legal": "Documenti legali",
-      "deletion": "Eliminazione dell'account"
+      "deletion": "Eliminazione dell'account",
+      "support": "Assistenza"
     }
   },
   "brandTagline": "Riprogetta la tua stanza in pochi secondi",
@@ -455,7 +456,8 @@
     "rights": "Tutti i diritti riservati.",
     "note": "Le stime di prezzi e budget sono generate dall'intelligenza artificiale e hanno solo scopo informativo.",
     "aiConsent": "Consenso al trattamento con l'IA",
-    "deleteAccount": "Elimina account"
+    "deleteAccount": "Elimina account",
+    "support": "Assistenza"
   },
   "notFound": {
     "title": "Pagina non trovata",
@@ -554,5 +556,42 @@
     "keep": "Conserviamo solo i dati richiesti dalla legge, per il periodo previsto (ad es. i registri delle richieste KVKK per 2 anni dalla chiusura). I dati di pagamento sono conservati da App Store e Google Play.",
     "subscription": "Se hai un abbonamento attivo, annullalo prima su App Store o Google Play: eliminare l'account non lo interrompe.",
     "cta": "Vai al mio account"
+  },
+  "support": {
+    "title": "Assistenza",
+    "intro": "Hai un problema o un'idea? Scrivici e il nostro team ti risponderà. La risposta compare qui e, se la tua e-mail è verificata, arriva anche via e-mail.",
+    "newTitle": "Nuova richiesta",
+    "category": "Argomento",
+    "categories": {
+      "bug": "Errore / non funziona",
+      "billing": "Pagamento e abbonamento",
+      "account": "Account e accesso",
+      "design": "Risultato del design",
+      "idea": "Suggerimento",
+      "other": "Altro"
+    },
+    "subject": "Titolo",
+    "message": "Il tuo messaggio",
+    "messageHint": "Almeno 10 caratteri. Se ci dici cosa hai fatto e cosa è successo, risolviamo più in fretta.",
+    "send": "Invia richiesta",
+    "sent": "Richiesta ricevuta: {ref}",
+    "myTickets": "Le mie richieste",
+    "empty": "Non hai ancora richieste.",
+    "status": {
+      "OPEN": "Aperta",
+      "ANSWERED": "Risposta inviata",
+      "CLOSED": "Chiusa"
+    },
+    "unread": "Nuova risposta",
+    "you": "Tu",
+    "team": "Team di assistenza",
+    "replyLabel": "Rispondi",
+    "replySend": "Invia",
+    "guestNote": "Stai scrivendo come ospite: vedrai la risposta in questa pagina, su questo browser. Accedi per riceverla via e-mail.",
+    "errorRef": "L'ID dell'errore verrà allegato alla richiesta: {id}",
+    "reportProblem": "Scrivi all'assistenza",
+    "back": "Tutte le richieste",
+    "newButton": "Apri una nuova richiesta",
+    "closedNote": "Questa richiesta è chiusa. Se rispondi, verrà riaperta."
   }
 }

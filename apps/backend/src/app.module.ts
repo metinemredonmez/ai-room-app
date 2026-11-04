@@ -17,6 +17,8 @@ import { AdminBroadcastsController, BroadcastsController, UnsubscribeController 
 import { BroadcastsService } from './broadcasts/broadcasts.service.js';
 import { AdminMarketingController } from './marketing/marketing.controller.js';
 import { AdminBlogController, BlogController } from './blog/blog.controller.js';
+import { AdminSupportController, SupportController } from './support/support.controller.js';
+import { SupportService } from './support/support.service.js';
 import { BlogService } from './blog/blog.service.js';
 import { MarketingService } from './marketing/marketing.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
@@ -39,7 +41,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -56,6 +58,7 @@ import { UsersService } from './users/users.service.js';
     BroadcastsService,
     MarketingService,
     BlogService,
+    SupportService,
     JobsService,
     RateLimiter,
     TokensService,

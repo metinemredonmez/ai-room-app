@@ -530,6 +530,28 @@ if (adminToken) {
   const asoAudit = new Set(((await call('GET', '/admin/audit?limit=100', A)).json?.items ?? []).map((a) => a.action));
   ok(['marketing.aso_run', 'marketing.edit', 'marketing.approve', 'marketing.archive', 'marketing.social_run', 'marketing.campaign_run', 'marketing.to_broadcast', 'marketing.report_run', 'marketing.blog_run', 'marketing.blog_translate', 'blog.unpublish', 'marketing.seo_run'].every((x) => asoAudit.has(x)), 'marketing actions are audited (LOG-01)');
 
+  // API.md §7.19 Destek: the user opens a ticket (with the failing request's id), the team answers in the admin,
+  // the user is told by e-mail and can answer back; nobody else can read it (AZ-01).
+  const U = { token: newPw.json?.accessToken };
+  const ticket = await call('POST', '/me/support', { ...U, body: { category: 'bug', subject: 'Smoke destek', body: 'Stüdyoda yükleme sırasında hata aldım.', requestId: 'smoke-request-0001', platform: 'web' } });
+  const stranger = await call('GET', `/me/support/${ticket.json?.id}`, { token });
+  const inbox = await call('GET', '/admin/support?status=OPEN', A);
+  ok(ticket.status === 201 && ticket.json?.reference?.startsWith('DST-') && stranger.status === 404 && inbox.json?.items?.some((t) => t.id === ticket.json?.id),
+    'support ticket opened; only its owner and the team can read it (AZ-01)', `${ticket.status} / ${stranger.status}`);
+  const answer = await call('POST', `/admin/support/${ticket.json?.id}/reply`, { ...A, body: { body: 'Düzelttik, yeniden dener misin?' } });
+  const replyMail = await lastMailTo(userEmail, 'Destek talebine yanıt');
+  const mine = await call('GET', '/me/support', U);
+  ok(answer.json?.status === 'ANSWERED' && replyMail?.text?.includes('Düzelttik') && replyMail.text.includes('/destek?t=') && mine.json?.items?.find((t) => t.id === ticket.json?.id)?.userUnread === true,
+    'team answer reaches the user by e-mail and shows as unread', answer.json?.status);
+  const back = await call('POST', `/me/support/${ticket.json?.id}/messages`, { ...U, body: { body: 'Hâlâ olmuyor.' } });
+  const tClosed = await call('POST', `/admin/support/${ticket.json?.id}/close`, A);
+  ok(back.json?.status === 'OPEN' && back.json?.userUnread === false && tClosed.json?.status === 'CLOSED' && tClosed.json?.messages?.length === 3,
+    'user answer reopens; the team closes', `${back.json?.status} / ${tClosed.json?.status}`);
+  const exported = await call('GET', '/me/export', U);
+  ok(exported.json?.supportTickets?.some((t) => t.reference === ticket.json?.reference), 'support tickets are in the KVKK data export');
+  const supportAudit = new Set(((await call('GET', '/admin/audit?limit=20', A)).json?.items ?? []).map((x) => x.action));
+  ok(supportAudit.has('support.reply') && supportAudit.has('support.close'), 'support answers and closes are audited (LOG-01)');
+
   const texts = await call('GET', '/admin/legal', A);
   ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');
   const draftBody = { kind: 'marketing', version: '2099-12-31', locale: 'tr', title: 'Smoke taslak', body: 'Smoke testi için geçici taslak metin. '.repeat(3), requiresConsent: false };
@@ -664,7 +686,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

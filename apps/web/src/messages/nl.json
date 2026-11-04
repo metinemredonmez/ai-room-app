@@ -15,7 +15,8 @@
       "blog": "Blog",
       "profile": "Mijn account",
       "legal": "Juridische teksten",
-      "deletion": "Account verwijderen"
+      "deletion": "Account verwijderen",
+      "support": "Support"
     }
   },
   "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
@@ -455,7 +456,8 @@
     "rights": "Alle rechten voorbehouden.",
     "note": "Prijs- en budgetschattingen worden door AI gegenereerd en zijn alleen bedoeld ter informatie.",
     "aiConsent": "Toestemming voor AI-verwerking",
-    "deleteAccount": "Account verwijderen"
+    "deleteAccount": "Account verwijderen",
+    "support": "Support"
   },
   "notFound": {
     "title": "Pagina niet gevonden",
@@ -554,5 +556,42 @@
     "keep": "Alleen gegevens die we wettelijk moeten bewaren, blijven de vereiste periode bewaard (bijv. KVKK-verzoeken tot 2 jaar na afhandeling). Betaalgegevens worden bewaard door de App Store en Google Play.",
     "subscription": "Heb je een actief abonnement, zeg dat dan eerst op via de App Store of Google Play; je account verwijderen stopt het abonnement niet.",
     "cta": "Naar mijn account"
+  },
+  "support": {
+    "title": "Support",
+    "intro": "Loop je ergens tegenaan of heb je een idee? Schrijf ons en ons team antwoordt. Het antwoord verschijnt hier, en ook per e-mail als je e-mailadres geverifieerd is.",
+    "newTitle": "Nieuwe aanvraag",
+    "category": "Onderwerp",
+    "categories": {
+      "bug": "Fout / werkt niet",
+      "billing": "Betaling en abonnement",
+      "account": "Account en inloggen",
+      "design": "Ontwerpresultaat",
+      "idea": "Suggestie",
+      "other": "Overig"
+    },
+    "subject": "Titel",
+    "message": "Je bericht",
+    "messageHint": "Minimaal 10 tekens. Vertel wat je deed en wat er gebeurde, dan lossen we het sneller op.",
+    "send": "Aanvraag versturen",
+    "sent": "Je aanvraag is ontvangen: {ref}",
+    "myTickets": "Mijn aanvragen",
+    "empty": "Je hebt nog geen aanvragen.",
+    "status": {
+      "OPEN": "Open",
+      "ANSWERED": "Beantwoord",
+      "CLOSED": "Gesloten"
+    },
+    "unread": "Nieuw antwoord",
+    "you": "Jij",
+    "team": "Supportteam",
+    "replyLabel": "Antwoord schrijven",
+    "replySend": "Versturen",
+    "guestNote": "Je schrijft als gast: je ziet het antwoord op deze pagina in deze browser. Log in om het per e-mail te ontvangen.",
+    "errorRef": "De fout-ID wordt aan je aanvraag toegevoegd: {id}",
+    "reportProblem": "Contact met support",
+    "back": "Alle aanvragen",
+    "newButton": "Nieuwe aanvraag starten",
+    "closedNote": "Deze aanvraag is gesloten. Als je antwoordt, wordt hij weer geopend."
   }
 }

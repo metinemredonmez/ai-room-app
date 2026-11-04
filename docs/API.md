@@ -861,3 +861,35 @@ Her çalıştırma (`POST /admin/marketing/<tür>`) aynı bütçe kesicisine ve 
 - `GET /v1/seo/meta?locale=` → `{ pages: { home: { title, description }, … } }`.
 - Web bu metni birkaç dakikalık önbellekle sayfa başlığına ve açıklamasına uygular. Onaylı metin yoksa ya da API
   yanıt vermezse sitenin kendi metni geçerlidir.
+
+### 7.19 Destek talepleri — backend + admin + web (mobil sonra)
+Kullanıcı web'den (`/destek`) ya da uygulamadan talep açar; ekip admin'de (**Destek**) yanıtlar. Yanıt kullanıcıya
+e-posta (yalnız doğrulanmış adres) ve push ile gider. Kullanıcı yalnız kendi taleplerini görür (AZ-01).
+
+**Kurallar**
+- Tür: `bug | billing | account | design | idea | other`. Başlık 3–120, mesaj 10–4000 (cevaplarda 1–4000) karakter.
+- `requestId`: hata ekranından açılırken backend'in `X-Request-Id`'si gönderilir; ekip logda arar. Web, BFF'den gelen bu
+  başlığı hata kutusundaki "Destek'e yaz" bağlantısına ekler.
+- Aynı anda en çok 5 açık talep; saatte 5 yeni talep, 30 mesaj.
+- Durum: `OPEN` → (ekip yanıtı) `ANSWERED` → (ekip) `CLOSED`. Kullanıcı cevap yazınca talep `OPEN` olur.
+- `userUnread`: okunmamış ekip yanıtı; kullanıcı talebi açınca düşer.
+- Ekibe yeni talep e-postası (`LEGAL_CONTACT_EMAIL`): yalnız numara, tür ve başlık; mesaj panelde kalır.
+- Kullanıcıya yanıt e-postası Türkçe ya da İngilizce (diğer diller İngilizce), bağlantı `WEB_APP_URL/<dil>/destek?t=<id>`.
+- Push: `data: { type: 'support', ticketId, url: 'casalume://support/<id>', path: '/destek?t=<id>' }`, Android kanal
+  `designs` (mobil `support` kanalı ekleyince değiştirilebilir).
+- Hesap silinince talepler de silinir; kapanmış talepler 2 yıl sonra silinir (retention). Talepler veri indirme
+  (`/me/export` → `supportTickets`) çıktısında yer alır.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/me/support` | kullanıcı | Taleplerim (son mesaja göre, en çok 50) |
+| POST | `/me/support` | kullanıcı | `{ category, subject, body, requestId?, designId?, platform?, appVersion? }` → 201 |
+| GET | `/me/support/:id` | kullanıcı | Talep + mesajlar; yanıtı okunmuş sayar |
+| POST | `/me/support/:id/messages` | kullanıcı | `{ body }` → talep yeniden açılır |
+| GET | `/admin/support?status=&cursor=&limit=` | SUPPORT | Liste + `counts` (OPEN/ANSWERED/CLOSED) |
+| GET | `/admin/support/:id` | SUPPORT | Talep, mesajlar, kullanıcı özeti |
+| POST | `/admin/support/:id/reply` | SUPPORT | `{ body }` → ANSWERED, e-posta + push |
+| POST | `/admin/support/:id/close` | SUPPORT | CLOSED |
+
+Mobil (sonra): Profil → Destek ekranı aynı `/me/support` uçlarını kullanır; `platform: 'ios' | 'android'` ve
+`appVersion` gönderilir; `casalume://support/<id>` derin bağlantısı talebi açar.

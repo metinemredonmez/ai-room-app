@@ -15,7 +15,8 @@
       "blog": "Blog",
       "profile": "Mon compte",
       "legal": "Mentions légales",
-      "deletion": "Suppression du compte"
+      "deletion": "Suppression du compte",
+      "support": "Assistance"
     }
   },
   "brandTagline": "Réinventez votre pièce en quelques secondes",
@@ -455,7 +456,8 @@
     "rights": "Tous droits réservés.",
     "note": "Les estimations de prix et de budget sont générées par l'IA et fournies à titre indicatif.",
     "aiConsent": "Consentement au traitement par IA",
-    "deleteAccount": "Supprimer le compte"
+    "deleteAccount": "Supprimer le compte",
+    "support": "Assistance"
   },
   "notFound": {
     "title": "Page introuvable",
@@ -554,5 +556,42 @@
     "keep": "Seuls les enregistrements exigés par la loi sont conservés pendant la durée requise (p. ex. les dossiers de demandes KVKK, 2 ans après leur clôture). Les données de paiement sont conservées par l'App Store et Google Play.",
     "subscription": "Si vous avez un abonnement actif, résiliez-le d'abord sur l'App Store ou Google Play ; supprimer le compte n'arrête pas l'abonnement.",
     "cta": "Accéder à mon compte"
+  },
+  "support": {
+    "title": "Assistance",
+    "intro": "Un problème ou une idée ? Écrivez-nous, notre équipe vous répondra. La réponse s'affiche ici, et vous la recevez aussi par e-mail si votre adresse est vérifiée.",
+    "newTitle": "Nouvelle demande",
+    "category": "Sujet",
+    "categories": {
+      "bug": "Bug / ne fonctionne pas",
+      "billing": "Paiement et abonnement",
+      "account": "Compte et connexion",
+      "design": "Résultat du design",
+      "idea": "Suggestion",
+      "other": "Autre"
+    },
+    "subject": "Titre",
+    "message": "Votre message",
+    "messageHint": "10 caractères minimum. Décrivez ce que vous avez fait et ce qui s'est passé : nous résoudrons le problème plus vite.",
+    "send": "Envoyer la demande",
+    "sent": "Demande reçue : {ref}",
+    "myTickets": "Mes demandes",
+    "empty": "Aucune demande pour le moment.",
+    "status": {
+      "OPEN": "Ouverte",
+      "ANSWERED": "Répondue",
+      "CLOSED": "Fermée"
+    },
+    "unread": "Nouvelle réponse",
+    "you": "Vous",
+    "team": "Équipe d'assistance",
+    "replyLabel": "Répondre",
+    "replySend": "Envoyer",
+    "guestNote": "Vous écrivez en tant qu'invité : vous verrez la réponse sur cette page, dans ce navigateur. Connectez-vous pour la recevoir par e-mail.",
+    "errorRef": "L'identifiant de l'erreur sera joint à la demande : {id}",
+    "reportProblem": "Contacter l'assistance",
+    "back": "Toutes les demandes",
+    "newButton": "Nouvelle demande",
+    "closedNote": "Cette demande est fermée. Si vous répondez, elle sera rouverte."
   }
 }

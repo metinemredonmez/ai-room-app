@@ -165,7 +165,8 @@ export async function refreshSession(): Promise<string | null> {
 /** Copies a backend response through, keeping only safe headers. */
 export async function relay(res: Response): Promise<Response> {
   const headers = new Headers();
-  for (const name of ["content-type", "retry-after", "cache-control"]) {
+  // x-request-id lets the error screen attach the failing request to a support ticket.
+  for (const name of ["content-type", "retry-after", "cache-control", "x-request-id"]) {
     const v = res.headers.get(name);
     if (v) headers.set(name, v);
   }

@@ -15,7 +15,8 @@
       "blog": "Blog",
       "profile": "Mi cuenta",
       "legal": "Textos legales",
-      "deletion": "Eliminar cuenta"
+      "deletion": "Eliminar cuenta",
+      "support": "Soporte"
     }
   },
   "brandTagline": "Rediseña tu habitación en segundos",
@@ -455,7 +456,8 @@
     "rights": "Todos los derechos reservados.",
     "note": "Las estimaciones de precios y presupuestos las genera la IA y son solo orientativas.",
     "aiConsent": "Consentimiento de procesamiento con IA",
-    "deleteAccount": "Eliminar cuenta"
+    "deleteAccount": "Eliminar cuenta",
+    "support": "Soporte"
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -554,5 +556,42 @@
     "keep": "Solo se conservan, durante el plazo correspondiente, los registros exigidos por ley (p. ej., los registros de solicitudes KVKK, 2 años tras su cierre). Los registros de pago los guardan el App Store y Google Play.",
     "subscription": "Si tienes una suscripción activa, cancélala primero en el App Store o Google Play; eliminar la cuenta no detiene la suscripción.",
     "cta": "Ir a mi cuenta"
+  },
+  "support": {
+    "title": "Soporte",
+    "intro": "¿Tienes un problema o una sugerencia? Escríbenos y nuestro equipo te responderá. La respuesta aparecerá aquí y, si tu correo está verificado, también te llegará por e-mail.",
+    "newTitle": "Nueva solicitud",
+    "category": "Tipo de tema",
+    "categories": {
+      "bug": "Error / no funciona",
+      "billing": "Pago y suscripción",
+      "account": "Cuenta e inicio de sesión",
+      "design": "Resultado del diseño",
+      "idea": "Sugerencia",
+      "other": "Otro"
+    },
+    "subject": "Asunto",
+    "message": "Tu mensaje",
+    "messageHint": "Mínimo 10 caracteres. Si nos cuentas qué hiciste y qué pasó, lo resolveremos más rápido.",
+    "send": "Enviar solicitud",
+    "sent": "Hemos recibido tu solicitud: {ref}",
+    "myTickets": "Mis solicitudes",
+    "empty": "Aún no tienes solicitudes.",
+    "status": {
+      "OPEN": "Abierta",
+      "ANSWERED": "Respondida",
+      "CLOSED": "Cerrada"
+    },
+    "unread": "Nueva respuesta",
+    "you": "Tú",
+    "team": "Equipo de soporte",
+    "replyLabel": "Escribe una respuesta",
+    "replySend": "Enviar",
+    "guestNote": "Estás escribiendo como invitado: verás la respuesta en esta página, en este navegador. Inicia sesión para recibirla por e-mail.",
+    "errorRef": "Se adjuntará a la solicitud el ID del error: {id}",
+    "reportProblem": "Escribir a soporte",
+    "back": "Todas las solicitudes",
+    "newButton": "Abrir nueva solicitud",
+    "closedNote": "Esta solicitud está cerrada. Si respondes, se volverá a abrir."
   }
 }

@@ -15,7 +15,8 @@
       "blog": "블로그",
       "profile": "내 계정",
       "legal": "법적 고지",
-      "deletion": "계정 삭제"
+      "deletion": "계정 삭제",
+      "support": "고객 지원"
     }
   },
   "brandTagline": "몇 초 만에 방을 새롭게 디자인해 보세요",
@@ -455,7 +456,8 @@
     "rights": "All rights reserved.",
     "note": "가격 및 예산 추정치는 AI가 생성하며 참고용이에요.",
     "aiConsent": "AI 처리 동의",
-    "deleteAccount": "계정 삭제"
+    "deleteAccount": "계정 삭제",
+    "support": "고객 지원"
   },
   "notFound": {
     "title": "페이지를 찾을 수 없어요",
@@ -554,5 +556,42 @@
     "keep": "법적 의무에 필요한 기록만 해당 기간 동안 보관돼요(예: KVKK 신청 기록은 종료 후 2년). 결제 기록은 App Store와 Google Play에서 보관해요.",
     "subscription": "구독 중이라면 먼저 App Store 또는 Google Play에서 해지하세요. 계정을 삭제해도 구독은 해지되지 않아요.",
     "cta": "내 계정으로 가기"
+  },
+  "support": {
+    "title": "고객 지원",
+    "intro": "문제가 있거나 제안하고 싶은 게 있나요? 남겨 주시면 저희 팀이 답변해 드려요. 답변은 여기에 표시되고, 이메일이 인증되어 있다면 이메일로도 보내 드려요.",
+    "newTitle": "새 문의",
+    "category": "문의 유형",
+    "categories": {
+      "bug": "오류 / 작동 안 함",
+      "billing": "결제 및 구독",
+      "account": "계정 및 로그인",
+      "design": "디자인 결과",
+      "idea": "제안",
+      "other": "기타"
+    },
+    "subject": "제목",
+    "message": "문의 내용",
+    "messageHint": "10자 이상 입력해 주세요. 어떤 작업을 했고 어떤 일이 일어났는지 적어 주시면 더 빨리 해결해 드릴 수 있어요.",
+    "send": "문의 보내기",
+    "sent": "문의가 접수됐어요: {ref}",
+    "myTickets": "내 문의",
+    "empty": "아직 문의 내역이 없어요.",
+    "status": {
+      "OPEN": "진행 중",
+      "ANSWERED": "답변 완료",
+      "CLOSED": "종료됨"
+    },
+    "unread": "새 답변",
+    "you": "나",
+    "team": "지원팀",
+    "replyLabel": "답장 쓰기",
+    "replySend": "보내기",
+    "guestNote": "게스트로 문의하고 있어요. 답변은 이 브라우저의 이 페이지에서 확인할 수 있어요. 이메일로 받으려면 로그인해 주세요.",
+    "errorRef": "오류 ID가 문의에 첨부돼요: {id}",
+    "reportProblem": "고객 지원에 문의하기",
+    "back": "전체 문의",
+    "newButton": "새 문의 작성",
+    "closedNote": "종료된 문의예요. 답장을 보내면 다시 열려요."
   }
 }

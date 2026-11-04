@@ -112,6 +112,8 @@ export const LIMITS = {
   oauthNonce: { name: 'oauth-nonce', max: 60, windowSec: 3600 },
   oauthLogin: { name: 'oauth-login', max: 30, windowSec: 900 },
   dataRequests: { name: 'data-requests', max: 5, windowSec: 86_400 },
+  supportCreate: { name: 'support-create', max: 5, windowSec: 3600 },
+  supportMessage: { name: 'support-message', max: 30, windowSec: 3600 },
 } satisfies Record<string, Limit>;
 
 /** In-process cap on simultaneous AI generations per instance. */

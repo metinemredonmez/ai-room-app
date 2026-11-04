@@ -16,6 +16,7 @@ import {
   ScrollText,
   SlidersHorizontal,
   Store,
+  LifeBuoy,
   Share2,
   Send,
   ChartNoAxesColumn,
@@ -65,7 +66,7 @@ import { ROLE_LABELS } from "@/lib/format";
 import { isPalette, PALETTES, setPalette, type PaletteId } from "@/lib/palette";
 import type { AdminMe, Page, ContentReport } from "@/lib/types";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "openReports" | "kvkkDue"; superAdminOnly?: boolean };
+type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "openReports" | "kvkkDue" | "openSupport"; superAdminOnly?: boolean };
 
 export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Genel", items: [{ href: "/", label: "Ana sayfa", icon: House }] },
@@ -81,6 +82,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     label: "Kullanıcılar",
     items: [
       { href: "/users", label: "Kullanıcılar", icon: Users },
+      { href: "/support", label: "Destek", icon: LifeBuoy, badge: "openSupport" },
       { href: "/broadcasts", label: "Toplu Gönderim", icon: Megaphone },
     ],
   },
@@ -143,16 +145,23 @@ export function AppSidebar() {
   const openReports = useApi<Page<ContentReport>>("/reports", { status: "OPEN", limit: 100 });
   const kvkk = useApi<{ counts: { dueSoon: number; overdue: number } }>("/data-requests", { limit: 1 });
   // KVKK: only applications that need action soon (due within 7 days or overdue).
-  const badges = { openReports: openReports.data?.items.length ?? 0, kvkkDue: (kvkk.data?.counts.dueSoon ?? 0) + (kvkk.data?.counts.overdue ?? 0) };
+  const support = useApi<{ counts: { OPEN: number } }>("/support", { status: "OPEN", limit: 1 });
+  const badges = {
+    openReports: openReports.data?.items.length ?? 0,
+    kvkkDue: (kvkk.data?.counts.dueSoon ?? 0) + (kvkk.data?.counts.overdue ?? 0),
+    openSupport: support.data?.counts.OPEN ?? 0,
+  };
   const { reload: reloadReports } = openReports;
   const { reload: reloadKvkk } = kvkk;
+  const { reload: reloadSupport } = support;
   useEffect(
     () =>
       onBadgesChanged(() => {
         reloadReports();
         reloadKvkk();
+        reloadSupport();
       }),
-    [reloadReports, reloadKvkk],
+    [reloadReports, reloadKvkk, reloadSupport],
   );
 
   return (

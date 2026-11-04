@@ -10,6 +10,8 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public retryAfter?: number,
+    /** The backend's X-Request-Id: attached to a support ticket from the error screen. */
+    public requestId?: string,
   ) {
     super(message);
   }
@@ -33,7 +35,8 @@ async function request<T>(url: string, method: string, body?: unknown): Promise<
   if (!res.ok) {
     const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
     const retry = Number(res.headers.get("retry-after"));
-    throw new ApiError(res.status, err?.code ?? "internal", err?.message ?? "Beklenmeyen bir hata oluştu.", retry || undefined);
+    const rid = res.headers.get("x-request-id");
+    throw new ApiError(res.status, err?.code ?? "internal", err?.message ?? "Beklenmeyen bir hata oluştu.", retry || undefined, rid && /^[A-Za-z0-9-]{8,64}$/.test(rid) ? rid : undefined);
   }
   return data as T;
 }

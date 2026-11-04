@@ -161,7 +161,9 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   dahil) + herkese açık `/hesap-silme` (Google Play hesap silme bağlantısı: https://casalume.app/hesap-silme); 11 dil,
   site haritasında; `/hesap` arama motorlarına kapalı. Kaynak: palemi `hesap/`, fal-app `legal/`.
 - [ ] Mobilde KVKK başvurusu ve veri indirme ekranı (sen) — backend hazır.
-- [ ] Destek talebi: kullanıcı formu (hata ekranındaki istek/iş kimliğiyle) + admin destek kutusu + yanıt bildirimi (palemi, fal-app).
+- [x] Destek talebi (API.md §7.19): web `/destek` (hata ekranından istek kimliğiyle), admin **Destek** kutusu (açık sayısı
+  rozetle), yanıt e-posta + push ile; veri indirmede, hesapla birlikte silinir. Kaynak: palemi, fal-app.
+  - [ ] Mobil (sen): Profil → Destek ekranı, `casalume://support/<id>` derin bağlantısı, Android `support` kanalı.
 - [ ] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
   da temeli (fal-app `share/`); mobilde story kartı 1080×1920 (sen, palemi).
 - [ ] Uygulama içi olay ölçümü (KVKK uyumlu beyaz liste) + admin kohort/huni ekranları (fal-app `olaylar/`).
