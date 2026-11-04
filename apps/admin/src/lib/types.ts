@@ -384,3 +384,47 @@ export type CohortAnalytics = {
   rows: { week: string; size: number; active: (number | null)[]; retention: (number | null)[] }[];
   average: (number | null)[];
 };
+
+// API.md §7.21 plans, packs and subscribers
+export type SubscriptionFilter = "active" | "trial" | "cancelled" | "grace" | "billing_issue" | "expired";
+export type AdminSubscription = {
+  id: string;
+  userId: string;
+  email: string | null;
+  isGuest: boolean | null;
+  productId: string | null;
+  store: string | null;
+  environment: string | null;
+  periodType: string | null;
+  status: string;
+  expiresAt: string | null;
+  gracePeriodExpiresAt: string | null;
+  updatedAt: string;
+  access: boolean;
+};
+export type PlanCycleId = "weekly" | "monthly" | "yearly";
+export type PlanCycle = { cycle: PlanCycleId; active: boolean; highlight: boolean; iosProductId: string | null; androidProductId: string | null };
+export type CreditPack = {
+  key: string;
+  nameTr: string;
+  nameEn: string;
+  credits: number;
+  iosProductId: string | null;
+  androidProductId: string | null;
+  highlight: boolean;
+  active: boolean;
+};
+export type PlanCatalog = {
+  plan: { nameTr: string; nameEn: string; taglineTr: string; taglineEn: string; featuresTr: string[]; featuresEn: string[]; cycles: PlanCycle[] };
+  packs: CreditPack[];
+};
+export type PlanCatalogState = {
+  catalog: PlanCatalog;
+  retiredProducts: number;
+  saved: boolean;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  limits: { free: { dailyGenerations: number; maxVariants: number }; pro: { dailyGenerations: number; maxVariants: number } };
+  revenuecatRest: boolean;
+};

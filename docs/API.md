@@ -930,3 +930,54 @@ ile gün ayırır. Sütunlar UTC tutan `timestamp`; eski ifade sonucu veritaban�
 çalışan bir sunucuda gün sınırı 6 saat kayıyordu.
 
 Mobil: yok (yalnız admin).
+
+### 7.21 Planlar, kredi paketleri ve aboneler — backend + admin (mobil sonra)
+Admin'de iki sayfa var, ikisi de **Gelir ve maliyet** altında:
+- **Planlar ve paketler:** ödeme ekranında görünen Pro planı, abonelik dönemleri ve kredi paketleri.
+- **Abonelikler:** RevenueCat'ten eşitlenen abone durumları.
+
+Fiyat hiçbir yerde tutulmaz. Fiyatı mağaza belirler; uygulama RevenueCat tekliflerindeki yerel fiyatı gösterir.
+
+**Katalog**
+- `Setting` tablosunda `billing.catalog` anahtarıyla tek satır olarak tutulur.
+- Hiç kaydedilmediyse paketler `CREDIT_PACKS` ortam değişkeninden gelir. Davranış ilk kayda kadar değişmez.
+- Pro plan alanları: Türkçe ve İngilizce ad, kısa açıklama ve özellik satırları (en çok 8). Dönemler
+  (`weekly | monthly | yearly`) her biri için satışta mı, öne çıkan mı, iOS ve Android ürün kimliği.
+- Kredi paketi alanları (en çok 6): `key`, iki dilde ad, `credits` (1–10.000), iOS ve Android ürün kimliği,
+  öne çıkan, satışta.
+- Kurallar:
+  - Bir ürün kimliği tek bir şeydir: iki paket ya da hem dönem hem paket olamaz. iOS ve Android aynı kimliği
+    kullanabilir.
+  - Satıştaki giriş en az bir ürün kimliği ister.
+  - Dönemlerde ve paketlerde en çok birer öne çıkan olur.
+- Kredi kararı: RevenueCat'ten gelen `NON_RENEWING_PURCHASE`, ürün kimliğinin katalogdaki paketinin `credits`
+  değeri kadar hak verir. Paket satışta olmasa da bu geçerlidir. Katalogdan çıkarılan paketin ürünü `retired`
+  listesinde kalır; geç gelen ya da yeniden işlenen satın alma yine hakkını alır. Katalogda olmayan ürün hak
+  vermez ve loga yazılır (`billing_unknown_pack`).
+- Kredi her satın almada katalogdan taze okunur. Ödeme ekranı en çok 15 saniyelik önbellekten okunur.
+- Kaydetme kuralları:
+  - Gerekçe zorunludur.
+  - `version` okunan `updatedAt` değeridir (hiç kaydedilmediyse `null`). Arada başkası kaydettiyse 409 döner
+    (danışma kilidi + iyimser sürüm).
+  - Denetim kaydı `billing.catalog_update`; yalnız değişen kısımlar yazılır, örnek:
+    `pack.credits:pack_1:10->12`, `pack.removed:…`.
+
+**Aboneler**
+- `status`: `active | trial | cancelled | grace | billing_issue | expired`. Süresi dolmamış deneme `trial` sayılır,
+  `active` sayılmaz.
+- `env=SANDBOX` test satın almalarını gösterir. Ortamı bilinmeyen abonelik canlı sayılır.
+- `q`: e-posta parçası ya da kullanıcı kimliği.
+- Eşitleme RevenueCat REST'ten yeniden okur. `REVENUECAT_API_KEY` yoksa 409 döner. Yönetici başına sınırlıdır ve
+  `billing.sync` olarak denetlenir.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/billing/catalog?locale=tr` | herkes | Ödeme ekranı: `plan` (`name`, `tagline`, `features`, `cycles[]` → `cycle`, `highlight`, `productIds { ios, android }`), `packs[]` (`key`, `name`, `credits`, `highlight`, `productIds`), `limits` (`free`/`pro` → `dailyGenerations`, `maxVariants`). Yalnız satıştakiler. `locale` tr değilse İngilizce |
+| GET | `/admin/billing/catalog` | SUPPORT | Düzenleme görünümü: `catalog`, `version`, `saved`, `updatedAt`, `updatedBy`, `retiredProducts`, `limits`, `revenuecatRest` |
+| PATCH | `/admin/billing/catalog` | ADMIN | `{ catalog, reason, version }` → 200 güncel görünüm. 400 (kural; ileti hangi alan olduğunu söyler), 409 (sürüm) |
+| GET | `/admin/subscriptions?status=&env=&q=&cursor=&limit=` | SUPPORT | `items[]` (`userId`, `email`, `productId`, `store`, `periodType`, `status`, `expiresAt`, `access` …), `nextCursor`, `counts` |
+| POST | `/admin/subscriptions/:userId/sync` | ADMIN | → `{ subscription }`. 409 REST anahtarı yok, 502 RevenueCat yanıt vermedi |
+
+Mobil (sonra): ödeme ekranı `GET /v1/billing/catalog?locale=<dil>` ile metinleri, öne çıkanı ve paketlerin hak
+sayısını alır. RevenueCat teklifleriyle `productIds` üzerinden eşleştirir; fiyatı RevenueCat'in `priceString`
+değerinden gösterir. Katalogda olmayan teklif gösterilmez. Yanıt alınamazsa yalnız RevenueCat teklifleri gösterilir.

@@ -171,6 +171,10 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   kohort tutma tablosu. Etkinlik, tasarım ve AI kayıtlarından ölçülür; uygulamaya ölçüm kodu gerekmedi.
 - [ ] Uygulama içi olay ölçümü (KVKK uyumlu beyaz liste): ekran görüntüleme, paywall gösterimi gibi tasarım dışı adımlar
   için (fal-app `olaylar/`); Analiz hunisine eklenir.
+- [x] Planlar ve paketler + Abonelikler (API.md §7.21): ödeme ekranı kataloğu panelden (Pro özellikleri, dönemler, kredi
+  paketleri; fiyat yok), paket kredisi `CREDIT_PACKS` yerine katalogdan, kaldırılan paket eski satın almalara hak vermeye
+  devam eder; abone listesi ve RevenueCat ile elle eşitleme. Kaynak: palemi `billing/catalog`, fal-app `subscriptions`.
+  - [ ] Mobil ödeme ekranı (sen): `GET /v1/billing/catalog` + RevenueCat teklifleri `productIds` ile eşleşir.
 - [ ] Deneme süresi + dürüst paywall (ilk ücret tarihi düğmenin üstünde) + “Aboneliği yönet” + deneme hatırlatması (sen, palemi).
 - [ ] Davet et – kazan (ücretsiz tasarım hakkı) + promosyon/hediye kodu + mimar/influencer ortaklık bağlantısı (fal-app).
 - [x] Panelden toplu push/kampanya (API.md §7.16): pazarlama izni, haftalık sınır, sessiz saatler, ticari ifade kontrolü,
@@ -190,6 +194,31 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).
 - [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
   Keychain temizliği, uygulama içi değerlendirme istemi.
+
+### Masaüstü kataloglarından eksikler (4 Kasım; YediOda kataloğu, MAEYJA ve Palemi kurulum belgeleri)
+Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/apps-features/` klasörüne gelecek.
+- [ ] Hoş geldin kredisi; silinip yeniden açılan hesap yeniden almaz (Palemi 5.7) · kolay
+- [ ] Kredi hareketlerim: web hesap sayfasında kullanıcının kendi defteri (YediOda #57) · kolay
+- [ ] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) · orta
+- [ ] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) · kolay
+- [ ] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) · kolay
+- [ ] Admin hesabında parola değiştirme (Palemi panel) · kolay
+- [ ] Mağaza inceleme (App Review) hesabı: süreli, denetimli (Palemi) · kolay
+- [ ] Kurucu uyarıları: satın alma bildirimi, disk/iş hatası/bütçe eşiği (YediOda #71, #90, #92) · orta
+- [ ] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) · kolay
+- [ ] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) · kolay
+- [ ] İstemci hata ucu (mobil/web hataları) (YediOda #106) · kolay
+- [ ] Hesap silmede 30 gün geri alma penceresi (YediOda #18) · orta
+- [ ] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) · orta
+- [ ] llms.txt (MAEYJA, YediOda #94) · kolay
+- [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta
+- [ ] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) · kolay
+- [ ] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) · kolay
+- [ ] Mağaza olayları CSV dışa aktarımı (Palemi) · kolay
+- [ ] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) · orta
+- [ ] A/B deney altyapısı (YediOda #74) · kolay, düşük öncelik
+Uymayanlar (alınmayacak): fal/astroloji/tarot içerikleri, ses (TTS/STT), kriz süzgeci, RAG, e-ticaret sepet/kargo/iade,
+makyaj ve renk analizi, astrolog portalı ve akademi, telefonla giriş.
 
 ## Admin
 - [ ] Eski görünümdeki 8 ekranı yeni tasarıma taşı (Kullanıcılar + detay, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim, Sistem, Ayarlar kısmen).

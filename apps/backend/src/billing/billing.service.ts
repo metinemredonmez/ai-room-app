@@ -8,6 +8,7 @@ import { log } from '../common/log.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { QueuesService } from '../jobs/queues.service.js';
 import { isUuid } from '../images/images.service.js';
+import { PlansService } from './plans.service.js';
 
 // RevenueCat store billing (palemi billing/revenuecat + yoga revenueCat patterns). Order matters
 // (yoga BE-01 lesson): authenticate the request BEFORE anything is written, then store the event once
@@ -47,23 +48,10 @@ interface RcSubscriber {
 
 @Injectable()
 export class BillingService {
-  private packs: Map<string, number>;
-
-  constructor(private prisma: PrismaService, private queues: QueuesService, @Inject(CONFIG) private cfg: Config) {
-    this.packs = new Map(
-      cfg.CREDIT_PACKS.split(',')
-        .map((p) => p.trim().split(':'))
-        .filter(([id, n]) => id && Number(n) > 0)
-        .map(([id, n]) => [id, Math.trunc(Number(n))]),
-    );
-  }
+  constructor(private prisma: PrismaService, private queues: QueuesService, @Inject(CONFIG) private cfg: Config, private plans: PlansService) {}
 
   get enabled() {
     return Boolean(this.cfg.REVENUECAT_WEBHOOK_AUTH || this.cfg.REVENUECAT_WEBHOOK_SECRET);
-  }
-
-  creditPacks() {
-    return [...this.packs].map(([productId, credits]) => ({ productId, credits }));
   }
 
   /** Authorization header (if configured) AND HMAC signature (if configured) must both pass. */
@@ -210,10 +198,16 @@ export class BillingService {
     ]);
   }
 
-  /** Consumable credit pack: the store purchase id is the primary key, so a purchase is credited once. */
+  /**
+   * Consumable credit pack: the store purchase id is the primary key, so a purchase is credited once. Credits come
+   * from the plans catalog (API.md §7.21); a product that is not a pack grants nothing.
+   */
   private async creditPack(userId: string, purchaseId: string, productId: string, store: string | null) {
-    const credits = this.packs.get(productId);
-    if (!credits) return;
+    const credits = await this.plans.creditsFor(productId);
+    if (!credits) {
+      log.warn('billing_unknown_pack', { userId, productId });
+      return;
+    }
     try {
       await this.prisma.$transaction([
         this.prisma.storePurchase.create({ data: { id: purchaseId.slice(0, 200), userId, productId, credits, store } }),

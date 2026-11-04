@@ -21,6 +21,8 @@ import {
   Send,
   ChartNoAxesColumn,
   ChartLine,
+  Crown,
+  Package,
   Newspaper,
   Search,
   ShieldCheck,
@@ -114,6 +116,8 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Gelir ve maliyet",
     items: [
+      { href: "/subscriptions", label: "Abonelikler", icon: Crown },
+      { href: "/plans", label: "Planlar ve paketler", icon: Package },
       { href: "/billing", label: "Ödeme olayları", icon: CreditCard },
       { href: "/ai-costs", label: "AI maliyeti", icon: Coins },
     ],

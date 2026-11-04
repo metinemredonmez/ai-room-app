@@ -19,6 +19,7 @@ import { AdminBlogController } from './blog/blog.controller.js';
 import { AdminBroadcastsController } from './broadcasts/broadcasts.controller.js';
 import { AdminSupportController } from './support/support.controller.js';
 import { AdminAnalyticsController } from './admin/analytics.controller.js';
+import { AdminPlansController, AdminSubscriptionsController } from './billing/billing-admin.controller.js';
 import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { loadConfig, type Config } from './config.js';
@@ -165,7 +166,7 @@ describe('RevenueCat webhook authentication (yoga BE-01 lesson: verify before wr
   const secret = 'whsec_test_0123456789abcdef';
   const auth = 'Bearer rc-webhook-auth-0123456789';
   const svc = (cfg: Partial<Record<string, string>>) =>
-    new BillingService({} as never, {} as never, { CREDIT_PACKS: 'casalume_credits_10:10', ...cfg } as never);
+    new BillingService({} as never, {} as never, { CREDIT_PACKS: 'casalume_credits_10:10', ...cfg } as never, {} as never);
   const body = Buffer.from(JSON.stringify({ api_version: '1.0', event: { id: 'evt_1', type: 'INITIAL_PURCHASE' } }));
   const sign = (t: number, b: Buffer = body) => `t=${t},v1=${createHmac('sha256', secret).update(`${t}.`).update(b).digest('hex')}`;
   const now = 1_800_000_000_000;
@@ -263,7 +264,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('every admin route declares its least role', () => {
     const reflector = new Reflector();
     const missing: string[] = [];
-    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController, AdminSupportController, AdminAnalyticsController]) {
+    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController]) {
       for (const name of Object.getOwnPropertyNames(ctrl.prototype)) {
         const handler = (ctrl.prototype as unknown as Record<string, unknown>)[name];
         if (name === 'constructor' || typeof handler !== 'function' || Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;
@@ -276,6 +277,12 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('revenue needs ADMIN; usage analytics are open to SUPPORT (AZ-01)', () => {
     const role = (name: 'revenue' | 'engagement' | 'cohorts') => Reflect.getMetadata(MIN_ROLE, AdminAnalyticsController.prototype[name]);
     expect([role('revenue'), role('engagement'), role('cohorts')]).toEqual(['ADMIN', 'SUPPORT', 'SUPPORT']);
+  });
+
+  it('the plans catalog and subscriber sync are changed by ADMIN only; SUPPORT reads (AZ-01)', () => {
+    const r = (proto: object, name: string) => Reflect.getMetadata(MIN_ROLE, (proto as Record<string, unknown>)[name] as object);
+    expect([r(AdminPlansController.prototype, 'catalog'), r(AdminPlansController.prototype, 'save')]).toEqual(['SUPPORT', 'ADMIN']);
+    expect([r(AdminSubscriptionsController.prototype, 'list'), r(AdminSubscriptionsController.prototype, 'sync')]).toEqual(['SUPPORT', 'ADMIN']);
   });
 
   const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN', amr = ['pwd', 'otp'], panelKey: string | null = null) => {

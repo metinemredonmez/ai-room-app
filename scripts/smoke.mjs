@@ -39,6 +39,12 @@ const paintDe = catDe.json?.tools?.find((t) => t.id === 'paint')?.name;
 ok(catDe.status === 200 && catDe.json.tools.length === 10 && paintDe && paintDe !== paintTr, 'catalog in German (Accept-Language q-values)', paintDe);
 const catBad = await call('GET', '/designs?locale=pt', { token });
 ok(catBad.status === 400, 'unsupported locale rejected', `status ${catBad.status}`);
+// API.md §7.21: the paywall catalog — active packs and the plan limits, never a price.
+const billingCat = await call('GET', '/billing/catalog?locale=en');
+ok(billingCat.status === 200 && Array.isArray(billingCat.json?.packs) && billingCat.json.packs.every((p) => p.credits > 0) && billingCat.json.limits?.pro?.dailyGenerations > 0 && !/price/i.test(JSON.stringify(billingCat.json)),
+  'paywall catalog: active packs and limits, no prices', `${billingCat.json?.packs?.length} packs`);
+const badCatLocale = await call('GET', '/billing/catalog?locale=xx');
+ok(badCatLocale.status === 400, 'paywall catalog rejects an unknown locale (INP-01)');
 
 const sample = await call('POST', '/uploads/sample', { token, body: { sample: 'living_room' } });
 ok(sample.status === 201, 'sample upload', sample.json?.image?.id);
@@ -657,6 +663,35 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
       'revenue: SANDBOX renewal counted, refund subtracted', `gross +${d('grossUsd')} refunds +${d('refundsUsd')}`);
     const prodRev = (await call('GET', '/admin/analytics/revenue?days=7', { token: adminToken })).json;
     ok(prodRev?.env === 'PRODUCTION' && Array.isArray(prodRev.daily) && prodRev.daily.length === 7 && typeof prodRev.subscriptions?.mrrUsd === 'number', 'revenue defaults to PRODUCTION (sandbox kept apart)');
+
+    // API.md §7.21: the plans catalog decides pack credits; a removed pack keeps crediting late purchases.
+    const subs = await call('GET', `/admin/subscriptions?env=SANDBOX&q=${encodeURIComponent(rcUser.email ?? rcUser.id)}`, { token: adminToken });
+    ok(subs.status === 200 && subs.json?.items?.some((x) => x.userId === rcUser.id) && typeof subs.json.counts?.expired === 'number', 'admin finds a subscriber by e-mail or user id (SANDBOX)', `${subs.status} ${subs.json?.items?.length}`);
+    const syncSub = await call('POST', `/admin/subscriptions/${rcUser.id}/sync`, { token: adminToken });
+    ok(benv.REVENUECAT_API_KEY ? [200, 502].includes(syncSub.status) : syncSub.status === 409, 'subscriber sync needs the RevenueCat REST key', String(syncSub.status));
+    const cat0 = (await call('GET', '/admin/billing/catalog', { token: adminToken })).json;
+    const putCat = (catalog, version, reason = 'smoke catalog test') => call('PATCH', '/admin/billing/catalog', { token: adminToken, body: { catalog, reason, version } });
+    const seven = { key: 'smoke_seven', nameTr: 'Smoke 7', nameEn: 'Smoke 7', credits: 7, iosProductId: 'smoke_credits_7', androidProductId: null, highlight: false, active: false };
+    const withSeven = await putCat({ plan: cat0.catalog.plan, packs: [...cat0.catalog.packs.filter((p) => p.key !== 'smoke_seven'), seven] }, cat0.version);
+    ok(withSeven.status === 200 && withSeven.json?.catalog?.packs?.some((p) => p.key === 'smoke_seven'), 'admin adds a credit pack (reason + version)', String(withSeven.status));
+    const staleCat = await putCat(cat0.catalog, cat0.version);
+    const dupeCat = await putCat({ ...withSeven.json.catalog, packs: [...withSeven.json.catalog.packs, { ...seven, key: 'smoke_dupe' }] }, withSeven.json.version);
+    const noReason = await call('PATCH', '/admin/billing/catalog', { token: adminToken, body: { catalog: withSeven.json.catalog, version: withSeven.json.version } });
+    ok(staleCat.status === 409 && dupeCat.status === 400 && /aynı ürün kimliği/.test(dupeCat.json?.error?.message ?? '') && noReason.status === 400,
+      'catalog: stale version 409, one product cannot be two packs, a reason is required', `${staleCat.status}/${dupeCat.status}/${noReason.status}`);
+    const packBuy = async () => {
+      const before = (await call('GET', '/me', { token: vt })).json.credits;
+      await rc({ id: `smoke_${crypto.randomUUID()}`, type: 'NON_RENEWING_PURCHASE', app_user_id: rcUser.id, product_id: 'smoke_credits_7', transaction_id: `txn7_${crypto.randomUUID()}`, store: 'APP_STORE', environment: 'SANDBOX' });
+      const after = await waitFor(async () => { const m = (await call('GET', '/me', { token: vt })).json; return m?.credits >= before + 7 ? m : null; });
+      return [before, after?.credits];
+    };
+    const [b7, a7] = await packBuy();
+    ok(a7 === b7 + 7, 'a pack purchase credits what the catalog says (even off sale)', `${b7} → ${a7}`);
+    const removedCat = await putCat({ plan: withSeven.json.catalog.plan, packs: withSeven.json.catalog.packs.filter((p) => p.key !== 'smoke_seven') }, withSeven.json.version, 'smoke cleanup');
+    const [b7r, a7r] = await packBuy();
+    ok(removedCat.status === 200 && removedCat.json?.retiredProducts >= 1 && a7r === b7r + 7, 'a removed pack still credits a late purchase', `${b7r} → ${a7r}`);
+    const catAudit = (await call('GET', '/admin/audit?limit=20', { token: adminToken })).json?.items ?? [];
+    ok(catAudit.some((x) => x.action === 'billing.catalog_update' && x.meta?.reason === 'smoke cleanup'), 'catalog changes are audited with the reason (LOG-01)');
   }
 }
 // #6 admin roles + MFA recovery (AZ-05, AUT-01, AUT-04). Admin login is limited to 5 / 15 min per IP,
@@ -693,6 +728,10 @@ if (adminToken) {
   const sRevenue = await call('GET', '/admin/analytics/revenue', { token: staffToken });
   const sEngagement = await call('GET', '/admin/analytics/engagement', { token: staffToken });
   ok(sRevenue.status === 403 && sEngagement.status === 200, 'SUPPORT sees usage analytics but not revenue (AZ-01)', `${sRevenue.status}/${sEngagement.status}`);
+  const sCatalog = await call('GET', '/admin/billing/catalog', { token: staffToken });
+  const sCatalogPut = await call('PATCH', '/admin/billing/catalog', { token: staffToken, body: { catalog: sCatalog.json?.catalog, reason: 'support tries', version: sCatalog.json?.version ?? null } });
+  const sSubs = await call('GET', '/admin/subscriptions', { token: staffToken });
+  ok(sCatalog.status === 200 && sSubs.status === 200 && sCatalogPut.status === 403, 'SUPPORT reads plans and subscribers but cannot change the catalog (AZ-01)', `${sCatalog.status}/${sSubs.status}/${sCatalogPut.status}`);
 
   const recovery = confirm.json.backupCodes[0];
   const bLogin = await call('POST', '/admin/auth/login', { body: { email: userEmail, password: pw, backupCode: recovery.toLowerCase() } });
@@ -720,7 +759,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

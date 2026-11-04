@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserGuard } from '../auth/tokens.service.js';
 import { Doc } from '../common/openapi.js';
@@ -6,12 +6,28 @@ import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js'
 import { LIMITS, RateLimiter } from '../common/infra.js';
 import { log } from '../common/log.js';
 import { UsersService } from '../users/users.service.js';
+import { z } from 'zod';
+import { LOCALES, contentLocale } from '../catalog/catalog.data.js';
+import { parse } from '../common/errors.js';
 import { BillingService } from './billing.service.js';
+import { PlansService } from './plans.service.js';
+
+const CatalogQuery = z.object({ locale: z.enum(LOCALES).default('tr').transform(contentLocale) }).strict();
 
 @ApiTags('billing')
 @Controller('v1')
 export class BillingController {
-  constructor(private billing: BillingService, private users: UsersService, private limiter: RateLimiter) {}
+  constructor(private billing: BillingService, private users: UsersService, private limiter: RateLimiter, private plans: PlansService) {}
+
+  /** The paywall's list (API.md §7.21): PRO features, billing periods and credit packs by store product id. No prices. */
+  @Doc('Planlar ve kredi paketleri (paywall)', {
+    description: 'Yalnız satıştaki dönem ve paketler. Fiyat dönmez: uygulama mağazanın yerel fiyatını gösterir. `locale` tr ise Türkçe, diğerleri İngilizce.',
+    errors: [400],
+  })
+  @Get('billing/catalog')
+  catalog(@Query() query: unknown) {
+    return this.plans.forPaywall(parse(CatalogQuery, query).locale);
+  }
 
   /** RevenueCat → us. Authenticated before any write; 200 fast, processing happens on the queue. */
   @Doc('RevenueCat webhook (Authorization ve/veya X-RevenueCat-Webhook-Signature HMAC zorunlu)', {

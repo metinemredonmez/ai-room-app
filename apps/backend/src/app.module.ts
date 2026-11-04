@@ -14,6 +14,8 @@ import { OAuthService } from './auth/oauth.service.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { AdminGuard, TokensService, UserGuard } from './auth/tokens.service.js';
 import { BillingController } from './billing/billing.controller.js';
+import { AdminPlansController, AdminSubscriptionsController } from './billing/billing-admin.controller.js';
+import { PlansService } from './billing/plans.service.js';
 import { BillingService } from './billing/billing.service.js';
 import { AdminBroadcastsController, BroadcastsController, UnsubscribeController } from './broadcasts/broadcasts.controller.js';
 import { BroadcastsService } from './broadcasts/broadcasts.service.js';
@@ -43,7 +45,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -57,6 +59,7 @@ import { UsersService } from './users/users.service.js';
     ConsentsService,
     DataRequestsService,
     BillingService,
+    PlansService,
     AnalyticsService,
     BroadcastsService,
     MarketingService,

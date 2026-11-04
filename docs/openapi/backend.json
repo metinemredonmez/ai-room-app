@@ -5063,6 +5063,32 @@
         ]
       }
     },
+    "/v1/billing/catalog": {
+      "get": {
+        "description": "Yalnız satıştaki dönem ve paketler. Fiyat dönmez: uygulama mağazanın yerel fiyatını gösterir. `locale` tr ise Türkçe, diğerleri İngilizce.",
+        "operationId": "BillingController_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Planlar ve kredi paketleri (paywall)",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/v1/webhooks/revenuecat": {
       "post": {
         "description": "Önce kimlik doğrulanır, sonra olay `id` ile bir kez kaydedilir; tekrar gelen olay yeniden işlenmez. İşleme kuyrukta yapılır ve RevenueCat REST ile abone durumu eşitlenir.",
@@ -10076,6 +10102,429 @@
           }
         ],
         "summary": "Haftalık kohort tutma tablosu",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/billing/catalog": {
+      "get": {
+        "operationId": "AdminPlansController_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Plan ve paket kataloğu (düzenleme için)",
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "description": "`version`: okunan `version` (hiç kaydedilmediyse null); arada değiştiyse 409. Kaldırılan paketin ürünü kredi vermeye devam eder.",
+        "operationId": "AdminPlansController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "catalog": {
+                    "type": "object",
+                    "properties": {
+                      "plan": {
+                        "type": "object",
+                        "properties": {
+                          "nameTr": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "nameEn": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "taglineTr": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "taglineEn": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "featuresTr": {
+                            "maxItems": 8,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            }
+                          },
+                          "featuresEn": {
+                            "maxItems": 8,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            }
+                          },
+                          "cycles": {
+                            "maxItems": 3,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "cycle": {
+                                  "type": "string",
+                                  "enum": [
+                                    "weekly",
+                                    "monthly",
+                                    "yearly"
+                                  ]
+                                },
+                                "active": {
+                                  "type": "boolean"
+                                },
+                                "highlight": {
+                                  "type": "boolean"
+                                },
+                                "iosProductId": {
+                                  "nullable": true,
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+                                },
+                                "androidProductId": {
+                                  "nullable": true,
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+                                }
+                              },
+                              "required": [
+                                "cycle",
+                                "active",
+                                "highlight",
+                                "iosProductId",
+                                "androidProductId"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "nameTr",
+                          "nameEn",
+                          "taglineTr",
+                          "taglineEn",
+                          "featuresTr",
+                          "featuresEn",
+                          "cycles"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "packs": {
+                        "maxItems": 6,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "pattern": "^[a-z][a-z0-9_]{0,31}$"
+                            },
+                            "nameTr": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "nameEn": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "credits": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 10000
+                            },
+                            "iosProductId": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+                            },
+                            "androidProductId": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+                            },
+                            "highlight": {
+                              "type": "boolean"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "nameTr",
+                            "nameEn",
+                            "credits",
+                            "iosProductId",
+                            "androidProductId",
+                            "highlight",
+                            "active"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "plan",
+                      "packs"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 200
+                  },
+                  "version": {
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "catalog",
+                  "reason",
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Kataloğu kaydet (gerekçe zorunlu, denetlenir)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/subscriptions": {
+      "get": {
+        "description": "`status`: active | trial | cancelled | grace | billing_issue | expired (deneme ayrı sayılır). `env` PRODUCTION | SANDBOX. `counts` seçili ortamın durum sayıları.",
+        "operationId": "AdminSubscriptionsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Aboneler (durum, ortam, e-posta araması; sayfalı)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/subscriptions/{userId}/sync": {
+      "post": {
+        "description": "RevenueCat REST anahtarı tanımlı değilse 409.",
+        "operationId": "AdminSubscriptionsController_sync",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "ai_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Aboneyi RevenueCat ile eşitle (denetlenir)",
         "tags": [
           "admin"
         ]
