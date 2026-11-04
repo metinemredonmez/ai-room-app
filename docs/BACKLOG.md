@@ -18,6 +18,16 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
   - **yazarak seçimde Türkçe ad** (“yastık”, “koltuk”): SAM 3 İngilizce kelime bekliyor olabilir — anlamazsa hedef
     İngilizceye çevrilmeli (bu, mevcut otomatik kilidi de etkiler).
 - [ ] Mobil dokun-seç arayüzü (sen): aynı uç ve `points` alanı; katalogda `needs.points`.
+- Mobil için hazır kimlikler (4 Kasım; gizli değil): Expo projectId `0e6e7543-8b53-419b-b3ea-9b1fb83ae929` (slug `casalume`);
+  Google OAuth iOS `…rolsejjn66v5dplhbtburkfkkf0mkien`, Android `…h88dnd5rfe85hapdftsc0c0p5iupleqj`, Web
+  `…tgi66u4p9mjrir8pik26dc5e3pobpm6i` (hepsi `611319732235-` ile başlar, `.apps.googleusercontent.com` ile biter);
+  Firebase projesi `ai-room-35914`. Dosyalar sahibinin Mac’inde `~/Documents/casalume-keys/`: Android imza anahtarı
+  `casalume-upload.jks` (alias `casalume`, parola Anahtar Zinciri’nde `casalume-android-keystore`), `google-services.json`,
+  `GoogleService-Info.plist`, Firebase servis hesabı JSON’u. Hiçbiri repoya girmez.
+- [ ] İlk EAS Android derlemesinden **önce** (sen): expo.dev → Credentials → Android → `app.casalume` → keystore olarak
+  `casalume-upload.jks`’i yükle (yoksa Expo yeni anahtar üretir, kayıtlı SHA-1 tutmaz); FCM V1 servis hesabı JSON’unu yükle.
+  Bildirimler başlayınca: Expo’da “Enhanced push security” aç, erişim jetonunu sunucuya `EXPO_ACCESS_TOKEN` olarak gir.
+  `app.json`’a `extra.eas.projectId` ve `owner` eklenecek.
 - Gemini ile maske denendi (4 Kasım, `gemini-3.8-flash`, örnek salon): nesneyi ve kutusunu doğru buluyor ama piksel
   maskesi yok, çokgen maske kayık ya da tamamen yanlış (koltuğa dokununca duvarı seçti). Bölge kilidi için **kullanılamaz**;
   `gemini-2.5-flash` yeni hesaplara kapalı.
@@ -125,6 +135,11 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Kendi hata alarmımız — Sentry yerine (sahibinin kararı, 4 Kasım): backend ve AI servisindeki 5xx / yakalanmamış hata
   → `support@casalume.app` e-postası (aynı hata saatte en çok bir kez) + admin’de “Hatalar” sayfası; fal-app
   `infra-watchdog` deseniyle disk, veritabanı, kota uyarıları. Mobil çökme raporu mağaza öncesi ayrıca düşünülecek.
+- [ ] Sohbete düşen iki sırrı yenile (4 Kasım; sahibi sonra yapacak):
+  - Firebase Admin SDK anahtarı (ai-room, `firebase-adminsdk-fbsvc`, 4 Kasım’da üretilen ilk anahtar): Cloud Console →
+    IAM → Service accounts → Keys → sil; Firebase’den yenisini üret, yalnız `~/Documents/casalume-keys/`e koy.
+  - Google OAuth “Casalume Web” client secret: Auth Platform → Clients → Casalume Web → secret’ı kapat/sil (kullanmıyoruz).
+  - `Downloads` klasöründeki `client_secret_…json` ve `…firebase-adminsdk…json` dosyalarını sil.
 - [ ] hazal’a fail2ban (e-posta girişlerine kaba kuvvet denemeleri görülüyor).
 - [ ] Admin ilk girişi: Google Authenticator kurulumu ve `admin-credentials.txt`’nin silinmesi (sahibi yapıyor).
 - [ ] hazal’daki diğer siteler (bilgi): maeyja.com 503 veriyor (Casalume öncesinden); uzmanumre.com’da DKIM/DMARC yok.
