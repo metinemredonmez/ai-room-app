@@ -18,6 +18,7 @@ import { AdminMarketingController } from './marketing/marketing.controller.js';
 import { AdminBlogController } from './blog/blog.controller.js';
 import { AdminBroadcastsController } from './broadcasts/broadcasts.controller.js';
 import { AdminSupportController } from './support/support.controller.js';
+import { AdminAnalyticsController } from './admin/analytics.controller.js';
 import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { loadConfig, type Config } from './config.js';
@@ -262,7 +263,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('every admin route declares its least role', () => {
     const reflector = new Reflector();
     const missing: string[] = [];
-    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController, AdminSupportController]) {
+    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController, AdminSupportController, AdminAnalyticsController]) {
       for (const name of Object.getOwnPropertyNames(ctrl.prototype)) {
         const handler = (ctrl.prototype as unknown as Record<string, unknown>)[name];
         if (name === 'constructor' || typeof handler !== 'function' || Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;
@@ -270,6 +271,11 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
       }
     }
     expect(missing).toEqual([]);
+  });
+
+  it('revenue needs ADMIN; usage analytics are open to SUPPORT (AZ-01)', () => {
+    const role = (name: 'revenue' | 'engagement' | 'cohorts') => Reflect.getMetadata(MIN_ROLE, AdminAnalyticsController.prototype[name]);
+    expect([role('revenue'), role('engagement'), role('cohorts')]).toEqual(['ADMIN', 'SUPPORT', 'SUPPORT']);
   });
 
   const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN', amr = ['pwd', 'otp'], panelKey: string | null = null) => {

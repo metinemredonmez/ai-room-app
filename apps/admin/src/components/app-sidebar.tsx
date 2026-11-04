@@ -20,6 +20,7 @@ import {
   Share2,
   Send,
   ChartNoAxesColumn,
+  ChartLine,
   Newspaper,
   Search,
   ShieldCheck,
@@ -69,7 +70,13 @@ import type { AdminMe, Page, ContentReport } from "@/lib/types";
 type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "openReports" | "kvkkDue" | "openSupport"; superAdminOnly?: boolean };
 
 export const NAV: { label: string; items: NavItem[] }[] = [
-  { label: "Genel", items: [{ href: "/", label: "Ana sayfa", icon: House }] },
+  {
+    label: "Genel",
+    items: [
+      { href: "/", label: "Ana sayfa", icon: House },
+      { href: "/analytics", label: "Analiz", icon: ChartLine },
+    ],
+  },
   {
     label: "İçerik",
     items: [

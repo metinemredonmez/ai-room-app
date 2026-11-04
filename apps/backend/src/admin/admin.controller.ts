@@ -110,9 +110,9 @@ export class AdminController {
                              (now() AT TIME ZONE 'Europe/Istanbul')::date, interval '1 day') gs
       )
       SELECT d.date,
-        (SELECT count(*) FROM "Design" x WHERE to_char(x."createdAt" AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = d.date) AS designs,
-        (SELECT count(*) FROM "Design" x WHERE x.status = 'FAILED' AND to_char(x."createdAt" AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = d.date) AS failed,
-        (SELECT count(*) FROM "User" u WHERE to_char(u."createdAt" AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = d.date) AS new_users
+        (SELECT count(*) FROM "Design" x WHERE to_char((x."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = d.date) AS designs,
+        (SELECT count(*) FROM "Design" x WHERE x.status = 'FAILED' AND to_char((x."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = d.date) AS failed,
+        (SELECT count(*) FROM "User" u WHERE to_char((u."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = d.date) AS new_users
       FROM d ORDER BY d.date`;
     const byTool = await this.prisma.design.groupBy({ by: ['tool'], _count: { _all: true }, where: { createdAt: { gte: since } } });
     const byStyle = await this.prisma.design.groupBy({

@@ -338,3 +338,49 @@ export type SupportDetail = SupportTicket & {
   messages: Array<{ id: string; author: "USER" | "STAFF"; body: string; createdAt: string }>;
   user: { id: string; email: string | null; name: string | null; isGuest: boolean; plan: string; locale: string; createdAt: string };
 };
+
+// API.md §7.20 analytics
+export type BillingEnv = "PRODUCTION" | "SANDBOX";
+export type RevenueAnalytics = {
+  days: number;
+  env: BillingEnv;
+  from: string;
+  to: string;
+  totals: {
+    grossUsd: number;
+    refundsUsd: number;
+    netUsd: number;
+    proceedsUsd: number;
+    payers: number;
+    arppuUsd: number | null;
+    newSubscriptions: number;
+    trials: number;
+    trialConversions: number;
+    renewals: number;
+    creditPacks: number;
+    refunds: number;
+    cancellations: number;
+    expirations: number;
+  };
+  daily: { date: string; grossUsd: number; refundsUsd: number; netUsd: number }[];
+  byProduct: { productId: string; revenueUsd: number; purchases: number }[];
+  byStore: { store: string; revenueUsd: number }[];
+  byCurrency: { currency: string; amount: number }[];
+  subscriptions: { active: number; byStatus: Record<string, number>; trials: number; renewing: number; priced: number; mrrUsd: number };
+  truncated: boolean;
+};
+export type EngagementAnalytics = {
+  days: number;
+  active: { today: number; week: number; month: number; period: number; returning: number; stickiness: number | null };
+  daily: { date: string; activeUsers: number }[];
+  funnel: { signups: number; designed: number; succeeded: number; repeat: number; registered: number; paid: number };
+  designs: { designs: number; designers: number; succeeded: number; favorites: number; perDesigner: number | null; favoriteRate: number | null };
+  reach: { kind: "tool" | "ai"; key: string; users: number }[];
+};
+export type CohortAnalytics = {
+  segment: "all" | "registered";
+  currentWeek: string;
+  weeks: number;
+  rows: { week: string; size: number; active: (number | null)[]; retention: (number | null)[] }[];
+  average: (number | null)[];
+};

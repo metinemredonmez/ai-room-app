@@ -346,14 +346,14 @@ export function DailyLineChart({
             {active !== null && <line x1={x(active)} x2={x(active)} y1={margin.top} y2={margin.top + plotH} stroke="var(--chart-axis)" strokeWidth={1} />}
             {last && (
               <>
-                <circle cx={x(n - 1)} cy={y(last.value)} r={4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
+                <circle cx={x(n - 1)} cy={y(last.value)} r={4} fill="var(--series-1)" stroke="var(--card)" strokeWidth={2} />
                 <text x={x(n - 1) + 8} y={y(last.value)} dy="0.32em" fontSize={AXIS_FONT} fill="var(--chart-ink-2)" className="tabular">
                   {format(last.value)}
                 </text>
               </>
             )}
             {active !== null && active !== n - 1 && data[active] && (
-              <circle cx={x(active)} cy={y(data[active].value)} r={4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
+              <circle cx={x(active)} cy={y(data[active].value)} r={4} fill="var(--series-1)" stroke="var(--card)" strokeWidth={2} />
             )}
             <rect
               x={margin.left}

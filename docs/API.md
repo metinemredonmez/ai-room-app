@@ -893,3 +893,40 @@ e-posta (yalnız doğrulanmış adres) ve push ile gider. Kullanıcı yalnız ke
 
 Mobil (sonra): Profil → Destek ekranı aynı `/me/support` uçlarını kullanır; `platform: 'ios' | 'android'` ve
 `appVersion` gönderilir; `casalume://support/<id>` derin bağlantısı talebi açar.
+
+### 7.20 Analiz — backend + admin
+Admin'de **Analiz** (Genel altında): gelir, etkileşim ve haftalık kohort tutma. Yalnız okuma; yalnız sayılar ve toplamlar
+döner, kişisel veri dönmez. Günler İstanbul takvim günü, haftalar pazartesi başlar. Yönetici hesapları (rol ≠ USER)
+kullanıcı sayılarına girmez.
+
+**Gelir** (ADMIN ve üstü)
+- Kaynak: saklanan RevenueCat olayları (`WebhookEvent.payload`). `price` USD'dir (deneme 0, iade negatif).
+- Gelir: ücretli `INITIAL_PURCHASE`, `RENEWAL`, `NON_RENEWING_PURCHASE` (kredi paketi). İade: `CANCELLATION` +
+  `cancel_reason: CUSTOMER_SUPPORT`. Başka iptaller yalnız yenilemeyi kapatır, tutardan düşmez. `PRODUCT_CHANGE`
+  sayılmaz.
+- Gün: olayın `event_timestamp_ms` değeri (yoksa alınma zamanı).
+- Ele geçen: `commission_percentage` ve `tax_percentage` düşülür; olay bildirmediyse brüt sayılır.
+- MRR: şu an erişimi olan, yenilenecek (deneme ve iptal edilmemiş) aboneliklerin son ödenen fiyatı, aylığa çevrilir.
+  Dönem `expiration_at_ms − purchased_at_ms` ile bulunur.
+- `env=SANDBOX` test satın almalarını ayrı gösterir. Ortam bilgisi olmayan olay canlı (PRODUCTION) sayılır.
+- Bir istekte en çok 50.000 olay okunur; aşılırsa `truncated: true` döner.
+
+**Etkileşim ve kohort** (SUPPORT ve üstü)
+- Aktif kullanıcı: o gün tasarım isteyen ya da AI özelliği (sohbet, analiz, nesne seçimi, referans stil) kullanan kişi.
+- Yapışkanlık: son 30 günün ortalama günlük aktifi ÷ 30 günlük aktif.
+- Huni: aralıkta hesabı açılanlar → ilk tasarım → başarılı sonuç → 3+ tasarım → e-postayla kayıt → satın alma.
+  Her adım, hesabı açılanlara oranlanır.
+- Kohort: hesabın açıldığı hafta. `retention[k]`, k. haftada aktif olanların yüzdesidir (0 = kayıt haftası).
+  Henüz gelmemiş haftalar `null` döner. `average` her kohortu büyüklüğüyle tartar.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/admin/analytics/revenue?days=30&env=PRODUCTION` | ADMIN | `days` 7–365. Döner: `totals`, `daily`, `byProduct`, `byStore`, `byCurrency`, `subscriptions` (`mrrUsd`, `active`, `byStatus`, `trials`), `truncated` |
+| GET | `/admin/analytics/engagement?days=30` | SUPPORT | `days` 7–90. Döner: `active` (`today`, `week`, `month`, `period`, `returning`, `stickiness`), `daily`, `funnel`, `designs`, `reach` |
+| GET | `/admin/analytics/cohorts?weeks=8&segment=all` | SUPPORT | `weeks` 4–12, `segment` `all` ya da `registered`. Döner: `rows` (`week`, `size`, `active[]`, `retention[]`), `average[]` |
+
+Not: Panodaki ve AI maliyetindeki günlük seriler artık `(createdAt AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul'`
+ile gün ayırır. Sütunlar UTC tutan `timestamp`; eski ifade sonucu veritabanı oturumunun saat dilimine bağlıyordu. UTC
+çalışan bir sunucuda gün sınırı 6 saat kayıyordu.
+
+Mobil: yok (yalnız admin).

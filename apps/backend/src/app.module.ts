@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AdminController } from './admin/admin.controller.js';
+import { AdminAnalyticsController } from './admin/analytics.controller.js';
+import { AnalyticsService } from './admin/analytics.service.js';
 import { AuditService } from './admin/audit.service.js';
 import { AdminSecurityService } from './admin/admin-security.service.js';
 import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
@@ -41,7 +43,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -55,6 +57,7 @@ import { UsersService } from './users/users.service.js';
     ConsentsService,
     DataRequestsService,
     BillingService,
+    AnalyticsService,
     BroadcastsService,
     MarketingService,
     BlogService,

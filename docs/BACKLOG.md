@@ -166,7 +166,11 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   - [ ] Mobil (sen): Profil → Destek ekranı, `casalume://support/<id>` derin bağlantısı, Android `support` kanalı.
 - [ ] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
   da temeli (fal-app `share/`); mobilde story kartı 1080×1920 (sen, palemi).
-- [ ] Uygulama içi olay ölçümü (KVKK uyumlu beyaz liste) + admin kohort/huni ekranları (fal-app `olaylar/`).
+- [x] Admin **Analiz** (API.md §7.20): gelir (brüt, iade, net, ele geçen, MRR, ürün/mağaza/para birimi; canlı ve
+  sandbox ayrı), etkileşim (günlük/7/30 gün aktif, yapışkanlık, yeni kullanıcı hunisi, özelliklere ulaşan kişi), haftalık
+  kohort tutma tablosu. Etkinlik, tasarım ve AI kayıtlarından ölçülür; uygulamaya ölçüm kodu gerekmedi.
+- [ ] Uygulama içi olay ölçümü (KVKK uyumlu beyaz liste): ekran görüntüleme, paywall gösterimi gibi tasarım dışı adımlar
+  için (fal-app `olaylar/`); Analiz hunisine eklenir.
 - [ ] Deneme süresi + dürüst paywall (ilk ücret tarihi düğmenin üstünde) + “Aboneliği yönet” + deneme hatırlatması (sen, palemi).
 - [ ] Davet et – kazan (ücretsiz tasarım hakkı) + promosyon/hediye kodu + mimar/influencer ortaklık bağlantısı (fal-app).
 - [x] Panelden toplu push/kampanya (API.md §7.16): pazarlama izni, haftalık sınır, sessiz saatler, ticari ifade kontrolü,

@@ -144,6 +144,22 @@ if (admin.status === 401 || admin.status === 429) {
   ok(replay.status === 401, 'TOTP code replay rejected');
   const stats = await call('GET', '/admin/stats?days=7', { token: admin.json.accessToken });
   ok(stats.status === 200 && stats.json?.totals?.designs >= 1 && stats.json.daily.length === 7, 'admin stats', `${stats.json?.totals?.designs} designs, ${stats.json?.totals?.users} users`);
+  ok(stats.json?.daily?.at(-1)?.designs >= 1, "today's designs fall on today's Istanbul day (UTC columns)", JSON.stringify(stats.json?.daily?.at(-1)));
+  // API.md §7.20: analytics. The smoke user made designs and a chat today, so it is active today and in this week's cohort.
+  const eng = await call('GET', '/admin/analytics/engagement?days=7', { token: admin.json.accessToken });
+  ok(eng.status === 200 && eng.json?.daily?.length === 7 && eng.json.daily.at(-1).activeUsers >= 1 && eng.json.active.today >= 1 && eng.json.funnel.signups >= 1 && eng.json.funnel.designed >= 1,
+    'engagement: active today, daily series, signup funnel', `${eng.status} today=${eng.json?.active?.today} signups=${eng.json?.funnel?.signups}`);
+  ok(eng.json?.reach?.some((r) => r.kind === 'tool' && r.users >= 1) && eng.json?.reach?.some((r) => r.kind === 'ai' && r.key === 'chat'), 'engagement: feature reach counts design tools and AI features');
+  const coh = await call('GET', '/admin/analytics/cohorts?weeks=4', { token: admin.json.accessToken });
+  const thisWeek = coh.json?.rows?.at(-1);
+  ok(coh.status === 200 && coh.json.rows.length === 4 && thisWeek?.size >= 1 && thisWeek.retention[0] > 0 && thisWeek.retention[1] === null,
+    'cohorts: this week has signups, active users, and no future weeks', JSON.stringify(thisWeek));
+  const badDays = await call('GET', '/admin/analytics/revenue?days=1000', { token: admin.json.accessToken });
+  const badEnv = await call('GET', '/admin/analytics/revenue?env=TEST', { token: admin.json.accessToken });
+  const badSeg = await call('GET', '/admin/analytics/cohorts?segment=staff', { token: admin.json.accessToken });
+  ok(badDays.status === 400 && badEnv.status === 400 && badSeg.status === 400, 'analytics query parameters are bounded (INP-01)', `${badDays.status}/${badEnv.status}/${badSeg.status}`);
+  const userAnalytics = await call('GET', '/admin/analytics/engagement', { token });
+  ok(userAnalytics.status === 401 || userAnalytics.status === 403, 'a user token cannot read analytics', String(userAnalytics.status));
   const feat = await call('PATCH', `/admin/designs/${design.json.id}`, { token: admin.json.accessToken, body: { featured: true } });
   ok(feat.status === 200 && feat.json?.featured === true, 'admin features a design');
   const insp = await call('GET', '/inspiration');
@@ -626,6 +642,21 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
       return list?.items?.length ? list : null;
     });
     ok(orphan.status === 200 && unmatched?.items?.length >= 1, 'event for an unknown app user lands in admin "unmatched" list');
+
+    // API.md §7.20: revenue analytics read the stored events (SANDBOX here): a renewal counts, its refund comes off.
+    const revenue = async () => (await call('GET', '/admin/analytics/revenue?env=SANDBOX&days=7', { token: adminToken })).json;
+    const revBefore = await revenue();
+    const ts = Date.now();
+    const paid = { app_user_id: rcUser.id, product_id: 'casalume_pro_monthly', entitlement_ids: ['pro'], period_type: 'NORMAL', environment: 'SANDBOX', store: 'APP_STORE',
+      currency: 'TRY', commission_percentage: 0.15, tax_percentage: 0.2, event_timestamp_ms: ts, purchased_at_ms: ts, expiration_at_ms: ts + 30 * 86400_000 };
+    await rc({ ...paid, id: `smoke_${crypto.randomUUID()}`, type: 'RENEWAL', price: 4.99, price_in_purchased_currency: 199.99 });
+    await rc({ ...paid, id: `smoke_${crypto.randomUUID()}`, type: 'CANCELLATION', cancel_reason: 'CUSTOMER_SUPPORT', price: -4.99, price_in_purchased_currency: -199.99 });
+    const revAfter = await waitFor(async () => { const r = await revenue(); return r?.totals?.refunds > (revBefore?.totals?.refunds ?? 0) ? r : null; });
+    const d = (k) => Math.round(((revAfter?.totals?.[k] ?? 0) - (revBefore?.totals?.[k] ?? 0)) * 100) / 100;
+    ok(revBefore?.env === 'SANDBOX' && d('grossUsd') === 4.99 && d('refundsUsd') === 4.99 && d('netUsd') === 0 && d('renewals') === 1 && d('refunds') === 1,
+      'revenue: SANDBOX renewal counted, refund subtracted', `gross +${d('grossUsd')} refunds +${d('refundsUsd')}`);
+    const prodRev = (await call('GET', '/admin/analytics/revenue?days=7', { token: adminToken })).json;
+    ok(prodRev?.env === 'PRODUCTION' && Array.isArray(prodRev.daily) && prodRev.daily.length === 7 && typeof prodRev.subscriptions?.mrrUsd === 'number', 'revenue defaults to PRODUCTION (sandbox kept apart)');
   }
 }
 // #6 admin roles + MFA recovery (AZ-05, AUT-01, AUT-04). Admin login is limited to 5 / 15 min per IP,
@@ -659,6 +690,9 @@ if (adminToken) {
   const sEscalate = await call('PATCH', `/admin/admins/${staffId}`, { token: staffToken, body: { role: 'SUPER_ADMIN', reason: 'self escalation' } });
   ok(sRead.status === 200 && sSettings.status === 403 && sAdmins.status === 403 && sEscalate.status === 403,
     'SUPPORT reads, but cannot change settings, list admins or escalate itself (AZ-01/AZ-05)', `${sRead.status}/${sSettings.status}/${sAdmins.status}/${sEscalate.status}`);
+  const sRevenue = await call('GET', '/admin/analytics/revenue', { token: staffToken });
+  const sEngagement = await call('GET', '/admin/analytics/engagement', { token: staffToken });
+  ok(sRevenue.status === 403 && sEngagement.status === 200, 'SUPPORT sees usage analytics but not revenue (AZ-01)', `${sRevenue.status}/${sEngagement.status}`);
 
   const recovery = confirm.json.backupCodes[0];
   const bLogin = await call('POST', '/admin/auth/login', { body: { email: userEmail, password: pw, backupCode: recovery.toLowerCase() } });
@@ -686,7 +720,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

@@ -363,6 +363,7 @@ model WebhookEvent {
   processedAt DateTime?
 
   @@index([status, receivedAt])
+  @@index([userId, receivedAt])
 }
 
 // Store subscription state per entitlement (synced from RevenueCat).

@@ -82,8 +82,8 @@ export class UsageService {
       this.prisma.aiUsage.aggregate({ _sum: { costUsd: true, images: true }, _count: { _all: true }, where: { createdAt: { gte: midnight } } }),
       this.prisma.$queryRaw<Array<{ date: string; cost: Prisma.Decimal | null; calls: bigint }>>`
         SELECT to_char(gs, 'YYYY-MM-DD') AS date,
-          (SELECT sum(u."costUsd") FROM "AiUsage" u WHERE to_char(u."createdAt" AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = to_char(gs, 'YYYY-MM-DD')) AS cost,
-          (SELECT count(*) FROM "AiUsage" u WHERE to_char(u."createdAt" AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = to_char(gs, 'YYYY-MM-DD')) AS calls
+          (SELECT sum(u."costUsd") FROM "AiUsage" u WHERE to_char((u."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = to_char(gs, 'YYYY-MM-DD')) AS cost,
+          (SELECT count(*) FROM "AiUsage" u WHERE to_char((u."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') = to_char(gs, 'YYYY-MM-DD')) AS calls
         FROM generate_series((now() AT TIME ZONE 'Europe/Istanbul')::date - ${days - 1}::int,
                              (now() AT TIME ZONE 'Europe/Istanbul')::date, interval '1 day') gs
         ORDER BY 1`,
