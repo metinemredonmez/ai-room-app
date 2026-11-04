@@ -8,36 +8,36 @@
   color-scheme: light;
   --radius: 0.875rem;
 
-  --background: #f7f4ef;
-  --foreground: #141414;
+  --background: #f6f1ea;
+  --foreground: #1c1714;
   --card: #ffffff;
-  --card-foreground: #141414;
+  --card-foreground: #1c1714;
   --popover: #ffffff;
-  --popover-foreground: #141414;
-  --primary: #1f6f5c;
+  --popover-foreground: #1c1714;
+  --primary: #a9532e;
   --primary-foreground: #ffffff;
-  --secondary: #efebe4;
-  --secondary-foreground: #141414;
-  --muted: #f1ede6;
-  --muted-foreground: #6b6a66;
-  --accent: #ece7df;
-  --accent-foreground: #141414;
+  --secondary: #f0e8de;
+  --secondary-foreground: #1c1714;
+  --muted: #f2ebe2;
+  --muted-foreground: #6e655e;
+  --accent: #eee5da;
+  --accent-foreground: #1c1714;
   --destructive: #c23434;
-  --border: #e6e1d8;
-  --input: #cfc8bc;
-  --ring: #1f6f5c;
+  --border: #e7ddd1;
+  --input: #d3c6b6;
+  --ring: #a9532e;
 
-  --sidebar: #fbf9f6;
-  --sidebar-foreground: #141414;
-  --sidebar-primary: #1f6f5c;
+  --sidebar: #fbf7f2;
+  --sidebar-foreground: #1c1714;
+  --sidebar-primary: #a9532e;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e3efeb;
-  --sidebar-accent-foreground: #1f6f5c;
-  --sidebar-border: #e6e1d8;
-  --sidebar-ring: #1f6f5c;
+  --sidebar-accent: #f8ece4;
+  --sidebar-accent-foreground: #a9532e;
+  --sidebar-border: #e7ddd1;
+  --sidebar-ring: #a9532e;
 
-  --brand-accent: #e07a4f;
-  --primary-soft: #e3efeb;
+  --brand-accent: #c9673e;
+  --primary-soft: #f8ece4;
   --danger-soft: #fbeaea;
   --good-text: #006300;
   --good-soft: #e6f4e6;
@@ -56,36 +56,36 @@
   :root {
     color-scheme: dark;
 
-    --background: #0e1311;
-    --foreground: #f2efea;
-    --card: #18201d;
-    --card-foreground: #f2efea;
-    --popover: #18201d;
-    --popover-foreground: #f2efea;
-    --primary: #3fb28f;
-    --primary-foreground: #0e1311;
-    --secondary: #222b27;
-    --secondary-foreground: #f2efea;
-    --muted: #1c2420;
-    --muted-foreground: #a3a8a4;
-    --accent: #232d29;
-    --accent-foreground: #f2efea;
+    --background: #15110f;
+    --foreground: #f3ece2;
+    --card: #1f1916;
+    --card-foreground: #f3ece2;
+    --popover: #1f1916;
+    --popover-foreground: #f3ece2;
+    --primary: #e07a52;
+    --primary-foreground: #1c1714;
+    --secondary: #2a221e;
+    --secondary-foreground: #f3ece2;
+    --muted: #241d1a;
+    --muted-foreground: #ada39a;
+    --accent: #2b231f;
+    --accent-foreground: #f3ece2;
     --destructive: #e66767;
-    --border: #2a332f;
-    --input: #3d4a45;
-    --ring: #3fb28f;
+    --border: #342a25;
+    --input: #4a3d36;
+    --ring: #e07a52;
 
-    --sidebar: #141b18;
-    --sidebar-foreground: #f2efea;
-    --sidebar-primary: #3fb28f;
-    --sidebar-primary-foreground: #0e1311;
-    --sidebar-accent: #1d3029;
-    --sidebar-accent-foreground: #3fb28f;
-    --sidebar-border: #2a332f;
-    --sidebar-ring: #3fb28f;
+    --sidebar: #1a1512;
+    --sidebar-foreground: #f3ece2;
+    --sidebar-primary: #e07a52;
+    --sidebar-primary-foreground: #1c1714;
+    --sidebar-accent: #3a2419;
+    --sidebar-accent-foreground: #e89a78;
+    --sidebar-border: #342a25;
+    --sidebar-ring: #e07a52;
 
-    --brand-accent: #f09a72;
-    --primary-soft: #1d3029;
+    --brand-accent: #e07a52;
+    --primary-soft: #3a2419;
     --danger-soft: #3a1f1f;
     --good-text: #0ca30c;
     --good-soft: #17301a;
@@ -171,4 +171,21 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* Animated brand mark (components/brand-mark.tsx): draw the arch, spill the light, pop and twinkle the spark.
+   Base styles are the final frame, so reduced motion simply shows the still mark. */
+@media (prefers-reduced-motion: no-preference) {
+  .brand-anim .brand-arch { stroke-dasharray: 1; animation: brand-draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) both; }
+  .brand-anim .brand-in { animation: brand-fade 0.6s 0.7s ease-out both; }
+  .brand-anim .brand-beam { transform-box: fill-box; transform-origin: 50% 0; animation: brand-spill 0.7s 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .brand-anim .brand-breathe { animation: brand-breathe 3.6s 1.6s ease-in-out infinite; }
+  .brand-anim .brand-pop { transform-box: fill-box; transform-origin: center; animation: brand-pop 0.5s 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .brand-anim .brand-twinkle { transform-box: fill-box; transform-origin: center; animation: brand-twinkle 2.8s 1.8s ease-in-out infinite; }
+}
+@keyframes brand-draw { 0% { stroke-dashoffset: 1; opacity: 0; } 6% { opacity: 1; } 100% { stroke-dashoffset: 0; } }
+@keyframes brand-fade { from { opacity: 0; } }
+@keyframes brand-spill { from { transform: scaleY(0); opacity: 0; } }
+@keyframes brand-breathe { 50% { opacity: 0.6; } }
+@keyframes brand-pop { from { transform: scale(0) rotate(-45deg); opacity: 0; } }
+@keyframes brand-twinkle { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(0.78) rotate(22deg); } }
 

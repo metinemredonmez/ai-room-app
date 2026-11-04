@@ -8,7 +8,6 @@
     "scheme": "casalume",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "app.casalume",
       "supportsTablet": true,
       "infoPlist": {
@@ -18,7 +17,7 @@
     "android": {
       "package": "app.casalume",
       "adaptiveIcon": {
-        "backgroundColor": "#1F6F5C",
+        "backgroundColor": "#1C1714",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -35,7 +34,7 @@
       [
         "expo-notifications",
         {
-          "color": "#1F6F5C",
+          "color": "#C9673E",
           "defaultChannel": "designs"
         }
       ],
@@ -50,9 +49,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#1F6F5C",
+          "backgroundColor": "#1C1714",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 140
         }
       ]
     ],

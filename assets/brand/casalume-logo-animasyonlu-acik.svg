@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><rect width="1024" height="1024" rx="228" fill="#f6f1ea"/><style>
+    .arch{stroke-dasharray:1;animation:draw .9s cubic-bezier(.65,0,.35,1) both}
+    .in{animation:fade .6s .7s ease-out both}
+    .beam{transform-box:fill-box;transform-origin:50% 0;animation:spill .7s .8s cubic-bezier(.2,.8,.2,1) both}
+    .breathe{animation:breathe 3.6s 1.6s ease-in-out infinite}
+    .pop{transform-box:fill-box;transform-origin:center;animation:pop .5s 1.1s cubic-bezier(.34,1.56,.64,1) both}
+    .twinkle{transform-box:fill-box;transform-origin:center;animation:twinkle 2.8s 1.8s ease-in-out infinite}
+    @keyframes draw{0%{stroke-dashoffset:1;opacity:0}6%{opacity:1}100%{stroke-dashoffset:0}}
+    @keyframes fade{from{opacity:0}}
+    @keyframes spill{from{transform:scaleY(0);opacity:0}}
+    @keyframes breathe{50%{opacity:.6}}
+    @keyframes pop{from{transform:scale(0) rotate(-45deg);opacity:0}}
+    @keyframes twinkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(.78) rotate(22deg)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}</style><g transform="translate(-25 -14)">
+    <g class="breathe"><path class="in" d="M402 744V452a110 110 0 0 1 220 0v292z" fill="#c9673e" fill-opacity="0.14"/>
+    <path class="beam" d="M402 744h220l100 124H302z" fill="#c9673e" fill-opacity="0.3"/></g>
+    <path class="arch" pathLength="1" d="M372 744V452a140 140 0 0 1 280 0v292" fill="none" stroke="#a9532e" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="pop"><path class="twinkle" d="M730 198q15 77 92 92q-77 15-92 92q-15-77-92-92q77-15 92-92z" fill="#c9673e"/></g>
+  </g></svg>

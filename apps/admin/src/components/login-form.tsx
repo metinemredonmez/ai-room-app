@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
+import { BrandMark } from "@/components/brand-mark";
 
 /** Only same-app relative paths are allowed as post-login targets (no open redirect). */
 function safeNext(raw: string | null): string {
@@ -292,24 +293,24 @@ function BackupCodes({ codes, email, onDone }: { codes: string[]; email: string;
 }
 
 function Logo({ className = "" }: { className?: string }) {
-  return <span className={`flex size-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground ${className}`}>AI</span>;
+  return <BrandMark size={36} animated className={`rounded-xl ${className}`} />;
 }
 
-/** Fixed deep-emerald panel (same in light and dark) with a line drawing of a room. */
+/** Fixed warm-ink panel (same in light and dark) with a line drawing of a room. */
 function BrandPanel() {
   return (
-    <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#0f3d33] p-10 text-white lg:flex xl:p-14">
+    <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#1c1714] p-10 text-white lg:flex xl:p-14">
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(60% 50% at 85% 10%, rgba(224,122,79,0.35), transparent 70%), radial-gradient(70% 60% at 10% 100%, rgba(63,178,143,0.45), transparent 70%)",
+            "radial-gradient(60% 50% at 85% 10%, rgba(243,236,226,0.16), transparent 70%), radial-gradient(70% 60% at 10% 100%, rgba(201,103,62,0.45), transparent 70%)",
         }}
       />
 
       <div className="relative flex items-center gap-2.5">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-white/15 text-sm font-bold ring-1 ring-white/25 backdrop-blur">AI</span>
+        <BrandMark size={44} tile={false} animated />
         <span className="font-semibold">Casalume</span>
       </div>
 

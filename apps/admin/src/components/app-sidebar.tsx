@@ -24,6 +24,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { BrandMark } from "@/components/brand-mark";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,7 +132,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/" onClick={() => setOpenMobile(false)}>
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">AI</span>
+                <BrandMark size={32} className="rounded-lg" />
                 <span className="grid leading-tight">
                   <span className="truncate font-semibold">Casalume</span>
                   <span className="truncate text-xs text-muted-foreground">Yönetim paneli</span>
