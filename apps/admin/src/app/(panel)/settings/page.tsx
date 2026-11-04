@@ -5,7 +5,20 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useFeedback } from "@/components/feedback";
 import { Badge, Button, Card, ErrorState, Field, Input, PageHeader, Select, Spinner, Textarea } from "@/components/common";
 import { api, ApiError, useApi } from "@/lib/api";
-import type { BrakeMode, Settings, SettingsResponse } from "@/lib/types";
+import type { AppPlatform, AppVersion, BrakeMode, Settings, SettingsResponse } from "@/lib/types";
+
+const SEMVER = /^\d+\.\d+\.\d+$/;
+const STORE_HOST: Record<AppPlatform, string> = { ios: "apps.apple.com", android: "play.google.com" };
+
+/** Mirrors the backend check, so mistakes show before saving (the backend still decides). */
+function versionProblem(platform: AppPlatform, v: AppVersion): string | null {
+  if (!SEMVER.test(v.min) || !SEMVER.test(v.latest)) return "Sürüm 1.4.0 biçiminde olmalı.";
+  const cmp = (a: string, b: string) => a.split(".").map(Number).reduce((r, n, i) => r || n - Number(b.split(".")[i]), 0);
+  if (cmp(v.min, v.latest) > 0) return "En düşük sürüm, en güncel sürümden büyük olamaz.";
+  if (v.storeUrl && !v.storeUrl.startsWith(`https://${STORE_HOST[platform]}/`)) return `Mağaza bağlantısı https://${STORE_HOST[platform]}/ ile başlamalı.`;
+  if (v.min !== "0.0.0" && !v.storeUrl) return "Zorunlu güncelleme için mağaza bağlantısı gerekli.";
+  return null;
+}
 
 const BRAKE_LABELS: Record<BrakeMode, string> = {
   off: "Kapalı — bütçe aşılsa da devam et",
@@ -53,6 +66,11 @@ function SettingsForm({ initial, defaults, onSaved }: { initial: Settings; defau
 
   async function save() {
     if (!changedCount) return;
+    const versionError = (["ios", "android"] as const).map((p) => versionProblem(p, draft.appVersions[p])).find(Boolean);
+    if (versionError) {
+      toast("error", `Zorunlu güncelleme: ${versionError}`);
+      return;
+    }
     if (reason.trim().length < 3) {
       toast("error", "Değişiklik gerekçesi en az 3 karakter olmalı.");
       return;
@@ -124,6 +142,34 @@ function SettingsForm({ initial, defaults, onSaved }: { initial: Settings; defau
         <Field label="Metin (EN)" htmlFor="aen">
           <Textarea id="aen" rows={2} maxLength={300} value={draft.announcement.textEn} onChange={(e) => set("announcement", { ...draft.announcement, textEn: e.target.value })} />
         </Field>
+      </Section>
+
+      <Section
+        title="Zorunlu güncelleme"
+        description="En düşük sürümün altındaki mobil uygulamalar her istekte 426 alır ve mağazaya yönlendirilir; en güncel sürümden eski olanlar kapatılabilir bir uyarı görür. 0.0.0 = kapalı."
+      >
+        {(["ios", "android"] as const).map((p) => {
+          const v = draft.appVersions[p];
+          const setV = (patch: Partial<AppVersion>) => set("appVersions", { ...draft.appVersions, [p]: { ...v, ...patch } });
+          const problem = versionProblem(p, v);
+          return (
+            <div key={p} className="grid gap-3 rounded-xl border border-line p-3">
+              <p className="text-sm font-semibold">{p === "ios" ? "iOS (App Store)" : "Android (Google Play)"}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="En düşük sürüm" htmlFor={`${p}-min`}>
+                  <Input id={`${p}-min`} value={v.min} inputMode="decimal" placeholder="1.4.0" onChange={(e) => setV({ min: e.target.value.trim() })} />
+                </Field>
+                <Field label="En güncel sürüm" htmlFor={`${p}-latest`}>
+                  <Input id={`${p}-latest`} value={v.latest} inputMode="decimal" placeholder="1.6.2" onChange={(e) => setV({ latest: e.target.value.trim() })} />
+                </Field>
+              </div>
+              <Field label="Mağaza bağlantısı" htmlFor={`${p}-store`}>
+                <Input id={`${p}-store`} value={v.storeUrl} placeholder={`https://${STORE_HOST[p]}/...`} onChange={(e) => setV({ storeUrl: e.target.value.trim() })} />
+              </Field>
+              {problem && <p className="text-xs text-danger" role="alert">{problem}</p>}
+            </div>
+          );
+        })}
       </Section>
 
       <Section title="KVKK" description="Açıkken üretimden önce kullanıcının güncel 'yapay zekâ ile işleme' onayı aranır (403 consent_required).">

@@ -231,20 +231,20 @@ function buildTasks(d: {
   const tasks: Task[] = [];
   // No second-factor reminders where MFA is switched off (development, ADMIN_DEV_SKIP_MFA).
   if (d.me?.mfa.required && !d.me.mfa.enrolled) {
-    tasks.push({ key: "mfa", tone: "critical", icon: ShieldAlert, title: "İki adımlı doğrulaman kurulmamış", detail: "Hesabını korumak için doğrulayıcı uygulamayı bağla" });
+    tasks.push({ key: "mfa", tone: "critical", icon: ShieldAlert, title: "İki adımlı doğrulaman kurulmamış", detail: "Hesabını korumak için doğrulayıcı uygulamayı bağla", href: "/account" });
   } else if (d.me?.mfa.required && d.me.mfa.backupCodesRemaining < 3) {
-    tasks.push({ key: "backup", tone: "warning", icon: ShieldAlert, title: `${d.me.mfa.backupCodesRemaining} yedek kodun kaldı`, detail: "Telefonunu kaybedersen giriş için yeni yedek kodlar üret" });
+    tasks.push({ key: "backup", tone: "warning", icon: ShieldAlert, title: `${d.me.mfa.backupCodesRemaining} yedek kodun kaldı`, detail: "Telefonunu kaybedersen giriş için yeni yedek kodlar üret", href: "/account" });
   }
 
   const k = d.kvkk?.counts;
   if (k?.overdue) {
-    tasks.push({ key: "kvkk-overdue", tone: "critical", icon: Scale, title: `${k.overdue} KVKK başvurusunun süresi geçti`, detail: "Yasal yanıt süresi 30 gün; hemen sonuçlandırılmalı" });
+    tasks.push({ key: "kvkk-overdue", tone: "critical", icon: Scale, title: `${k.overdue} KVKK başvurusunun süresi geçti`, detail: "Yasal yanıt süresi 30 gün; hemen sonuçlandırılmalı", href: "/data-requests" });
   }
   if (k?.dueSoon) {
-    tasks.push({ key: "kvkk-soon", tone: "warning", icon: Scale, title: `${k.dueSoon} KVKK başvurusunun süresi 7 gün içinde doluyor`, detail: "Son tarihten önce yanıtla" });
+    tasks.push({ key: "kvkk-soon", tone: "warning", icon: Scale, title: `${k.dueSoon} KVKK başvurusunun süresi 7 gün içinde doluyor`, detail: "Son tarihten önce yanıtla", href: "/data-requests" });
   }
   if (k && k.open > k.overdue + k.dueSoon) {
-    tasks.push({ key: "kvkk-open", tone: "info", icon: Scale, title: `${k.open - k.overdue - k.dueSoon} açık KVKK başvurusu`, detail: "Süresi var; sırayla ele alınabilir" });
+    tasks.push({ key: "kvkk-open", tone: "info", icon: Scale, title: `${k.open - k.overdue - k.dueSoon} açık KVKK başvurusu`, detail: "Süresi var; sırayla ele alınabilir", href: "/data-requests" });
   }
 
   const openReports = d.reports?.items.length ?? 0;

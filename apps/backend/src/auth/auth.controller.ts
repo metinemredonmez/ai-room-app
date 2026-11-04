@@ -261,7 +261,6 @@ export class AdminAuthController {
     const input = parse(AdminLoginSchema, body);
     // Development machines may switch the second factor off (ADMIN_DEV_SKIP_MFA, refused outside development).
     const devSkip = this.tokens.devSkipMfa && !input.otp && !input.backupCode;
-    if (!devSkip && !input.otp && !input.backupCode) throw new AppError(400, 'validation_failed', 'otp veya backupCode gerekli');
     await this.limiter.hit(LIMITS.adminLogin, req.clientIp);
     await this.limiter.hit(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
@@ -278,6 +277,9 @@ export class AdminAuthController {
       }
       throw await fail();
     }
+    // No factor at all fails like a wrong code: a correct password alone reveals nothing. Checked after the
+    // enrollment branch, so a newly promoted admin learns that setup is due without having a code yet.
+    if (!devSkip && !input.otp && !input.backupCode) throw await fail();
     // Recovery codes are only spent after the password checked out.
     const remaining = input.backupCode ? await this.security.consumeBackupCode(user.id, input.backupCode) : null;
     const passed = devSkip || (input.backupCode ? remaining !== null : await this.security.claimTotp(user, input.otp!));

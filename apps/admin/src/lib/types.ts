@@ -123,7 +123,10 @@ export type Settings = {
   maintenance: { enabled: boolean; messageTr: string; messageEn: string };
   announcement: { enabled: boolean; textTr: string; textEn: string };
   requireAiConsent: boolean;
+  appVersions: Record<AppPlatform, AppVersion>;
 };
+export type AppPlatform = "ios" | "android";
+export type AppVersion = { min: string; latest: string; storeUrl: string };
 export type SettingsResponse = { values: Settings; defaults: Settings };
 
 export type BudgetState = "normal" | "warning" | "exceeded";
@@ -175,3 +178,47 @@ export type BillingEvent = {
 };
 
 export type AdminMe = User & { mfa: { required: boolean; enrolled: boolean; backupCodesRemaining: number } };
+
+export type AdminTeamMember = User & {
+  status: "ACTIVE" | "BANNED";
+  mfa: { enrolled: boolean; enrollBefore: string | null; backupCodesRemaining: number };
+  lastSeenAt: string | null;
+};
+
+export type LegalKind = "terms" | "privacy" | "ai_processing" | "marketing";
+export type LegalLocale = "tr" | "en";
+export type LegalCurrent = { kind: LegalKind; version: string; consentVersion: string; publishedAt: string | null; url: string };
+export type LegalRow = {
+  id: string;
+  kind: LegalKind;
+  version: string;
+  locale: LegalLocale;
+  title: string;
+  requiresConsent: boolean;
+  status: "draft" | "published";
+  publishedAt: string | null;
+  updatedAt: string;
+};
+export type LegalDocument = Omit<LegalRow, "status" | "updatedAt"> & { body: string; createdAt: string; updatedAt: string };
+
+export type DataRequestStatus = "RECEIVED" | "IN_PROGRESS" | "COMPLETED" | "REJECTED";
+export type DataRequest = {
+  id: string;
+  reference: string;
+  type: string;
+  status: DataRequestStatus;
+  details: string;
+  response: string | null;
+  receivedAt: string;
+  dueAt: string;
+  closedAt: string | null;
+  channel: "app" | "email" | "kep" | "letter" | "other";
+  contactEmail: string | null;
+  userId: string | null;
+  handledBy: string | null;
+  daysLeft: number | null;
+  overdue: boolean;
+};
+export type DataRequestDetail = DataRequest & {
+  user: { id: string; email: string | null; name: string | null; isGuest: boolean; status: string; createdAt: string } | null;
+};

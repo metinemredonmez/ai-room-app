@@ -4468,7 +4468,7 @@
             "admin": []
           }
         ],
-        "summary": "Oturumdaki yönetici: rol ve MFA durumu",
+        "summary": "Oturumdaki yönetici: rol ve MFA durumu (`required: false` yalnız geliştirmede, ADMIN_DEV_SKIP_MFA)",
         "tags": [
           "admin"
         ]

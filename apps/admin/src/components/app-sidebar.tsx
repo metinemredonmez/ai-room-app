@@ -7,12 +7,16 @@ import {
   CreditCard,
   Flag,
   House,
+  FileText,
   ListChecks,
   LogOut,
   Palette,
+  Scale,
   ScrollText,
   SlidersHorizontal,
+  ShieldCheck,
   Sparkles,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -47,7 +51,7 @@ import { useApi } from "@/lib/api";
 import { ROLE_LABELS } from "@/lib/format";
 import type { AdminMe, Page, ContentReport } from "@/lib/types";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "openReports" };
+type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "openReports" | "kvkkDue"; superAdminOnly?: boolean };
 
 export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Genel", items: [{ href: "/", label: "Ana sayfa", icon: House }] },
@@ -60,6 +64,13 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     ],
   },
   { label: "Kullanıcılar", items: [{ href: "/users", label: "Kullanıcılar", icon: Users }] },
+  {
+    label: "KVKK",
+    items: [
+      { href: "/data-requests", label: "KVKK başvuruları", icon: Scale, badge: "kvkkDue" },
+      { href: "/legal", label: "Yasal metinler", icon: FileText },
+    ],
+  },
   {
     label: "Gelir ve maliyet",
     items: [
@@ -74,9 +85,13 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/jobs", label: "Zamanlı işler", icon: ListChecks },
       { href: "/audit", label: "Denetim kaydı", icon: ScrollText },
       { href: "/system", label: "Sistem durumu", icon: Activity },
+      { href: "/admins", label: "Yöneticiler", icon: ShieldCheck, superAdminOnly: true },
     ],
   },
 ];
+
+/** Pages reached from the account menu, for the header breadcrumb. */
+export const EXTRA_PAGES = [{ href: "/account", label: "Hesabım", group: "Hesap" }];
 
 export function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -95,7 +110,9 @@ export function AppSidebar() {
   const { setOpenMobile } = useSidebar();
   const me = useApi<AdminMe>("/me");
   const openReports = useApi<Page<ContentReport>>("/reports", { status: "OPEN", limit: 100 });
-  const badges = { openReports: openReports.data?.items.length ?? 0 };
+  const kvkk = useApi<{ counts: { dueSoon: number; overdue: number } }>("/data-requests", { limit: 1 });
+  // KVKK: only applications that need action soon (due within 7 days or overdue).
+  const badges = { openReports: openReports.data?.items.length ?? 0, kvkkDue: (kvkk.data?.counts.dueSoon ?? 0) + (kvkk.data?.counts.overdue ?? 0) };
 
   return (
     <Sidebar collapsible="icon">
@@ -121,7 +138,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(({ href, label, icon: Icon, badge }) => {
+                {group.items.filter((i) => !i.superAdminOnly || me.data?.role === "SUPER_ADMIN").map(({ href, label, icon: Icon, badge }) => {
                   const count = badge ? badges[badge] : 0;
                   return (
                     <SidebarMenuItem key={href}>
@@ -184,6 +201,11 @@ function UserMenu({ me }: { me: AdminMe | null }) {
               {me?.mfa.required && !me.mfa.enrolled && <p className="mt-1 text-xs text-destructive">İki adımlı doğrulama kurulmamış</p>}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/account">
+                <UserRound aria-hidden /> Hesabım
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={logout} disabled={loggingOut}>
               <LogOut aria-hidden /> Çıkış yap
             </DropdownMenuItem>

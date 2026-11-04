@@ -1,13 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { NAV, isActive } from "@/components/app-sidebar";
+import { EXTRA_PAGES, NAV, isActive } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const current = NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.label }))).find((i) => isActive(pathname, i.href));
+  const current = [...NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.label }))), ...EXTRA_PAGES].find((i) => isActive(pathname, i.href));
 
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur lg:px-6">
