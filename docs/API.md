@@ -731,3 +731,55 @@ Diller (maeyja ile aynı): `tr` (varsayılan), `en`, `de`, `es`, `fr`, `it`, `ru
 **AI servisi**
 - Sohbet ve maliyet analizi 11 dilde yanıt verir (`locale`).
 - Görsel talimatları İngilizce kalır.
+
+### 7.18 Pazarlama ajanları — mağaza metni (ASO) — backend + admin + AI servisi
+Ajanlar yalnız **taslak** üretir. Buradan hiçbir şey yayınlanmaz ya da gönderilmez (AI-02). Taslağı sahibi düzenler ve
+onaylar; mağazaya yüklemeyi kendisi yapar.
+
+**Bilgi sayfası (`GET /admin/marketing/facts?locale=`)**
+- Canlı katalogdan ve ayarlardan üretilir: araçlar, stiller, odalar, günlük ücretsiz hak, planlar.
+- Araç, stil ve oda adları o dilde uygulamanın gösterdiği adlardır.
+- Fiyat yazılmaz; mağaza ülkesine göre değişir.
+- Ajan yalnız buradaki gerçekleri kullanır: özellik, ödül, kullanıcı sayısı ya da puan uyduramaz.
+
+**Mağaza metni**
+- Her dil kendi pazarı için ayrı yazılır, çeviri değildir.
+- Alanlar ve sınırlar (karakter):
+
+  | Mağaza | Alanlar |
+  |---|---|
+  | App Store | ad 30, alt başlık 30, anahtar kelime 100, tanıtım metni 170, açıklama 4000, yenilikler 4000 |
+  | Google Play | başlık 30, kısa açıklama 80, tam açıklama 4000 |
+
+- AI servisi (`POST /internal/v1/marketing/aso`):
+  - Claude Opus 5.5 ile yapılandırılmış çıktı üretir.
+  - Sınırı aşan alanları bir kez yeniden yazdırır; hâlâ aşan alanı kesmez, `violations` içinde bildirir.
+  - Anahtar kelimelerden ad ve alt başlıktaki sözcükleri, tekrarları ve virgül sonrası boşlukları atar.
+- Bir dil yaklaşık 45–60 saniye sürer ve 0,09–0,11 $ tutar. Maliyet `AiUsage` defterine `kind=marketing` olarak yazılır.
+
+**Akış**
+- Her dil bir taslaktır (`MarketingDraft`) ve arka planda yazılır (`marketing` kuyruğu, aynı anda 3 dil).
+- Durumlar: `PENDING` → `READY` | `FAILED` → `APPROVED` → `ARCHIVED`.
+- Geçici AI hatası bir kez yeniden denenir. Bir saatten uzun `PENDING` kalan taslak `FAILED` (`timeout`) olur.
+- Düzenleme sunucuda mağaza sınırlarıyla denetlenir. Onaylı taslak düzenlenirse yeniden onay ister.
+- Sınırı aşan alanı olan taslak onaylanamaz (422 `over_limit`).
+- Onaylanan taslak o dilin güncel metni olur; önceki onaylı metin arşivlenir.
+- Günlük AI bütçesi dolduysa yazım başlamaz (503 `budget_exceeded`). Yazılmakta olan dil yeniden başlatılamaz (409).
+- Hız sınırı: admin başına saatte 10 çalıştırma.
+
+**Dışa aktarma**
+- `appStore`: EAS Metadata `store.config.json` (`apple.info.<locale>`: `title`, `subtitle`, `description`, `keywords`,
+  `releaseNotes`, `promoText`). Mobil tarafta `eas metadata:push` ile yüklenir.
+- `googlePlay`: Play Console dil kodu başına `title`, `shortDescription`, `fullDescription`, `releaseNotes`.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/admin/marketing/facts?locale=` | EDITOR | Ajana verilen bilgi sayfası |
+| GET | `/admin/marketing/aso` | EDITOR | Arşivlenmemiş taslaklar (en çok 200) |
+| POST | `/admin/marketing/aso` | EDITOR | `{ locales[], brief?, whatsNew? }` → 202, dil başına taslak |
+| GET | `/admin/marketing/aso/export` | EDITOR | Onaylı metinler: `{ locales, appStore, googlePlay }` |
+| PATCH | `/admin/marketing/drafts/:id` | EDITOR | `{ output }`; mağaza sınırları denetlenir |
+| POST | `/admin/marketing/drafts/:id/approve` | ADMIN | Dilin güncel metni olur |
+| POST | `/admin/marketing/drafts/:id/archive` | EDITOR | |
+
+Bütün yazma işlemleri denetim kaydına girer: `marketing.aso_run`, `.edit`, `.approve`, `.archive`.

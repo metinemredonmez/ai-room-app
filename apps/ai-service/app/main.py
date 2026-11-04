@@ -13,6 +13,7 @@ from fastapi.security import APIKeyHeader
 from .assistant import Assistant, AssistantUnavailable, CallUsage
 from .config import Settings, get_settings
 from .images import NO_CHANGE_BELOW, ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
+from .marketing import aso as write_aso
 from .monitoring import init_monitoring
 from .prompts import build_prompt, clean
 from .providers import ImageProvider, ProviderError, create_providers
@@ -23,7 +24,7 @@ from .region import (
 )
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
-    AnalyzeRequest, AnalyzeResponse, ChatRequest, ChatResponse, ErrorResponse, GenerateRequest, GenerateResponse,
+    AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, ChatRequest, ChatResponse, ErrorResponse, GenerateRequest, GenerateResponse,
     HealthResponse, QualityRequest, QualityResponse, RegionInfo, SegmentRequest, SegmentResponse, Usage,
 )
 
@@ -40,6 +41,7 @@ DESCRIPTION = """Internal AI service of Casalume. Only the backend calls it (hea
 * tap selection: the user taps the objects to change; `/segment` previews the mask before anything is generated
 * capture-quality gate, no-change detection
 * Claude design chat and shopping/budget analysis
+* marketing drafts for the admin (store listing per language)
 * every AI answer carries a `usage` cost-ledger entry (API.md §7.2)
 
 Errors: `{"error": {"code", "message", "retryable"}}` — the backend retries only when `retryable` is true."""
@@ -48,6 +50,7 @@ TAGS = [
     {"name": "generation", "description": "Image editing / restyling"},
     {"name": "quality", "description": "Advisory capture-quality check"},
     {"name": "assistant", "description": "Claude chat and analysis (demo answers without a key)"},
+    {"name": "marketing", "description": "Marketing drafts for the admin (store listing); never published from here"},
     {"name": "health", "description": "Liveness and provider state"},
 ]
 
@@ -371,6 +374,13 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             if m.image_b64:
                 m.image_b64 = to_b64(decode_image(m.image_b64, settings.max_image_bytes, 1568))
         return await assistant.chat(req)
+
+    @app.post("/internal/v1/marketing/aso", tags=["marketing"], response_model=AsoResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "Assistant unavailable"}},
+              summary="App Store + Google Play listing draft for one language")
+    async def marketing_aso(req: AsoRequest) -> AsoResponse:
+        return await write_aso(assistant, req)
 
     return app
 

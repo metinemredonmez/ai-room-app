@@ -415,6 +415,32 @@ if (adminToken) {
   ok(forged.status === 400, 'forged unsubscribe link refused', `status ${forged.status}`);
   await call('DELETE', `/admin/broadcasts/${mailB.json?.id}`, A);
 
+  // API.md §7.18 Pazarlama: store listing drafts are written in the background from the catalog's fact sheet,
+  // held to the store limits, approved by an ADMIN and exported as files. Nothing is published (AI-02).
+  const facts = await call('GET', '/admin/marketing/facts', A);
+  ok(facts.status === 200 && facts.json?.facts?.includes('Instant Remodel') && !/₺|\d+[.,]\d{2}/.test(facts.json.facts), 'marketing fact sheet comes from the catalog, without prices');
+  const badRun = await call('POST', '/admin/marketing/aso', { ...A, body: { locales: ['pt'] } });
+  ok(badRun.status === 400, 'store listing: unknown language refused', `status ${badRun.status}`);
+  const asoRun = await call('POST', '/admin/marketing/aso', { ...A, body: { locales: ['nl'], brief: 'Smoke' } });
+  const asoId = asoRun.json?.items?.[0]?.id;
+  let aso = null;
+  for (let i = 0; i < 40; i++) {
+    aso = (await call('GET', '/admin/marketing/aso', A)).json?.items?.find((d) => d.id === asoId);
+    if (aso && aso.status !== 'PENDING') break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  ok(asoRun.status === 202 && aso?.status === 'READY' && aso.output?.app_name?.startsWith('Casalume'), 'store listing draft written in the background', aso?.status);
+  const asoTooLong = await call('PATCH', `/admin/marketing/drafts/${asoId}`, { ...A, body: { output: { ...aso?.output, play_short: 'x'.repeat(81) } } });
+  ok(asoTooLong.status === 400, 'store limits enforced on edits (INP-01)', `status ${asoTooLong.status}`);
+  const asoEdit = await call('PATCH', `/admin/marketing/drafts/${asoId}`, { ...A, body: { output: { ...aso?.output, app_promo: 'Smoke tanıtım' } } });
+  const asoApprove = await call('POST', `/admin/marketing/drafts/${asoId}/approve`, A);
+  const asoExport = await call('GET', '/admin/marketing/aso/export', A);
+  ok(asoEdit.status === 200 && asoApprove.json?.status === 'APPROVED' && asoExport.json?.appStore?.apple?.info?.['nl-NL']?.promoText === 'Smoke tanıtım' && asoExport.json?.googlePlay?.['nl-NL']?.title,
+    'approved listing exported as EAS store.config.json + Play text', asoApprove.json?.status);
+  await call('POST', `/admin/marketing/drafts/${asoId}/archive`, A);
+  const asoAudit = new Set(((await call('GET', '/admin/audit?limit=50', A)).json?.items ?? []).map((a) => a.action));
+  ok(['marketing.aso_run', 'marketing.edit', 'marketing.approve', 'marketing.archive'].every((x) => asoAudit.has(x)), 'marketing actions are audited (LOG-01)');
+
   const texts = await call('GET', '/admin/legal', A);
   ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');
   const draftBody = { kind: 'marketing', version: '2099-12-31', locale: 'tr', title: 'Smoke taslak', body: 'Smoke testi için geçici taslak metin. '.repeat(3), requiresConsent: false };
@@ -549,7 +575,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

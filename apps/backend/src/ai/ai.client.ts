@@ -66,6 +66,16 @@ export interface AnalyzeOutput {
   usage?: AiUsageReport;
 }
 
+export interface AsoOutput {
+  listing: {
+    app_name: string; app_subtitle: string; app_keywords: string; app_promo: string; app_description: string;
+    app_whats_new: string; play_title: string; play_short: string; play_description: string;
+  };
+  /** Fields still over the store limit after the AI service's one rewrite. */
+  violations: string[];
+  usage?: AiUsageReport;
+}
+
 export interface ChatOutput {
   reply: string;
   suggestions: Array<{ label: string; tool: string; style_id?: string | null; room_id?: string | null; instructions?: string | null }>;
@@ -127,6 +137,11 @@ export class AiClient {
 
   chat(input: unknown, requestId?: string) {
     return this.call<ChatOutput>('POST', '/internal/v1/chat', input, 90_000, requestId);
+  }
+
+  /** Store listing draft for one language (API.md §7.18); up to two Claude calls, hence the long timeout. */
+  marketingAso(input: { locale: string; facts: string; brief?: string; whats_new?: string }) {
+    return this.call<AsoOutput>('POST', '/internal/v1/marketing/aso', input, 300_000);
   }
 
   /** Advisory capture-quality check; failures are swallowed (never blocks an upload). */

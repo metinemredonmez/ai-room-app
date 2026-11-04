@@ -15,7 +15,8 @@ import { PushRetryableError, PushService } from '../push/push.service.js';
 import { AppleRetryableError, AppleService } from '../auth/apple.service.js';
 import { DataRequestsService } from '../kvkk/data-requests.service.js';
 import { BroadcastsService } from '../broadcasts/broadcasts.service.js';
-import { QueuesService, type BroadcastJob, type DesignJob, type NotificationJob } from './queues.service.js';
+import { MarketingService } from '../marketing/marketing.service.js';
+import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
 
@@ -37,6 +38,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private apple: AppleService,
     private dataRequests: DataRequestsService,
     private broadcasts: BroadcastsService,
+    private marketing: MarketingService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -49,6 +51,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       new Worker<NotificationJob>('notifications', (job) => this.runNotification(job), { connection, concurrency: 4 }),
       // One broadcast at a time: weekly marketing caps are counted without races.
       new Worker<BroadcastJob>('broadcasts', (job) => this.runBroadcast(job), { connection, concurrency: 1 }),
+      // Marketing drafts: a few languages at a time keeps Claude's rate limit and the server load low.
+      new Worker<MarketingJob>('marketing', (job) => this.marketing.process(job.data.draftId, job.attemptsMade + 1 >= (job.opts.attempts ?? 1)), { connection, concurrency: 3 }),
     );
     for (const w of this.workers) {
       w.on('error', (e) => log.warn('worker_error', { error: e.name }));
@@ -133,7 +137,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         job.name === 'retention' ? await this.retention()
         : job.name === 'kvkk-deadlines' ? await this.dataRequests.deadlineDigest()
         : job.name === 'broadcasts-due' ? await this.broadcasts.due()
-        : { failedStale: await this.designs.reconcile() };
+        : { failedStale: await this.designs.reconcile(), marketingStale: await this.marketing.reconcile() };
       await this.prisma.jobRun.update({
         where: { id: run.id },
         data: { status: 'ok', details: details as Prisma.InputJsonValue, finishedAt: new Date() },

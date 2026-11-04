@@ -97,6 +97,8 @@ export const LIMITS = {
   // Each selection preview is a paid SAM 3 call; a tap-and-adjust session needs a few dozen at most.
   selection: { name: 'selection', max: 60, windowSec: 600 },
   broadcastTest: { name: 'broadcast-test', max: 20, windowSec: 600 },
+  /** RES-01: one marketing run is up to 11 Claude calls (≈1 $); per admin. */
+  marketing: { name: 'marketing', max: 10, windowSec: 3600 },
   broadcastOpened: { name: 'broadcast-opened', max: 120, windowSec: 3600 },
   unsubscribe: { name: 'unsubscribe-ip', max: 30, windowSec: 600 },
   analysis: { name: 'analysis', max: 30, windowSec: 3600 },

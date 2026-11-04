@@ -130,10 +130,13 @@ Ortak altyapı (ilk adım):
 - Admin: kenar çubuğunda “Pazarlama” grubu.
 
 Sıra:
-- [ ] 1. **Mağaza metni (ASO)** — App Store: ad ≤30, alt başlık ≤30, anahtar kelime ≤100 (virgülle, addaki sözcükler
+- [x] 1. **Mağaza metni (ASO)** (API.md §7.18; admin → Pazarlama → Mağaza metni) — App Store: ad ≤30, alt başlık ≤30, anahtar kelime ≤100 (virgülle, addaki sözcükler
   tekrar edilmez), tanıtım metni ≤170, açıklama ≤4000, yenilikler. Google Play: başlık ≤30, kısa açıklama ≤80,
   açıklama ≤4000. 11 dilde tek seferde; sınırı aşan alan bir kez yeniden istenir. Dışa aktarma: EAS Metadata
-  `store.config.json` (App Store) + Play için dil başına metin paketi.
+  `store.config.json` (App Store) + Play için dil başına metin paketi. Gerçek denemede Türkçe ve Japonca sınırların
+  içinde çıktı; dil başına ≈0,1 $, ≈50 sn.
+  - [ ] Mobil (sen): `store.config.json`’u `eas metadata:push` ile yükle; Play metinlerini Console’a yapıştır.
+  - [ ] Mağaza ekran görüntüleri her dilde (sosyal medya ajanının görsel altyapısıyla birlikte).
 - [ ] 2. **Sosyal medya gönderisi** — önce/sonra görseli sunucuda (sharp): kare 1080×1080 + story 1080×1920, Casalume
   imzalı; dile ve platforma göre (Instagram, TikTok, Pinterest) açıklama + etiketler; zip indirme.
   KVKK: kullanıcı fotoğrafı yalnız açık “tanıtımda kullanılabilir” onayıyla (yeni onay türü); o zamana kadar yalnız

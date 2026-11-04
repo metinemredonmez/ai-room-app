@@ -15,6 +15,7 @@ import {
   Scale,
   ScrollText,
   SlidersHorizontal,
+  Store,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -77,6 +78,10 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/users", label: "Kullanıcılar", icon: Users },
       { href: "/broadcasts", label: "Toplu Gönderim", icon: Megaphone },
     ],
+  },
+  {
+    label: "Pazarlama",
+    items: [{ href: "/marketing/aso", label: "Mağaza metni", icon: Store }],
   },
   {
     label: "KVKK",

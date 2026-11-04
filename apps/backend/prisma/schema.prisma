@@ -279,7 +279,7 @@ model AuditLog {
 // Cost ledger: one row per AI service call (usage reported by the AI service).
 model AiUsage {
   id           String   @id @default(uuid()) @db.Uuid
-  kind         String // generate | analyze | chat | describe | segment
+  kind         String // generate | analyze | chat | describe | segment | marketing
   provider     String
   model        String
   images       Int      @default(0)
@@ -528,4 +528,34 @@ model BroadcastDelivery {
   @@unique([broadcastId, userId])
   @@index([broadcastId, status])
   @@index([userId, sentAt])
+}
+
+enum MarketingDraftStatus {
+  PENDING
+  READY
+  FAILED
+  APPROVED
+  ARCHIVED
+}
+
+/// Admin "Pazarlama" (API.md §7.18): AI drafts the owner reviews and edits. Nothing is published from here; an
+/// APPROVED draft is the current text for its kind + locale (approving a new one archives the old one).
+model MarketingDraft {
+  id           String               @id @default(uuid()) @db.Uuid
+  kind         String // aso
+  locale       String
+  status       MarketingDraftStatus @default(PENDING)
+  input        Json                 @default("{}") // owner's brief and release notes
+  output       Json? // AsoListing (snake_case fields, API.md §7.18)
+  violations   String[]             @default([]) // fields over the store limit
+  error        String?
+  costUsd      Decimal              @default(0) @db.Decimal(12, 6)
+  createdById  String?              @db.Uuid
+  approvedById String?              @db.Uuid
+  approvedAt   DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([kind, locale, createdAt])
+  @@index([status])
 }

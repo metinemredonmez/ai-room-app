@@ -269,3 +269,26 @@ export type BroadcastDetail = Broadcast & {
   breakdown: { status: string; reason: string | null; count: number }[];
   recent: { userId: string; email: string | null; status: string; reason: string | null; devices: number; sentAt: string | null; openedAt: string | null }[];
 };
+
+/** Pazarlama (API.md §7.18). */
+export type MarketingDraftStatus = "PENDING" | "READY" | "FAILED" | "APPROVED" | "ARCHIVED";
+export type AsoField =
+  | "app_name" | "app_subtitle" | "app_keywords" | "app_promo" | "app_description" | "app_whats_new"
+  | "play_title" | "play_short" | "play_description";
+export type AsoListing = Record<AsoField, string>;
+export type MarketingDraft = {
+  id: string;
+  kind: "aso";
+  locale: Locale;
+  status: MarketingDraftStatus;
+  input: { brief?: string | null; whatsNew?: string | null };
+  output: AsoListing | null;
+  violations: AsoField[];
+  error: string | null;
+  costUsd: number;
+  createdById: string | null;
+  approvedById: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

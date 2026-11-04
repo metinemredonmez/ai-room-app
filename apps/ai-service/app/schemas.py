@@ -8,7 +8,7 @@ ToolId = Literal[
 ]
 # The web and app languages (API.md §7.17); the assistant answers in the user's language.
 Locale = Literal["tr", "en", "de", "es", "fr", "it", "ru", "nl", "ja", "ko", "zh"]
-UsageKind = Literal["generate", "analyze", "chat", "describe", "segment"]
+UsageKind = Literal["generate", "analyze", "chat", "describe", "segment", "marketing"]
 QualityIssue = Literal["too_dark", "too_bright", "blurry", "low_res", "low_contrast"]
 
 B64 = Field(..., min_length=100, max_length=17_000_000, description="Base64-encoded JPEG/PNG/WEBP image")
@@ -198,6 +198,33 @@ class ChatResponse(BaseModel):
     reply: str
     suggestions: list[Suggestion]
     usage: Usage | None = None
+
+
+class AsoRequest(Strict):
+    """Store listing draft for one language (API.md §7.18). `facts` is the backend's fact sheet."""
+
+    locale: Locale
+    facts: str = Field(..., min_length=50, max_length=8000)
+    brief: str | None = Field(None, max_length=1000, description="Owner's notes: emphasis, audience, campaign")
+    whats_new: str | None = Field(None, max_length=1000, description="Changes in this release")
+
+
+class AsoListing(BaseModel):
+    app_name: str
+    app_subtitle: str
+    app_keywords: str
+    app_promo: str
+    app_description: str
+    app_whats_new: str
+    play_title: str
+    play_short: str
+    play_description: str
+
+
+class AsoResponse(BaseModel):
+    listing: AsoListing
+    violations: list[str] = Field(description="Fields still over the store limit after one rewrite")
+    usage: Usage
 
 
 class ProviderState(BaseModel):

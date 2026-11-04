@@ -14,6 +14,10 @@ export interface BroadcastJob {
   broadcastId: string;
 }
 
+export interface MarketingJob {
+  draftId: string;
+}
+
 /** BullMQ queues on the existing Redis (palemi jobs/outbox pattern, ported to Node). */
 @Injectable()
 export class QueuesService implements OnModuleDestroy {
@@ -24,6 +28,8 @@ export class QueuesService implements OnModuleDestroy {
   readonly notifications: Queue<NotificationJob>;
   /** Toplu Gönderim: one job per broadcast; a single worker (concurrency 1) keeps weekly caps race-free. */
   readonly broadcasts: Queue<BroadcastJob>;
+  /** Pazarlama: one job per AI draft (API.md §7.18). */
+  readonly marketing: Queue<MarketingJob>;
 
   constructor(@Inject(CONFIG) cfg: Config) {
     this.connection = new Redis(cfg.REDIS_URL, { maxRetriesPerRequest: null });
@@ -60,6 +66,15 @@ export class QueuesService implements OnModuleDestroy {
         removeOnFail: { count: 500 },
       },
     });
+    this.marketing = new Queue<MarketingJob>('marketing', {
+      connection: this.connection,
+      defaultJobOptions: {
+        attempts: 2,
+        backoff: { type: 'fixed', delay: 30_000 },
+        removeOnComplete: { count: 500 },
+        removeOnFail: { count: 500 },
+      },
+    });
   }
 
   /** Queued designs only: sync requests are answered in-app, so they never push. */
@@ -68,7 +83,7 @@ export class QueuesService implements OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await Promise.allSettled([this.designs.close(), this.maintenance.close(), this.notifications.close(), this.broadcasts.close()]);
+    await Promise.allSettled([this.designs.close(), this.maintenance.close(), this.notifications.close(), this.broadcasts.close(), this.marketing.close()]);
     this.connection.disconnect();
   }
 }
