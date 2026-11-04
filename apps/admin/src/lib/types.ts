@@ -223,3 +223,39 @@ export type DataRequest = {
 export type DataRequestDetail = DataRequest & {
   user: { id: string; email: string | null; name: string | null; isGuest: boolean; status: string; createdAt: string } | null;
 };
+
+// --- Toplu Gönderim (API.md §7.16) ---
+export type BroadcastKind = "SERVICE" | "MARKETING";
+export type BroadcastStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED" | "FAILED";
+export type BroadcastAudience = {
+  plan?: "FREE" | "PRO";
+  platform?: "ios" | "android";
+  locale?: "tr" | "en";
+  accounts?: "all" | "registered" | "guests";
+  inactiveDays?: number;
+  activeDays?: number;
+  registeredAfter?: string;
+  registeredBefore?: string;
+  emails?: string[];
+};
+export type Broadcast = {
+  id: string;
+  title: string;
+  body: string;
+  link: string | null;
+  kind: BroadcastKind;
+  audience: BroadcastAudience;
+  status: BroadcastStatus;
+  scheduledAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  counts: { target: number; sent: number; skipped: number; failed: number; opened: number };
+  error: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type BroadcastDetail = Broadcast & {
+  breakdown: { status: string; reason: string | null; count: number }[];
+  recent: { userId: string; email: string | null; status: string; reason: string | null; devices: number; sentAt: string | null; openedAt: string | null }[];
+};

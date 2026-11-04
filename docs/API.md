@@ -626,3 +626,44 @@ katalogda bu araçların `needs.points` alanı `true` döner.
 - AI servisi ucu: `POST /internal/v1/segment` `{ image_b64, points?, target? }` → `{ mask_b64, coverage, method, usage }`.
 - Açık konu: fal SAM 3'te nokta istemi metinsiz gönderiliyor (`prompt` alanı yok). Belgede varsayılan `prompt` "wheel" olarak
   görünüyor; `FAL_KEY` girildikten sonra canlıda gerçek bir fotoğrafla denenip doğrulanacak.
+
+### 7.16 Toplu Gönderim (admin → uygulama bildirimi) — backend + admin
+fal-app'teki toplu gönderim modülünün Casalume'a uyarlanmış hali; gönderim Expo push ile yapılır. Admin menüsü:
+**Kullanıcılar → Toplu Gönderim**. Okuma EDITOR, yazma ve gönderim ADMIN yetkisi ister; her yazma denetim kaydına girer.
+- **Tür:**
+  - `SERVICE` (Bilgilendirme): cihazı kayıtlı herkese gider. Ticari ifade içeremez (6563 sayılı Kanun / İYS):
+    indirim, fiyat, PRO'ya geçiş, aciliyet, `/fiyatlar` bağlantısı gibi işaretler bulunursa 422 `looks_commercial`.
+  - `MARKETING` (Kampanya): yalnız pazarlama izni **gönderim anında** geçerli olanlara gider. Kişi başına 7 günde en çok
+    `settings.broadcast.weeklyMarketingCap` (varsayılan 2) kampanya. İstanbul saatiyle sessiz saatlerde (varsayılan
+    21:00–09:00) gönderilmez; "şimdi gönder" ya da zamanlama, pencerenin bitimine kayar.
+- **Kitle:** `{ plan?, platform?, locale?, accounts: all|registered|guests, inactiveDays? | activeDays?, registeredAfter?,
+  registeredBefore?, emails? (≤500) }`. Yalnız `ACTIVE` ve `USER` rolündeki, en az bir push cihazı olan kullanıcılar sayılır.
+  Üst sınır 100.000.
+- **Bağlantı:** Yalnız uygulama içi yollar (`/studio`, `/tasarimlarim`, `/sohbet`, `/fiyatlar` ve tek bir sorgu
+  parametresi), EXT-02. Push verisi: `{ type: 'broadcast', broadcastId, kind, url: 'casalume://studio', path }`.
+  Android kanalı `news`; mobil uygulama bu kanalı oluşturmalı, oluşturmazsa varsayılan kanala düşer.
+- **Akış:** `DRAFT` → (`SCHEDULED`) → `SENDING` → `SENT` | `FAILED` | `CANCELLED`.
+  - Gönderim tek bir koşullu güncellemeyle sahiplenilir; ikinci "gönder" 409 alır, aynı gönderim iki kez gitmez.
+  - Alıcı başına `BroadcastDelivery` satırı tutulur: `PENDING` → `SENDING` → `SENT` / `SKIPPED` / `FAILED` / `CANCELLED`.
+    `reason` alanı: `no_device`, `consent_missing`, `weekly_cap`, `provider_error`, `interrupted`, `cancelled`, `inactive`.
+  - En çok bir kez teslim: satır Expo çağrısından önce `SENDING` olur. Çöken bir turun satırları yeniden gönderilmez,
+    `interrupted` olarak kapanır. Expo 429/5xx verirse tur geri alınır ve iş yeniden denenir.
+  - `broadcasts` kuyruğu tek işçiyle (eşzamanlılık 1) çalışır; haftalık sınır yarış koşulu olmadan sayılır.
+  - Zamanlanmış gönderimleri her dakika `broadcasts-due` başlatır; yarıda kalanlar 10 dakika sonra kaldığı yerden sürer.
+- **KVKK:** Kişi başı teslim satırları 180 gün sonra silinir (gece bakımı); gönderimdeki sayaçlar kalır.
+
+| Yöntem | Yol | Gövde | Not |
+|---|---|---|---|
+| GET | `/admin/broadcasts` | — | Sayfalı liste |
+| GET | `/admin/broadcasts/links` | — | Seçilebilir uygulama içi bağlantılar |
+| POST | `/admin/broadcasts/estimate` | `{ audience, kind }` | `{ withDevice, eligible }` (eligible: kampanyada izni olanlar) |
+| POST | `/admin/broadcasts/precheck` | `{ title, body, link?, kind }` | `{ signals[], blocked }` |
+| POST | `/admin/broadcasts` | `{ title (3–80), body (5–300), link?, kind, audience }` | 201 taslak |
+| PATCH | `/admin/broadcasts/:id` | aynı | Yalnız DRAFT / SCHEDULED |
+| POST | `/admin/broadcasts/:id/send` | — | 200; kampanya sessiz saatteyse `SCHEDULED` döner |
+| POST | `/admin/broadcasts/:id/schedule` | `{ at (ISO) }` | 1 dakika – 60 gün sonrası |
+| POST | `/admin/broadcasts/:id/cancel` | — | Süren gönderim bir sonraki turda durur |
+| DELETE | `/admin/broadcasts/:id` | — | 204; gönderim sürerken 409. Metin denetim kaydında kalır |
+| GET | `/admin/broadcasts/:id` | — | Sayaçlar, durum/neden dağılımı, son 50 alıcı |
+| POST | `/admin/broadcasts/test` | `{ title, body, link?, kind, email }` | Yalnız o hesabın cihazlarına "[Test]" önekiyle; rapora yazılmaz. 10 dakikada 20 |
+| POST | `/broadcasts/:id/opened` | — (kullanıcı oturumu) | 204; mobil uygulama bildirime dokunulunca çağırır, kişi başına bir kez sayılır |

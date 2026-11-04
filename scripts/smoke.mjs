@@ -343,6 +343,41 @@ if (adminToken) {
   ok(manual.status === 201 && manual.json?.overdue === true, 'application received by KEP is logged with its arrival date (overdue)');
   if (manual.json?.id) await call('PATCH', `/admin/data-requests/${manual.json.id}`, { ...A, body: { status: 'REJECTED', response: 'smoke: test kaydı kapatıldı' } });
 
+  // API.md §7.16 Toplu Gönderim: commercial text needs MARKETING, links stay in the app, one send per broadcast,
+  // the worker delivers through the push outbox, "opened" counts once per user.
+  const svc = { title: 'Yeni stiller geldi', body: 'Kapadokya ve Ege stillerini stüdyoda dene.', link: '/studio', kind: 'SERVICE', audience: { platform: 'ios', activeDays: 1 } };
+  const promo = await call('POST', '/admin/broadcasts', { ...A, body: { ...svc, body: "PRO'ya geç, %50 indirim" } });
+  ok(promo.status === 422 && promo.json?.error?.code === 'looks_commercial', 'commercial text refused as a service broadcast (İYS)', `status ${promo.status}`);
+  const evilLink = await call('POST', '/admin/broadcasts', { ...A, body: { ...svc, link: 'https://evil.example' } });
+  ok(evilLink.status === 400, 'broadcast link must stay inside the app (EXT-02)', `status ${evilLink.status}`);
+  const est = await call('POST', '/admin/broadcasts/estimate', { ...A, body: { audience: svc.audience, kind: 'SERVICE' } });
+  const estMkt = await call('POST', '/admin/broadcasts/estimate', { ...A, body: { audience: svc.audience, kind: 'MARKETING' } });
+  ok(est.status === 200 && est.json?.withDevice >= 1 && estMkt.json?.eligible <= estMkt.json?.withDevice, 'audience estimate (marketing counts consented users only)', `${est.json?.withDevice} / ${estMkt.json?.eligible}`);
+  const bDraft = await call('POST', '/admin/broadcasts', { ...A, body: svc });
+  ok(bDraft.status === 201 && bDraft.json?.status === 'DRAFT', 'broadcast bDraft created', `status ${bDraft.status}`);
+  const send1 = await call('POST', `/admin/broadcasts/${bDraft.json?.id}/send`, A);
+  const send2 = await call('POST', `/admin/broadcasts/${bDraft.json?.id}/send`, A);
+  ok(send1.status === 200 && ['SENDING', 'SENT'].includes(send1.json?.status) && send2.status === 409, 'a broadcast is claimed for sending once', `${send1.status} / ${send2.status}`);
+  let bReport = null;
+  for (let i = 0; i < 40; i++) {
+    bReport = await call('GET', `/admin/broadcasts/${bDraft.json?.id}`, A);
+    if (bReport.json?.status !== 'SENDING') break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  ok(bReport?.json?.status === 'SENT' && bReport.json.counts.sent >= 1, 'broadcast delivered by the worker', JSON.stringify(bReport?.json?.counts));
+  let bPush = null;
+  for (const f of (await readdir(pushDir).catch(() => [])).sort().reverse()) {
+    const m = JSON.parse(await readFile(new URL(f, pushDir), 'utf8'));
+    if (m.to === pushToken && m.data?.broadcastId === bDraft.json?.id) { bPush = m; break; }
+  }
+  ok(bPush?.title === svc.title && bPush.channelId === 'news' && bPush.data.url === 'casalume://studio', 'broadcast push carries the text and the in-app link', bPush?.data?.url);
+  const open1 = await call('POST', `/broadcasts/${bDraft.json?.id}/opened`, { token: other.json.accessToken });
+  const open2 = await call('POST', `/broadcasts/${bDraft.json?.id}/opened`, { token: other.json.accessToken });
+  const reportAfter = await call('GET', `/admin/broadcasts/${bDraft.json?.id}`, A);
+  ok(open1.status === 204 && open2.status === 204 && reportAfter.json?.counts?.opened === 1, 'opened is counted once per user', `opened ${reportAfter.json?.counts?.opened}`);
+  const removed = await call('DELETE', `/admin/broadcasts/${bDraft.json?.id}`, A);
+  ok(removed.status === 204, 'finished broadcast deleted (text kept in the audit log)', `status ${removed.status}`);
+
   const texts = await call('GET', '/admin/legal', A);
   ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');
   const draftBody = { kind: 'marketing', version: '2099-12-31', locale: 'tr', title: 'Smoke taslak', body: 'Smoke testi için geçici taslak metin. '.repeat(3), requiresConsent: false };
@@ -368,7 +403,7 @@ if (adminToken) {
   ok(reResolve.status === 409, 'a decided report cannot be overwritten', `status ${reResolve.status}`);
   const jobs = await call('GET', '/admin/jobs', A);
   ok(jobs.status === 200 && typeof jobs.json?.queue?.waiting === 'number', 'jobs overview + queue counts', `${jobs.json?.items?.length} runs`);
-  const auditV11 = await call('GET', '/admin/audit?limit=10', A);
+  const auditV11 = await call('GET', '/admin/audit?limit=50', A);
   ok(auditV11.json?.items?.some((a) => a.action === 'settings.update'), 'settings changes are audited');
 }
 // ---------------------------------------------------------------- RevenueCat webhook (store billing)

@@ -23,7 +23,8 @@ export interface PushMessage {
   data: Record<string, string>;
   sound: 'default';
   priority: 'high';
-  channelId: 'designs';
+  /** Android notification channel; the app creates `designs` and `news` (broadcasts). */
+  channelId: 'designs' | 'news';
 }
 
 interface Ticket {

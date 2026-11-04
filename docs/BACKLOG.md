@@ -119,8 +119,11 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Uygulama içi olay ölçümü (KVKK uyumlu beyaz liste) + admin kohort/huni ekranları (fal-app `olaylar/`).
 - [ ] Deneme süresi + dürüst paywall (ilk ücret tarihi düğmenin üstünde) + “Aboneliği yönet” + deneme hatırlatması (sen, palemi).
 - [ ] Davet et – kazan (ücretsiz tasarım hakkı) + promosyon/hediye kodu + mimar/influencer ortaklık bağlantısı (fal-app).
-- [ ] Panelden toplu push/kampanya (pazarlama izni ayrımı, test gönderimi, teslim raporu) + yaşam döngüsü e-postaları ve
-  geri çağırma (fal-app).
+- [x] Panelden toplu push/kampanya (API.md §7.16): pazarlama izni, haftalık sınır, sessiz saatler, ticari ifade kontrolü,
+  test gönderimi, teslim ve açılma raporu (fal-app). Mobil (sen): bildirime dokununca `POST /v1/broadcasts/:id/opened`,
+  Android `news` kanalı.
+- [ ] Toplu e-posta kanalı (maeyja kampanya modülü): imzalı abonelikten çık, List-Unsubscribe, günlük sınır — sırada.
+- [ ] Yaşam döngüsü e-postaları ve geri çağırma (fal-app).
 - [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).

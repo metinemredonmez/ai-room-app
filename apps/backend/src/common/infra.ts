@@ -96,6 +96,8 @@ export const LIMITS = {
   generateIp: { name: 'gen-ip', max: 120, windowSec: 3600 },
   // Each selection preview is a paid SAM 3 call; a tap-and-adjust session needs a few dozen at most.
   selection: { name: 'selection', max: 60, windowSec: 600 },
+  broadcastTest: { name: 'broadcast-test', max: 20, windowSec: 600 },
+  broadcastOpened: { name: 'broadcast-opened', max: 120, windowSec: 3600 },
   analysis: { name: 'analysis', max: 30, windowSec: 3600 },
   chatUser: { name: 'chat-user', max: 40, windowSec: 3600 },
   chatIp: { name: 'chat-ip', max: 150, windowSec: 3600 },

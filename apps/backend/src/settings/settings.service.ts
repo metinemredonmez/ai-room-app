@@ -6,6 +6,7 @@ import { PrismaService } from '../common/infra.js';
 import { log } from '../common/log.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { SEMVER_RE, compareVersions } from '../common/semver.js';
+import { HHMM_RE } from '../broadcasts/broadcast.rules.js';
 
 // Runtime settings (pattern from maeyja settings.defaults.ts + palemi runtime_settings): typed defaults
 // in code, overrides in the Setting table, editable from the admin API without a deploy.
@@ -34,6 +35,10 @@ export const SettingsSchema = z
     announcement: z.object({ enabled: z.boolean(), textTr: text(300), textEn: text(300) }).strict(),
     requireAiConsent: z.boolean(),
     appVersions: z.object({ ios: appVersion('apps.apple.com'), android: appVersion('play.google.com') }).strict(),
+    // Toplu Gönderim: marketing pushes per user per 7 days, and the Istanbul quiet window for marketing.
+    broadcast: z
+      .object({ weeklyMarketingCap: z.number().int().min(1).max(14), quietStart: z.string().regex(HHMM_RE), quietEnd: z.string().regex(HHMM_RE) })
+      .strict(),
   })
   .strict();
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -66,6 +71,7 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
         ios: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
         android: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
       },
+      broadcast: { weeklyMarketingCap: 2, quietStart: '21:00', quietEnd: '09:00' },
     };
     this.values = this.defaults;
   }

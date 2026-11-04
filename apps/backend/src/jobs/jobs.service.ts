@@ -14,7 +14,8 @@ import { BillingService } from '../billing/billing.service.js';
 import { PushRetryableError, PushService } from '../push/push.service.js';
 import { AppleRetryableError, AppleService } from '../auth/apple.service.js';
 import { DataRequestsService } from '../kvkk/data-requests.service.js';
-import { QueuesService, type DesignJob, type NotificationJob } from './queues.service.js';
+import { BroadcastsService } from '../broadcasts/broadcasts.service.js';
+import { QueuesService, type BroadcastJob, type DesignJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
 
@@ -35,6 +36,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private push: PushService,
     private apple: AppleService,
     private dataRequests: DataRequestsService,
+    private broadcasts: BroadcastsService,
     @Inject(CONFIG) private cfg: Config,
   ) {}
 
@@ -45,6 +47,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       new Worker<DesignJob>('designs', (job) => this.runDesign(job), { connection, concurrency: this.cfg.MAX_CONCURRENT_GENERATIONS }),
       new Worker('maintenance', (job) => this.runMaintenance(job), { connection, concurrency: 1 }),
       new Worker<NotificationJob>('notifications', (job) => this.runNotification(job), { connection, concurrency: 4 }),
+      // One broadcast at a time: weekly marketing caps are counted without races.
+      new Worker<BroadcastJob>('broadcasts', (job) => this.runBroadcast(job), { connection, concurrency: 1 }),
     );
     for (const w of this.workers) {
       w.on('error', (e) => log.warn('worker_error', { error: e.name }));
@@ -56,6 +60,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       }
     }
     await this.queues.maintenance.upsertJobScheduler('reconcile-designs', { every: 60_000 }, { name: 'reconcile-designs' });
+    await this.queues.maintenance.upsertJobScheduler('broadcasts-due', { every: 60_000 }, { name: 'broadcasts-due' });
     await this.queues.maintenance.upsertJobScheduler(
       'retention',
       { pattern: '30 3 * * *', tz: 'Europe/Istanbul' },
@@ -108,6 +113,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private async runBroadcast(job: Job<BroadcastJob>) {
+    try {
+      return await this.broadcasts.process(job.data.broadcastId);
+    } catch (e) {
+      if (e instanceof PushRetryableError) throw e;
+      log.error('broadcast_failed', { broadcastId: job.data.broadcastId, error: (e as Error).name });
+      throw new UnrecoverableError((e as Error).message);
+    }
+  }
+
   private async runMaintenance(job: Job) {
     // Store events track their own status in WebhookEvent; they don't belong in the cron log.
     if (job.name === 'revenuecat-event') return this.billing.process((job.data as { eventId: string }).eventId);
@@ -117,6 +132,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       const details =
         job.name === 'retention' ? await this.retention()
         : job.name === 'kvkk-deadlines' ? await this.dataRequests.deadlineDigest()
+        : job.name === 'broadcasts-due' ? await this.broadcasts.due()
         : { failedStale: await this.designs.reconcile() };
       await this.prisma.jobRun.update({
         where: { id: run.id },
@@ -179,9 +195,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // Devices not seen for 270 days (Expo expires idle tokens; the app re-registers on every launch).
     const pushTokens = await this.prisma.pushToken.deleteMany({ where: { lastSeenAt: { lt: new Date(now - 270 * DAY) } } });
     const dataRequests = await this.dataRequests.purgeClosed();
+    const broadcastDeliveries = (await this.broadcasts.purgeOldDeliveries()).count;
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries,
     };
   }
 

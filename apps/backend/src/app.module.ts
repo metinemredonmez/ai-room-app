@@ -13,6 +13,8 @@ import { EmailTokensService } from './auth/email-tokens.service.js';
 import { AdminGuard, TokensService, UserGuard } from './auth/tokens.service.js';
 import { BillingController } from './billing/billing.controller.js';
 import { BillingService } from './billing/billing.service.js';
+import { AdminBroadcastsController, BroadcastsController } from './broadcasts/broadcasts.controller.js';
+import { BroadcastsService } from './broadcasts/broadcasts.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
 import { VersionGate } from './common/app-version.js';
 import { ErrorFilter } from './common/errors.js';
@@ -33,7 +35,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -47,6 +49,7 @@ import { UsersService } from './users/users.service.js';
     ConsentsService,
     DataRequestsService,
     BillingService,
+    BroadcastsService,
     JobsService,
     RateLimiter,
     TokensService,

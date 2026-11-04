@@ -9,6 +9,7 @@ import {
   House,
   FileText,
   ListChecks,
+  Megaphone,
   LogOut,
   Palette,
   Scale,
@@ -70,7 +71,13 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/styles", label: "Stiller", icon: Palette },
     ],
   },
-  { label: "Kullanıcılar", items: [{ href: "/users", label: "Kullanıcılar", icon: Users }] },
+  {
+    label: "Kullanıcılar",
+    items: [
+      { href: "/users", label: "Kullanıcılar", icon: Users },
+      { href: "/broadcasts", label: "Toplu Gönderim", icon: Megaphone },
+    ],
+  },
   {
     label: "KVKK",
     items: [

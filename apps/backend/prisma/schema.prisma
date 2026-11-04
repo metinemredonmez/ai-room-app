@@ -66,46 +66,72 @@ enum DesignStatus {
   FAILED
 }
 
+/// SERVICE: information about the user's own use of the app; MARKETING: commercial message (consent + weekly cap).
+enum BroadcastKind {
+  SERVICE
+  MARKETING
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+  FAILED
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  SKIPPED
+  FAILED
+  CANCELLED
+}
+
 model User {
-  id            String     @id @default(uuid()) @db.Uuid
-  email           String?    @unique
-  emailVerifiedAt DateTime?
-  passwordHash  String?
-  name          String?
-  role          Role       @default(USER)
-  status        UserStatus @default(ACTIVE)
-  isGuest       Boolean    @default(true)
-  deviceHash    String?    @unique
-  plan          Plan       @default(FREE)
-  planExpiresAt DateTime?
-  storeProUntil DateTime? // App Store / Play entitlement synced from RevenueCat (separate from admin/dev grants)
-  credits       Int        @default(0)
-  freeUsedOn    String? // YYYY-MM-DD, Europe/Istanbul
-  freeUsedCount Int        @default(0)
-  locale        String     @default("tr")
-  totpSecret    String?
-  totpLastStep  BigInt?
+  id                String     @id @default(uuid()) @db.Uuid
+  email             String?    @unique
+  emailVerifiedAt   DateTime?
+  passwordHash      String?
+  name              String?
+  role              Role       @default(USER)
+  status            UserStatus @default(ACTIVE)
+  isGuest           Boolean    @default(true)
+  deviceHash        String?    @unique
+  plan              Plan       @default(FREE)
+  planExpiresAt     DateTime?
+  storeProUntil     DateTime? // App Store / Play entitlement synced from RevenueCat (separate from admin/dev grants)
+  credits           Int        @default(0)
+  freeUsedOn        String? // YYYY-MM-DD, Europe/Istanbul
+  freeUsedCount     Int        @default(0)
+  locale            String     @default("tr")
+  totpSecret        String?
+  totpLastStep      BigInt?
   totpPendingSecret String? // TOTP enrollment in progress (confirmed with a first code)
   mfaEnrollBefore   DateTime? // set on promotion / MFA reset: enrollment window (AUT-04)
-  tokenVersion  Int        @default(0) // bumped to revoke every access token (SES-04)
-  lastSeenAt    DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  tokenVersion      Int        @default(0) // bumped to revoke every access token (SES-04)
+  lastSeenAt        DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  refreshTokens RefreshToken[]
-  emailTokens   EmailToken[]
-  consents      Consent[]
-  reports       ContentReport[]
-  subscriptions Subscription[]
-  purchases     StorePurchase[]
-  pushTokens    PushToken[]
-  backupCodes   AdminBackupCode[]
-  identities    AuthIdentity[]
-  dataRequests  DataRequest[]
-  images        Image[]
-  designs       Design[]
-  ledger        CreditLedger[]
-  audits        AuditLog[]     @relation("actor")
+  refreshTokens       RefreshToken[]
+  emailTokens         EmailToken[]
+  consents            Consent[]
+  reports             ContentReport[]
+  subscriptions       Subscription[]
+  purchases           StorePurchase[]
+  pushTokens          PushToken[]
+  backupCodes         AdminBackupCode[]
+  identities          AuthIdentity[]
+  dataRequests        DataRequest[]
+  images              Image[]
+  designs             Design[]
+  ledger              CreditLedger[]
+  audits              AuditLog[]          @relation("actor")
+  broadcastDeliveries BroadcastDelivery[]
+  broadcasts          Broadcast[]         @relation("broadcastAuthor")
 
   @@index([createdAt])
 }
@@ -159,30 +185,30 @@ model Image {
 }
 
 model Design {
-  id           String       @id @default(uuid()) @db.Uuid
-  userId       String       @db.Uuid
+  id           String          @id @default(uuid()) @db.Uuid
+  userId       String          @db.Uuid
   tool         String
   styleId      String?
   roomId       String?
-  params       Json         @default("{}")
+  params       Json            @default("{}")
   prompt       String?
   provider     String?
-  status       DesignStatus @default(PENDING)
+  status       DesignStatus    @default(PENDING)
   error        String?
-  inputImageId String       @db.Uuid
-  creditsUsed  Int          @default(0)
-  freeUsed     Int          @default(0)
+  inputImageId String          @db.Uuid
+  creditsUsed  Int             @default(0)
+  freeUsed     Int             @default(0)
   chargeDay    String?
   chargeState  ChargeState?
   queuedAt     DateTime?
   startedAt    DateTime?
-  favorite     Boolean      @default(false)
-  featured     Boolean      @default(false)
-  createdAt    DateTime     @default(now())
+  favorite     Boolean         @default(false)
+  featured     Boolean         @default(false)
+  createdAt    DateTime        @default(now())
   finishedAt   DateTime?
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inputImage   Image        @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
-  results      Image[]      @relation("results")
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputImage   Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
+  results      Image[]         @relation("results")
   analyses     Analysis[]
   reports      ContentReport[]
   usages       AiUsage[]
@@ -447,4 +473,52 @@ model DataRequest {
 
   @@index([status, dueAt])
   @@index([userId, createdAt])
+}
+
+/// Admin "Toplu Gönderim" (fal-app broadcast, sent through Expo push). Counters are denormalised from the
+/// deliveries so the list stays cheap; the deliveries are the source of truth for the report.
+model Broadcast {
+  id           String              @id @default(uuid()) @db.Uuid
+  title        String
+  body         String
+  link         String? // in-app path, e.g. /studio
+  kind         BroadcastKind       @default(SERVICE)
+  audience     Json // AudienceSchema (src/broadcasts/broadcast.rules.ts)
+  status       BroadcastStatus     @default(DRAFT)
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  targetCount  Int                 @default(0)
+  sentCount    Int                 @default(0)
+  skippedCount Int                 @default(0)
+  failedCount  Int                 @default(0)
+  openedCount  Int                 @default(0)
+  error        String?
+  createdById  String?             @db.Uuid
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdBy    User?               @relation("broadcastAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  deliveries   BroadcastDelivery[]
+
+  @@index([status, scheduledAt])
+  @@index([createdAt])
+}
+
+/// One row per recipient: what happened to the message for this user and whether it was opened.
+model BroadcastDelivery {
+  id          String         @id @default(uuid()) @db.Uuid
+  broadcastId String         @db.Uuid
+  userId      String         @db.Uuid
+  status      DeliveryStatus @default(PENDING)
+  reason      String? // no_device | consent_missing | weekly_cap | provider_error | interrupted | cancelled
+  devices     Int            @default(0)
+  sentAt      DateTime?
+  openedAt    DateTime?
+  createdAt   DateTime       @default(now())
+  broadcast   Broadcast      @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([broadcastId, userId])
+  @@index([broadcastId, status])
+  @@index([userId, sentAt])
 }
