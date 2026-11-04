@@ -71,6 +71,10 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - [ ] Sohbet ve alışveriş listesi: Kaptan (Türkiye’de, OpenAI uyumlu) — şimdilik canlıda “kullanılamıyor”.
 - [ ] Mobil: açık rıza ekranı, “İçeriği bildir”, zorunlu güncelleme, dört renk, açılış animasyonu (palemi tarzı).
 - [ ] Mobil: Google ve Apple ile giriş (backend hazır).
+  - Apple ile giriş canlıda **dört değeri birlikte** ister: `APPLE_CLIENT_IDS=app.casalume` + `APPLE_TEAM_ID`, `APPLE_KEY_ID`,
+    `APPLE_PRIVATE_KEY` (Sign in with Apple anahtarı .p8; hesap silinince Apple oturumu iptal edilir, App Store 5.1.1(v)) ve
+    `FIELD_ENC_KEY`. Yalnız `APPLE_CLIENT_IDS` girilince backend açılmıyor (4 Kasım’da API bu yüzden düştü, satır kaldırıldı).
+    Apple Developer üyeliği açılınca hepsi birlikte girilecek.
 - [ ] Bildirimler (push): Expo projesi, APNs anahtarı (Apple), FCM (Google); “Tasarımın hazır” ve kampanya izni ayrı.
 - [ ] Tam veri sorumlusu adresi (KVKK m.10) — şu an yalnız “Maltepe, İstanbul”.
 
