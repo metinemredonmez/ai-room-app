@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { jwtVerify, SignJWT } from 'jose';
 import { CONFIG, type Config } from '../config.js';
 import { unauthorized, AppError } from '../common/errors.js';
@@ -31,10 +31,21 @@ export class TokensService {
   private key: Uint8Array;
   /** ADMIN_DEV_SKIP_MFA (development only): admin tokens without a second factor are accepted. */
   readonly devSkipMfa: boolean;
+  /** ADMIN_PANEL_KEY set: logins through the IP-restricted admin panel need no second factor (owner decision). */
+  readonly panelKey: string | null;
 
   constructor(private prisma: PrismaService, @Inject(CONFIG) cfg: Config) {
     this.key = new TextEncoder().encode(cfg.JWT_SECRET);
     this.devSkipMfa = cfg.ADMIN_DEV_SKIP_MFA;
+    this.panelKey = cfg.ADMIN_PANEL_KEY ?? null;
+  }
+
+  /** Constant-time check of the admin panel key header. */
+  isPanel(header: unknown): boolean {
+    if (!this.panelKey || typeof header !== 'string') return false;
+    const a = Buffer.from(header);
+    const b = Buffer.from(this.panelKey);
+    return a.length === b.length && timingSafeEqual(a, b);
   }
 
   private sign(user: Pick<User, 'id' | 'tokenVersion'>, audience: string, ttlSec: number, amr?: string[]) {
@@ -69,9 +80,12 @@ export class TokensService {
     return { accessToken: await this.sign(user, AUD_APP, ACCESS_TTL_SEC), refreshToken, expiresIn: ACCESS_TTL_SEC };
   }
 
-  /** amr records the second factor: `otp` (TOTP), `mfa` (single-use recovery code) or `dev` (none, ADMIN_DEV_SKIP_MFA). */
-  async issueAdmin(user: User, factor: 'otp' | 'backup' | 'dev' = 'otp') {
-    const amr = ['pwd', factor === 'otp' ? 'otp' : factor === 'backup' ? 'mfa' : 'dev'];
+  /**
+   * amr records the second factor: `otp` (TOTP), `mfa` (single-use recovery code), `dev` (none, ADMIN_DEV_SKIP_MFA)
+   * or `panel` (none, login through the IP-restricted admin panel, ADMIN_PANEL_KEY).
+   */
+  async issueAdmin(user: User, factor: 'otp' | 'backup' | 'dev' | 'panel' = 'otp') {
+    const amr = ['pwd', factor === 'otp' ? 'otp' : factor === 'backup' ? 'mfa' : factor];
     return { accessToken: await this.sign(user, AUD_ADMIN, ADMIN_TTL_SEC, amr), expiresIn: ADMIN_TTL_SEC };
   }
 
@@ -152,7 +166,8 @@ export class AdminGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<AppRequest>();
     const claims = await this.tokens.verify(bearer(req), AUD_ADMIN);
     // A `dev` token stops working as soon as ADMIN_DEV_SKIP_MFA is switched off.
-    if (!claims.amr?.some((m) => m === 'otp' || m === 'mfa' || (m === 'dev' && this.tokens.devSkipMfa))) throw unauthorized();
+    // A panel token stops working as soon as ADMIN_PANEL_KEY is removed (the code is required again).
+    if (!claims.amr?.some((m) => m === 'otp' || m === 'mfa' || (m === 'dev' && this.tokens.devSkipMfa) || (m === 'panel' && this.tokens.panelKey))) throw unauthorized();
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
       select: { id: true, role: true, status: true, tokenVersion: true },

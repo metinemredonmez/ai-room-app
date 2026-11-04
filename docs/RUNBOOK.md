@@ -63,6 +63,24 @@ Seed stilleri, yasal metinleri ve `ADMIN_EMAIL` için süper yöneticiyi oluştu
 `/var/www/casalume/data/admin-credentials.txt` (600) dosyasındadır: `otpauth` satırı doğrulayıcı uygulamaya eklenir,
 sonra dosya silinir. Canlıda MFA zorunludur (AUT-01).
 
+**Panelden kodsuz giriş (sahibinin kararı, 4 Kasım 2026; risk kabul edildi).** `ADMIN_PANEL_KEY` tanımlıyken
+admin.casalume.app üzerinden yapılan girişler yalnız e-posta + parola ister. Panel sunucusu bu anahtarı backend'e
+iletir; anahtar tarayıcıya hiç gitmez.
+
+- Neden kabul edilebilir: panel nginx'te yalnız izinli adreslere açıktır (`allow …; deny all;`).
+- API'ye (api.casalume.app) doğrudan yapılan admin girişlerinde kod yine zorunludur.
+- Her kodsuz giriş denetim kaydına `factor: panel` olarak yazılır.
+
+```bash
+bash /var/www/casalume/app/deploy/hazal/panel-key.sh       # aç (yeni anahtar, ekrana basılmaz)
+bash /var/www/casalume/app/deploy/hazal/panel-key.sh off   # kapat (kod her yerde yeniden zorunlu)
+sudo -iu casalume pm2 reload casalume-api --update-env
+sudo -iu casalume pm2 reload casalume-admin --update-env
+```
+
+Panel izinli adreslerin dışına açılırsa (ör. Tailscale olmadan her yerden) önce `panel-key.sh off` çalıştırılır.
+Anahtar kapatılınca kodsuz alınmış oturumlar bir sonraki istekte düşer.
+
 ## 5. PM2 (casalume)
 
 ```bash

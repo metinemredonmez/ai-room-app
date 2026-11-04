@@ -260,7 +260,9 @@ export class AdminAuthController {
   async login(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(AdminLoginSchema, body);
     // Development machines may switch the second factor off (ADMIN_DEV_SKIP_MFA, refused outside development).
-    const devSkip = this.tokens.devSkipMfa && !input.otp && !input.backupCode;
+    // Logins through the IP-restricted admin panel skip it too when ADMIN_PANEL_KEY is set (owner decision).
+    const panel = this.tokens.isPanel(req.headers['x-admin-panel-key']);
+    const devSkip = (this.tokens.devSkipMfa || panel) && !input.otp && !input.backupCode;
     await this.limiter.hit(LIMITS.adminLogin, req.clientIp);
     await this.limiter.hit(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
@@ -283,7 +285,7 @@ export class AdminAuthController {
     // Recovery codes are only spent after the password checked out.
     const remaining = input.backupCode ? await this.security.consumeBackupCode(user.id, input.backupCode) : null;
     const passed = devSkip || (input.backupCode ? remaining !== null : await this.security.claimTotp(user, input.otp!));
-    const factor = devSkip ? 'dev' : input.backupCode ? 'backup' : 'otp';
+    const factor = devSkip ? (panel ? 'panel' : 'dev') : input.backupCode ? 'backup' : 'otp';
     if (!passed) throw await fail();
     await this.limiter.reset(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     await this.audit.record(user.id, 'admin.login', 'user', user.id, { factor, ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) }, req.clientIp);
@@ -294,7 +296,7 @@ export class AdminAuthController {
         `Kalan yedek kod: ${remaining}. ${remaining <= 3 ? 'Panelden yeni kodlar oluşturmanı öneririz.' : ''}`.trim(),
       ]);
     }
-    if (devSkip) log.warn('admin_login_without_mfa', { userId: user.id });
+    if (devSkip) log.warn('admin_login_without_mfa', { userId: user.id, via: factor });
     const tokens = await this.tokens.issueAdmin(user, factor);
     return { ...tokens, admin: this.users.toDto(user), ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) };
   }

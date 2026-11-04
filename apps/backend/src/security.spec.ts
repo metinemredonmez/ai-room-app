@@ -13,7 +13,10 @@ import { AdminController } from './admin/admin.controller.js';
 import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
 import { AdminDataRequestsController, AdminLegalController } from './kvkk/kvkk.controller.js';
 import { MIN_ROLE, MinRole, atLeast, isAdminRole } from './admin/roles.js';
-import { AdminGuard } from './auth/tokens.service.js';
+import { AdminGuard, TokensService } from './auth/tokens.service.js';
+import { AdminMarketingController } from './marketing/marketing.controller.js';
+import { AdminBlogController } from './blog/blog.controller.js';
+import { AdminBroadcastsController } from './broadcasts/broadcasts.controller.js';
 import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { loadConfig, type Config } from './config.js';
@@ -95,6 +98,11 @@ describe('configuration (KEY-01)', () => {
     for (const NODE_ENV of ['production', 'test']) {
       expect(() => loadConfig({ ...base, NODE_ENV, ADMIN_DEV_SKIP_MFA: 'true' })).toThrow(/ADMIN_DEV_SKIP_MFA/);
     }
+  });
+
+  it('takes a panel key only when it is long enough', () => {
+    expect(loadConfig({ ...base, ADMIN_PANEL_KEY: 'p'.repeat(64) }).ADMIN_PANEL_KEY).toHaveLength(64);
+    expect(() => loadConfig({ ...base, ADMIN_PANEL_KEY: 'short' })).toThrow();
   });
 
   it('refuses missing or default-looking secrets', () => {
@@ -253,7 +261,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('every admin route declares its least role', () => {
     const reflector = new Reflector();
     const missing: string[] = [];
-    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController]) {
+    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController]) {
       for (const name of Object.getOwnPropertyNames(ctrl.prototype)) {
         const handler = (ctrl.prototype as unknown as Record<string, unknown>)[name];
         if (name === 'constructor' || typeof handler !== 'function' || Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;
@@ -263,13 +271,13 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
     expect(missing).toEqual([]);
   });
 
-  const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN') => {
+  const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN', amr = ['pwd', 'otp'], panelKey: string | null = null) => {
     class Probe {
       handler() {}
     }
     if (declared) MinRole(declared)(Probe.prototype, 'handler', Object.getOwnPropertyDescriptor(Probe.prototype, 'handler')!);
     const req = { headers: { authorization: 'Bearer t' }, path: '/v1/admin/x' } as unknown as Request & { auth?: { role: string } };
-    const tokens = { verify: async () => ({ sub: 'u1', ver: 1, typ: 'access', amr: ['pwd', 'otp'] }) };
+    const tokens = { verify: async () => ({ sub: 'u1', ver: 1, typ: 'access', amr }), devSkipMfa: false, panelKey };
     const prisma = { user: { findUnique: async () => ({ id: 'u1', role, status: 'ACTIVE', tokenVersion: 1 }) } };
     const guard = new AdminGuard(tokens as never, prisma as never, new Reflector());
     const ctx = { switchToHttp: () => ({ getRequest: () => req }), getHandler: () => Probe.prototype.handler, getClass: () => Probe };
@@ -286,6 +294,25 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
 
   it('denies a route that declares no role (fail closed)', async () => {
     await expect(guardFor('SUPER_ADMIN').run()).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('accepts a code-less panel login only while ADMIN_PANEL_KEY is set (owner decision)', async () => {
+    await expect(guardFor('SUPER_ADMIN', 'ADMIN', ['pwd', 'panel'], null).run()).rejects.toMatchObject({ status: 401 });
+    await expect(guardFor('SUPER_ADMIN', 'ADMIN', ['pwd', 'panel'], 'k'.repeat(64)).run()).resolves.toBe(true);
+    await expect(guardFor('SUPER_ADMIN', 'ADMIN', ['pwd'], 'k'.repeat(64)).run()).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('recognises the panel only by its exact key', () => {
+    const key = 'k'.repeat(64);
+    const on = new TokensService({} as never, { JWT_SECRET: 'j'.repeat(40), ADMIN_DEV_SKIP_MFA: false, ADMIN_PANEL_KEY: key } as never);
+    expect(on.isPanel(key)).toBe(true);
+    expect(on.isPanel(key.slice(1))).toBe(false);
+    expect(on.isPanel(`${key}x`)).toBe(false);
+    expect(on.isPanel(undefined)).toBe(false);
+    expect(on.isPanel([key])).toBe(false);
+    const off = new TokensService({} as never, { JWT_SECRET: 'j'.repeat(40), ADMIN_DEV_SKIP_MFA: false } as never);
+    expect(off.isPanel(key)).toBe(false);
+    expect(off.isPanel('')).toBe(false);
   });
 });
 

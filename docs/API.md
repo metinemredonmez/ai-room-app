@@ -395,6 +395,14 @@ Rakiplerde en sık şikâyet: "boyamak istedim, pencerelerimi de değiştirdi". 
 Roller hiyerarşiktir: `SUPPORT < EDITOR < ADMIN < SUPER_ADMIN`. Her admin ucu en düşük rolünü açıkça bildirir (`@MinRole`).
 Rol bildirmeyen uç **reddedilir** (AZ-01). Rol her istekte veritabanından okunur; düşürme ya da MFA sıfırlama bir sonraki istekte etkili olur.
 
+**Panelden kodsuz giriş** (sahibinin kararı, RUNBOOK §4):
+- `ADMIN_PANEL_KEY` tanımlıysa, `x-admin-panel-key` başlığı bu anahtarla birebir eşleşen `POST /admin/auth/login`
+  isteği kodsuz kabul edilir. Karşılaştırma sabit sürelidir.
+- Bu başlığı yalnız admin panelinin sunucu tarafı gönderir. Token `amr: ["pwd","panel"]` taşır ve anahtar
+  kaldırılınca geçersiz olur.
+- Başlıksız ya da yanlış anahtarlı istekte kod zorunludur. Adım yükseltme gerektiren işlemler (yedek kod yenileme)
+  yine TOTP ister.
+
 | Rol | Yetki |
 |---|---|
 | SUPPORT | İstatistik, kullanıcı/tasarım/stil/ayar okuma, ödeme olaylarını görme, içerik bildirimlerini sonuçlandırma |

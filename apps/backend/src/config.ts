@@ -72,6 +72,12 @@ const Env = z.object({
   SWAGGER_ENABLED: z.enum(['true', 'false']).optional().transform((v) => (v === undefined ? undefined : v === 'true')),
   // Local development only: admin login with e-mail + password, no TOTP. Refused outside NODE_ENV=development.
   ADMIN_DEV_SKIP_MFA: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+  /**
+   * Owner decision (4 Nov 2026, risk accepted): logins that come through the admin panel's server (it sends this
+   * key) skip the 6-digit code. admin.casalume.app is reachable only from allow-listed addresses (nginx), so the
+   * code is still required for any admin login made directly against the public API. Unset = code everywhere.
+   */
+  ADMIN_PANEL_KEY: z.string().min(32).max(200).optional(),
   // KVKK data controller, filled into the legal texts ({{controller.*}}); required in production.
   LEGAL_CONTROLLER_NAME: z.string().trim().min(2).max(200).default('Casalume (geliştirme)'),
   LEGAL_CONTROLLER_ADDRESS: z.string().trim().min(2).max(300).default('Adres henüz tanımlanmadı'),

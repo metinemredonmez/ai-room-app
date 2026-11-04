@@ -186,6 +186,8 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 ## Admin
 - [ ] Eski görünümdeki 8 ekranı yeni tasarıma taşı (Kullanıcılar + detay, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim, Sistem, Ayarlar kısmen).
 - [ ] Admin’e her yerden güvenli erişim: Tailscale (şimdilik yalnız sahibin ev IP’si açık).
+- [x] Panelden kodsuz admin girişi (sahibinin kararı, 4 Kasım; `deploy/hazal/panel-key.sh`): API'ye doğrudan girişte
+  kod yine zorunlu. Panel izinli IP dışına açılırsa önce `panel-key.sh off`.
 
 ## Belgeler
 - [x] Masaüstündeki diğer uygulamalarla (yoga, fal-app, palemi, maeyja) özellik karşılaştırması — yukarıda.

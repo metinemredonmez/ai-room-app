@@ -22,10 +22,18 @@ export async function readJson(req: NextRequest): Promise<Record<string, unknown
 
 /** POSTs to the backend's admin auth API; a network failure becomes a 502 response. */
 export async function backendAuth(path: string, body: unknown): Promise<Response> {
+  // ADMIN_PANEL_KEY (owner decision): this panel is reachable only from allow-listed addresses, so its logins
+  // skip the 6-digit code. The key never reaches the browser; logins made elsewhere still need the code.
+  const panelKey = path === "login" ? process.env.ADMIN_PANEL_KEY : undefined;
   try {
     return await fetch(`${apiBaseUrl()}/admin/auth/${path}`, {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json", "accept-language": "tr" },
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        "accept-language": "tr",
+        ...(panelKey ? { "x-admin-panel-key": panelKey } : {}),
+      },
       body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(15_000),
