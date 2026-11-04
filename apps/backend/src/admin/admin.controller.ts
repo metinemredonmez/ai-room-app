@@ -30,6 +30,7 @@ const DesignsQuery = z.object({
   tool: z.enum(TOOL_IDS).optional(),
   styleId: z.string().regex(/^[a-z_]{2,40}$/).optional(),
   userId: z.uuid().optional(),
+  featured: z.enum(['true', 'false']).optional(),
 });
 const PatchUser = z
   .object({ status: z.enum(['ACTIVE', 'BANNED']).optional(), plan: z.enum(['FREE', 'PRO']).optional(), planExpiresAt: z.iso.datetime().nullable().optional() })
@@ -219,6 +220,7 @@ export class AdminController {
       ...(q.tool ? { tool: q.tool } : {}),
       ...(q.styleId ? { styleId: q.styleId } : {}),
       ...(q.userId ? { userId: q.userId } : {}),
+      ...(q.featured ? { featured: q.featured === 'true' } : {}),
     };
     const rows = await this.prisma.design.findMany({
       where, include: { inputImage: true, results: true, user: { select: { email: true } } },
