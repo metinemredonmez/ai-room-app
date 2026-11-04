@@ -15,6 +15,17 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
 - [ ] Kalite ölçümü: maske dışı fark ≈ 0 (bugünkü `masked_mean_abs_diff`), maske içi gerçekten değişmiş; değerlendirme setine nesne vakaları.
 - [ ] Web stüdyo arayüzü (sen: mobil arayüz).
 
+Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu, denenerek doğrulanmalı):
+- Remodel AI “Furniture Swap” ve Ideal.house (mobilyayı kendisi bulur, duvar/zemine dokunmaz) parça değiştiriyor;
+  Home-design.ai fırçayla boyayarak seçtiriyor; RoomLab ve Edensign istenen ürünün fotoğrafını yükletip odaya yerleştiriyor.
+- Interior AI nesneye dokununca benzer ürünleri gösteriyor; ReimagineHome ve ShopTheRoom tasarımdaki eşyaları satın
+  alma bağlantısına çeviriyor (eBay, Etsy). Ortak şikâyet: tam oda araçları oda geometrisini bozuyor.
+- Bizden çıkacaklar:
+  - [ ] Seçim üç yolla: dokun (SAM 3 nokta), kutu, fırça.
+  - [ ] “Bu ürünü koy”: kullanıcı ürün fotoğrafı ya da bağlantısı verir, seçili nesnenin yerine o gelir.
+  - [ ] Seçili nesne için Türkiye’deki mağazalardan benzer ürün ve TL fiyat (alışveriş listesiyle birleşir).
+  - [ ] “Odan bozulmaz” sözü: maske dışı değişmezlik ölçülür, gerekirse sonuç reddedilip yeniden üretilir.
+
 ## Şu an
 - [x] Dört renk teması (Kil · Pirinç · Mürekkep · Erik): web (başlıktaki seçici) ve admin (kullanıcı menüsü). Açık tema varsayılan.
 - [x] Web ana sayfası: gerçek fotoğraflar (Nano Banana 2 önce/sonra), Casalume logosu, ince serif başlıklar.
@@ -86,7 +97,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 ## Belgeler
 - [x] Masaüstündeki diğer uygulamalarla (yoga, fal-app, palemi, maeyja) özellik karşılaştırması — yukarıda.
 - [x] `Casalume-API-ve-Hesaplar.pdf` (Masaüstü): yedek yol haritası, servis başına kayıt adımları, teknolojiler, bildirimler.
-- [ ] Dünyadaki benzer uygulamaların özellik karşılaştırması (nesne seçip değiştirme odağıyla).
+- [x] Dünyadaki benzer uygulamaların özellik karşılaştırması — “Ana fark” bölümünde.
 - [ ] Codex için bağımsız test ve denetim komutu (en sonda).
 
 ## İşletim
