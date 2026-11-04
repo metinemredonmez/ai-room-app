@@ -441,7 +441,7 @@ if (adminToken) {
   while (Math.floor(Date.now() / 30000) === step) await new Promise((r) => setTimeout(r, 250)); // next TOTP window (≤ 30 s)
   const regen = await call('POST', '/admin/me/backup-codes', { token: bLogin.json?.accessToken, body: { otp: totp(enroll.json.secret) } });
   const staffMe = await call('GET', '/admin/me', { token: bLogin.json?.accessToken });
-  ok(replayStepUp.status === 401 && regen.status === 201 && regen.json?.backupCodes?.length === 10 && staffMe.json?.mfa?.backupCodesRemaining === 10,
+  ok(replayStepUp.status === 403 && replayStepUp.json?.error?.code === 'step_up_failed' && regen.status === 201 && regen.json?.backupCodes?.length === 10 && staffMe.json?.mfa?.backupCodesRemaining === 10,
     'regenerating recovery codes needs a fresh TOTP code (step-up)');
 
   const mfaReset = await call('POST', `/admin/admins/${staffId}/mfa-reset`, { token: adminToken, body: { reason: 'smoke lost phone' } });
