@@ -1,5 +1,6 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { isIP } from "node:net";
+import { cookies, headers as requestHeaders } from "next/headers";
 import type { NextRequest } from "next/server";
 import type { AuthResponse } from "@/lib/types";
 import { isLocale, type Locale } from "@/lib/i18n";
@@ -106,8 +107,24 @@ export interface BackendCall {
   locale?: string;
 }
 
+/**
+ * The visitor's IP as nginx saw it: nginx overwrites X-Forwarded-For with $remote_addr, so its last entry can't be
+ * forged by the browser. Without it the backend would see every web visitor as 127.0.0.1 (this server), and its
+ * per-IP limits (login, guest accounts, chat) would be one shared bucket.
+ */
+async function visitorIp(): Promise<string | null> {
+  try {
+    const last = ((await requestHeaders()).get("x-forwarded-for") ?? "").split(",").map((s) => s.trim()).filter(Boolean).pop();
+    return last && isIP(last) ? last : null;
+  } catch {
+    return null; // outside a request (build time)
+  }
+}
+
 export async function callBackend(call: BackendCall): Promise<Response> {
   const headers = new Headers({ accept: "application/json" });
+  const ip = await visitorIp();
+  if (ip) headers.set("x-forwarded-for", ip);
   if (call.contentType) headers.set("content-type", call.contentType);
   if (call.bearer) headers.set("authorization", `Bearer ${call.bearer}`);
   if (call.locale) headers.set("accept-language", call.locale);

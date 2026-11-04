@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AppError } from '../common/errors.js';
 import { todayInIstanbul } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
-import type { User } from '../generated/prisma/client.js';
+import type { Prisma, User } from '../generated/prisma/client.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { isLocale } from '../catalog/catalog.data.js';
 
@@ -93,9 +93,13 @@ export class UsersService {
     });
   }
 
-  async refund(userId: string, charge: Charge, refId: string) {
+  /**
+   * Gives held units back. Pass `tx` to make the refund part of the caller's transaction (the design's charge-state
+   * change and the refund then commit or roll back together, so a refund is never lost nor applied twice).
+   */
+  async refund(userId: string, charge: Charge, refId: string, tx?: Prisma.TransactionClient) {
     if (!charge.fromFree && !charge.fromCredits) return;
-    await this.prisma.$transaction(async (tx) => {
+    const run = async (tx: Prisma.TransactionClient) => {
       const rows = await tx.$queryRaw<QuotaRow[]>`
         SELECT "plan", "planExpiresAt", "storeProUntil", "credits", "freeUsedOn", "freeUsedCount"
         FROM "User" WHERE "id" = ${userId}::uuid FOR UPDATE`;
@@ -112,6 +116,8 @@ export class UsersService {
       await tx.creditLedger.create({
         data: { userId, delta: charge.fromFree + charge.fromCredits, reason: 'refund', refId },
       });
-    });
+    };
+    if (tx) await run(tx);
+    else await this.prisma.$transaction(run);
   }
 }

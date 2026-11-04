@@ -106,6 +106,27 @@ export class DesignsService {
 
   private include = { inputImage: true, results: true } as const;
 
+  /**
+   * KVKK: every path that sends the user's photo (or an image made from it) to an AI provider needs the current
+   * AI-processing consent when the setting requires it — generation, selection, analysis and chat with images.
+   */
+  async assertAiConsent(userId: string) {
+    if (this.settings.current.requireAiConsent && !(await this.consents.hasCurrent(userId, 'ai_processing'))) {
+      throw new AppError(403, 'consent_required', 'Yapay zekâ işleme onayı gerekli');
+    }
+  }
+
+  /**
+   * Budget brake for the other paid AI paths a FREE user can trigger (selection, analysis, chat): with the hard
+   * brake (`free_paused`) on and the daily budget spent they pause like generation does. PRO users keep service.
+   */
+  async assertBudgetFor(userId: string) {
+    const budget = await this.usage.budget();
+    if (budget.state !== 'exceeded' || budget.brakeMode !== 'free_paused') return;
+    if (this.users.isPro(await this.users.get(userId))) return;
+    throw new AppError(503, 'generation_paused', 'Yoğunluk nedeniyle bu özellik kısa süreliğine durduruldu');
+  }
+
   /** Validates the request, holds credits and either runs inline (sync) or enqueues (async, 202). */
   async create(userId: string, body: CreateDesign, requestId: string, mode: 'sync' | 'async' = 'sync') {
     const settings = this.settings.current;
@@ -115,9 +136,7 @@ export class DesignsService {
     const locale: Locale = isLocale(user.locale) ? user.locale : 'tr';
     const tool = TOOLS[body.tool];
     if (tool.isPro && !pro) throw new AppError(402, 'pro_required', 'Bu araç PRO üyelere özel');
-    if (settings.requireAiConsent && !(await this.consents.hasCurrent(userId, 'ai_processing'))) {
-      throw new AppError(403, 'consent_required', 'Yapay zekâ işleme onayı gerekli');
-    }
+    await this.assertAiConsent(userId);
 
     // Budget brake (fal-app butce-freni / yoga brakeFreeUsers): only FREE users are affected.
     let variants: number = Math.min(body.variants, pro ? settings.maxVariantsPro : settings.maxVariantsFree);
@@ -182,9 +201,8 @@ export class DesignsService {
     if (!body.points && !body.target) throw new AppError(400, 'validation_failed', 'Dokunulan nokta ya da nesne adı gerekli');
     const settings = this.settings.current;
     if (settings.maintenance.enabled) throw new AppError(503, 'busy', settings.maintenance.messageTr);
-    if (settings.requireAiConsent && !(await this.consents.hasCurrent(userId, 'ai_processing'))) {
-      throw new AppError(403, 'consent_required', 'Yapay zekâ işleme onayı gerekli');
-    }
+    await this.assertAiConsent(userId);
+    await this.assertBudgetFor(userId);
     const img = await this.images.owned(imageId, userId);
     try {
       const out = await this.ai.segment(
@@ -210,6 +228,15 @@ export class DesignsService {
   async process(designId: string, opts: { finalAttempt: boolean; requestId?: string }): Promise<void> {
     const d = await this.prisma.design.findUnique({ where: { id: designId }, include: { user: true } });
     if (!d || d.status !== 'PENDING') return;
+    // The budget may have run out while this design waited in the queue: a FREE design then stops here,
+    // before any provider call, and its held credits go back.
+    if (!this.users.isPro(d.user)) {
+      const budget = await this.usage.budget();
+      if (budget.state === 'exceeded' && budget.brakeMode === 'free_paused') {
+        await this.fail(designId, 'generation_paused');
+        return;
+      }
+    }
     await this.prisma.design.update({ where: { id: designId }, data: { startedAt: new Date() } });
     const params = (d.params ?? {}) as Record<string, string | number | boolean | undefined>;
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
@@ -248,22 +275,10 @@ export class DesignsService {
       }
       if (!buffers.length) throw new AiError(422, 'no_change', 'Yapay zekâ görselde değişiklik üretemedi; hakkın iade edildi', false);
       for (const buf of buffers) await this.images.save(buf, { ownerId: d.userId, kind: 'RESULT', designId });
-      // Partial result (some variants dropped as no_change/failed): refund the missing units, paid credits first.
-      const missing = Math.max(0, Number(params.variants ?? 1) - buffers.length);
-      const refundCredits = Math.min(missing, d.creditsUsed);
-      const refundFree = Math.min(missing - refundCredits, d.freeUsed);
-      if (refundCredits + refundFree > 0 && d.chargeDay && d.chargeState === 'HELD') {
-        await this.users.refund(d.userId, { day: d.chargeDay, fromFree: refundFree, fromCredits: refundCredits }, designId);
-      }
-      await this.prisma.design.update({
-        where: { id: designId },
-        data: {
-          status: 'SUCCEEDED', prompt: out.prompt, provider: out.provider, finishedAt: new Date(),
-          ...(out.region ? { params: { ...(d.params as Prisma.JsonObject), region: out.region } } : {}),
-          creditsUsed: d.creditsUsed - refundCredits, freeUsed: d.freeUsed - refundFree,
-        },
+      await this.settleSuccess(d, buffers.length, {
+        status: 'SUCCEEDED', prompt: out.prompt, provider: out.provider, finishedAt: new Date(),
+        ...(out.region ? { params: { ...(d.params as Prisma.JsonObject), region: out.region } } : {}),
       });
-      await this.prisma.design.updateMany({ where: { id: designId, chargeState: 'HELD' }, data: { chargeState: 'CAPTURED' } });
       log.info('design_succeeded', {
         designId, userId: d.userId, tool: d.tool, provider: out.provider, variants: buffers.length, regionLock: out.region?.applied ?? null,
       });
@@ -279,6 +294,30 @@ export class DesignsService {
     }
   }
 
+  /**
+   * Success: captures the hold and, for variants that didn't come back, refunds the missing units (paid credits
+   * first) in ONE transaction — a crash can't refund twice or lose the refund. Only the call that moves the design
+   * out of HELD refunds; a retried job finds it CAPTURED and refunds nothing.
+   */
+  private async settleSuccess(
+    d: { id: string; userId: string; params: Prisma.JsonValue; creditsUsed: number; freeUsed: number; chargeDay: string | null },
+    produced: number,
+    data: Prisma.DesignUpdateInput,
+  ) {
+    const missing = Math.max(0, Number((d.params as { variants?: number } | null)?.variants ?? 1) - produced);
+    const refundCredits = Math.min(missing, d.creditsUsed);
+    const refundFree = Math.min(missing - refundCredits, d.freeUsed);
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.design.updateMany({ where: { id: d.id, chargeState: 'HELD' }, data: { chargeState: 'CAPTURED' } });
+      const refund = claimed.count === 1 && refundCredits + refundFree > 0 && d.chargeDay !== null;
+      if (refund) await this.users.refund(d.userId, { day: d.chargeDay!, fromFree: refundFree, fromCredits: refundCredits }, d.id, tx);
+      await tx.design.update({
+        where: { id: d.id },
+        data: { ...data, ...(refund ? { creditsUsed: d.creditsUsed - refundCredits, freeUsed: d.freeUsed - refundFree } : {}) },
+      });
+    });
+  }
+
   /** Marks a design FAILED and releases its held credits exactly once. */
   async fail(designId: string, code: string) {
     await this.prisma.design.updateMany({
@@ -287,16 +326,34 @@ export class DesignsService {
     });
     const d = await this.prisma.design.findUnique({ where: { id: designId } });
     if (!d) return;
-    const claimed = await this.prisma.design.updateMany({ where: { id: designId, chargeState: 'HELD' }, data: { chargeState: 'RELEASED' } });
-    if (claimed.count === 1 && d.chargeDay) {
-      await this.users
-        .refund(d.userId, { day: d.chargeDay, fromFree: d.freeUsed, fromCredits: d.creditsUsed }, designId)
-        .catch((err: Error) => log.error('refund_failed', { designId, error: err.name }));
-    }
+    await this.releaseHold(designId);
     log.warn('design_failed', { designId, userId: d.userId, tool: d.tool, code });
   }
 
-  /** Reconciler: anything PENDING for more than 10 minutes is failed and refunded. */
+  /**
+   * HELD → RELEASED and the refund commit together. If the refund fails the design stays HELD and the reconciler
+   * tries again; the conditional update means two callers can never both refund.
+   */
+  private async releaseHold(designId: string): Promise<boolean> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const d = await tx.design.findUnique({ where: { id: designId } });
+        if (!d || d.chargeState !== 'HELD') return false;
+        const claimed = await tx.design.updateMany({ where: { id: designId, chargeState: 'HELD' }, data: { chargeState: 'RELEASED' } });
+        if (claimed.count !== 1) return false;
+        if (d.chargeDay) await this.users.refund(d.userId, { day: d.chargeDay, fromFree: d.freeUsed, fromCredits: d.creditsUsed }, designId, tx);
+        return true;
+      });
+    } catch (err) {
+      log.error('refund_failed', { designId, error: (err as Error).name });
+      return false;
+    }
+  }
+
+  /**
+   * Reconciler: anything PENDING for more than 10 minutes is failed and refunded, and failed designs whose refund
+   * didn't go through (still HELD) are refunded again.
+   */
   async reconcile(): Promise<number> {
     const stale = await this.prisma.design.findMany({
       where: { status: 'PENDING', createdAt: { lt: new Date(Date.now() - 10 * 60_000) } },
@@ -304,6 +361,12 @@ export class DesignsService {
       take: 200,
     });
     for (const s of stale) await this.fail(s.id, 'timeout');
+    const unrefunded = await this.prisma.design.findMany({
+      where: { status: 'FAILED', chargeState: 'HELD' },
+      select: { id: true },
+      take: 200,
+    });
+    for (const u of unrefunded) await this.releaseHold(u.id);
     return stale.length;
   }
 
@@ -349,6 +412,9 @@ export class DesignsService {
     if (!target) throw notFound();
     const cached = await this.prisma.analysis.findUnique({ where: { designId_imageId: { designId, imageId: target.id } } });
     if (cached) return this.analysisDto(cached);
+    // A new analysis sends the result image to the AI provider: same consent and budget brake as generating it.
+    await this.assertAiConsent(userId);
+    await this.assertBudgetFor(userId);
 
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
     const out = await this.ai.analyze(

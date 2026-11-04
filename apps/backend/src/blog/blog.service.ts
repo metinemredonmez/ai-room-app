@@ -22,7 +22,10 @@ export class BlogService {
   async publish(tx: Tx, draft: MarketingDraft, userId: string): Promise<BlogPost> {
     const article = blogArticleSchema.parse(draft.output);
     const input = draft.input as BlogDraftInput;
-    let groupId: string = randomUUID();
+    // Re-approving an edited article updates the post it already published (same group, same row), even when the
+    // slug stays the same — a new group would collide with its own slug.
+    const previous = await tx.blogPost.findFirst({ where: { draftId: draft.id, locale: draft.locale } });
+    let groupId: string = previous?.groupId ?? randomUUID();
     let styleId = input.styleId ?? null;
     if (input.mode === 'translate' && input.sourcePostId) {
       const source = await tx.blogPost.findUnique({ where: { id: input.sourcePostId } });

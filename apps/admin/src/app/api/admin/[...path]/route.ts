@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { apiBaseUrl, cookieOptions, PROFILE_COOKIE, SESSION_COOKIE } from "@/lib/server/config";
+import { forwardedFor } from "@/lib/server/client-ip";
 import { errorResponse, isSameOrigin } from "@/lib/server/guards";
 
 const SEGMENT = /^[A-Za-z0-9_-]{1,80}$/;
@@ -36,6 +37,7 @@ async function forward(req: NextRequest, ctx: Ctx, method: "GET" | "POST" | "PAT
         authorization: `Bearer ${token}`,
         accept: "application/json",
         "accept-language": "tr",
+        ...(await forwardedFor()),
         ...(body !== undefined ? { "content-type": "application/json" } : {}),
       },
       body,

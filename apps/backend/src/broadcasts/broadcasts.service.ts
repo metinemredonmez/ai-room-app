@@ -289,6 +289,8 @@ export class BroadcastsService {
         break;
       }
       if (b.status !== 'SENDING') return { skipped: b.status };
+      // Marketing never wakes anyone up: a send that reaches the quiet hours pauses and due() resumes it after.
+      if (this.quietFor(b)) return { paused: 'quiet_hours' };
       const batch = await this.prisma.broadcastDelivery.findMany({
         where: { broadcastId, status: 'PENDING' }, orderBy: { id: 'asc' }, take: BATCH, select: { id: true, userId: true },
       });
@@ -296,8 +298,11 @@ export class BroadcastsService {
       await this.prisma.broadcastDelivery.updateMany({ where: { id: { in: batch.map((d) => d.id) }, status: 'PENDING' }, data: { status: 'SENDING' } });
       try {
         if (b.channel === 'EMAIL') {
-          const paused = await this.emailRound(b, batch);
-          if (paused) return { paused: 'email_daily_cap' };
+          const stop = await this.emailRound(b, batch);
+          if (stop) {
+            await this.refreshCounters(broadcastId);
+            return { paused: stop };
+          }
         } else {
           await this.sendRound(b, batch);
         }
@@ -312,6 +317,12 @@ export class BroadcastsService {
       await sleep(200);
     }
     return this.complete(broadcastId);
+  }
+
+  /** True while a MARKETING broadcast may not be sent (Istanbul quiet hours). */
+  private quietFor(b: Pick<Broadcast, 'kind'>, at = new Date()) {
+    const s = this.settings.current.broadcast;
+    return b.kind === 'MARKETING' && inQuietHours(at, s.quietStart, s.quietEnd);
   }
 
   /** Who may receive this marketing round, as skip reasons; SERVICE rounds skip nobody here. */
@@ -331,15 +342,18 @@ export class BroadcastsService {
 
   /**
    * E-mail round: one message a second through our own mail server, never more than `emailDailyCap` a day across
-   * all broadcasts. Returns true when the daily cap stopped the round (the rows go back to PENDING and the
-   * every-minute scheduler resumes the send once the day turns).
+   * all broadcasts. A round takes ~50 s, so for MARKETING the quiet hours and the user's consent are checked again
+   * right before each message (an unsubscribe during the round is honoured). Returns why the round stopped early —
+   * `email_daily_cap` or `quiet_hours` — with the unsent rows back in PENDING for the scheduler to resume, or null.
    */
-  private async emailRound(b: Broadcast, batch: Array<{ id: string; userId: string }>): Promise<boolean> {
+  private async emailRound(b: Broadcast, batch: Array<{ id: string; userId: string }>): Promise<'email_daily_cap' | 'quiet_hours' | null> {
     const left = this.settings.current.broadcast.emailDailyCap - (await this.emailSentToday());
     const now = batch.slice(0, Math.max(0, left));
     const later = batch.slice(now.length).map((d) => d.id);
-    if (later.length) await this.prisma.broadcastDelivery.updateMany({ where: { id: { in: later }, status: 'SENDING' }, data: { status: 'PENDING' } });
-    if (!now.length) return true;
+    const giveBack = (ids: string[]) =>
+      ids.length ? this.prisma.broadcastDelivery.updateMany({ where: { id: { in: ids }, status: 'SENDING' }, data: { status: 'PENDING' } }) : null;
+    await giveBack(later);
+    if (!now.length) return 'email_daily_cap';
     const users = new Map(
       (await this.prisma.user.findMany({
         where: { id: { in: now.map((d) => d.userId) } },
@@ -347,9 +361,15 @@ export class BroadcastsService {
       })).map((u) => [u.id, u]),
     );
     const gate = await this.marketingGate(b, now.map((d) => d.userId));
-    for (const d of now) {
+    for (const [i, d] of now.entries()) {
+      if (this.quietFor(b)) {
+        await giveBack(now.slice(i).map((x) => x.id));
+        return 'quiet_hours';
+      }
       const u = users.get(d.userId);
-      const reason = !u || u.status !== 'ACTIVE' ? 'inactive' : !u.email || !u.emailVerifiedAt ? 'no_email' : gate(u.id);
+      let reason = !u || u.status !== 'ACTIVE' ? 'inactive' : !u.email || !u.emailVerifiedAt ? 'no_email' : gate(u.id);
+      // Consent read again for this one message: it may have been withdrawn since the round started.
+      if (!reason && b.kind === 'MARKETING' && !(await this.withMarketingConsent([u!.id])).has(u!.id)) reason = 'consent_missing';
       if (reason) {
         await this.prisma.broadcastDelivery.update({ where: { id: d.id }, data: { status: 'SKIPPED', reason } });
         continue;
@@ -363,7 +383,7 @@ export class BroadcastsService {
       }
       await sleep(EMAIL_INTERVAL_MS);
     }
-    return later.length > 0;
+    return later.length > 0 ? 'email_daily_cap' : null;
   }
 
   private mailFor(b: Pick<Broadcast, 'kind' | 'title' | 'body' | 'link'>, to: { email: string; locale: string }, deliveryId: string) {
@@ -419,8 +439,12 @@ export class BroadcastsService {
       }
     }
 
-    const receipts = messages.length ? await this.push.send(messages) : {};
-    const accepted = this.push.transport === 'outbox' ? new Set(messages.map((m) => m.to)) : new Set(Object.values(receipts));
+    // At most once: a chunk that failed is reported as provider_error, never sent again; chunks that went out
+    // before it count as SENT (not "interrupted").
+    const out = messages.length ? await this.push.send(messages) : { receipts: {}, unsent: [], error: null };
+    const receipts = out.receipts;
+    const unsent = new Set(out.unsent.map((m) => m.to));
+    const accepted = this.push.transport === 'outbox' ? new Set(messages.map((m) => m.to).filter((t) => !unsent.has(t))) : new Set(Object.values(receipts));
     const now = new Date();
     const updates: Prisma.PrismaPromise<unknown>[] = [];
     for (const [deliveryId, reason] of skipped) {
@@ -484,10 +508,12 @@ export class BroadcastsService {
       await this.start(id).then(() => started++).catch((e: Error) => log.warn('broadcast_start_failed', { broadcastId: id, error: e.name }));
     }
     const stale = await this.prisma.broadcast.findMany({
-      where: { status: 'SENDING', updatedAt: { lt: new Date(now.getTime() - 10 * 60_000) } }, select: { id: true }, take: 20,
+      where: { status: 'SENDING', updatedAt: { lt: new Date(now.getTime() - 10 * 60_000) } }, select: { id: true, kind: true }, take: 20,
     });
     let resumed = 0;
-    for (const { id } of stale) {
+    for (const { id, kind } of stale) {
+      // A marketing send paused for the quiet hours stays paused until they end.
+      if (this.quietFor({ kind }, now)) continue;
       const job = await this.queues.broadcasts.getJob(`broadcast-${id}`);
       const state = job ? await job.getState() : null;
       if (state === 'active' || state === 'waiting' || state === 'delayed') continue;
@@ -524,8 +550,8 @@ export class BroadcastsService {
     const messages: PushMessage[] = user.pushTokens.map(({ token }) => ({
       to: token, title: `[Test] ${content.title}`, body: content.body, data, sound: 'default', priority: 'high', channelId: 'news',
     }));
-    const receipts = await this.push.send(messages);
-    const accepted = this.push.transport === 'outbox' ? messages.length : Object.keys(receipts).length;
+    const out = await this.push.send(messages);
+    const accepted = this.push.transport === 'outbox' ? messages.length - out.unsent.length : Object.keys(out.receipts).length;
     return { userId: user.id, devices: messages.length, accepted };
   }
 

@@ -438,6 +438,21 @@ if (adminToken) {
   ok(asoEdit.status === 200 && asoApprove.json?.status === 'APPROVED' && asoExport.json?.appStore?.apple?.info?.['nl-NL']?.promoText === 'Smoke tanıtım' && asoExport.json?.googlePlay?.['nl-NL']?.title,
     'approved listing exported as EAS store.config.json + Play text', asoApprove.json?.status);
   await call('POST', `/admin/marketing/drafts/${asoId}/archive`, A);
+  // Two store listings of one language approved at the same moment: still exactly one current text.
+  const twin = [];
+  for (let i = 0; i < 2; i++) {
+    const r = await call('POST', '/admin/marketing/aso', { ...A, body: { locales: ['nl'] } });
+    twin.push(r.json?.items?.[0]?.id);
+    for (let j = 0; j < 40; j++) {
+      const d = (await call('GET', '/admin/marketing/drafts?kind=aso', A)).json?.items?.find((x) => x.id === twin[i]);
+      if (d && d.status !== 'PENDING') break;
+      await new Promise((res) => setTimeout(res, 500));
+    }
+  }
+  await Promise.all(twin.map((id) => call('POST', `/admin/marketing/drafts/${id}/approve`, A)));
+  const nlApproved = (await call('GET', '/admin/marketing/drafts?kind=aso', A)).json?.items?.filter((d) => d.locale === 'nl' && d.status === 'APPROVED') ?? [];
+  ok(nlApproved.length === 1, 'parallel approvals keep one current listing per language', `${nlApproved.length} approved`);
+  for (const id of twin) await call('POST', `/admin/marketing/drafts/${id}/archive`, A);
   const waitDraft = async (kind, id) => {
     for (let i = 0; i < 40; i++) {
       const d = (await call('GET', `/admin/marketing/drafts?kind=${kind}`, A)).json?.items?.find((x) => x.id === id);
@@ -462,8 +477,10 @@ if (adminToken) {
   const campRun = await call('POST', '/admin/marketing/campaign', { ...A, body: { locales: ['tr'], channel: 'PUSH', kind: 'SERVICE', goal: 'Yeni stilleri duyur' } });
   const camp = await waitDraft('campaign', campRun.json?.items?.[0]?.id);
   const campApprove = await call('POST', `/admin/marketing/drafts/${camp?.id}/approve`, A);
-  const toB = await call('POST', `/admin/marketing/drafts/${camp?.id}/broadcast`, A);
-  const toB2 = await call('POST', `/admin/marketing/drafts/${camp?.id}/broadcast`, A);
+  // Two clicks at the same time: the lock lets one through, the other sees the open broadcast (no duplicate).
+  const both = await Promise.all([1, 2].map(() => call('POST', `/admin/marketing/drafts/${camp?.id}/broadcast`, A)));
+  const toB = both.find((r) => r.status === 201) ?? both[0];
+  const toB2 = both.find((r) => r !== toB) ?? both[1];
   const campB = await call('GET', `/admin/broadcasts/${toB.json?.broadcastId}`, A);
   ok(camp?.status === 'READY' && campApprove.status === 200 && toB.status === 201 && toB2.status === 409 && campB.json?.status === 'DRAFT' && campB.json?.audience?.locale === 'tr',
     'campaign text becomes one broadcast draft for its language', `${toB.status} / ${campB.json?.status}`);

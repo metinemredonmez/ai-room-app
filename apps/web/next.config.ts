@@ -51,7 +51,15 @@ const nextConfig: NextConfig = {
   // URL and proxies it (TLS error, 500 on hazal). A config rewrite is a path and never leaves the server.
   async rewrites() {
     return {
-      beforeFiles: [{ source: "/:path*", has: [{ type: "header", key: DEFAULT_LOCALE_HEADER, value: "1" }], destination: "/tr/:path*" }],
+      // Same paths as the proxy matcher: the header only ever applies where the proxy set (or removed) it, never to
+      // /api, /_next or files, so a client sending it by hand changes nothing outside pages.
+      beforeFiles: [
+        {
+          source: "/:path((?!api/|_next/|.*\\..*).*)",
+          has: [{ type: "header", key: DEFAULT_LOCALE_HEADER, value: "1" }],
+          destination: "/tr/:path",
+        },
+      ],
       afterFiles: [],
       fallback: [],
     };

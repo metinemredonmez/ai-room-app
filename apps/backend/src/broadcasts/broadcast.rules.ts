@@ -72,7 +72,17 @@ export function fold(textIn: string): string {
     .replace(/ç/g, 'c')
     .replace(/â/g, 'a')
     .replace(/[’']/g, '')
+    // Other Latin-script languages (campaign texts exist in 11): é → e, ñ → n, ß stays.
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
     .replace(/\s+/g, ' ');
+}
+
+/** Second reading against obfuscation: "1nd1r1m" (digits for letters) and "i n d i r i m" / "i.n.d.i.r.i.m". */
+function deobfuscate(folded: string): string {
+  const leet = folded.replace(/[1!|]/g, 'i').replace(/0/g, 'o').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/\$/g, 's');
+  // Runs of single letters split by spaces or punctuation are joined back into one word.
+  return leet.replace(/\b(?:\p{L}[\s.\-_*·]+){2,}\p{L}\b/gu, (m) => m.replace(/[\s.\-_*·]+/g, ''));
 }
 
 /**
@@ -94,11 +104,31 @@ const SIGNALS: Array<{ id: string; re: RegExp }> = [
   { id: 'aciliyet', re: /\bson gun|\bkacirma|\bsinirli sure|\bsadece bugun|\bbugune ozel/ },
   { id: 'yuzde', re: /%\s?\d|\d\s?%|\byuzde ?\d/ },
   { id: 'en_commercial', re: /\b(discount|sale|offer|deal|coupon|promo|free trial|subscribe|upgrade|limited time|buy now|% off)\b/ },
+  // The other campaign languages (folded: no accents). Cyrillic and CJK have no \b word boundaries in JS.
+  {
+    id: 'yabanci_ticari',
+    re: new RegExp(
+      [
+        '\\b(rabatt|angebot|gutschein|gratis testen|jetzt kaufen|abonnieren|nur heute|befristet)',
+        '\\b(descuento|oferta|cupon|prueba gratis|suscribete|solo hoy|tiempo limitado|compra ya)',
+        '\\b(reduction|offre|essai gratuit|abonnez|seulement aujourd|duree limitee|achetez)',
+        '\\b(sconto|offerta|prova gratuita|abbonati|solo oggi|tempo limitato|acquista)',
+        '\\b(korting|aanbieding|gratis proberen|abonneer|alleen vandaag|tijdelijk|koop nu)',
+        'скидк|акци|промокод|купон|бесплатн|подписк|распродаж|только сегодня|купит',
+        '割引|セール|クーポン|無料体験|期間限定|今だけ|購入|お得',
+        '할인|세일|쿠폰|무료 체험|구독|오늘만|기간 한정|구매',
+        '折扣|优惠|促销|特价|免费试用|订阅|限时|立即购买|打折',
+      ].join('|'),
+    ),
+  },
+  { id: 'para_birimi', re: /[€$£¥₽₩円元]\s?\d|\d\s?[€$£¥₽₩円元]|\d\s?(eur|usd|euro)\b/ },
 ];
 
 export function commercialSignals(content: Pick<Content, 'title' | 'body'> & { link?: string | null }): string[] {
-  const t = fold(`${content.title} ${content.body}`);
-  const found = SIGNALS.filter((s) => s.re.test(t)).map((s) => s.id);
+  // "¦" keeps a one-letter title from being joined to spaced-out letters in the body.
+  const t = fold(`${content.title} ¦ ${content.body}`);
+  const d = deobfuscate(t);
+  const found = SIGNALS.filter((s) => s.re.test(t) || s.re.test(d)).map((s) => s.id);
   if (content.link?.startsWith('/fiyatlar')) found.push('satin_alma_ekrani');
   return found;
 }

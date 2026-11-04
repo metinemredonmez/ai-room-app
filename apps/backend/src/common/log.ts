@@ -1,11 +1,14 @@
 // LOG-01 / LOG-02: one JSON object per event; secrets, tokens, image bytes and chat text are redacted.
 
+// Same keys as the error reporter (common/monitoring.ts) except the client IP, which security events must carry
+// (LOG-01). E-mail addresses inside any text are masked too (LOG-02).
 const REDACT =
-  /^(authorization|cookie|password|passwordhash|token|accesstoken|refreshtoken|secret|totpsecret|otp|data|text|messages|prompt|deviceid|sig)$/i;
+  /^(authorization|cookie|set-cookie|password|passwordhash|token|accesstoken|refreshtoken|idtoken|identitytoken|secret|totpsecret|otp|backupcode|data|text|messages|prompt|deviceid|sig|email|to|nonce|authorizationcode|x-internal-token|x-admin-panel-key|idempotency-key)$/i;
+const EMAIL = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu;
 
 type Fields = Record<string, unknown>;
 
-function scrub(value: unknown, depth = 0): unknown {
+export function scrub(value: unknown, depth = 0): unknown {
   if (depth > 4) return '[depth]';
   if (Array.isArray(value)) return value.slice(0, 20).map((v) => scrub(v, depth + 1));
   if (value && typeof value === 'object') {
@@ -13,7 +16,10 @@ function scrub(value: unknown, depth = 0): unknown {
     for (const [k, v] of Object.entries(value as Fields)) out[k] = REDACT.test(k) ? '[redacted]' : scrub(v, depth + 1);
     return out;
   }
-  if (typeof value === 'string' && value.length > 300) return `${value.slice(0, 300)}…`;
+  if (typeof value === 'string') {
+    const masked = value.replace(EMAIL, '[email]');
+    return masked.length > 300 ? `${masked.slice(0, 300)}…` : masked;
+  }
   return value;
 }
 

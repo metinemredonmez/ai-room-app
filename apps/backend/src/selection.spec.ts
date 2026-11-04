@@ -25,7 +25,7 @@ function service(opts: { owned?: boolean; consent?: boolean; requireConsent?: bo
   };
   const settings = { current: { maintenance: { enabled: false }, requireAiConsent: opts.requireConsent ?? false } };
   const consents = { hasCurrent: async () => opts.consent ?? true };
-  const usageSvc = { record: async (u: unknown) => void calls.recorded.push(u) };
+  const usageSvc = { record: async (u: unknown) => void calls.recorded.push(u), budget: async () => ({ state: 'normal', brakeMode: 'free_paused' }) };
   const designs = new DesignsService(
     {} as never, images as never, {} as never, {} as never, ai as never, settings as never, usageSvc as never,
     {} as never, consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never,

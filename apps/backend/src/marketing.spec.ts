@@ -15,7 +15,7 @@ const listing = (over: Partial<AsoListing> = {}): AsoListing => ({
   ...over,
 });
 
-type Row = Record<string, unknown> & { id: string; kind: string; locale: string; status: string; violations: string[]; createdAt: Date };
+type Row = Record<string, unknown> & { id: string; kind: string; locale: string; status: string; violations: string[]; createdAt: Date; updatedAt: Date };
 
 /** In-memory MarketingDraft table: just enough Prisma for the service. */
 function fakePrisma() {
@@ -25,6 +25,7 @@ function fakePrisma() {
       if (v && typeof v === 'object' && 'in' in v) return (v as { in: unknown[] }).in.includes(r[k]);
       if (v && typeof v === 'object' && 'not' in v) return r[k] !== (v as { not: unknown }).not;
       if (v && typeof v === 'object' && 'lt' in v) return (r[k] as Date) < (v as { lt: Date }).lt;
+      if (v instanceof Date) return r[k] instanceof Date && (r[k] as Date).getTime() === v.getTime();
       return r[k] === v;
     });
   const table = {
@@ -33,21 +34,26 @@ function fakePrisma() {
       rows.push(row);
       return row;
     },
-    findMany: async ({ where }: { where?: Record<string, unknown> } = {}) => rows.filter((r) => match(r, where)),
-    findUnique: async ({ where }: { where: { id: string } }) => rows.find((r) => r.id === where.id) ?? null,
+    findMany: async ({ where }: { where?: Record<string, unknown> } = {}) => rows.filter((r) => match(r, where)).map((r) => ({ ...r })),
+    // Copies, like a database read: a later write must not change what a caller already read.
+    findUnique: async ({ where }: { where: { id: string } }) => {
+      const r = rows.find((x) => x.id === where.id);
+      return r ? { ...r } : null;
+    },
     update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
       const r = rows.find((x) => x.id === where.id)!;
-      Object.assign(r, data, { updatedAt: new Date() });
-      return r;
+      Object.assign(r, data, { updatedAt: new Date(r.updatedAt.getTime() + 1) });
+      return { ...r };
     },
     updateMany: async ({ where, data }: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
       const hit = rows.filter((r) => match(r, where));
-      for (const r of hit) Object.assign(r, data);
+      for (const r of hit) Object.assign(r, data, { updatedAt: new Date(r.updatedAt.getTime() + 1) });
       return { count: hit.length };
     },
   };
   const prisma = {
     marketingDraft: table,
+    $queryRaw: async () => [],
     $transaction: async (arg: unknown) => (typeof arg === 'function' ? (arg as (tx: unknown) => unknown)(prisma) : Promise.all(arg as Promise<unknown>[])),
   };
   return { prisma, rows };
@@ -315,5 +321,59 @@ describe('blog and SEO', () => {
     await svc.update(rows[1].id, full);
     await svc.approve(rows[1].id, 'admin');
     expect(rows.map((r) => r.status)).toEqual(['ARCHIVED', 'APPROVED']);
+  });
+});
+
+describe('concurrent edits and approvals', () => {
+  it('refuses to approve a version that changed after it was read', async () => {
+    const { svc, rows } = service();
+    await svc.runAso({ locales: ['de'] }, 'admin');
+    await svc.process(rows[0].id, false);
+    const table = (svc as unknown as { prisma: { marketingDraft: Record<string, (a: never) => Promise<unknown>> } }).prisma.marketingDraft;
+    const updateMany = table.updateMany;
+    // An edit lands right after the approver read the draft and before its write.
+    table.updateMany = (async (args: { data: { status?: string } }) => {
+      if (args.data.status === 'APPROVED') Object.assign(rows[0], { output: listing({ play_short: 'Ungeprüft' }), updatedAt: new Date(rows[0].updatedAt.getTime() + 1) });
+      return updateMany(args as never);
+    }) as never;
+    await expect(svc.approve(rows[0].id, 'admin')).rejects.toMatchObject({ status: 409 });
+    table.updateMany = updateMany;
+    expect(rows[0].status).toBe('READY'); // the unreviewed text is not approved
+  });
+
+  it('a stale edit does not overwrite a newer one', async () => {
+    const { svc, rows } = service();
+    await svc.runAso({ locales: ['de'] }, 'admin');
+    await svc.process(rows[0].id, false);
+    const table = (svc as unknown as { prisma: { marketingDraft: Record<string, (...a: never[]) => unknown> } }).prisma.marketingDraft;
+    const read = table.findUnique;
+    const stale = { ...rows[0] };
+    table.findUnique = (async () => ({ ...stale })) as never;
+    await svc.update(rows[0].id, listing({ play_short: 'Erste' })); // lands: version matches
+    await expect(svc.update(rows[0].id, listing({ play_short: 'Zweite' }))).rejects.toMatchObject({ status: 409 }); // stale read
+    table.findUnique = read;
+    expect((rows[0].output as { play_short: string }).play_short).toBe('Erste');
+  });
+
+  it('keeps one approved store listing per language', async () => {
+    const { svc, rows } = service();
+    await svc.runAso({ locales: ['de'] }, 'admin');
+    await svc.process(rows[0].id, false);
+    await svc.runAso({ locales: ['de'] }, 'admin').catch(() => undefined);
+    rows.push({ ...rows[0], id: 'second', status: 'READY', updatedAt: new Date() });
+    await svc.approve(rows[0].id, 'admin');
+    await svc.approve('second', 'admin');
+    expect(rows.filter((r) => r.status === 'APPROVED').map((r) => r.id)).toEqual(['second']);
+  });
+
+  it('a campaign text with an open broadcast draft cannot be edited (no second broadcast)', async () => {
+    const { svc, rows, created } = service();
+    await svc.runCampaign({ locales: ['tr'], channel: 'PUSH', kind: 'SERVICE', goal: 'Yeni stilleri duyur' }, 'admin');
+    await svc.process(rows[0].id, false);
+    await svc.approve(rows[0].id, 'admin');
+    await svc.toBroadcast(rows[0].id, 'admin');
+    await expect(svc.update(rows[0].id, { title: 'Yeni', body: 'Yeni metin', link: null })).rejects.toMatchObject({ status: 409 });
+    await expect(svc.toBroadcast(rows[0].id, 'admin')).rejects.toMatchObject({ status: 409 });
+    expect(created).toHaveLength(1);
   });
 });

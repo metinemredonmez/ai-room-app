@@ -11,7 +11,7 @@ import { DesignsService } from '../designs/designs.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { ImagesService } from '../images/images.service.js';
 import { BillingService } from '../billing/billing.service.js';
-import { PushRetryableError, PushService } from '../push/push.service.js';
+import { PushPartialError, PushRetryableError, PushService } from '../push/push.service.js';
 import { AppleRetryableError, AppleService } from '../auth/apple.service.js';
 import { DataRequestsService } from '../kvkk/data-requests.service.js';
 import { BroadcastsService } from '../broadcasts/broadcasts.service.js';
@@ -110,12 +110,19 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   private async runNotification(job: Job<NotificationJob>) {
     try {
       if ('receipts' in job.data) return await this.push.checkReceipts(job.data.receipts);
-      const receipts = await this.push.notifyDesign(job.data.designId, (d, locale) => this.designs.titleOf(d, locale));
+      const { designId, tokens } = job.data;
+      const receipts = await this.push.notifyDesign(designId, (d, locale) => this.designs.titleOf(d, locale), tokens);
       if (Object.keys(receipts).length) {
         await this.queues.notifications.add('push-receipts', { receipts }, { delay: 15 * 60_000, attempts: 2 });
       }
       return { receipts: Object.keys(receipts).length };
     } catch (e) {
+      // Part of the devices got it: this job is done, a new one retries only the rest (no duplicate pushes).
+      if (e instanceof PushPartialError && 'designId' in job.data) {
+        await this.queues.notifications.add('design-result', { designId: job.data.designId, tokens: e.unsent }, { delay: 30_000, attempts: 4, backoff: { type: 'exponential', delay: 10_000 } });
+        if (Object.keys(e.receipts).length) await this.queues.notifications.add('push-receipts', { receipts: e.receipts }, { delay: 15 * 60_000, attempts: 2 });
+        return { partial: e.unsent.length };
+      }
       if (e instanceof PushRetryableError) throw e;
       log.error('push_failed', { job: job.name, error: (e as Error).name });
       throw new UnrecoverableError((e as Error).message);

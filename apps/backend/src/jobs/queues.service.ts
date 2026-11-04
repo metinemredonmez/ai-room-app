@@ -8,7 +8,8 @@ export interface DesignJob {
   requestId?: string;
 }
 
-export type NotificationJob = { designId: string } | { receipts: Record<string, string> };
+/** `tokens`: retry of a partial send, only the devices that didn't get the push yet. */
+export type NotificationJob = { designId: string; tokens?: string[] } | { receipts: Record<string, string> };
 
 export interface BroadcastJob {
   broadcastId: string;

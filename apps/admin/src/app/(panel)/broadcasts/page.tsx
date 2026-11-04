@@ -58,6 +58,7 @@ const SIGNALS: Record<string, string> = {
   indirim: "indirim", kampanya: "kampanya", firsat: "fırsat", teklif: "teklif", kupon: "kupon/promosyon", hediye: "hediye",
   abonelik: "abonelik/üyelik", pro: "PRO'ya geçiş", deneme: "deneme süresi", satin_al: "satın alma", fiyat: "fiyat",
   aciliyet: "aciliyet (son gün, kaçırma…)", yuzde: "yüzde", en_commercial: "İngilizce ticari ifade", satin_alma_ekrani: "fiyatlar ekranına bağlantı",
+  yabanci_ticari: "başka dilde ticari ifade", para_birimi: "para birimiyle fiyat",
 };
 const NONE = "all";
 

@@ -36,6 +36,23 @@ interface Ticket {
 /** Thrown for 429 / 5xx / network failures so BullMQ retries the job with backoff. */
 export class PushRetryableError extends Error {}
 
+/**
+ * Some chunks went out before a retryable failure: only `unsent` may be tried again, so a device that already got
+ * the push doesn't get it twice. `receipts` are the tickets of what did go out (for the receipt check).
+ */
+export class PushPartialError extends PushRetryableError {
+  constructor(public unsent: string[], public receipts: Record<string, string>, cause: string) {
+    super(cause);
+  }
+}
+
+/** Result of a send: what Expo accepted (ticket id → token) and what is still unsent after a retryable failure. */
+export interface SendResult {
+  receipts: Record<string, string>;
+  unsent: PushMessage[];
+  error: string | null;
+}
+
 const COPY = {
   tr: {
     ready: { title: 'Tasarımın hazır', body: (t: string) => `"${t}" tamamlandı. Görmek için dokun.` },
@@ -84,7 +101,8 @@ export class PushService {
   }
 
   /** Sends the result of a queued design to every device of its owner. Returns receipt ids to check later. */
-  async notifyDesign(designId: string, titleOf: (d: Design, locale: Locale) => Promise<string>): Promise<Record<string, string>> {
+  /** `only`: retry of a partial send — just these tokens (those that got the push are not sent again). */
+  async notifyDesign(designId: string, titleOf: (d: Design, locale: Locale) => Promise<string>, only?: string[]): Promise<Record<string, string>> {
     const design = await this.prisma.design.findUnique({
       where: { id: designId },
       include: { user: { select: { locale: true, pushTokens: { select: { token: true } } } } },
@@ -94,7 +112,9 @@ export class PushService {
     // Push copy exists in Turkish and English; the design title itself is localised.
     const copy = COPY[contentLocale(locale)][design.status === 'SUCCEEDED' ? 'ready' : 'failed'];
     const title = await titleOf(design, locale);
-    const messages: PushMessage[] = design.user.pushTokens.map(({ token }) => ({
+    const tokens = design.user.pushTokens.map((t) => t.token).filter((t) => !only || only.includes(t));
+    if (!tokens.length) return {};
+    const messages: PushMessage[] = tokens.map((token) => ({
       to: token,
       title: copy.title,
       body: copy.body(title),
@@ -103,27 +123,39 @@ export class PushService {
       priority: 'high',
       channelId: 'designs',
     }));
-    const receipts = await this.send(messages);
-    log.info('push_sent', { designId, status: design.status, devices: messages.length, transport: this.transport });
-    return receipts;
+    const out = await this.send(messages);
+    log.info('push_sent', { designId, status: design.status, devices: messages.length - out.unsent.length, transport: this.transport });
+    if (out.unsent.length === messages.length) throw new PushRetryableError(out.error ?? 'expo_unsent'); // nothing went out: retry all
+    if (out.unsent.length) throw new PushPartialError(out.unsent.map((m) => m.to), out.receipts, out.error ?? 'expo_partial');
+    return out.receipts;
   }
 
-  async send(messages: PushMessage[]): Promise<Record<string, string>> {
+  /**
+   * Sends in chunks of 100. A retryable failure stops the run and returns what is left as `unsent` instead of
+   * throwing, so the caller knows exactly which devices already got the message.
+   */
+  async send(messages: PushMessage[]): Promise<SendResult> {
     if (this.cfg.PUSH_TRANSPORT === 'outbox') {
       await mkdir(this.outbox, { recursive: true, mode: 0o700 });
       for (const m of messages) {
         const file = path.join(this.outbox, `${Date.now()}-${randomUUID()}.json`);
         await writeFile(file, JSON.stringify({ ...m, createdAt: new Date().toISOString() }, null, 2), { mode: 0o600 });
       }
-      return {};
+      return { receipts: {}, unsent: [], error: null };
     }
     const receipts: Record<string, string> = {};
     for (let i = 0; i < messages.length; i += CHUNK) {
       const chunk = messages.slice(i, i + CHUNK);
-      const tickets = await this.post<Ticket[]>(EXPO_SEND, chunk);
+      let tickets: Ticket[];
+      try {
+        tickets = await this.post<Ticket[]>(EXPO_SEND, chunk);
+      } catch (e) {
+        if (e instanceof PushRetryableError) return { receipts, unsent: messages.slice(i), error: e.message };
+        throw e;
+      }
       Object.assign(receipts, await this.handleTickets(chunk.map((m) => m.to), tickets));
     }
-    return receipts;
+    return { receipts, unsent: [], error: null };
   }
 
   /** Ticket i belongs to message i. Dead devices are removed now; the rest are checked via receipts. */

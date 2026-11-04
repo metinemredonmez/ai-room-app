@@ -154,12 +154,19 @@ export class MarketingService {
   async process(draftId: string, finalAttempt: boolean) {
     const draft = await this.prisma.marketingDraft.findUnique({ where: { id: draftId } });
     if (!draft || draft.status !== 'PENDING' || !isLocale(draft.locale)) return { skipped: true };
+    // Checked again when the job starts: the budget may have run out while the draft waited in the queue.
+    // The weekly report still goes out with its numbers, just without the AI reading.
+    const overBudget = (await this.usage.budget()).state === 'exceeded';
+    if (overBudget && draft.kind !== 'report') {
+      await this.prisma.marketingDraft.update({ where: { id: draftId }, data: { status: 'FAILED', error: 'budget_exceeded' } });
+      return { failed: true };
+    }
     try {
       const out: Written | null =
         draft.kind === 'aso' ? await this.writeAso(draft, draft.locale)
         : draft.kind === 'social' ? await this.writeSocial(draft, draft.locale)
         : draft.kind === 'campaign' ? await this.writeCampaign(draft, draft.locale)
-        : draft.kind === 'report' ? await this.writeReport(draft)
+        : draft.kind === 'report' ? await this.writeReport(draft, overBudget)
         : draft.kind === 'blog' ? await this.writeBlog(draft, draft.locale)
         : draft.kind === 'seo' ? await this.writeSeo(draft.locale)
         : null;
@@ -230,8 +237,9 @@ export class MarketingService {
     return { output: { ...output, signals: check.signals }, violations: check.blocked ? [...violations, 'looks_commercial'] : violations, usage: out.usage };
   }
 
-  private async writeReport(draft: MarketingDraft): Promise<Written> {
+  private async writeReport(draft: MarketingDraft, skipAi = false): Promise<Written> {
     const input = draft.input as unknown as ReportInput;
+    if (skipAi) return { output: { metrics: input.metrics, text: null }, violations: [], error: 'budget_exceeded' };
     try {
       const out = await this.ai.marketingReport({ metrics: JSON.stringify(input.metrics) });
       return { output: { metrics: input.metrics, text: out.report }, violations: [], usage: out.usage };
@@ -299,12 +307,35 @@ export class MarketingService {
     throw new AppError(409, 'conflict', 'Bu taslak düzenlenemez');
   }
 
-  /** Owner's edit, held to the same limits. An approved text that changes needs approving again. */
+  /** Transaction-scoped lock: approvals of one language (or actions on one draft) run one after another. */
+  private async lock(tx: Prisma.TransactionClient, key: string) {
+    // pg_advisory_xact_lock returns void, which Prisma can't read: select a constant alongside it.
+    await tx.$queryRaw`SELECT 1 AS locked FROM (SELECT pg_advisory_xact_lock(hashtext(${`marketing:${key}`}))) AS l`;
+  }
+
+  private changed() {
+    return new AppError(409, 'conflict', 'Taslak bu arada değişti; sayfayı yenileyip yeniden dene');
+  }
+
+  /**
+   * Owner's edit, held to the same limits. An approved text that changes needs approving again. Optimistic
+   * concurrency: the write only lands if the draft is still the version that was read (updatedAt).
+   */
   async update(id: string, output: unknown) {
-    const draft = await this.prisma.marketingDraft.findUnique({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      await this.lock(tx, `draft:${id}`);
+      return this.updateLocked(tx, id, output);
+    });
+  }
+
+  private async updateLocked(tx: Prisma.TransactionClient, id: string, output: unknown) {
+    const draft = await tx.marketingDraft.findUnique({ where: { id } });
     if (!draft) throw notFound();
     if (draft.status !== 'READY' && draft.status !== 'APPROVED') {
       throw new AppError(409, 'conflict', 'Yalnız hazır ya da onaylı taslak düzenlenebilir');
+    }
+    if ((draft.output as { broadcastId?: string } | null)?.broadcastId) {
+      throw new AppError(409, 'conflict', 'Bu metinden gönderim taslağı açıldı; değişikliği Toplu Gönderim ekranında yap');
     }
     const value = parse(this.editSchema(draft), output) as Record<string, unknown>;
     let violations: string[] = [];
@@ -314,30 +345,45 @@ export class MarketingService {
       value.signals = check.signals;
       if (check.blocked) violations = ['looks_commercial'];
     }
-    const saved = await this.prisma.marketingDraft.update({
-      where: { id },
+    const { count } = await tx.marketingDraft.updateMany({
+      where: { id, status: draft.status, updatedAt: draft.updatedAt },
       data: { output: value as Prisma.InputJsonValue, violations, status: 'READY', approvedAt: null, approvedById: null },
     });
-    return this.dto(saved);
+    if (count !== 1) throw this.changed();
+    return this.dto((await tx.marketingDraft.findUnique({ where: { id } }))!);
   }
 
-  /** Approving a store listing makes it its language's current text (the previous one is archived). */
+  /**
+   * Approves exactly the version that was reviewed: the status change is conditional on the draft not having
+   * changed (updatedAt), and approvals of one kind + language are serialised, so there is never more than one
+   * current store listing / SEO text per language. A blog article is published from that same version.
+   */
   async approve(id: string, userId: string) {
     return this.prisma.$transaction(async (tx) => {
+      const first = await tx.marketingDraft.findUnique({ where: { id } });
+      if (!first) throw notFound();
+      await this.lock(tx, `${first.kind}:${first.locale}`);
       const draft = await tx.marketingDraft.findUnique({ where: { id } });
       if (!draft) throw notFound();
       if (draft.status !== 'READY' || draft.kind === 'report') throw new AppError(409, 'conflict', 'Yalnız hazır taslak onaylanabilir');
       if (draft.violations.length) {
         throw new AppError(422, 'over_limit', `Düzeltilmesi gereken alanlar var: ${draft.violations.join(', ')}`);
       }
+      const claimed = await tx.marketingDraft.updateMany({
+        where: { id, status: 'READY', updatedAt: draft.updatedAt },
+        data: { status: 'APPROVED', approvedById: userId, approvedAt: new Date() },
+      });
+      if (claimed.count !== 1) throw this.changed();
       // Store listing and SEO texts: one current text per language, the previous one is archived.
       if (draft.kind === 'aso' || draft.kind === 'seo') {
-        await tx.marketingDraft.updateMany({ where: { kind: draft.kind, locale: draft.locale, status: 'APPROVED' }, data: { status: 'ARCHIVED' } });
+        await tx.marketingDraft.updateMany({
+          where: { kind: draft.kind, locale: draft.locale, status: 'APPROVED', id: { not: id } },
+          data: { status: 'ARCHIVED' },
+        });
       }
-      // A blog article goes live on approval.
+      // A blog article goes live on approval, with the text that was approved.
       if (draft.kind === 'blog') await this.blog.publish(tx, draft, userId);
-      const saved = await tx.marketingDraft.update({ where: { id }, data: { status: 'APPROVED', approvedById: userId, approvedAt: new Date() } });
-      return this.dto(saved);
+      return this.dto((await tx.marketingDraft.findUnique({ where: { id } }))!);
     });
   }
 
@@ -345,8 +391,12 @@ export class MarketingService {
     const draft = await this.prisma.marketingDraft.findUnique({ where: { id } });
     if (!draft) throw notFound();
     if (draft.status === 'PENDING') throw new AppError(409, 'conflict', 'Yazılmakta olan taslak arşivlenemez');
-    const saved = await this.prisma.marketingDraft.update({ where: { id }, data: { status: 'ARCHIVED' } });
-    return this.dto(saved);
+    const { count } = await this.prisma.marketingDraft.updateMany({
+      where: { id, status: { not: 'PENDING' }, updatedAt: draft.updatedAt },
+      data: { status: 'ARCHIVED' },
+    });
+    if (count !== 1) throw this.changed();
+    return this.dto((await this.prisma.marketingDraft.findUnique({ where: { id } }))!);
   }
 
   /** Store files, from the approved listings only. */
@@ -382,18 +432,26 @@ export class MarketingService {
    * own checks (commercial text, consent, caps, quiet hours) and is sent from the Toplu Gönderim screen.
    */
   async toBroadcast(id: string, userId: string) {
-    const draft = await this.prisma.marketingDraft.findUnique({ where: { id } });
-    if (!draft || draft.kind !== 'campaign') throw notFound();
-    if (draft.status !== 'APPROVED') throw new AppError(409, 'conflict', 'Önce taslağı onayla');
-    const out = draft.output as { title: string; body: string; link: string | null; broadcastId?: string };
-    if (out.broadcastId) throw new AppError(409, 'conflict', 'Bu metinden zaten bir gönderim taslağı açıldı');
-    const input = draft.input as CampaignInput;
-    const b = await this.broadcasts.create(
-      { title: out.title, body: out.body, link: out.link, kind: input.kind, channel: input.channel, audience: { accounts: 'all', locale: draft.locale as Locale } },
-      userId,
-    );
-    await this.prisma.marketingDraft.update({ where: { id }, data: { output: { ...out, broadcastId: b.id } } });
-    return { broadcastId: b.id };
+    // One click at a time per draft: the second waits for the lock, then sees broadcastId and stops (no duplicate).
+    return this.prisma.$transaction(async (tx) => {
+      await this.lock(tx, `draft:${id}`);
+      const draft = await tx.marketingDraft.findUnique({ where: { id } });
+      if (!draft || draft.kind !== 'campaign') throw notFound();
+      if (draft.status !== 'APPROVED') throw new AppError(409, 'conflict', 'Önce taslağı onayla');
+      const out = draft.output as { title: string; body: string; link: string | null; broadcastId?: string };
+      if (out.broadcastId) throw new AppError(409, 'conflict', 'Bu metinden zaten bir gönderim taslağı açıldı');
+      const input = draft.input as CampaignInput;
+      const b = await this.broadcasts.create(
+        { title: out.title, body: out.body, link: out.link, kind: input.kind, channel: input.channel, audience: { accounts: 'all', locale: draft.locale as Locale } },
+        userId,
+      );
+      const { count } = await tx.marketingDraft.updateMany({
+        where: { id, status: 'APPROVED', updatedAt: draft.updatedAt },
+        data: { output: { ...out, broadcastId: b.id } },
+      });
+      if (count !== 1) throw this.changed();
+      return { broadcastId: b.id };
+    });
   }
 
   /** Stuck PENDING drafts (the job was lost, e.g. Redis flushed) are failed after an hour; a full run takes ~10 min. */

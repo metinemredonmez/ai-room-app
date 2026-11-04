@@ -97,7 +97,7 @@
     },
     "/v1/catalog": {
       "get": {
-        "description": "`?locale=tr|en` ya da Accept-Language",
+        "description": "`?locale=` (11 dil) ya da Accept-Language",
         "operationId": "PublicController_getCatalog",
         "parameters": [],
         "responses": {
@@ -1429,7 +1429,16 @@
                     "type": "string",
                     "enum": [
                       "tr",
-                      "en"
+                      "en",
+                      "de",
+                      "es",
+                      "fr",
+                      "it",
+                      "ru",
+                      "nl",
+                      "ja",
+                      "ko",
+                      "zh"
                     ]
                   }
                 },
@@ -1928,6 +1937,166 @@
         ]
       }
     },
+    "/v1/uploads/{id}/selection": {
+      "post": {
+        "description": "Değiştir / Nesne Sil / Duvar Boyası için. `points` (0..1, her nokta bir nesne, en çok 8) ya da `target` (nesne adı; o türün hepsi). Aynı noktalar `POST /designs` içinde `points` olarak gönderilir. Her çağrı ücretli bir SAM 3 isteğidir: 10 dakikada 60. `FAL_KEY` yoksa 503 `selection_unavailable`; nesne bulunamazsa 422 `selection_failed`.",
+        "operationId": "UserController_selection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "points": {
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "y": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "target": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Selection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "ai_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user": []
+          }
+        ],
+        "summary": "Dokunarak seçim önizlemesi (maske)",
+        "tags": [
+          "user"
+        ]
+      }
+    },
     "/v1/designs": {
       "post": {
         "description": "Varsayılan senkron (201). `Prefer: respond-async` → 202 + PENDING, `GET /designs/:id` ile sorgula. `Idempotency-Key` aynı isteğin iki kez ücretlendirilmesini önler (200 ile mevcut tasarım döner). Kredi: HELD → CAPTURED / RELEASED.",
@@ -2047,6 +2216,31 @@
                     "type": "string",
                     "format": "uuid",
                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "points": {
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "y": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    }
                   }
                 },
                 "required": [
@@ -2794,7 +2988,16 @@
                     "type": "string",
                     "enum": [
                       "tr",
-                      "en"
+                      "en",
+                      "de",
+                      "es",
+                      "fr",
+                      "it",
+                      "ru",
+                      "nl",
+                      "ja",
+                      "ko",
+                      "zh"
                     ]
                   }
                 },
@@ -4024,6 +4227,36 @@
                           "android"
                         ],
                         "additionalProperties": false
+                      },
+                      "broadcast": {
+                        "type": "object",
+                        "properties": {
+                          "weeklyMarketingCap": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 14
+                          },
+                          "quietStart": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          },
+                          "quietEnd": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          },
+                          "emailDailyCap": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 10000
+                          }
+                        },
+                        "required": [
+                          "weeklyMarketingCap",
+                          "quietStart",
+                          "quietEnd",
+                          "emailDailyCap"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "additionalProperties": false
@@ -5021,7 +5254,7 @@
     },
     "/v1/legal": {
       "get": {
-        "description": "`?locale=tr|en`",
+        "description": "`?locale=` 11 dilden biri; Türkçe dışındakiler İngilizce metni alır",
         "operationId": "LegalController_index",
         "parameters": [
           {
@@ -5046,7 +5279,7 @@
     },
     "/v1/legal/{kind}": {
       "get": {
-        "description": "`?locale=tr|en&version=YYYY-MM-DD`",
+        "description": "`?locale=` (Türkçe dışındakiler İngilizce metni alır) `&version=YYYY-MM-DD`",
         "operationId": "LegalController_document",
         "parameters": [
           {
@@ -6029,6 +6262,3080 @@
           "admin"
         ]
       }
+    },
+    "/v1/admin/broadcasts": {
+      "get": {
+        "description": "Yeniden eskiye; `cursor` ile sayfalama.",
+        "operationId": "AdminBroadcastsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Toplu gönderimler",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminBroadcastsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 80
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 2000
+                  },
+                  "link": {
+                    "nullable": true,
+                    "type": "string",
+                    "pattern": "^\\/(studio|tasarimlarim|sohbet|fiyatlar)(\\?[a-z_]{1,20}=[a-z0-9_-]{1,40})?$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "SERVICE",
+                      "MARKETING"
+                    ]
+                  },
+                  "channel": {
+                    "default": "PUSH",
+                    "type": "string",
+                    "enum": [
+                      "PUSH",
+                      "EMAIL"
+                    ]
+                  },
+                  "audience": {
+                    "type": "object",
+                    "properties": {
+                      "plan": {
+                        "type": "string",
+                        "enum": [
+                          "FREE",
+                          "PRO"
+                        ]
+                      },
+                      "platform": {
+                        "type": "string",
+                        "enum": [
+                          "ios",
+                          "android"
+                        ]
+                      },
+                      "locale": {
+                        "type": "string",
+                        "enum": [
+                          "tr",
+                          "en",
+                          "de",
+                          "es",
+                          "fr",
+                          "it",
+                          "ru",
+                          "nl",
+                          "ja",
+                          "ko",
+                          "zh"
+                        ]
+                      },
+                      "accounts": {
+                        "default": "all",
+                        "type": "string",
+                        "enum": [
+                          "all",
+                          "registered",
+                          "guests"
+                        ]
+                      },
+                      "inactiveDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 365
+                      },
+                      "activeDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 365
+                      },
+                      "registeredAfter": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "registeredBefore": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "emails": {
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 254,
+                          "format": "email",
+                          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "title",
+                  "body",
+                  "kind",
+                  "audience"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Taslak oluştur",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/links": {
+      "get": {
+        "operationId": "AdminBroadcastsController_links",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Bildirimde kullanılabilecek uygulama içi bağlantılar",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/estimate": {
+      "post": {
+        "description": "`withDevice`: ulaşılabilir eşleşen kullanıcı (PUSH: cihazı kayıtlı, EMAIL: e-postası doğrulanmış); `eligible`: kampanyada pazarlama izni de olanlar.",
+        "operationId": "AdminBroadcastsController_estimate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audience": {
+                    "type": "object",
+                    "properties": {
+                      "plan": {
+                        "type": "string",
+                        "enum": [
+                          "FREE",
+                          "PRO"
+                        ]
+                      },
+                      "platform": {
+                        "type": "string",
+                        "enum": [
+                          "ios",
+                          "android"
+                        ]
+                      },
+                      "locale": {
+                        "type": "string",
+                        "enum": [
+                          "tr",
+                          "en",
+                          "de",
+                          "es",
+                          "fr",
+                          "it",
+                          "ru",
+                          "nl",
+                          "ja",
+                          "ko",
+                          "zh"
+                        ]
+                      },
+                      "accounts": {
+                        "default": "all",
+                        "type": "string",
+                        "enum": [
+                          "all",
+                          "registered",
+                          "guests"
+                        ]
+                      },
+                      "inactiveDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 365
+                      },
+                      "activeDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 365
+                      },
+                      "registeredAfter": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "registeredBefore": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "emails": {
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 254,
+                          "format": "email",
+                          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "SERVICE",
+                      "MARKETING"
+                    ]
+                  },
+                  "channel": {
+                    "default": "PUSH",
+                    "type": "string",
+                    "enum": [
+                      "PUSH",
+                      "EMAIL"
+                    ]
+                  }
+                },
+                "required": [
+                  "audience",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Kitle tahmini",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/precheck": {
+      "post": {
+        "description": "`blocked`: \"Bilgilendirme\" türünde ticari ifade var; tür \"Kampanya\" olmalı.",
+        "operationId": "AdminBroadcastsController_precheck",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 80
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 2000
+                  },
+                  "link": {
+                    "nullable": true,
+                    "type": "string",
+                    "pattern": "^\\/(studio|tasarimlarim|sohbet|fiyatlar)(\\?[a-z_]{1,20}=[a-z0-9_-]{1,40})?$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "SERVICE",
+                      "MARKETING"
+                    ]
+                  },
+                  "channel": {
+                    "default": "PUSH",
+                    "type": "string",
+                    "enum": [
+                      "PUSH",
+                      "EMAIL"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "body",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Metin ön kontrolü (ticari ileti işaretleri)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/test": {
+      "post": {
+        "description": "Metni yalnız verilen e-postadaki uygulama hesabının cihazlarına \"[Test]\" önekiyle gönderir; rapora yazılmaz.",
+        "operationId": "AdminBroadcastsController_test",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 80
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 2000
+                  },
+                  "link": {
+                    "nullable": true,
+                    "type": "string",
+                    "pattern": "^\\/(studio|tasarimlarim|sohbet|fiyatlar)(\\?[a-z_]{1,20}=[a-z0-9_-]{1,40})?$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "SERVICE",
+                      "MARKETING"
+                    ]
+                  },
+                  "channel": {
+                    "default": "PUSH",
+                    "type": "string",
+                    "enum": [
+                      "PUSH",
+                      "EMAIL"
+                    ]
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "format": "email",
+                    "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  }
+                },
+                "required": [
+                  "title",
+                  "body",
+                  "kind",
+                  "email"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Kendine test gönder",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/{id}": {
+      "get": {
+        "description": "Sayaçlar, durum/neden dağılımı ve son 50 alıcı.",
+        "operationId": "AdminBroadcastsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Gönderim raporu",
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminBroadcastsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 80
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 2000
+                  },
+                  "link": {
+                    "nullable": true,
+                    "type": "string",
+                    "pattern": "^\\/(studio|tasarimlarim|sohbet|fiyatlar)(\\?[a-z_]{1,20}=[a-z0-9_-]{1,40})?$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "SERVICE",
+                      "MARKETING"
+                    ]
+                  },
+                  "channel": {
+                    "default": "PUSH",
+                    "type": "string",
+                    "enum": [
+                      "PUSH",
+                      "EMAIL"
+                    ]
+                  },
+                  "audience": {
+                    "type": "object",
+                    "properties": {
+                      "plan": {
+                        "type": "string",
+                        "enum": [
+                          "FREE",
+                          "PRO"
+                        ]
+                      },
+                      "platform": {
+                        "type": "string",
+                        "enum": [
+                          "ios",
+                          "android"
+                        ]
+                      },
+                      "locale": {
+                        "type": "string",
+                        "enum": [
+                          "tr",
+                          "en",
+                          "de",
+                          "es",
+                          "fr",
+                          "it",
+                          "ru",
+                          "nl",
+                          "ja",
+                          "ko",
+                          "zh"
+                        ]
+                      },
+                      "accounts": {
+                        "default": "all",
+                        "type": "string",
+                        "enum": [
+                          "all",
+                          "registered",
+                          "guests"
+                        ]
+                      },
+                      "inactiveDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 365
+                      },
+                      "activeDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 365
+                      },
+                      "registeredAfter": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "registeredBefore": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "emails": {
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 254,
+                          "format": "email",
+                          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "title",
+                  "body",
+                  "kind",
+                  "audience"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Taslağı / zamanlanmışı düzenle",
+        "tags": [
+          "admin"
+        ]
+      },
+      "delete": {
+        "description": "Gönderim sürerken silinemez. Metin ve sayaçlar denetim kaydında kalır.",
+        "operationId": "AdminBroadcastsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Sil",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/{id}/send": {
+      "post": {
+        "description": "Kampanya sessiz saatlerdeyse gönderim saatin bitimine zamanlanır.",
+        "operationId": "AdminBroadcastsController_send",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Şimdi gönder",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/{id}/schedule": {
+      "post": {
+        "operationId": "AdminBroadcastsController_schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "at"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Zamanla",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/broadcasts/{id}/cancel": {
+      "post": {
+        "description": "Sürmekte olan gönderim bir sonraki turda durur; gidenler geri alınamaz.",
+        "operationId": "AdminBroadcastsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "İptal et",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/broadcasts/{id}/opened": {
+      "post": {
+        "description": "Kullanıcı başına bir kez sayılır; bilinmeyen kimlik sessizce yok sayılır.",
+        "operationId": "BroadcastsController_opened",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toplu bildirim açıldı",
+        "tags": [
+          "user"
+        ]
+      }
+    },
+    "/v1/unsubscribe": {
+      "post": {
+        "description": "E-postadaki bağlantının `r` (teslim kimliği) ve `t` (imza) değerleri; pazarlama izni geri çekilir.",
+        "operationId": "UnsubscribeController_unsubscribe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "r": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "t": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "r",
+                  "t"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Kampanya e-postalarından çık",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/v1/unsubscribe/one-click": {
+      "post": {
+        "description": "E-posta sağlayıcısı List-Unsubscribe-Post ile çağırır; `r` ve `t` sorgu parametresidir.",
+        "operationId": "UnsubscribeController_oneClick",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Tek tıkla abonelikten çık (RFC 8058)",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/v1/admin/marketing/facts": {
+      "get": {
+        "description": "Katalogdan ve ayarlardan üretilir; ajan yalnız bunları kullanabilir. `?locale=` ile o dildeki uygulama adları.",
+        "operationId": "AdminMarketingController_facts",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Ajanlara verilen bilgi sayfası",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/drafts": {
+      "get": {
+        "description": "`?kind=aso|social|campaign|report|blog|seo`; arşivlenmemişler, yeniden eskiye (en çok 200).",
+        "operationId": "AdminMarketingController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Taslaklar",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/aso": {
+      "post": {
+        "description": "Dil başına bir taslak (≈1 dk, ≈0,1 $).",
+        "operationId": "AdminMarketingController_runAso",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "locales": {
+                    "minItems": 1,
+                    "maxItems": 11,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "tr",
+                        "en",
+                        "de",
+                        "es",
+                        "fr",
+                        "it",
+                        "ru",
+                        "nl",
+                        "ja",
+                        "ko",
+                        "zh"
+                      ]
+                    }
+                  },
+                  "brief": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "whatsNew": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "locales"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Mağaza metni yaz",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/social": {
+      "post": {
+        "description": "Stil × platform × dil başına bir taslak (en çok 30). Görsel: kendi örnek odamız ve stil fotoğrafı.",
+        "operationId": "AdminMarketingController_runSocial",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "styleIds": {
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z_]{2,40}$"
+                    }
+                  },
+                  "platforms": {
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "instagram",
+                        "tiktok",
+                        "pinterest"
+                      ]
+                    }
+                  },
+                  "locales": {
+                    "minItems": 1,
+                    "maxItems": 11,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "tr",
+                        "en",
+                        "de",
+                        "es",
+                        "fr",
+                        "it",
+                        "ru",
+                        "nl",
+                        "ja",
+                        "ko",
+                        "zh"
+                      ]
+                    }
+                  },
+                  "brief": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "styleIds",
+                  "platforms",
+                  "locales"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Sosyal medya gönderisi yaz",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/social/styles": {
+      "get": {
+        "description": "Örnek odadan üretilmiş fotoğrafı olan stiller.",
+        "operationId": "AdminMarketingController_socialStyles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Gönderide kullanılabilecek stiller",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/drafts/{id}/image": {
+      "get": {
+        "description": "`?format=square|story|pin` → `{ dataUrl, width, height }` (JPEG).",
+        "operationId": "AdminMarketingController_image",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Gönderi görseli",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/campaign": {
+      "post": {
+        "description": "Dil başına bir taslak; ticari ifade kontrolü taslakta da yapılır.",
+        "operationId": "AdminMarketingController_runCampaign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "locales": {
+                    "minItems": 1,
+                    "maxItems": 11,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "tr",
+                        "en",
+                        "de",
+                        "es",
+                        "fr",
+                        "it",
+                        "ru",
+                        "nl",
+                        "ja",
+                        "ko",
+                        "zh"
+                      ]
+                    }
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "PUSH",
+                      "EMAIL"
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "SERVICE",
+                      "MARKETING"
+                    ]
+                  },
+                  "goal": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "locales",
+                  "channel",
+                  "kind",
+                  "goal"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Toplu gönderim metni yaz",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/blog": {
+      "post": {
+        "description": "Konudan bir yazı (varsayılan Türkçe, ≈1–2 dk, ≈0,1 $). Onaylanınca yayına girer.",
+        "operationId": "AdminMarketingController_runBlog",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "topic": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 300
+                  },
+                  "keywords": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "locale": {
+                    "default": "tr",
+                    "type": "string",
+                    "enum": [
+                      "tr",
+                      "en",
+                      "de",
+                      "es",
+                      "fr",
+                      "it",
+                      "ru",
+                      "nl",
+                      "ja",
+                      "ko",
+                      "zh"
+                    ]
+                  },
+                  "styleId": {
+                    "type": "string",
+                    "pattern": "^[a-z_]{2,40}$"
+                  }
+                },
+                "required": [
+                  "topic"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Blog yazısı yaz",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/blog/translate": {
+      "post": {
+        "description": "Dil başına bir taslak; onaylanan çeviri yazının o dildeki sürümü olarak yayına girer.",
+        "operationId": "AdminMarketingController_translateBlog",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "postId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "locales": {
+                    "minItems": 1,
+                    "maxItems": 11,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "tr",
+                        "en",
+                        "de",
+                        "es",
+                        "fr",
+                        "it",
+                        "ru",
+                        "nl",
+                        "ja",
+                        "ko",
+                        "zh"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "postId",
+                  "locales"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Yayındaki yazıyı başka dillere çevir",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/seo": {
+      "post": {
+        "description": "Dil başına ana sayfa, stüdyo, fiyatlar, sohbet ve blog için; onaylanan metin sitede kullanılır (≈5 dk içinde).",
+        "operationId": "AdminMarketingController_runSeo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "locales": {
+                    "minItems": 1,
+                    "maxItems": 11,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "tr",
+                        "en",
+                        "de",
+                        "es",
+                        "fr",
+                        "it",
+                        "ru",
+                        "nl",
+                        "ja",
+                        "ko",
+                        "zh"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "locales"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "busy / generation_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Sayfa başlığı ve açıklaması yaz",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/drafts/{id}/broadcast": {
+      "post": {
+        "description": "Onaylı metin, o dildeki kullanıcılara giden bir Toplu Gönderim TASLAĞI olur; gönderim kendi ekranından yapılır.",
+        "operationId": "AdminMarketingController_toBroadcast",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Kampanya metninden toplu gönderim taslağı aç",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/report": {
+      "post": {
+        "description": "`send: true` raporu SUPER_ADMIN adreslerine de gönderir. Her pazartesi 09:00 kendiliğinden gönderilir.",
+        "operationId": "AdminMarketingController_runReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "send": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Haftalık raporu şimdi oluştur",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/aso/export": {
+      "get": {
+        "description": "`appStore`: EAS Metadata `store.config.json`; `googlePlay`: Play Console için dil başına metinler.",
+        "operationId": "AdminMarketingController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Onaylı mağaza metinleri",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/drafts/{id}": {
+      "patch": {
+        "description": "Türün sınırları denetlenir. Onaylı taslak düzenlenince yeniden onay ister.",
+        "operationId": "AdminMarketingController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "output": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "output"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "validation_failed / bad_request / invalid_token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Taslağı düzenle",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/drafts/{id}/approve": {
+      "post": {
+        "description": "Mağaza metni ve SEO: dilin güncel metni olur, öncekisi arşivlenir. Blog: yazı yayına girer.",
+        "operationId": "AdminMarketingController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "no_change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Taslağı onayla",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/marketing/drafts/{id}/archive": {
+      "post": {
+        "operationId": "AdminMarketingController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Taslağı arşivle",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/blog": {
+      "get": {
+        "description": "`?locale=` (11 dil), yeniden eskiye, en çok 100.",
+        "operationId": "BlogController_list",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Yayındaki blog yazıları",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/v1/blog/sitemap": {
+      "get": {
+        "operationId": "BlogController_sitemap",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Site haritası için bütün yayındaki yazılar (dil, adres, çeviri grubu)",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/v1/blog/{slug}": {
+      "get": {
+        "description": "`?locale=`; gövde Markdown alt kümesi; `translations` hreflang için.",
+        "operationId": "BlogController_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Blog yazısı",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/v1/seo/meta": {
+      "get": {
+        "description": "`?locale=` → `{ pages: { home: { title, description }, … } }`; onaylı yoksa boş.",
+        "operationId": "BlogController_seo",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Onaylı sayfa başlıkları ve açıklamaları",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/v1/admin/blog": {
+      "get": {
+        "operationId": "AdminBlogController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Blog yazıları (yayında ve yayından kaldırılmış)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/blog/{id}/unpublish": {
+      "post": {
+        "operationId": "AdminBlogController_unpublish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Yazıyı yayından kaldır",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/blog/{id}/publish": {
+      "post": {
+        "operationId": "AdminBlogController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden / consent_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Yazıyı yeniden yayınla",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -6166,7 +9473,16 @@
             "type": "string",
             "enum": [
               "tr",
-              "en"
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
             ]
           },
           "createdAt": {
@@ -6256,7 +9572,16 @@
                 "type": "string",
                 "enum": [
                   "tr",
-                  "en"
+                  "en",
+                  "de",
+                  "es",
+                  "fr",
+                  "it",
+                  "ru",
+                  "nl",
+                  "ja",
+                  "ko",
+                  "zh"
                 ]
               },
               "createdAt": {
@@ -6937,6 +10262,35 @@
         "required": [
           "image",
           "quality"
+        ],
+        "additionalProperties": false
+      },
+      "Selection": {
+        "type": "object",
+        "properties": {
+          "mask": {
+            "type": "string",
+            "description": "data:image/png;base64,… — gri tonlu, fotoğrafla aynı boyutta; seçili alan 255"
+          },
+          "coverage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Seçimin fotoğraftaki payı"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "sam3",
+              "heuristic"
+            ],
+            "description": "heuristic: yalnız demo (mock) modunda"
+          }
+        },
+        "required": [
+          "mask",
+          "coverage",
+          "method"
         ],
         "additionalProperties": false
       },

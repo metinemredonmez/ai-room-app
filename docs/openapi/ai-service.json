@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI Room AI Service",
-    "description": "Internal AI service of AI Room. Only the backend calls it (header `X-Internal-Token`).\n\n* image generation with a provider fallback chain, circuit breakers and a 150 s time budget\n* region lock for paint / flooring / replace / targeted declutter: SAM 3 mask, pixels outside it stay the user's\n* capture-quality gate, no-change detection\n* Claude design chat and shopping/budget analysis\n* every AI answer carries a `usage` cost-ledger entry (API.md §7.2)\n\nErrors: `{\"error\": {\"code\", \"message\", \"retryable\"}}` — the backend retries only when `retryable` is true.",
+    "title": "Casalume AI Service",
+    "description": "Internal AI service of Casalume. Only the backend calls it (header `X-Internal-Token`).\n\n* image generation with a provider fallback chain, circuit breakers and a 150 s time budget\n* region lock for paint / flooring / replace / targeted declutter: SAM 3 mask, pixels outside it stay the user's\n* tap selection: the user taps the objects to change; `/segment` previews the mask before anything is generated\n* capture-quality gate, no-change detection\n* Claude design chat and shopping/budget analysis\n* marketing drafts for the admin (store listing per language)\n* every AI answer carries a `usage` cost-ledger entry (API.md §7.2)\n\nErrors: `{\"error\": {\"code\", \"message\", \"retryable\"}}` — the backend retries only when `retryable` is true.",
     "version": "1.1.0"
   },
   "paths": {
@@ -141,6 +141,112 @@
           },
           "502": {
             "description": "`ai_unavailable`: providers failed or the 150 s budget ran out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/segment": {
+      "post": {
+        "tags": [
+          "generation"
+        ],
+        "summary": "Selection preview: the mask for tapped objects or an object name",
+        "operationId": "segment_preview_internal_v1_segment_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SegmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`selection_failed`: nothing usable at the taps (usage included)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`ai_unavailable`: the segmenter failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`selection_unavailable`: no segmenter or REGION_LOCK=off",
             "content": {
               "application/json": {
                 "schema": {
@@ -434,6 +540,582 @@
           }
         ]
       }
+    },
+    "/internal/v1/marketing/aso": {
+      "post": {
+        "tags": [
+          "marketing"
+        ],
+        "summary": "App Store + Google Play listing draft for one language",
+        "operationId": "marketing_aso_internal_v1_marketing_aso_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/marketing/social": {
+      "post": {
+        "tags": [
+          "marketing"
+        ],
+        "summary": "Caption, hashtags and alt text for a before/after post of one style",
+        "operationId": "marketing_social_internal_v1_marketing_social_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/marketing/campaign": {
+      "post": {
+        "tags": [
+          "marketing"
+        ],
+        "summary": "Push / e-mail text for a Toplu Gönderim draft",
+        "operationId": "marketing_campaign_internal_v1_marketing_campaign_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/marketing/report": {
+      "post": {
+        "tags": [
+          "marketing"
+        ],
+        "summary": "Turkish reading of the owner's weekly numbers",
+        "operationId": "marketing_report_internal_v1_marketing_report_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/marketing/blog": {
+      "post": {
+        "tags": [
+          "marketing"
+        ],
+        "summary": "Blog article: written from a topic or translated from a published one",
+        "operationId": "marketing_blog_internal_v1_marketing_blog_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlogRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/internal/v1/marketing/seo": {
+      "post": {
+        "tags": [
+          "marketing"
+        ],
+        "summary": "Page titles and meta descriptions for one language",
+        "operationId": "marketing_seo_internal_v1_marketing_seo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong X-Internal-Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body larger than 40 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not a JPEG/PNG/WEBP image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Assistant unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -503,7 +1185,16 @@
             "type": "string",
             "enum": [
               "tr",
-              "en"
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
             ],
             "title": "Locale",
             "default": "tr"
@@ -591,6 +1282,424 @@
           "disclaimer"
         ],
         "title": "AnalyzeResponse"
+      },
+      "AsoListing": {
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "title": "App Name"
+          },
+          "app_subtitle": {
+            "type": "string",
+            "title": "App Subtitle"
+          },
+          "app_keywords": {
+            "type": "string",
+            "title": "App Keywords"
+          },
+          "app_promo": {
+            "type": "string",
+            "title": "App Promo"
+          },
+          "app_description": {
+            "type": "string",
+            "title": "App Description"
+          },
+          "app_whats_new": {
+            "type": "string",
+            "title": "App Whats New"
+          },
+          "play_title": {
+            "type": "string",
+            "title": "Play Title"
+          },
+          "play_short": {
+            "type": "string",
+            "title": "Play Short"
+          },
+          "play_description": {
+            "type": "string",
+            "title": "Play Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_name",
+          "app_subtitle",
+          "app_keywords",
+          "app_promo",
+          "app_description",
+          "app_whats_new",
+          "play_title",
+          "play_short",
+          "play_description"
+        ],
+        "title": "AsoListing"
+      },
+      "AsoRequest": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
+            ],
+            "title": "Locale"
+          },
+          "facts": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 50,
+            "title": "Facts"
+          },
+          "brief": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief",
+            "description": "Owner's notes: emphasis, audience, campaign"
+          },
+          "whats_new": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whats New",
+            "description": "Changes in this release"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locale",
+          "facts"
+        ],
+        "title": "AsoRequest",
+        "description": "Store listing draft for one language (API.md §7.18). `facts` is the backend's fact sheet."
+      },
+      "AsoResponse": {
+        "properties": {
+          "listing": {
+            "$ref": "#/components/schemas/AsoListing"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations",
+            "description": "Fields still over the store limit after one rewrite"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "listing",
+          "violations",
+          "usage"
+        ],
+        "title": "AsoResponse"
+      },
+      "BlogArticle": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "slug",
+          "body"
+        ],
+        "title": "BlogArticle"
+      },
+      "BlogRequest": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
+            ],
+            "title": "Locale"
+          },
+          "facts": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 50,
+            "title": "Facts"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          },
+          "keywords": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlogSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Links",
+            "description": "In-site paths the article may link to"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locale",
+          "facts"
+        ],
+        "title": "BlogRequest",
+        "description": "Blog article (API.md §7.18): written from a topic, or translated from a published article."
+      },
+      "BlogResponse": {
+        "properties": {
+          "article": {
+            "$ref": "#/components/schemas/BlogArticle"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "article",
+          "violations",
+          "usage"
+        ],
+        "title": "BlogResponse"
+      },
+      "BlogSource": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 400,
+            "title": "Description"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 40000,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "body"
+        ],
+        "title": "BlogSource"
+      },
+      "CampaignRequest": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
+            ],
+            "title": "Locale"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "PUSH",
+              "EMAIL"
+            ],
+            "title": "Channel"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SERVICE",
+              "MARKETING"
+            ],
+            "title": "Kind"
+          },
+          "goal": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 5,
+            "title": "Goal"
+          },
+          "facts": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 50,
+            "title": "Facts"
+          },
+          "links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Links",
+            "description": "In-app paths the message may open"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locale",
+          "channel",
+          "kind",
+          "goal",
+          "facts"
+        ],
+        "title": "CampaignRequest",
+        "description": "Text of a Toplu Gönderim message (push or e-mail) for one language (API.md §7.18)."
+      },
+      "CampaignResponse": {
+        "properties": {
+          "message": {
+            "$ref": "#/components/schemas/CampaignText"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "violations",
+          "usage"
+        ],
+        "title": "CampaignResponse"
+      },
+      "CampaignText": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "body"
+        ],
+        "title": "CampaignText"
       },
       "CatalogEntry": {
         "properties": {
@@ -686,7 +1795,16 @@
             "type": "string",
             "enum": [
               "tr",
-              "en"
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
             ],
             "title": "Locale",
             "default": "tr"
@@ -933,6 +2051,23 @@
               }
             ],
             "title": "Reference Image B64"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Point"
+                },
+                "type": "array",
+                "maxItems": 8,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points",
+            "description": "Tap selection, one object per point"
           }
         },
         "additionalProperties": false,
@@ -1048,6 +2183,30 @@
           "providers"
         ],
         "title": "HealthResponse"
+      },
+      "Point": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y"
+        ],
+        "title": "Point",
+        "description": "A tap on the photo, 0..1 from the top-left corner. Each point selects one object (API.md §7.15)."
       },
       "ProviderState": {
         "properties": {
@@ -1254,6 +2413,398 @@
         ],
         "title": "RenovationItem"
       },
+      "ReportRequest": {
+        "properties": {
+          "metrics": {
+            "type": "string",
+            "maxLength": 12000,
+            "minLength": 20,
+            "title": "Metrics",
+            "description": "JSON of this week's and last week's numbers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "metrics"
+        ],
+        "title": "ReportRequest",
+        "description": "Owner's weekly report: the backend's numbers, Claude's short reading of them (Turkish)."
+      },
+      "ReportResponse": {
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/ReportText"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report",
+          "usage"
+        ],
+        "title": "ReportResponse"
+      },
+      "ReportText": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Highlights"
+          },
+          "actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Actions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "highlights",
+          "actions"
+        ],
+        "title": "ReportText"
+      },
+      "SegmentRequest": {
+        "properties": {
+          "image_b64": {
+            "type": "string",
+            "maxLength": 17000000,
+            "minLength": 100,
+            "title": "Image B64",
+            "description": "Base64-encoded JPEG/PNG/WEBP image"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Point"
+                },
+                "type": "array",
+                "maxItems": 8,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points",
+            "description": "Tap selection, one object per point"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "image_b64"
+        ],
+        "title": "SegmentRequest",
+        "description": "Selection preview: the mask the region lock would use for these taps (or this object name)."
+      },
+      "SegmentResponse": {
+        "properties": {
+          "mask_b64": {
+            "type": "string",
+            "title": "Mask B64",
+            "description": "PNG, grayscale, source size: 255 inside the selection, 0 outside"
+          },
+          "coverage": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "sam3",
+              "heuristic"
+            ],
+            "title": "Method"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mask_b64",
+          "coverage",
+          "method",
+          "usage"
+        ],
+        "title": "SegmentResponse"
+      },
+      "SeoMeta": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "description"
+        ],
+        "title": "SeoMeta"
+      },
+      "SeoPage": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Key"
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 80,
+            "title": "Path"
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Purpose"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "path",
+          "purpose"
+        ],
+        "title": "SeoPage"
+      },
+      "SeoRequest": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
+            ],
+            "title": "Locale"
+          },
+          "facts": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 50,
+            "title": "Facts"
+          },
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/SeoPage"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Pages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locale",
+          "facts",
+          "pages"
+        ],
+        "title": "SeoRequest"
+      },
+      "SeoResponse": {
+        "properties": {
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/SeoMeta"
+            },
+            "type": "array",
+            "title": "Pages"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pages",
+          "violations",
+          "usage"
+        ],
+        "title": "SeoResponse"
+      },
+      "SocialPost": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Pinterest pin title; the opening hook elsewhere"
+          },
+          "caption": {
+            "type": "string",
+            "title": "Caption"
+          },
+          "hashtags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hashtags"
+          },
+          "alt_text": {
+            "type": "string",
+            "title": "Alt Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "caption",
+          "hashtags",
+          "alt_text"
+        ],
+        "title": "SocialPost"
+      },
+      "SocialRequest": {
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "tr",
+              "en",
+              "de",
+              "es",
+              "fr",
+              "it",
+              "ru",
+              "nl",
+              "ja",
+              "ko",
+              "zh"
+            ],
+            "title": "Locale"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "instagram",
+              "tiktok",
+              "pinterest"
+            ],
+            "title": "Platform"
+          },
+          "style_name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Style Name"
+          },
+          "style_description": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Style Description",
+            "default": ""
+          },
+          "facts": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 50,
+            "title": "Facts"
+          },
+          "brief": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locale",
+          "platform",
+          "style_name",
+          "facts"
+        ],
+        "title": "SocialRequest",
+        "description": "Caption for a before/after post of one style (API.md §7.18)."
+      },
+      "SocialResponse": {
+        "properties": {
+          "post": {
+            "$ref": "#/components/schemas/SocialPost"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "post",
+          "violations",
+          "usage"
+        ],
+        "title": "SocialResponse"
+      },
       "Suggestion": {
         "properties": {
           "label": {
@@ -1334,7 +2885,9 @@
               "generate",
               "analyze",
               "chat",
-              "describe"
+              "describe",
+              "segment",
+              "marketing"
             ],
             "title": "Kind"
           },
@@ -1446,6 +2999,10 @@
     {
       "name": "assistant",
       "description": "Claude chat and analysis (demo answers without a key)"
+    },
+    {
+      "name": "marketing",
+      "description": "Marketing drafts for the admin (store listing); never published from here"
     },
     {
       "name": "health",

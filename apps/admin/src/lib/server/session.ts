@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { apiBaseUrl, cookieOptions, PROFILE_COOKIE, SESSION_COOKIE } from "@/lib/server/config";
+import { forwardedFor } from "@/lib/server/client-ip";
 import { errorResponse } from "@/lib/server/guards";
 import { ADMIN_ROLES, type AdminRole } from "@/lib/types";
 
@@ -32,6 +33,7 @@ export async function backendAuth(path: string, body: unknown): Promise<Response
         "content-type": "application/json",
         accept: "application/json",
         "accept-language": "tr",
+        ...(await forwardedFor()),
         ...(panelKey ? { "x-admin-panel-key": panelKey } : {}),
       },
       body: JSON.stringify(body),

@@ -455,6 +455,9 @@ export class UserController {
     const locale = input.locale ?? localeOf(req);
     const withImages = input.messages.filter((m) => m.imageId);
     if (withImages.length > 3) throw new AppError(400, 'validation_failed', 'En fazla 3 görsel eklenebilir');
+    // Photos go to the AI provider: the same AI-processing consent as a generation (KVKK).
+    if (withImages.length) await this.designs.assertAiConsent(auth.userId);
+    await this.designs.assertBudgetFor(auth.userId);
     const messages = await Promise.all(
       input.messages.map(async (m) => ({
         role: m.role,
