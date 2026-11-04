@@ -133,6 +133,7 @@ model User {
   identities          AuthIdentity[]
   dataRequests        DataRequest[]
   supportTickets      SupportTicket[]
+  orgMemberships      OrgMember[]
   images              Image[]
   designs             Design[]
   ledger              CreditLedger[]
@@ -642,4 +643,68 @@ model WelcomeGrant {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+/// Corporate workspace (API.md §7.23): a firm with members and a shared credit pool. Firms are created and topped
+/// up from the admin panel (invoiced outside the app). Access to anything a firm owns is decided by OrgMember on
+/// every request, and every firm-owned row carries orgId (AZ-01/AZ-02).
+model Organization {
+  id               String      @id @default(uuid()) @db.Uuid
+  name             String
+  status           OrgStatus   @default(ACTIVE)
+  credits          Int         @default(0)
+  /// Default monthly credit cap for members without their own; null = no cap.
+  memberMonthlyCap Int?
+  /// Staff-only note (contract, invoice reference). Never shown to the firm.
+  note             String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  members          OrgMember[]
+  ledger           OrgLedger[]
+
+  @@index([createdAt])
+}
+
+/// One person in one firm. Exactly one OWNER per firm (kept by the service under a lock).
+model OrgMember {
+  orgId      String       @db.Uuid
+  userId     String       @db.Uuid
+  role       OrgRole      @default(MEMBER)
+  /// Monthly credit cap for this member; null = the firm default.
+  monthlyCap Int?
+  createdAt  DateTime     @default(now())
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([orgId, userId])
+  @@index([userId])
+}
+
+/// The firm's credit pool movements: staff top-ups (actorId) and members' spending (userId).
+model OrgLedger {
+  id        String       @id @default(uuid()) @db.Uuid
+  orgId     String       @db.Uuid
+  delta     Int
+  reason    String
+  /// The member who spent (null for a staff top-up). An id only, so the firm's history survives a member leaving.
+  userId    String?      @db.Uuid
+  /// The staff member who changed the pool.
+  actorId   String?      @db.Uuid
+  refId     String?
+  createdAt DateTime     @default(now())
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([orgId, userId, createdAt])
 }

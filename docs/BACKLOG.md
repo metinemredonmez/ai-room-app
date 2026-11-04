@@ -195,6 +195,14 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
   Keychain temizliği, uygulama içi değerlendirme istemi.
 
+### Kurumsal hesaplar (firmalar, API.md §7.23)
+- [x] 1. adım: firma, roller (sahip/yönetici/üye), ortak kredi havuzu, üye başı aylık sınır; admin **Firmalar** sayfaları,
+  denetim, veri indirmede üyelikler. Havuz eksiye inemez (CHECK kısıtı), sahip yalnız devirle değişir.
+- [ ] 2. adım: e-postayla davet + "Kişisel / Firma" çalışma alanı; firma alanında tasarım havuzdan ve aylık sınırdan harcar.
+- [ ] 3. adım: web ekip sayfası (üyeler, davetler, roller, kişi başı kullanım) ve üst menüde alan geçişi.
+- [ ] 4. adım: firma içinde projeler / müşteri klasörleri.
+- [ ] 5. adım: logolu müşteri sunumu (paylaşım sayfasıyla), alan adıyla katılım, kartla ödeme, kurumsal SSO.
+
 ### Masaüstü kataloglarından eksikler (4 Kasım; YediOda kataloğu, MAEYJA ve Palemi kurulum belgeleri)
 Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/apps-features/` klasörüne gelecek.
 - [x] Hoş geldin kredisi (API.md §7.22): Ayarlar'dan miktar; e-posta / Apple / Google kimliği başına bir kez, hesap silinse de (HMAC özeti 3 yıl); web doğrulama sayfasında 11 dilde mesaj (Palemi 5.7)

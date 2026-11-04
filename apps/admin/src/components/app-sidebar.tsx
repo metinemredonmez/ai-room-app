@@ -22,6 +22,7 @@ import {
   ChartNoAxesColumn,
   ChartLine,
   Crown,
+  Building,
   Package,
   Newspaper,
   Search,
@@ -91,6 +92,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     label: "Kullanıcılar",
     items: [
       { href: "/users", label: "Kullanıcılar", icon: Users },
+      { href: "/orgs", label: "Firmalar", icon: Building },
       { href: "/support", label: "Destek", icon: LifeBuoy, badge: "openSupport" },
       { href: "/broadcasts", label: "Toplu Gönderim", icon: Megaphone },
     ],

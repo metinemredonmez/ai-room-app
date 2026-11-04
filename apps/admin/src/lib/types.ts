@@ -430,3 +430,32 @@ export type PlanCatalogState = {
   limits: { free: { dailyGenerations: number; maxVariants: number }; pro: { dailyGenerations: number; maxVariants: number } };
   revenuecatRest: boolean;
 };
+
+// API.md §7.23 firms (corporate workspaces)
+export type OrgStatus = "ACTIVE" | "SUSPENDED";
+export type OrgRole = "OWNER" | "ADMIN" | "MEMBER";
+export type AdminOrg = { id: string; name: string; status: OrgStatus; credits: number; members: number; ownerEmail: string | null; createdAt: string };
+export type AdminOrgMember = {
+  userId: string;
+  email: string | null;
+  name: string | null;
+  userStatus: "ACTIVE" | "BANNED";
+  role: OrgRole;
+  monthlyCap: number | null;
+  effectiveCap: number | null;
+  usedThisMonth: number;
+  joinedAt: string;
+};
+export type AdminOrgDetail = {
+  id: string;
+  name: string;
+  status: OrgStatus;
+  credits: number;
+  memberMonthlyCap: number | null;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  owner: { userId: string; email: string | null } | null;
+  members: AdminOrgMember[];
+  ledger: { id: string; delta: number; reason: string; userId: string | null; actorId: string | null; createdAt: string }[];
+};

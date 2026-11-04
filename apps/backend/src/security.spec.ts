@@ -20,6 +20,7 @@ import { AdminBroadcastsController } from './broadcasts/broadcasts.controller.js
 import { AdminSupportController } from './support/support.controller.js';
 import { AdminAnalyticsController } from './admin/analytics.controller.js';
 import { AdminPlansController, AdminSubscriptionsController } from './billing/billing-admin.controller.js';
+import { AdminOrgsController } from './orgs/orgs.admin.controller.js';
 import { resolveClientIp } from './common/http.js';
 import { EmailTokensService } from './auth/email-tokens.service.js';
 import { loadConfig, type Config } from './config.js';
@@ -264,7 +265,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('every admin route declares its least role', () => {
     const reflector = new Reflector();
     const missing: string[] = [];
-    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController]) {
+    for (const ctrl of [AdminController, AdminSelfController, AdminsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, AdminMarketingController, AdminBlogController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController]) {
       for (const name of Object.getOwnPropertyNames(ctrl.prototype)) {
         const handler = (ctrl.prototype as unknown as Record<string, unknown>)[name];
         if (name === 'constructor' || typeof handler !== 'function' || Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;
@@ -283,6 +284,12 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
     const r = (proto: object, name: string) => Reflect.getMetadata(MIN_ROLE, (proto as Record<string, unknown>)[name] as object);
     expect([r(AdminPlansController.prototype, 'catalog'), r(AdminPlansController.prototype, 'save')]).toEqual(['SUPPORT', 'ADMIN']);
     expect([r(AdminSubscriptionsController.prototype, 'list'), r(AdminSubscriptionsController.prototype, 'sync')]).toEqual(['SUPPORT', 'ADMIN']);
+  });
+
+  it('firms: SUPPORT reads, only ADMIN changes (AZ-01/AZ-05)', () => {
+    const r = (name: string) => Reflect.getMetadata(MIN_ROLE, (AdminOrgsController.prototype as unknown as Record<string, object>)[name]);
+    expect(['list', 'detail'].map(r)).toEqual(['SUPPORT', 'SUPPORT']);
+    expect(['create', 'update', 'credits', 'addMember', 'updateMember', 'removeMember'].map(r)).toEqual(Array(6).fill('ADMIN'));
   });
 
   const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN', amr = ['pwd', 'otp'], panelKey: string | null = null) => {

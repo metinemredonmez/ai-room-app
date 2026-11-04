@@ -701,10 +701,22 @@ if (adminToken) {
   const setWelcome = (n, reason) => call('PATCH', '/admin/settings', { ...A, body: { values: { welcomeCredits: n }, reason } });
   const on = await setWelcome(2, 'smoke welcome credits');
   const catWelcome = (await call('GET', '/catalog?locale=tr')).json?.welcomeCredits;
+  // Signing up again with the same address finds the first (used) mail at once: wait for a link not used before.
+  const usedTokens = new Set();
+  const freshToken = async (email) => {
+    for (let i = 0; i < 30; i++) {
+      const tk = tokenFrom(await lastMailTo(email, 'doğrula'));
+      if (tk && !usedTokens.has(tk)) {
+        usedTokens.add(tk);
+        return tk;
+      }
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return null;
+  };
   const signUp = async (email) => {
     const r = await call('POST', '/auth/register', { body: { email, password: 'welcome-password-123' } });
-    const mail = await lastMailTo(email, 'doğrula');
-    const v = await call('POST', '/auth/email/verify', { body: { token: tokenFrom(mail) } });
+    const v = await call('POST', '/auth/email/verify', { body: { token: await freshToken(email) } });
     const me = (await call('GET', '/me', { token: r.json?.accessToken })).json;
     return { token: r.json?.accessToken, gift: v.json?.welcomeCredits, credits: me?.credits };
   };
@@ -717,6 +729,40 @@ if (adminToken) {
   ok(gone.status === 204 && again.gift === 0 && again.credits === 0 && alias.gift === 0, 'deleting and signing up again (or a +alias) gets no second welcome (BUS-01)', `${again.gift}/${alias.gift}`);
   const off = await setWelcome(before, 'smoke welcome credits restore');
   ok(off.status === 200, 'welcome credits setting restored', String(before));
+}
+let firmIdForStaffCheck = null;
+// API.md §7.23 step 1: firms — pool never negative, one owner (transfer), staff accounts cannot join, export lists it.
+if (adminToken) {
+  const A = { token: adminToken };
+  const verifiedUser = async (tag) => {
+    const email = `${tag}-${Date.now()}@example.com`;
+    const r = await call('POST', '/auth/register', { body: { email, password: 'firm-password-1234' } });
+    await call('POST', '/auth/email/verify', { body: { token: tokenFrom(await lastMailTo(email, 'doğrula')) } });
+    return { email, token: r.json?.accessToken, id: r.json?.user?.id };
+  };
+  const owner = await verifiedUser('firm-owner');
+  const member = await verifiedUser('firm-member');
+  const created = await call('POST', '/admin/orgs', { ...A, body: { name: 'Smoke Mimarlık', ownerEmail: owner.email, credits: 10, reason: 'smoke firm' } });
+  const orgId = created.json?.id;
+  ok(created.status === 201 && created.json?.owner?.email === owner.email && created.json.credits === 10, 'admin creates a firm with an owner and a credit pool', String(created.status));
+  const tooMuch = await call('POST', `/admin/orgs/${orgId}/credits`, { ...A, body: { delta: -11, reason: 'smoke overdraw' } });
+  const fine = await call('POST', `/admin/orgs/${orgId}/credits`, { ...A, body: { delta: -4, reason: 'smoke adjust' } });
+  ok(tooMuch.status === 409 && fine.status === 201 && fine.json?.credits === 6, 'firm pool never goes below zero (BUS-01)', `${tooMuch.status}/${fine.json?.credits}`);
+  const staffJoin = await call('POST', `/admin/orgs/${orgId}/members`, { ...A, body: { email: creds.email, reason: 'smoke staff' } });
+  const added = await call('POST', `/admin/orgs/${orgId}/members`, { ...A, body: { email: member.email, role: 'MEMBER', monthlyCap: 5, reason: 'smoke member' } });
+  ok(staffJoin.status === 422 && added.status === 201 && added.json?.members?.length === 2, 'a staff account cannot join a firm; a verified user can', `${staffJoin.status}/${added.status}`);
+  const demoteOwner = await call('PATCH', `/admin/orgs/${orgId}/members/${owner.id}`, { ...A, body: { role: 'MEMBER', reason: 'smoke demote' } });
+  const transfer = await call('PATCH', `/admin/orgs/${orgId}/members/${member.id}`, { ...A, body: { role: 'OWNER', reason: 'smoke transfer' } });
+  const owners = (transfer.json?.members ?? []).filter((m) => m.role === 'OWNER').map((m) => m.email);
+  ok(demoteOwner.status === 409 && transfer.status === 200 && owners.length === 1 && owners[0] === member.email, 'one owner: changed only by a transfer', `${demoteOwner.status}/${owners.join(',')}`);
+  const removed = await call('POST', `/admin/orgs/${orgId}/members/${owner.id}/remove`, { ...A, body: { reason: 'smoke remove' } });
+  const otherFirm = await call('PATCH', `/admin/orgs/${crypto.randomUUID()}/members/${member.id}`, { ...A, body: { monthlyCap: 3, reason: 'smoke idor' } });
+  ok(removed.status === 201 && removed.json?.members?.length === 1 && otherFirm.status === 404, "the former owner leaves; a member can't be reached through another firm's id (AZ-04)", `${removed.status}/${otherFirm.status}`);
+  const exported = (await call('GET', '/me/export', { token: member.token })).json;
+  ok(exported?.organizations?.some((o) => o.organization === 'Smoke Mimarlık' && o.role === 'OWNER'), 'firm memberships are in the KVKK data export');
+  const orgAudit = new Set(((await call('GET', '/admin/audit?limit=30', A)).json?.items ?? []).map((x) => x.action));
+  ok(['org.create', 'org.credits', 'org.member_add', 'org.owner_transfer', 'org.member_remove'].every((a) => orgAudit.has(a)), 'firm changes are audited (LOG-01)');
+  firmIdForStaffCheck = orgId;
 }
 // #6 admin roles + MFA recovery (AZ-05, AUT-01, AUT-04). Admin login is limited to 5 / 15 min per IP,
 // so this block uses at most two more login calls.
@@ -756,6 +802,10 @@ if (adminToken) {
   const sCatalogPut = await call('PATCH', '/admin/billing/catalog', { token: staffToken, body: { catalog: sCatalog.json?.catalog, reason: 'support tries', version: sCatalog.json?.version ?? null } });
   const sSubs = await call('GET', '/admin/subscriptions', { token: staffToken });
   ok(sCatalog.status === 200 && sSubs.status === 200 && sCatalogPut.status === 403, 'SUPPORT reads plans and subscribers but cannot change the catalog (AZ-01)', `${sCatalog.status}/${sSubs.status}/${sCatalogPut.status}`);
+  const sOrgs = await call('GET', '/admin/orgs', { token: staffToken });
+  const sOrgCreate = await call('POST', '/admin/orgs', { token: staffToken, body: { name: 'Support Firm', ownerEmail: userEmail, reason: 'support tries' } });
+  const sOrgCredits = firmIdForStaffCheck ? await call('POST', `/admin/orgs/${firmIdForStaffCheck}/credits`, { token: staffToken, body: { delta: 100, reason: 'support tries' } }) : { status: 403 };
+  ok(sOrgs.status === 200 && sOrgCreate.status === 403 && sOrgCredits.status === 403, 'SUPPORT reads firms but cannot create them or move credits (AZ-01)', `${sOrgs.status}/${sOrgCreate.status}/${sOrgCredits.status}`);
 
   const recovery = confirm.json.backupCodes[0];
   const bLogin = await call('POST', '/admin/auth/login', { body: { email: userEmail, password: pw, backupCode: recovery.toLowerCase() } });
@@ -783,7 +833,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

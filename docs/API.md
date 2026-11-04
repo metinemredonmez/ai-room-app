@@ -1019,3 +1019,49 @@ Kredi paketi, Yönetici).
 
 Mobil (sonra): Apple/Google girişi yanıtındaki `welcomeCredits > 0` ise kısa bir kutlama gösterilir. Kayıt
 ekranında `catalog.welcomeCredits` varsa teklif yazılır.
+
+### 7.23 Firmalar (kurumsal hesap) — 1. adım: backend + admin
+Hedef: mimarlık ofisleri, mobilya/dekor mağazaları, emlak/inşaat firmaları, otel/kafe zincirleri. Bu adımda firma,
+roller ve ortak kredi havuzu admin'den yönetilir (**Kullanıcılar → Firmalar**). Ödeme panelden elle tanımlanır,
+fatura dışarıda kesilir.
+
+**Model**
+- `Organization`: ad, durum (`ACTIVE | SUSPENDED`), `credits` havuzu, üye başı aylık sınır (`memberMonthlyCap`,
+  boş sınırsız), ekip içi not.
+- `OrgMember`: rol (`OWNER | ADMIN | MEMBER`), kişiye özel `monthlyCap`.
+- `OrgLedger`: havuz hareketleri; ekip yüklemesi `actorId` ile, üye harcaması `userId` ile tutulur.
+
+**Kurallar**
+- Üye, kayıtlı + e-postası doğrulanmış + etkin + yönetici olmayan hesap olmalı (yoksa 404/422). Yönetici
+  hesapları panel içindir. Bir kişi en çok 10 firmada, bir firmada en çok 200 üye olabilir.
+- Sahip tektir: `OWNER` yalnız devirle verilir. Devirde eski sahip `ADMIN` olur. Sahibin rolü düzenlenemez,
+  sahip çıkarılamaz (409 `owner_transfer_required`). Sahibi hesabını silerse firma sahipsiz kalır; panel uyarır,
+  bir üyeye sahiplik verilir.
+- Havuz eksiye inemez (BUS-01): koşullu tek adımlık güncelleme ve veritabanı CHECK kısıtı (`credits >= 0`).
+  Yetmezse 409 `insufficient_credits`.
+- Üye ve sahip işlemleri firma satırı kilitlenerek yapılır. Başka firmanın üyesine bu firmanın kimliğiyle
+  ulaşılamaz (404, AZ-04).
+- Her değişiklik gerekçe ister ve denetime yazılır: `org.create`, `org.update`, `org.credits`, `org.member_add`,
+  `org.member_update`, `org.owner_transfer`, `org.member_remove`.
+- Veri indirme (`/me/export`) `organizations` listesini içerir: firma adı, rol, sınır, katılma tarihi. Başka
+  üyelerin verisi yer almaz.
+- "Bu ay" kullanımı İstanbul takvim ayıdır: üyenin `generation` harcamaları eksi `refund` iadeleri. Harcama
+  2. adımda başlar.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/admin/orgs?q=&status=&cursor=&limit=` | SUPPORT | Ad, sahip e-postası ya da kimlikle arama |
+| GET | `/admin/orgs/:id` | SUPPORT | Firma, sahip, üyeler (bu ayki kullanım, geçerli sınır), son 50 kredi hareketi |
+| POST | `/admin/orgs` | ADMIN | `{ name, ownerEmail, credits?, memberMonthlyCap?, note?, reason }` → 201 |
+| PATCH | `/admin/orgs/:id` | ADMIN | `{ name?, status?, memberMonthlyCap?, note?, reason }` |
+| POST | `/admin/orgs/:id/credits` | ADMIN | `{ delta, reason }` → 201; eksiye inerse 409 |
+| POST | `/admin/orgs/:id/members` | ADMIN | `{ email, role: ADMIN\|MEMBER, monthlyCap?, reason }` → 201 |
+| PATCH | `/admin/orgs/:id/members/:userId` | ADMIN | `{ role?, monthlyCap?, reason }`; `role: OWNER` sahipliği devreder |
+| POST | `/admin/orgs/:id/members/:userId/remove` | ADMIN | `{ reason }`; sahip çıkarılamaz |
+
+Sonraki adımlar:
+- **2. adım:** e-postayla davet ve "Kişisel / Firma" çalışma alanı. Firma alanındaki tasarım havuzdan ve üyenin
+  aylık sınırından harcar.
+- **3. adım:** web ekip sayfası.
+- **4. adım:** projeler.
+- **5. adım:** logolu sunum, alan adıyla katılım, kartla ödeme, SSO.

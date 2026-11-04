@@ -27,6 +27,7 @@ import { OAUTH_PROVIDERS } from './auth/oidc.js';
 import { APP_PLATFORMS, SkipVersionGate } from './common/app-version.js';
 import { clientVersion, compareVersions } from './common/semver.js';
 import { SettingsService } from './settings/settings.service.js';
+import { OrgsService } from './orgs/orgs.service.js';
 
 /** ?locale= first, then the best supported Accept-Language entry (q-values respected), then the fallback. */
 export function localeOf(req: AppRequest, fallback?: string): Locale {
@@ -207,6 +208,7 @@ export class UserController {
     private push: PushService,
     private oauth: OAuthService,
     @Inject(CONFIG) private cfg: Config,
+    private orgs: OrgsService,
   ) {}
 
   @Get('me')
@@ -377,7 +379,7 @@ export class UserController {
   async exportMe(@Auth() auth: AuthContext, @Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
     await this.limiter.hit(LIMITS.export, auth.userId);
     const user = await this.users.get(auth.userId);
-    const [designs, ledger, consents, reports, uploads, devices, identities, dataRequests, supportTickets] = await Promise.all([
+    const [designs, ledger, consents, reports, uploads, devices, identities, dataRequests, supportTickets, organizations] = await Promise.all([
       this.prisma.design.findMany({ where: { userId: auth.userId }, include: { inputImage: true, results: true, analyses: true }, orderBy: { createdAt: 'desc' } }),
       this.prisma.creditLedger.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.consent.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
@@ -387,6 +389,7 @@ export class UserController {
       this.prisma.authIdentity.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'asc' } }),
       this.prisma.dataRequest.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
       this.prisma.supportTicket.findMany({ where: { userId: auth.userId }, include: { messages: { orderBy: { createdAt: 'asc' } } }, orderBy: { createdAt: 'desc' } }),
+      this.orgs.membershipsOf(auth.userId),
     ]);
     log.info('data_export', { userId: auth.userId });
     res.setHeader('Content-Disposition', `attachment; filename="casalume-verilerim-${new Date().toISOString().slice(0, 10)}.json"`);
@@ -397,6 +400,7 @@ export class UserController {
       consents: consents.map((c) => ({ kind: c.kind, version: c.version, granted: c.granted, createdAt: c.createdAt.toISOString() })),
       uploads: uploads.map((i) => this.images.ref(i)),
       dataRequests: dataRequests.map((r) => ({ reference: r.reference, type: r.type, status: r.status, details: r.details, response: r.response, receivedAt: r.receivedAt.toISOString(), dueAt: r.dueAt.toISOString(), closedAt: r.closedAt?.toISOString() ?? null })),
+      organizations,
       supportTickets: supportTickets.map((t) => ({
         reference: t.reference, category: t.category, subject: t.subject, status: t.status, createdAt: t.createdAt.toISOString(),
         messages: t.messages.map((m) => ({ author: m.author, body: m.body, createdAt: m.createdAt.toISOString() })),
