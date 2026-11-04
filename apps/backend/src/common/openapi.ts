@@ -94,6 +94,11 @@ export const COMPONENTS: Record<string, SchemaObject> = Object.fromEntries(
     DesignPage: z.object({ items: z.array(Design), nextCursor: z.string().nullable() }),
     Analysis,
     Upload: z.object({ image: ImageRef, quality: Quality.nullable().describe('Tavsiye niteliğinde; AI servisi yanıt vermezse null') }),
+    Selection: z.object({
+      mask: z.string().describe('data:image/png;base64,… — gri tonlu, fotoğrafla aynı boyutta; seçili alan 255'),
+      coverage: z.number().min(0).max(1).describe('Seçimin fotoğraftaki payı'),
+      method: z.enum(['sam3', 'heuristic']).describe('heuristic: yalnız demo (mock) modunda'),
+    }),
     Catalog: z.object({
       tools: z.array(z.object({ id: z.string(), name: z.string(), description: z.string(), icon: z.string(), category: z.string(), isPro: z.boolean(), isNew: z.boolean(), needs: z.record(z.string(), z.boolean()) })),
       styles: z.array(z.object({ id: z.string(), name: z.string(), description: z.string(), palette: z.array(z.string()), isPro: z.boolean(), previewUrl: z.url() })),

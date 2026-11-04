@@ -90,6 +90,8 @@ export type ToolNeeds = {
   instructions: boolean;
   reference: boolean;
   removeAll: boolean;
+  /** Tap selection (API.md §7.15); absent on older backends. */
+  points?: boolean;
 };
 
 export type CatalogTool = {
@@ -129,7 +131,12 @@ export type CreateDesign = {
   instructions?: string;
   removeAll?: boolean;
   referenceImageId?: string;
+  points?: Point[];
 };
+
+/** A tap on the photo, 0..1 from the top-left; each point selects one object. */
+export type Point = { x: number; y: number };
+export type Selection = { mask: string; coverage: number; method: "sam3" | "heuristic" };
 
 export type Suggestion = { label: string; tool: ToolId; styleId?: string; roomId?: string; instructions?: string };
 

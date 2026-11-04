@@ -18,8 +18,10 @@ from PIL import Image, ImageChops, ImageDraw, ImageStat  # noqa: E402
 from app.config import Settings  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.providers import FalProvider, ProviderError  # noqa: E402
+from app.prompts import build_prompt  # noqa: E402
 from app.region import (  # noqa: E402
-    FalSegmenter, HeuristicSegmenter, RegionMask, composite, create_segmenter, masked_mean_abs_diff, region_target, usable,
+    FalSegmenter, HeuristicSegmenter, RegionMask, composite, create_segmenter, describe_area, masked_mean_abs_diff,
+    region_target, selection_points, usable,
 )
 from app.schemas import GenerateRequest  # noqa: E402
 
@@ -211,7 +213,8 @@ class FixedSegmenter:
     def __init__(self, mask: Image.Image | None = None, error: Exception | None = None, cost: float = 0.005):
         self.mask, self.error, self.cost = mask, error, cost
 
-    async def segment(self, image, target, timeout):
+    async def segment(self, image, target, timeout, points=None):
+        self.points = points
         if self.error:
             raise self.error
         return RegionMask(self.mask, self.method, self.cost)
@@ -234,3 +237,107 @@ def test_segmenter_cost_is_billed_and_failures_do_not_fail_the_design():
     empty = TestClient(create_app(settings(), segmenter=FixedSegmenter(Image.new("L", (640, 480), 0))))
     region = empty.post("/internal/v1/generate", headers=AUTH, json={"tool": "flooring", "image_b64": original}).json()["region"]
     assert region["applied"] is False and region["reason"] == "mask_unusable"
+
+
+# --- §7.15 tap selection ---------------------------------------------------------------------------------------
+
+TAP = [{"x": 0.25, "y": 0.6}]
+
+
+def test_tap_selection_targets_and_area():
+    assert region_target(req("replace", points=TAP)) == "selection"
+    assert region_target(req("replace", points=TAP, target="yastık")) == "yastık"
+    assert region_target(req("paint", points=TAP)) == "selection"
+    assert selection_points(req("declutter", points=TAP)) == [(0.25, 0.6)]
+    assert selection_points(req("replace")) is None
+    m = Image.new("L", (200, 100), 0)
+    ImageDraw.Draw(m).rectangle((50, 40, 99, 79), fill=255)
+    assert describe_area(m) == "in the area 25–50 % from the left and 40–80 % from the top of the photo"
+    assert describe_area(Image.new("L", (10, 10), 0)) == ""
+
+
+def test_prompt_names_the_selected_area():
+    area = "in the area 25–50 % from the left and 40–80 % from the top of the photo"
+    p = build_prompt(req("replace", points=TAP, replacement="hardal kadife yastık"), area=area)
+    assert f"replace the selected object {area}" in p and '"hardal kadife yastık"' in p
+    assert f'replace the "koltuk" {area}' in build_prompt(req("replace", points=TAP, target="koltuk"), area=area)
+    assert f"Remove the selected object {area}" in build_prompt(req("declutter", points=TAP), area=area)
+    assert f"Repaint only the wall {area}" in build_prompt(req("paint", points=TAP, color_hex="#3A6B4F"), area=area)
+    assert "Repaint the walls" in build_prompt(req("paint"))  # no selection: unchanged
+
+
+def test_fal_segmenter_sends_one_point_prompt_per_tap():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        m = Image.new("L", (640, 480), 0)
+        ImageDraw.Draw(m).rectangle((100, 250, 220, 330), fill=255)
+        return httpx.Response(200, json={"masks": [{"url": data_uri(jpeg(m, "PNG"), "image/png")}], "scores": [0.9]})
+
+    seg = FalSegmenter("k", "fal-ai/sam-3/image", 0.005, transport=httpx.MockTransport(handler))
+    mask = asyncio.run(seg.segment(room(), "selection", 10, [(0.25, 0.6), (0.75, 0.5)]))
+    body = seen["body"]
+    assert "prompt" not in body and body["max_masks"] == 2
+    assert body["point_prompts"] == [{"x": 160, "y": 287, "label": 1, "object_id": 1},
+                                     {"x": 479, "y": 240, "label": 1, "object_id": 2}]
+    assert mask is not None and 0.02 < mask.coverage < 0.04
+
+
+def test_heuristic_selection_is_drawn_around_the_taps():
+    mask = asyncio.run(HeuristicSegmenter().segment(room(), "selection", 5, [(0.25, 0.6)]))
+    assert mask is not None and usable(mask)
+    assert mask.mask.getpixel((160, 288)) == 255 and mask.mask.getpixel((600, 40)) == 0
+
+
+def test_tap_selection_changes_only_the_selected_object():
+    client = TestClient(create_app(settings()))
+    original = room()
+    res = client.post("/internal/v1/generate", headers=AUTH, json={
+        "tool": "replace", "image_b64": b64(original), "variants": 1, "points": TAP, "replacement": "rattan koltuk"})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["region"]["applied"] and body["region"]["target"] == "selection" and body["region"]["method"] == "heuristic"
+    assert "selected object in the area" in body["prompt"]
+    out = base64.b64decode(body["images_b64"][0])
+    assert region_diff(original, out, (420, 0, 640, 200)) < 3  # far from the tap: the user's own pixels
+
+
+def test_tap_selection_fails_before_any_image_when_nothing_is_selected():
+    seg = FixedSegmenter(Image.new("L", (640, 480), 0))
+    client = TestClient(create_app(settings(), segmenter=seg))
+    res = client.post("/internal/v1/generate", headers=AUTH, json={"tool": "declutter", "image_b64": b64(room()), "points": TAP})
+    assert res.status_code == 422 and res.json()["error"]["code"] == "selection_failed"
+    assert res.json()["usage"]["kind"] == "segment" and res.json()["usage"]["images"] == 0
+    assert seg.points == [(0.25, 0.6)]
+
+
+def test_tap_selection_unavailable_and_unsupported():
+    off = TestClient(create_app(settings(REGION_LOCK="off")))
+    res = off.post("/internal/v1/generate", headers=AUTH, json={"tool": "replace", "image_b64": b64(room()), "points": TAP})
+    assert res.status_code == 503 and res.json()["error"]["code"] == "selection_unavailable"
+    client = TestClient(create_app(settings()))
+    for body in ({"tool": "redesign", "points": TAP}, {"tool": "declutter", "remove_all": True, "points": TAP}):
+        res = client.post("/internal/v1/generate", headers=AUTH, json={**body, "image_b64": b64(room())})
+        assert res.status_code == 400 and res.json()["error"]["code"] == "selection_not_supported"
+    too_many = [{"x": 0.1, "y": 0.1}] * 9
+    res = client.post("/internal/v1/generate", headers=AUTH, json={"tool": "replace", "image_b64": b64(room()), "points": too_many})
+    assert res.status_code == 400
+
+
+def test_segment_preview_returns_the_mask():
+    client = TestClient(create_app(settings()))
+    res = client.post("/internal/v1/segment", headers=AUTH, json={"image_b64": b64(room()), "points": TAP})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    mask = Image.open(io.BytesIO(base64.b64decode(body["mask_b64"])))
+    assert mask.format == "PNG" and mask.size == (640, 480) and mask.getpixel((160, 288)) == 255
+    assert body["method"] == "heuristic" and 0.05 < body["coverage"] < 0.2
+    assert body["usage"]["kind"] == "segment" and body["usage"]["cost_usd"] == 0
+    by_name = client.post("/internal/v1/segment", headers=AUTH, json={"image_b64": b64(room()), "target": "koltuk"})
+    assert by_name.status_code == 200
+    assert client.post("/internal/v1/segment", headers=AUTH, json={"image_b64": b64(room())}).status_code == 400
+    assert client.post("/internal/v1/segment", json={"image_b64": b64(room()), "points": TAP}).status_code == 401
+    paid = TestClient(create_app(settings(), segmenter=FixedSegmenter(left_half_mask())))
+    usage = paid.post("/internal/v1/segment", headers=AUTH, json={"image_b64": b64(room()), "points": TAP}).json()["usage"]
+    assert (usage["provider"], usage["model"], usage["cost_usd"]) == ("falai", "fal-ai/sam-3/image", 0.005)

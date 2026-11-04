@@ -30,6 +30,10 @@ export function useErrorText() {
         return t.errors.not_found;
       case "network":
         return t.errors.network;
+      case "selection_failed":
+        return t.errors.selection_failed;
+      case "selection_unavailable":
+        return t.errors.selection_unavailable;
       case "validation_failed":
       case "bad_request":
       case "conflict":

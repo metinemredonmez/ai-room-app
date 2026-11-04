@@ -7,13 +7,16 @@ kalır; profesyonel ihtiyaçlar (proje, müşteri, sunum) PRO ve “Profesyonel�
 Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamını değiştirmek kolay ve çoğu uygulamada var,
 üstelik kemer, pencere gibi mimariyi de değiştirebiliyor. Casalume’un farkı: kullanıcı odadaki **bir şeye odaklanır**
 (yastıklar, koltuk, sehpa, avize…) ve **yalnız o** değişir, odanın geri kalanı piksel piksel aynı kalır.
-- Bugün: “Değiştir” aracı yazıyla hedef alır (“koltuk”), fal.ai SAM 3 eşleşen her şeyi maskeler, bölge kilidi maske dışını korur.
-- [ ] Canlıda `FAL_KEY` (SAM 3 maske) — yoksa nesne kilidi zayıf kalır.
-- [ ] Dokun-seç: fotoğrafta tek dokunuş ya da kutu → yalnız o nesnenin maskesi (SAM 3 nokta/kutu istemi; tek örnek, “tüm koltuklar” değil).
-- [ ] Üretmeden önce maske önizlemesi: seçili nesne vurgulanır, kullanıcı ekler/çıkarır (çoklu seçim: bütün yastıklar).
+- Yazarak: “Değiştir” aracına ad yazılır (“yastık”), SAM 3 o türün hepsini maskeler, bölge kilidi maske dışını korur.
+- [x] Dokun-seç (API.md §7.15): Değiştir, Nesne Sil ve Duvar Boyası’nda fotoğrafa dokunulur; her dokunuş bir nesne (SAM 3
+  nokta istemi), en çok 8. Maske üretimden önce çıkarılır; hiçbir şey bulunamazsa görsel üretilmez, hak iade edilir.
+- [x] Maske önizlemesi (`POST /v1/uploads/:id/selection`), çoklu seçim, geri al/temizle — web stüdyosunda.
+- [ ] Canlıda `FAL_KEY` (SAM 3) — **olmadan dokun-seç kapalı** (503, web yazarak seçime döner) ve otomatik kilit de çalışmaz.
+- [ ] `FAL_KEY` girilince canlıda gerçek fotoğrafla dene: metinsiz nokta istemi doğru nesneyi veriyor mu (belgede varsayılan
+  `prompt` “wheel” görünüyor), maske sınırları iyi mi.
+- [ ] Mobil dokun-seç arayüzü (sen): aynı uç ve `points` alanı; katalogda `needs.points`.
 - [ ] Nesneye komut: renk, kumaş/malzeme, stil, kaldır, başka ürünle değiştir (referans görsel), varyant karşılaştırma.
 - [ ] Kalite ölçümü: maske dışı fark ≈ 0 (bugünkü `masked_mean_abs_diff`), maske içi gerçekten değişmiş; değerlendirme setine nesne vakaları.
-- [ ] Web stüdyo arayüzü (sen: mobil arayüz).
 
 Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu, denenerek doğrulanmalı):
 - Remodel AI “Furniture Swap” ve Ideal.house (mobilyayı kendisi bulur, duvar/zemine dokunmaz) parça değiştiriyor;
@@ -21,7 +24,7 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - Interior AI nesneye dokununca benzer ürünleri gösteriyor; ReimagineHome ve ShopTheRoom tasarımdaki eşyaları satın
   alma bağlantısına çeviriyor (eBay, Etsy). Ortak şikâyet: tam oda araçları oda geometrisini bozuyor.
 - Bizden çıkacaklar:
-  - [ ] Seçim üç yolla: dokun (SAM 3 nokta), kutu, fırça.
+  - [ ] Seçim üç yolla: dokun (SAM 3 nokta — yapıldı), kutu, fırça.
   - [ ] “Bu ürünü koy”: kullanıcı ürün fotoğrafı ya da bağlantısı verir, seçili nesnenin yerine o gelir.
   - [ ] Seçili nesne için Türkiye’deki mağazalardan benzer ürün ve TL fiyat (alışveriş listesiyle birleşir).
   - [ ] “Odan bozulmaz” sözü: maske dışı değişmezlik ölçülür, gerekirse sonuç reddedilip yeniden üretilir.

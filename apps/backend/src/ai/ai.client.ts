@@ -32,6 +32,16 @@ export interface GenerateInput {
   instructions?: string;
   remove_all?: boolean;
   reference_image_b64?: string;
+  /** Tap selection, 0..1 from the top-left; one object per point (API.md §7.15). */
+  points?: Array<{ x: number; y: number }>;
+}
+
+export interface SegmentOutput {
+  /** PNG, grayscale, source size: 255 inside the selection. */
+  mask_b64: string;
+  coverage: number;
+  method: 'sam3' | 'heuristic';
+  usage?: AiUsageReport;
 }
 
 export interface GenerateOutput {
@@ -90,6 +100,12 @@ export class AiClient {
       if (res.status === 422 && code === 'no_change') {
         throw new AiError(422, 'no_change', 'Yapay zekâ görselde değişiklik üretemedi; hakkın iade edildi', false, err?.usage);
       }
+      if (res.status === 422 && code === 'selection_failed') {
+        throw new AiError(422, 'selection_failed', 'Dokunduğun yerde değiştirilecek bir nesne bulunamadı; başka bir noktaya dokun', false, err?.usage);
+      }
+      if (res.status === 503 && code === 'selection_unavailable') {
+        throw new AiError(503, 'selection_unavailable', 'Dokunarak seçim şu an kullanılamıyor; nesnenin adını yazarak seç', false);
+      }
       if (res.status === 400 || res.status === 415) throw new AiError(400, 'bad_request', 'Görsel işlenemedi', false);
       throw new AiError(502, 'ai_unavailable', 'Yapay zekâ şu an yanıt veremiyor', err?.error?.retryable ?? res.status >= 500);
     }
@@ -98,6 +114,11 @@ export class AiClient {
 
   generate(input: GenerateInput, requestId?: string) {
     return this.call<GenerateOutput>('POST', '/internal/v1/generate', input, 180_000, requestId);
+  }
+
+  /** Selection preview: the mask the region lock will use for these taps (or this object name). */
+  segment(input: { image_b64: string; target?: string; points?: Array<{ x: number; y: number }> }, requestId?: string) {
+    return this.call<SegmentOutput>('POST', '/internal/v1/segment', input, 40_000, requestId);
   }
 
   analyze(input: { image_b64: string; locale: string; room?: string; style_name?: string }, requestId?: string) {

@@ -1,21 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Crown, ImageUp, Info, LoaderCircle, Plus, Sparkles, X } from "lucide-react";
+import { Crown, ImageUp, Info, LoaderCircle, MousePointerClick, Plus, Sparkles, Undo2, X } from "lucide-react";
 import { ApiError, api } from "@/lib/api";
 import { ImageInputError, fileToUpload } from "@/lib/image";
 import { clearStudioPrefill, peekStudioPrefill, type StudioPrefill } from "@/lib/prefill";
-import type { CreateDesign, Design, ImageRef, SampleId, ToolId } from "@/lib/types";
+import type { CreateDesign, Design, ImageRef, Point, SampleId, Selection, ToolId } from "@/lib/types";
 import { useApp } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { RoomIcon, ToolIcon } from "@/components/icons";
 import { ResultView } from "@/components/result-view";
+import { SelectableImage } from "@/components/selectable-image";
 import { btn, card, chip, input, label } from "@/components/ui";
 
 const SAMPLES: SampleId[] = ["living_room", "empty_room", "bedroom", "exterior", "garden"];
 const CATEGORY_ORDER = ["interior", "exterior", "edit"] as const;
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const LINKABLE_TOOLS = ["redesign", "furnish", "paint", "flooring", "exterior", "garden"] as const;
+const MAX_POINTS = 8;
+
+/** One committed tap selection: the taps so far and the mask the server returned for them. */
+type SelectionStep = { points: Point[]; mask: string };
 
 function readInitial(): StudioPrefill {
   const prefill = peekStudioPrefill() ?? {};
@@ -82,6 +87,12 @@ export function Studio() {
   const [error, setError] = useState<unknown>(null);
   const [result, setResult] = useState<Design | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  // Tap selection (API.md §7.15): a history of steps, so "undo" needs no new (paid) mask request.
+  const [steps, setSteps] = useState<SelectionStep[]>([]);
+  const [pending, setPending] = useState<Point | null>(null);
+  const [selectNote, setSelectNote] = useState<string | null>(null);
+  const [tapOff, setTapOff] = useState(false);
+  const selSeq = useRef(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const refFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -118,10 +129,58 @@ export function Studio() {
   const effRoom = catalog.rooms.find((r) => r.id === roomId) ?? catalog.rooms[0];
   const effFloor = catalog.floors.find((f) => f.id === floorId) ?? catalog.floors[0];
   const effColor = catalog.colors.find((c) => c.id === colorId) ?? catalog.colors[0];
+  const points = steps.at(-1)?.points ?? [];
+  const canTap = Boolean(needs.points) && !tapOff && !(needs.removeAll && removeAll);
+  const selectHint = t.studio.select.hint[tool.id as keyof typeof t.studio.select.hint] ?? t.studio.select.hint.replace;
+
+  function clearSelection() {
+    selSeq.current++;
+    setSteps([]);
+    setPending(null);
+    setSelectNote(null);
+  }
 
   function selectTool(id: ToolId) {
     setToolId(id);
     setError(null);
+    clearSelection();
+  }
+
+  async function tap(p: Point) {
+    if (!image || pending || busy) return;
+    if (points.length >= MAX_POINTS) {
+      setSelectNote(t.studio.select.max);
+      return;
+    }
+    const next = [...points, p];
+    const seq = ++selSeq.current;
+    setPending(p);
+    setSelectNote(null);
+    try {
+      await ensureSession();
+      const out = await api.post<Selection>(`/uploads/${image.id}/selection`, { points: next });
+      if (seq === selSeq.current) setSteps((s) => [...s, { points: next, mask: out.mask }]);
+    } catch (e) {
+      if (seq !== selSeq.current) return;
+      if (e instanceof ApiError && e.code === "selection_unavailable") {
+        setTapOff(true);
+        setSteps([]);
+        setSelectNote(t.studio.select.unavailable);
+      } else if (e instanceof ApiError && e.code === "selection_failed") {
+        setSelectNote(t.studio.select.notFound);
+      } else {
+        setError(e);
+      }
+    } finally {
+      if (seq === selSeq.current) setPending(null);
+    }
+  }
+
+  function undoTap() {
+    selSeq.current++;
+    setPending(null);
+    setSelectNote(null);
+    setSteps((s) => s.slice(0, -1));
   }
 
   async function uploadFile(file: File, kind: "input" | "reference") {
@@ -134,6 +193,7 @@ export function Studio() {
       if (kind === "input") {
         setImage(uploaded);
         setResult(null);
+        clearSelection();
       } else {
         setReference(uploaded);
       }
@@ -156,6 +216,7 @@ export function Studio() {
       const { image: uploaded } = await api.post<{ image: ImageRef }>("/uploads/sample", { sample });
       setImage(uploaded);
       setResult(null);
+      clearSelection();
       if (sample === "exterior" && catalog?.tools.some((x) => x.id === "exterior")) setToolId("exterior");
       if (sample === "garden" && catalog?.tools.some((x) => x.id === "garden")) setToolId("garden");
       if (sample === "empty_room" && toolId === "redesign" && catalog?.tools.some((x) => x.id === "furnish")) setToolId("furnish");
@@ -168,7 +229,7 @@ export function Studio() {
 
   function validationError(): string | null {
     if (!image) return t.studio.needPhoto;
-    if (tool.id === "replace" && needs.target && !target.trim()) return t.studio.needTarget;
+    if (tool.id === "replace" && needs.target && !target.trim() && !points.length) return t.studio.needTarget;
     if (needs.replacement && !replacement.trim()) return t.studio.needReplacement;
     if (tool.id === "custom" && needs.instructions && !instructions.trim()) return t.studio.needInstructions;
     if (needs.reference && !reference) return t.studio.needReference;
@@ -194,6 +255,7 @@ export function Studio() {
     if (needs.instructions && instructions.trim()) body.instructions = instructions.trim().slice(0, 300);
     if (needs.removeAll) body.removeAll = removeAll;
     if (needs.reference && reference) body.referenceImageId = reference.id;
+    if (canTap && points.length) body.points = points;
 
     setError(null);
     setElapsed(0);
@@ -440,7 +502,10 @@ export function Studio() {
                   <input
                     type="checkbox"
                     checked={removeAll}
-                    onChange={(e) => setRemoveAll(e.target.checked)}
+                    onChange={(e) => {
+                      setRemoveAll(e.target.checked);
+                      if (e.target.checked) clearSelection();
+                    }}
                     className="h-5 w-5 accent-[var(--primary)]"
                   />
                   {t.studio.removeAll}
@@ -458,8 +523,15 @@ export function Studio() {
                     maxLength={120}
                     value={target}
                     onChange={(e) => setTarget(e.target.value)}
-                    placeholder={tool.id === "replace" ? t.studio.targetPlaceholderReplace : t.studio.targetPlaceholderDeclutter}
+                    placeholder={
+                      points.length
+                        ? t.studio.select.optional
+                        : tool.id === "replace"
+                          ? t.studio.targetPlaceholderReplace
+                          : t.studio.targetPlaceholderDeclutter
+                    }
                   />
+                  {canTap && <p className="mt-1.5 text-xs text-muted">{t.studio.select.orType}</p>}
                 </div>
               )}
 
@@ -578,15 +650,40 @@ export function Studio() {
           ) : (
             <div className={`${card} relative overflow-hidden p-2`}>
               {image ? (
-                <div className="relative">
-                  <img
+                <>
+                  {(canTap || selectNote) && (
+                    <div className="flex flex-wrap items-center gap-2 px-2 pb-2.5 pt-1 text-sm" aria-live="polite">
+                      <MousePointerClick className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      {/* h-9 = the undo/clear buttons, so the photo does not jump when they appear */}
+                      <span className="flex min-h-9 flex-1 items-center text-muted">{points.length ? t.studio.select.count(points.length) : selectHint}</span>
+                      {pending && <LoaderCircle className="h-4 w-4 animate-spin text-primary" aria-hidden />}
+                      {points.length > 0 && (
+                        <>
+                          <button type="button" onClick={undoTap} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+                            <Undo2 className="h-3.5 w-3.5" aria-hidden /> {t.studio.select.undo}
+                          </button>
+                          <button type="button" onClick={clearSelection} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+                            <X className="h-3.5 w-3.5" aria-hidden /> {t.studio.select.clear}
+                          </button>
+                        </>
+                      )}
+                      {selectNote && <p className="w-full text-xs text-accent">{selectNote}</p>}
+                    </div>
+                  )}
+                  <SelectableImage
                     src={image.url}
-                    alt={t.result.before}
-                    className="w-full rounded-3xl object-cover"
-                    style={{ aspectRatio: `${image.width} / ${image.height}` }}
-                  />
-                  {busy && <ProgressOverlay elapsed={elapsed} />}
-                </div>
+                    alt={canTap ? t.studio.select.imageLabel : t.result.before}
+                    width={image.width}
+                    height={image.height}
+                    enabled={canTap && !busy}
+                    points={canTap ? points : []}
+                    pending={pending}
+                    mask={canTap ? (steps.at(-1)?.mask ?? null) : null}
+                    onTap={(p) => void tap(p)}
+                  >
+                    {busy && <ProgressOverlay elapsed={elapsed} />}
+                  </SelectableImage>
+                </>
               ) : (
                 <button
                   type="button"

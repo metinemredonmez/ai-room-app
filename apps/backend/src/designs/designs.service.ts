@@ -12,10 +12,16 @@ import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
 import type { Design, Image, Prisma } from '../generated/prisma/client.js';
-import { ImagesService, isUuid } from '../images/images.service.js';
+import { ImagesService, isUuid, sniffMime } from '../images/images.service.js';
 import { UsersService, type Charge } from '../users/users.service.js';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
+
+/** Tap selection (API.md §7.15): 0..1 from the top-left of the input photo, one object per point. */
+export const PointsSchema = z.array(z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).strict()).min(1).max(8);
+
+export const SelectionSchema = z.object({ points: PointsSchema.optional(), target: text(120).optional() }).strict();
+export type Selection = z.infer<typeof SelectionSchema>;
 
 export const CreateDesignSchema = z
   .object({
@@ -32,6 +38,7 @@ export const CreateDesignSchema = z
     instructions: text(300).optional(),
     removeAll: z.boolean().optional(),
     referenceImageId: z.uuid().optional(),
+    points: PointsSchema.optional(),
   })
   .strict();
 export type CreateDesign = z.infer<typeof CreateDesignSchema>;
@@ -126,11 +133,14 @@ export class DesignsService {
     if (body.tool === 'reference' && !body.referenceImageId) {
       throw new AppError(400, 'validation_failed', 'Referans görsel gerekli');
     }
+    if (body.points && (!tool.needs.points || body.removeAll)) {
+      throw new AppError(400, 'validation_failed', 'Dokunarak seçim bu araçta kullanılamaz');
+    }
     const input = await this.images.owned(body.inputImageId, userId);
     if (body.referenceImageId) await this.images.owned(body.referenceImageId, userId);
 
     const params: Record<string, unknown> = {};
-    for (const k of ['floorId', 'colorHex', 'colorName', 'target', 'replacement', 'instructions', 'removeAll', 'referenceImageId'] as const) {
+    for (const k of ['floorId', 'colorHex', 'colorName', 'target', 'replacement', 'instructions', 'removeAll', 'referenceImageId', 'points'] as const) {
       if (body[k] !== undefined) params[k] = body[k];
     }
     params.variants = variants;
@@ -164,6 +174,35 @@ export class DesignsService {
   }
 
   /**
+   * Tap selection preview (API.md §7.15): the mask a design with these points (or this object name) will be
+   * locked to, shown over the photo before anything is generated. Each call is a paid SAM 3 request.
+   */
+  async selection(userId: string, imageId: string, body: Selection, requestId: string) {
+    if (!body.points && !body.target) throw new AppError(400, 'validation_failed', 'Dokunulan nokta ya da nesne adı gerekli');
+    const settings = this.settings.current;
+    if (settings.maintenance.enabled) throw new AppError(503, 'busy', settings.maintenance.messageTr);
+    if (settings.requireAiConsent && !(await this.consents.hasCurrent(userId, 'ai_processing'))) {
+      throw new AppError(403, 'consent_required', 'Yapay zekâ işleme onayı gerekli');
+    }
+    const img = await this.images.owned(imageId, userId);
+    try {
+      const out = await this.ai.segment(
+        { image_b64: (await this.images.read(img.id)).toString('base64'), target: body.target, points: body.points },
+        requestId,
+      );
+      await this.usage.record(out.usage, { userId });
+      // Only a real PNG goes back to the browser as a data URI.
+      if (sniffMime(Buffer.from(out.mask_b64, 'base64')) !== 'image/png') {
+        throw new AiError(502, 'ai_unavailable', 'Yapay zekâ şu an yanıt veremiyor', false);
+      }
+      return { mask: `data:image/png;base64,${out.mask_b64}`, coverage: out.coverage, method: out.method };
+    } catch (e) {
+      if (e instanceof AiError && e.usage) await this.usage.record(e.usage, { userId });
+      throw e;
+    }
+  }
+
+  /**
    * Runs one generation. Idempotent: anything not PENDING is skipped. A retryable AI failure on a
    * non-final attempt is re-thrown with the design left PENDING so the queue can try again.
    */
@@ -175,6 +214,7 @@ export class DesignsService {
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
     const pro = this.users.isPro(d.user);
     const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
+    const points = PointsSchema.safeParse((d.params as { points?: unknown } | null)?.points);
     try {
       const out = await this.ai.generate(
         {
@@ -193,6 +233,7 @@ export class DesignsService {
           reference_image_b64: str(params.referenceImageId)
             ? (await this.images.read(str(params.referenceImageId)!)).toString('base64')
             : undefined,
+          points: points.success ? points.data : undefined,
         },
         opts.requestId,
       );

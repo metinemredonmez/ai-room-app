@@ -94,6 +94,8 @@ export const LIMITS = {
   uploads: { name: 'uploads', max: 60, windowSec: 3600 },
   generateUser: { name: 'gen-user', max: 20, windowSec: 600 },
   generateIp: { name: 'gen-ip', max: 120, windowSec: 3600 },
+  // Each selection preview is a paid SAM 3 call; a tap-and-adjust session needs a few dozen at most.
+  selection: { name: 'selection', max: 60, windowSec: 600 },
   analysis: { name: 'analysis', max: 30, windowSec: 3600 },
   chatUser: { name: 'chat-user', max: 40, windowSec: 3600 },
   chatIp: { name: 'chat-ip', max: 150, windowSec: 3600 },

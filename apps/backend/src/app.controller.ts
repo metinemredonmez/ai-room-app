@@ -16,7 +16,7 @@ import { ConsentsService } from './kvkk/consents.service.js';
 import { CONSENT_KINDS } from './kvkk/legal.js';
 import { UsageService } from './usage/usage.service.js';
 import { log } from './common/log.js';
-import { CreateDesignSchema, DesignsService, cursorArgs } from './designs/designs.service.js';
+import { CreateDesignSchema, DesignsService, SelectionSchema, cursorArgs } from './designs/designs.service.js';
 import { ALLOWED_MIME, ImagesService, isUuid } from './images/images.service.js';
 import { SAMPLE_IDS, loadSample } from './images/samples.js';
 import { UsersService } from './users/users.service.js';
@@ -277,6 +277,16 @@ export class UserController {
     await this.limiter.hit(LIMITS.uploads, auth.userId);
     const img = await this.images.save(await loadSample(sample), { ownerId: auth.userId, kind: 'SAMPLE' });
     return { image: this.images.ref(img) };
+  }
+
+  /** Tap selection preview (API.md §7.15): the mask shown over the photo before generating. AZ-01: own images only. */
+  @Post('uploads/:id/selection')
+  @HttpCode(200)
+  @Doc('Dokunarak seçim önizlemesi (maske)', { body: SelectionSchema, response: 'Selection', description: 'Değiştir / Nesne Sil / Duvar Boyası için. `points` (0..1, her nokta bir nesne, en çok 8) ya da `target` (nesne adı; o türün hepsi). Aynı noktalar `POST /designs` içinde `points` olarak gönderilir. Her çağrı ücretli bir SAM 3 isteğidir: 10 dakikada 60. `FAL_KEY` yoksa 503 `selection_unavailable`; nesne bulunamazsa 422 `selection_failed`.', errors: [400, 401, 403, 404, 422, 429, 502, 503] })
+  async selection(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(SelectionSchema, body);
+    await this.limiter.hit(LIMITS.selection, auth.userId);
+    return this.designs.selection(auth.userId, id, input, req.id);
   }
 
   /**

@@ -594,3 +594,34 @@ sürümleri gösterir; yayın sonrası en geç 60 sn içinde güncellenir.
 
 Bekleyenler: admin panelinde metin düzenleyici ve başvuru masası (admin aşaması); mobilde onay yenileme ekranı ve başvuru formu
 (mobil aşaması); metinlerin hukukçu incelemesi.
+
+### 7.15 Dokunarak seçim (seçilen nesneyi değiştir) — backend + AI servisi + web
+Casalume'un ana farkı: kullanıcı odadaki **bir nesneye dokunur** (yastık, koltuk, sehpa…) ve yalnız o değişir.
+Tam oda araçları (`redesign` vb.) olduğu gibi kalır. Seçim yalnız `replace`, `declutter` ve `paint` araçlarında vardır;
+katalogda bu araçların `needs.points` alanı `true` döner.
+- Nokta: `{ x, y }`, fotoğrafın sol üst köşesinden 0..1 oranında. **Her nokta bir nesnedir**, en çok 8 nokta.
+  Aynı türün hepsini seçmek için `target` yazılır (ör. `yastık`): SAM 3 metin istemiyle o türün hepsini bulur.
+- AI servisinde her nokta SAM 3'e ayrı `object_id` ile ön plan noktası (`label: 1`) olarak, piksel koordinatıyla gider;
+  maskelerin birleşimi kullanılır. `mock` modunda dokunulan yerin çevresine çizilen etiketli elips (`heuristic`) kullanılır.
+- Otomatik kilitten farkı: seçim kullanıcının açık isteğidir, **sessizce düşmez**. Maske üretimden **önce** çıkarılır.
+  - Hiçbir şey bulunamazsa (kapsam %0,5'ten az ya da %95'ten fazla) hiçbir görsel üretilmez: 422 `selection_failed`.
+    SAM 3 maliyeti `usage` (`kind: 'segment'`) içinde döner ve kaydedilir; tasarım başarısız olur ve hak iade edilir.
+  - Segmenter yoksa (`FAL_KEY` yok ya da `REGION_LOCK=off`): 503 `selection_unavailable`. İstemci yazarak seçime döner.
+  - fal.ai hatası ya da zaman aşımı: 502 `ai_unavailable` (zaman aşımı yeniden denenebilir).
+- Prompt'a seçimin yeri yazılır ("… 25–60 % from the left and 40–80 % from the top of the photo"). Çıktı yalnız maske içinde
+  orijinalle birleştirilir; `region.target` değeri `target` ya da `selection` olur.
+- Araç dışı kullanım reddedilir: başka araçta `points` ya da `points` ile `removeAll` → 400 (AI servisi: `selection_not_supported`).
+
+| Yöntem | Yol | Gövde | Yanıt |
+|---|---|---|---|
+| POST | `/uploads/:id/selection` | `{ points?: [{x,y}] (1..8), target?: string (≤120) }` — en az biri | 200 `{ mask: 'data:image/png;base64,…', coverage, method: 'sam3'\|'heuristic' }` |
+| POST | `/designs` | mevcut alanlar + `points?` | Önizlemedeki noktalar aynen gönderilir; maske üretimde yeniden çıkarılır (aynı girdi, aynı maske). |
+
+- `/uploads/:id/selection` yalnız kullanıcının kendi görselinde çalışır (AZ-01: başkasınınki 404). Tasarım sonuçları da
+  kullanıcınındır; sonuç üzerinde yeniden seçim yapılabilir. AI işleme onayı gerekiyorsa 403 `consent_required`.
+- Her önizleme ücretli bir SAM 3 çağrısıdır (`FALAI_SEG_COST_USD`): kullanıcı başına 10 dakikada 60 (RES-01).
+  Maliyet `AiUsage` içinde `kind: 'segment'` olarak görünür.
+- Maske AI servisinde PIL ile yeniden kodlanır; backend PNG imzasını doğrulamadan tarayıcıya göndermez.
+- AI servisi ucu: `POST /internal/v1/segment` `{ image_b64, points?, target? }` → `{ mask_b64, coverage, method, usage }`.
+- Açık konu: fal SAM 3'te nokta istemi metinsiz gönderiliyor (`prompt` alanı yok). Belgede varsayılan `prompt` "wheel" olarak
+  görünüyor; `FAL_KEY` girildikten sonra canlıda gerçek bir fotoğrafla denenip doğrulanacak.

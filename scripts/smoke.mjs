@@ -79,6 +79,24 @@ const painted = await call('POST', '/designs', {
 ok(painted.status === 201 && painted.json?.region?.applied === true && painted.json.region.target === 'wall',
   'paint is region-locked (§7.8)', `${painted.json?.region?.method} · coverage ${painted.json?.region?.coverage}`);
 
+// API.md §7.15: tap selection — preview the mask, then only the tapped object changes.
+const tap = [{ x: 0.3, y: 0.62 }];
+const sel = await call('POST', `/uploads/${otherSample.json?.image?.id}/selection`, { token: other.json.accessToken, body: { points: tap } });
+ok(sel.status === 200 && sel.json?.mask?.startsWith('data:image/png;base64,') && sel.json.coverage > 0,
+  'tap selection preview (§7.15)', `${sel.json?.method} · coverage ${sel.json?.coverage}`);
+const selSteal = await call('POST', `/uploads/${sample.json.image.id}/selection`, { token: other.json.accessToken, body: { points: tap } });
+ok(selSteal.status === 404, "other user can't select on someone else's photo (AZ-01)", `status ${selSteal.status}`);
+const swapped = await call('POST', '/designs', {
+  token: other.json.accessToken,
+  body: { tool: 'replace', inputImageId: otherSample.json?.image?.id, points: tap, replacement: 'rattan koltuk', variants: 1 },
+});
+ok(swapped.status === 201 && swapped.json?.region?.applied === true && swapped.json.region.target === 'selection',
+  'tapped object is region-locked (§7.15)', `status ${swapped.status} · ${swapped.json?.region?.method}`);
+const wholeRoomTap = await call('POST', '/designs', {
+  token: other.json.accessToken, body: { tool: 'redesign', inputImageId: otherSample.json?.image?.id, points: tap, variants: 1 },
+});
+ok(wholeRoomTap.status === 400, 'tap selection refused for whole-room tools', `status ${wholeRoomTap.status}`);
+
 // SES-05: refresh rotation with reuse detection.
 const r1 = await call('POST', '/auth/refresh', { body: { refreshToken: guest.json.refreshToken } });
 ok(r1.status === 201, 'refresh rotates');

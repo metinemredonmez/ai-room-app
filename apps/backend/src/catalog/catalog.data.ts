@@ -11,10 +11,12 @@ export type ToolId = (typeof TOOL_IDS)[number];
 type Needs = {
   style: boolean; room: boolean; floor: boolean; color: boolean; target: boolean;
   replacement: boolean; instructions: boolean; reference: boolean; removeAll: boolean;
+  /** Tap selection (API.md §7.15): the user taps the objects to change instead of naming them. */
+  points: boolean;
 };
 const needs = (n: Partial<Needs>): Needs => ({
   style: false, room: false, floor: false, color: false, target: false,
-  replacement: false, instructions: false, reference: false, removeAll: false, ...n,
+  replacement: false, instructions: false, reference: false, removeAll: false, points: false, ...n,
 });
 
 export const TOOLS: Record<ToolId, {
@@ -37,19 +39,19 @@ export const TOOLS: Record<ToolId, {
     name: { tr: 'Nesne Sil', en: 'Remove Objects' },
     description: { tr: 'Dağınıklığı ya da tüm eşyaları kaldır', en: 'Remove clutter or empty the room' },
     icon: 'trash-outline', category: 'edit', isPro: false, isNew: false,
-    needs: needs({ room: true, target: true, removeAll: true }),
+    needs: needs({ room: true, target: true, removeAll: true, points: true }),
   },
   replace: {
     name: { tr: 'Değiştir', en: 'Replace' },
     description: { tr: 'Bir eşyayı başka bir şeyle değiştir', en: 'Swap one item for another' },
     icon: 'swap-horizontal-outline', category: 'edit', isPro: false, isNew: false,
-    needs: needs({ room: true, target: true, replacement: true }),
+    needs: needs({ room: true, target: true, replacement: true, points: true }),
   },
   paint: {
     name: { tr: 'Duvar Boyası', en: 'Wall Paint' },
     description: { tr: 'Duvarları istediğin renge boya', en: 'Repaint your walls' },
     icon: 'color-palette-outline', category: 'edit', isPro: false, isNew: false,
-    needs: needs({ room: true, color: true }),
+    needs: needs({ room: true, color: true, points: true }),
   },
   flooring: {
     name: { tr: 'Yeni Zemin', en: 'New Flooring' },

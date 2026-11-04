@@ -36,13 +36,16 @@ def clean(text: str | None, limit: int = 200, user_text: bool = False) -> str:
     return text[:limit]
 
 
-def build_prompt(req: GenerateRequest, reference_style: str | None = None) -> str:
+def build_prompt(req: GenerateRequest, reference_style: str | None = None, area: str = "") -> str:
+    """`area` is where a tap selection lies (region.describe_area); empty without one."""
     room = clean(req.room, 60) or "room"
     style = clean(req.style_prompt, 600) or DEFAULT_STYLE
     target = clean(req.target, 120, user_text=True)
     replacement = clean(req.replacement, 120, user_text=True)
     extra = clean(req.instructions, 300, user_text=True)
     extra_line = f' Additional request from the homeowner: "{extra}".' if extra else ""
+    where = f" {area}" if area else ""
+    selected = (f'"{target}"' if target else "selected object") + where
 
     match req.tool:
         case "redesign":
@@ -61,14 +64,18 @@ def build_prompt(req: GenerateRequest, reference_style: str | None = None) -> st
                     f"Remove all furniture, decor and objects from this {room}, leaving a clean empty room with "
                     f"bare walls and floor. Reconstruct hidden areas plausibly. {KEEP_STRUCTURE}"
                 )
-            what = f'the "{target}"' if target else "clutter, cables, personal items and mess"
+            if area:
+                what = f"the {selected}"
+            else:
+                what = f'the "{target}"' if target else "clutter, cables, personal items and mess"
             return (
                 f"Remove {what} from this {room}. Fill the removed areas plausibly so no trace remains. "
                 f"Change nothing else. {KEEP_STRUCTURE}"
             )
         case "replace":
+            thing = selected if area else f'"{target or "main sofa"}"'
             return (
-                f'In this {room}, replace the "{target or "main sofa"}" with "{replacement or "a modern alternative"}", '
+                f'In this {room}, replace the {thing} with "{replacement or "a modern alternative"}", '
                 f"matching the room's lighting, scale and perspective. Change nothing else. {KEEP_STRUCTURE}"
             )
         case "paint":
@@ -77,8 +84,9 @@ def build_prompt(req: GenerateRequest, reference_style: str | None = None) -> st
                 if req.color_hex
                 else "a warm off-white"
             )
+            walls = f"only the wall{where}" if area else "the walls"
             return (
-                f"Repaint the walls of this {room} in {color} with a matte finish. Keep furniture, floor, "
+                f"Repaint {walls} of this {room} in {color} with a matte finish. Keep furniture, floor, "
                 f"ceiling and everything else unchanged. {KEEP_STRUCTURE}"
             )
         case "flooring":

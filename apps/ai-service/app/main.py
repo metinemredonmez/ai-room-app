@@ -14,14 +14,17 @@ from .assistant import Assistant, AssistantUnavailable, CallUsage
 from .config import Settings, get_settings
 from .images import NO_CHANGE_BELOW, ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
 from .monitoring import init_monitoring
-from .prompts import build_prompt
+from .prompts import build_prompt, clean
 from .providers import ImageProvider, ProviderError, create_providers
 from .quality import assess
-from .region import RegionMask, Segmenter, composite, create_segmenter, masked_mean_abs_diff, region_target, usable
+from .region import (
+    SELECTABLE_TOOLS, RegionMask, Segmenter, Taps, composite, create_segmenter, describe_area, mask_png,
+    masked_mean_abs_diff, region_target, selection_points, usable,
+)
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, ChatRequest, ChatResponse, ErrorResponse, GenerateRequest, GenerateResponse,
-    HealthResponse, QualityRequest, QualityResponse, RegionInfo, Usage,
+    HealthResponse, QualityRequest, QualityResponse, RegionInfo, SegmentRequest, SegmentResponse, Usage,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -34,6 +37,7 @@ DESCRIPTION = """Internal AI service of Casalume. Only the backend calls it (hea
 
 * image generation with a provider fallback chain, circuit breakers and a 150 s time budget
 * region lock for paint / flooring / replace / targeted declutter: SAM 3 mask, pixels outside it stay the user's
+* tap selection: the user taps the objects to change; `/segment` previews the mask before anything is generated
 * capture-quality gate, no-change detection
 * Claude design chat and shopping/budget analysis
 * every AI answer carries a `usage` cost-ledger entry (API.md §7.2)
@@ -61,6 +65,14 @@ class NoChangeError(Exception):
     def __init__(self, usage: Usage):
         super().__init__("no_change")
         self.usage = usage
+
+
+class SelectionError(Exception):
+    """A tap selection could not be honoured: no segmenter (503) or nothing usable at the taps (422)."""
+
+    def __init__(self, status: int, code: str, message: str, usage: Usage | None = None):
+        super().__init__(code)
+        self.status, self.code, self.message, self.usage = status, code, message, usage
 
 
 def error(status: int, code: str, message: str, retryable: bool = False, usage: Usage | None = None) -> JSONResponse:
@@ -146,6 +158,11 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         log.warning('{"event":"no_change","images":%d}', exc.usage.images)
         return error(422, "no_change", "The result is identical to the input photo", usage=exc.usage)
 
+    @app.exception_handler(SelectionError)
+    async def selection_error(_: Request, exc: SelectionError):
+        log.warning('{"event":"selection_error","reason":"%s"}', exc.code)
+        return error(exc.status, exc.code, exc.message, usage=exc.usage)
+
     @app.exception_handler(AssistantUnavailable)
     async def assistant_error(_: Request, exc: AssistantUnavailable):
         log.warning('{"event":"assistant_error","reason":"%s"}', exc.reason)
@@ -180,14 +197,34 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             fallback_used=any(r.fallback_used for r in results),
         )
 
-    async def segment(image: bytes, target: str, timeout: float) -> RegionMask | Exception:
+    async def segment(image: bytes, target: str, timeout: float, points: Taps | None = None) -> RegionMask | Exception:
         assert segmenter is not None
         try:
-            return await asyncio.wait_for(segmenter.segment(image, target, timeout), timeout=timeout)
+            return await asyncio.wait_for(segmenter.segment(image, target, timeout, points), timeout=timeout)
         except (ProviderError, TimeoutError, asyncio.TimeoutError, OSError, ValueError) as exc:
             # A failed mask never fails the design: the edit continues without the lock (and says so).
             log.warning('{"event":"segmentation_failed","reason":"%s"}', getattr(exc, "code", type(exc).__name__))
             return exc
+
+    def segment_usage(mask: RegionMask, started: float) -> Usage:
+        sam = mask.method == "sam3"
+        return Usage(provider="falai" if sam else "demo", model=settings.falai_seg_model if sam else "heuristic",
+                     kind="segment", latency_ms=int((time.perf_counter() - started) * 1000), cost_usd=mask.cost_usd)
+
+    async def select(image: bytes, target: str, points: Taps | None, timeout: float, started: float) -> RegionMask:
+        """A selection the user asked for explicitly: unlike the automatic lock, it must succeed or fail loudly."""
+        if settings.region_lock != "auto" or segmenter is None:
+            raise SelectionError(503, "selection_unavailable", "Object selection is not available")
+        seg = await segment(image, target, timeout, points)
+        if isinstance(seg, ProviderError):
+            raise seg
+        if isinstance(seg, (TimeoutError, asyncio.TimeoutError)):
+            raise ProviderError("segmentation_timeout", retryable=True)
+        if isinstance(seg, Exception):
+            raise ProviderError("segmentation_failed", retryable=False)
+        if not usable(seg):
+            raise SelectionError(422, "selection_failed", "Nothing selectable at these points", segment_usage(seg, started))
+        return seg
 
     @app.post("/internal/v1/generate", tags=["generation"], response_model=GenerateResponse,
               dependencies=[Depends(require_internal)],
@@ -201,6 +238,16 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         deadline = loop.time() + settings.generate_time_budget_s
         remaining = lambda: max(0.05, deadline - loop.time())  # noqa: E731
         image = decode_image(req.image_b64, settings.max_image_bytes)
+        target = region_target(req) if settings.region_lock == "auto" else None
+
+        # Tap selection: the mask is needed for the prompt and must exist, so it comes first — a selection that
+        # finds nothing fails here, before any image is paid for.
+        points = selection_points(req)
+        selected: RegionMask | None = None
+        if points:
+            if req.tool not in SELECTABLE_TOOLS or req.remove_all:
+                raise HTTPException(status_code=400, detail="selection_not_supported")
+            selected = await select(image, target or "selection", points, remaining(), started)
 
         reference_style: str | None = None
         describe: CallUsage | None = None
@@ -212,12 +259,12 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
                 reference_style, describe = await asyncio.wait_for(assistant.describe_reference(ref), timeout=remaining())
             except (TimeoutError, asyncio.TimeoutError) as exc:
                 raise ProviderError("time_budget_exceeded", retryable=True) from exc
-        prompt = build_prompt(req, reference_style)
+        prompt = build_prompt(req, reference_style, describe_area(selected.mask) if selected else "")
         tint = req.color_hex if req.tool == "paint" else None
 
-        target = region_target(req) if settings.region_lock == "auto" else None
-        # The mask is computed while the variants render, so the lock adds no latency of its own.
-        seg_task = asyncio.create_task(segment(image, target, remaining())) if target and segmenter else None
+        # Otherwise the mask is computed while the variants render, so the lock adds no latency of its own.
+        seg_task = (asyncio.create_task(segment(image, target, remaining()))
+                    if target and segmenter and not selected else None)
 
         async def one(variant: int) -> ChainResult:
             async with generation_slots:
@@ -233,7 +280,11 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
 
         region: RegionInfo | None = None
         mask: RegionMask | None = None
-        if target:
+        if selected and target:
+            seg = mask = selected
+            region = RegionInfo(applied=True, target=target, method=selected.method,  # type: ignore[arg-type]
+                                coverage=round(selected.coverage, 4))
+        elif target:
             seg = await seg_task if seg_task else None
             if isinstance(seg, RegionMask):
                 mask = seg if usable(seg) else None
@@ -275,6 +326,22 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             raise NoChangeError(usage)
         return GenerateResponse(images_b64=images, prompt=prompt, provider=usage.provider,
                                 reference_style=reference_style, region=region, usage=usage)
+
+    @app.post("/internal/v1/segment", tags=["generation"], response_model=SegmentResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS,
+                         422: {"model": ErrorResponse, "description": "`selection_failed`: nothing usable at the taps (usage included)"},
+                         502: {"model": ErrorResponse, "description": "`ai_unavailable`: the segmenter failed"},
+                         503: {"model": ErrorResponse, "description": "`selection_unavailable`: no segmenter or REGION_LOCK=off"}},
+              summary="Selection preview: the mask for tapped objects or an object name")
+    async def segment_preview(req: SegmentRequest) -> SegmentResponse:
+        started = time.perf_counter()
+        image = decode_image(req.image_b64, settings.max_image_bytes)
+        points = [(p.x, p.y) for p in req.points] if req.points else None
+        sel = await select(image, clean(req.target, 60) or "selection", points, min(30.0, settings.provider_timeout_s), started)
+        png = await asyncio.to_thread(mask_png, sel.mask)
+        return SegmentResponse(mask_b64=to_b64(png), coverage=round(sel.coverage, 4), method=sel.method,  # type: ignore[arg-type]
+                               usage=segment_usage(sel, started))
 
     @app.post("/internal/v1/quality", tags=["quality"], response_model=QualityResponse,
               dependencies=[Depends(require_internal)], responses=ERRORS,

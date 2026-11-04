@@ -1,13 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ToolId = Literal[
     "redesign", "furnish", "declutter", "replace", "paint",
     "flooring", "exterior", "garden", "reference", "custom",
 ]
 Locale = Literal["tr", "en"]
-UsageKind = Literal["generate", "analyze", "chat", "describe"]
+UsageKind = Literal["generate", "analyze", "chat", "describe", "segment"]
 QualityIssue = Literal["too_dark", "too_bright", "blurry", "low_res", "low_contrast"]
 
 B64 = Field(..., min_length=100, max_length=17_000_000, description="Base64-encoded JPEG/PNG/WEBP image")
@@ -42,6 +42,16 @@ class ErrorResponse(BaseModel):
     usage: Usage | None = Field(None, description="Present when cost was incurred before the failure (e.g. no_change)")
 
 
+class Point(Strict):
+    """A tap on the photo, 0..1 from the top-left corner. Each point selects one object (API.md §7.15)."""
+
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+
+
+Points = Field(None, min_length=1, max_length=8, description="Tap selection, one object per point")
+
+
 class GenerateRequest(Strict):
     tool: ToolId
     image_b64: str = B64
@@ -56,6 +66,28 @@ class GenerateRequest(Strict):
     instructions: str | None = Field(None, max_length=300)
     remove_all: bool = False
     reference_image_b64: str | None = Field(None, max_length=17_000_000)
+    points: list[Point] | None = Points
+
+
+class SegmentRequest(Strict):
+    """Selection preview: the mask the region lock would use for these taps (or this object name)."""
+
+    image_b64: str = B64
+    target: str | None = Field(None, max_length=120)
+    points: list[Point] | None = Points
+
+    @model_validator(mode="after")
+    def _something_to_select(self):
+        if not self.points and not (self.target or "").strip():
+            raise ValueError("points or target required")
+        return self
+
+
+class SegmentResponse(BaseModel):
+    mask_b64: str = Field(description="PNG, grayscale, source size: 255 inside the selection, 0 outside")
+    coverage: float = Field(ge=0, le=1)
+    method: Literal["sam3", "heuristic"]
+    usage: Usage
 
 
 class RegionInfo(BaseModel):

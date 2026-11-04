@@ -4,6 +4,9 @@ For paint / flooring / replace / targeted declutter the target region is segment
 or a clearly labelled geometric heuristic in mock/demo mode). Whatever the image model returns, only the
 pixels inside that mask are taken from it — windows, doors and everything else keep the user's own pixels
 (only JPEG re-encoding noise). This is the main complaint about competitors ("the AI changed my windows").
+
+Tap selection (API.md §7.15): for replace / declutter / paint the user may tap the objects instead; each tap
+is a SAM 3 point prompt for one object, so only the tapped pillow changes, not every pillow in the room.
 """
 
 from __future__ import annotations
@@ -27,10 +30,20 @@ SEG_MAX_MASKS = 4
 MIN_COVERAGE = 0.005  # < 0.5 % of the image: segmentation found nothing usable
 MAX_COVERAGE = 0.95  # > 95 %: not a local edit any more
 FEATHER_PX = 3
+SELECTABLE_TOOLS = ("replace", "declutter", "paint")
+
+Taps = list[tuple[float, float]]
+
+
+def selection_points(req: GenerateRequest) -> Taps | None:
+    """The user's taps (0..1), or None when the request has no tap selection."""
+    return [(p.x, p.y) for p in req.points] if req.points else None
 
 
 def region_target(req: GenerateRequest) -> str | None:
     """The thing to segment, or None when the tool edits the whole scene."""
+    if req.points and req.tool in SELECTABLE_TOOLS:
+        return clean(req.target, 60) or "selection"
     if req.tool == "paint":
         return "wall"
     if req.tool == "flooring":
@@ -56,7 +69,7 @@ class RegionMask:
 class Segmenter(Protocol):
     method: str
 
-    async def segment(self, image: bytes, target: str, timeout: float) -> RegionMask | None: ...
+    async def segment(self, image: bytes, target: str, timeout: float, points: Taps | None = None) -> RegionMask | None: ...
 
 
 def _data_uri(data: bytes, mime: str = "image/jpeg") -> str:
@@ -86,7 +99,7 @@ def mask_from_image(img: Image.Image, size: tuple[int, int]) -> Image.Image:
 
 
 class FalSegmenter:
-    """fal.ai SAM 3: text-prompted segmentation; masks come back inline (sync_mode) — no URL fetching."""
+    """fal.ai SAM 3: text- or point-prompted segmentation; masks come back inline (sync_mode) — no URL fetching."""
 
     method = "sam3"
 
@@ -96,11 +109,24 @@ class FalSegmenter:
         self._cost = cost_usd
         self._transport = transport
 
-    async def segment(self, image: bytes, target: str, timeout: float) -> RegionMask | None:
-        body = {
-            "image_url": _data_uri(image), "prompt": target, "apply_mask": False, "sync_mode": True,
-            "output_format": "png", "return_multiple_masks": True, "max_masks": SEG_MAX_MASKS, "include_scores": True,
+    async def segment(self, image: bytes, target: str, timeout: float, points: Taps | None = None) -> RegionMask | None:
+        with Image.open(io.BytesIO(image)) as src:
+            size = src.size
+        body: dict = {
+            "image_url": _data_uri(image), "apply_mask": False, "sync_mode": True,
+            "output_format": "png", "return_multiple_masks": True, "include_scores": True,
         }
+        if points:
+            # One foreground point per object (pixel coordinates); a separate object_id keeps the objects apart.
+            w, h = size
+            body["point_prompts"] = [
+                {"x": round(x * (w - 1)), "y": round(y * (h - 1)), "label": 1, "object_id": i + 1}
+                for i, (x, y) in enumerate(points)
+            ]
+            body["max_masks"] = len(points)
+        else:
+            body["prompt"] = target
+            body["max_masks"] = SEG_MAX_MASKS
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(10.0, timeout)), transport=self._transport) as client:
                 res = await client.post(self._url, json=body, headers=self._headers)
@@ -113,10 +139,8 @@ class FalSegmenter:
         if not isinstance(items, list):
             raise ProviderError("falai_bad_output", retryable=False)
         scores = data.get("scores") if isinstance(data.get("scores"), list) else []
-        with Image.open(io.BytesIO(image)) as src:
-            size = src.size
         union = Image.new("L", size, 0)
-        for i, item in enumerate(items[:SEG_MAX_MASKS]):
+        for i, item in enumerate(items[: body["max_masks"]]):
             score = scores[i] if i < len(scores) and isinstance(scores[i], (int, float)) else None
             if score is not None and score < SEG_MIN_SCORE:
                 continue
@@ -131,12 +155,16 @@ class HeuristicSegmenter:
 
     method = "heuristic"
 
-    async def segment(self, image: bytes, target: str, timeout: float) -> RegionMask | None:
+    async def segment(self, image: bytes, target: str, timeout: float, points: Taps | None = None) -> RegionMask | None:
         with Image.open(io.BytesIO(image)) as src:
             w, h = src.size
         mask = Image.new("L", (w, h), 0)
         draw = ImageDraw.Draw(mask)
-        if target == "floor":
+        if points:
+            for x, y in points:  # an ellipse around each tap
+                cx, cy, rx, ry = x * w, y * h, w * 0.12, h * 0.15
+                draw.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+        elif target == "floor":
             draw.rectangle((0, int(h * 0.68), w, h), fill=255)
         elif target == "wall":
             draw.rectangle((int(w * 0.24), int(h * 0.18), int(w * 0.76), int(h * 0.66)), fill=255)
@@ -147,6 +175,22 @@ class HeuristicSegmenter:
 
 def usable(region: RegionMask | None) -> bool:
     return region is not None and MIN_COVERAGE <= region.coverage <= MAX_COVERAGE
+
+
+def describe_area(mask: Image.Image) -> str:
+    """Where the selection is, in words the image model understands ("25–60 % from the left, …")."""
+    box = mask.getbbox()
+    if box is None:
+        return ""
+    w, h = mask.size
+    left, top, right, bottom = (round(100 * v / d) for v, d in zip(box, (w, h, w, h)))
+    return f"in the area {left}–{right} % from the left and {top}–{bottom} % from the top of the photo"
+
+
+def mask_png(mask: Image.Image) -> bytes:
+    out = io.BytesIO()
+    mask.convert("L").save(out, format="PNG", optimize=True)
+    return out.getvalue()
 
 
 def composite(original: bytes, generated: bytes, mask: Image.Image, feather: int = FEATHER_PX) -> bytes:

@@ -247,7 +247,7 @@ model AuditLog {
 // Cost ledger: one row per AI service call (usage reported by the AI service).
 model AiUsage {
   id           String   @id @default(uuid()) @db.Uuid
-  kind         String // generate | analyze | chat | describe
+  kind         String // generate | analyze | chat | describe | segment
   provider     String
   model        String
   images       Int      @default(0)
