@@ -346,6 +346,8 @@ if (adminToken) {
   ok(reports.json?.items?.some((r) => r.id === report.json.id), 'admin sees the open report');
   const resolved = await call('PATCH', `/admin/reports/${report.json.id}`, { ...A, body: { status: 'RESOLVED', resolution: 'smoke checked' } });
   ok(resolved.status === 200 && resolved.json?.status === 'RESOLVED', 'admin resolves the report');
+  const reResolve = await call('PATCH', `/admin/reports/${report.json.id}`, { ...A, body: { status: 'DISMISSED', resolution: 'second opinion' } });
+  ok(reResolve.status === 409, 'a decided report cannot be overwritten', `status ${reResolve.status}`);
   const jobs = await call('GET', '/admin/jobs', A);
   ok(jobs.status === 200 && typeof jobs.json?.queue?.waiting === 'number', 'jobs overview + queue counts', `${jobs.json?.items?.length} runs`);
   const auditV11 = await call('GET', '/admin/audit?limit=10', A);

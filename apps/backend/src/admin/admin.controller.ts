@@ -354,7 +354,7 @@ export class AdminController {
     const q = parse(z.object({ ...Page, status: z.enum(['OPEN', 'RESOLVED', 'DISMISSED']).optional() }), query);
     const rows = await this.prisma.contentReport.findMany({
       where: q.status ? { status: q.status } : {},
-      include: { design: { include: { inputImage: true, results: true } } },
+      include: { design: { include: { inputImage: true, results: true, user: { select: { id: true, email: true } } } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: q.limit + 1, ...cursorArgs(q.cursor),
     });
     const page = rows.slice(0, q.limit);
@@ -364,6 +364,7 @@ export class AdminController {
           id: r.id, designId: r.designId, reason: r.reason, note: r.note, status: r.status, reporterId: r.reporterId,
           createdAt: r.createdAt.toISOString(), resolvedAt: r.resolvedAt?.toISOString() ?? null, resolution: r.resolution,
           design: await this.designs.toDto(r.design),
+          owner: { id: r.design.user.id, email: r.design.user.email },
         })),
       ),
       nextCursor: rows.length > q.limit ? page[page.length - 1].id : null,
@@ -372,7 +373,7 @@ export class AdminController {
 
   @MinRole('SUPPORT')
   @Patch('reports/:id')
-  @Doc('Bildirimi sonuçlandır (isteğe bağlı: öne çıkarmayı kaldır / tasarımı sil)', { errors: [400, 401, 403, 404] })
+  @Doc('Bildirimi sonuçlandır (isteğe bağlı: öne çıkarmayı kaldır / tasarımı sil); yalnız açık bildirim', { errors: [400, 401, 403, 404, 409] })
   async resolveReport(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(
       z.object({
@@ -388,11 +389,14 @@ export class AdminController {
     if (input.deleteDesign && !atLeast(auth.role, 'ADMIN')) throw new AppError(403, 'forbidden', 'Tasarım silmek ADMIN yetkisi ister');
     const report = await this.prisma.contentReport.findUnique({ where: { id } });
     if (!report) throw notFound();
-    if (input.unfeature) await this.prisma.design.update({ where: { id: report.designId }, data: { featured: false } });
-    const updated = await this.prisma.contentReport.update({
-      where: { id },
+    // A report is decided once: a double click or a second moderator gets 409 instead of overwriting the first decision.
+    const claimed = await this.prisma.contentReport.updateMany({
+      where: { id, status: 'OPEN' },
       data: { status: input.status, resolution: input.resolution, resolvedBy: auth.userId, resolvedAt: new Date() },
     });
+    if (claimed.count !== 1) throw new AppError(409, 'conflict', 'Bu bildirim zaten sonuçlandırılmış');
+    if (input.unfeature) await this.prisma.design.update({ where: { id: report.designId }, data: { featured: false } });
+    const updated = await this.prisma.contentReport.findUniqueOrThrow({ where: { id } });
     await this.audit.record(auth.userId, 'report.resolve', 'report', id, { status: input.status, unfeature: input.unfeature ?? false, deleteDesign: input.deleteDesign ?? false }, req.clientIp);
     if (input.deleteDesign) {
       await this.designs.remove(report.designId); // cascades the report row too

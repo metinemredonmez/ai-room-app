@@ -4233,6 +4233,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4240,7 +4250,7 @@
             "admin": []
           }
         ],
-        "summary": "Bildirimi sonuçlandır (isteğe bağlı: öne çıkarmayı kaldır / tasarımı sil)",
+        "summary": "Bildirimi sonuçlandır (isteğe bağlı: öne çıkarmayı kaldır / tasarımı sil); yalnız açık bildirim",
         "tags": [
           "admin"
         ]

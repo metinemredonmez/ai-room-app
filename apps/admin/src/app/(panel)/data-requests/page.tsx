@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { api, ApiError, useApi, usePaged } from "@/lib/api";
+import { api, ApiError, notifyBadges, useApi, usePaged } from "@/lib/api";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import type { AdminMe, DataRequest, DataRequestDetail, DataRequestStatus } from "@/lib/types";
 
@@ -82,6 +82,7 @@ export default function DataRequestsPage() {
     received.reload();
     inProgress.reload();
     other.reload();
+    notifyBadges();
   };
   const c = counts.data?.counts;
 

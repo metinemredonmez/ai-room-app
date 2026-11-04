@@ -150,6 +150,7 @@ export type ContentReport = {
   resolvedAt: string | null;
   resolution: string | null;
   design: Design;
+  owner: { id: string; email: string | null };
 };
 
 export type JobRun = {

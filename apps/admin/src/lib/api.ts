@@ -15,6 +15,19 @@ export class ApiError extends Error {
 
 type Query = Record<string, string | number | boolean | null | undefined>;
 
+const BADGES_EVENT = "airoom:badges";
+
+/** Tells the sidebar that its counters (open reports, KVKK deadlines) may have changed. */
+export function notifyBadges() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(BADGES_EVENT));
+}
+
+/** Subscribes to {@link notifyBadges}; returns the unsubscribe function. */
+export function onBadgesChanged(cb: () => void): () => void {
+  window.addEventListener(BADGES_EVENT, cb);
+  return () => window.removeEventListener(BADGES_EVENT, cb);
+}
+
 function withQuery(path: string, query?: Query): string {
   if (!query) return path;
   const qs = new URLSearchParams();

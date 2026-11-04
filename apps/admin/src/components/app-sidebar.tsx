@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -47,7 +47,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useApi } from "@/lib/api";
+import { onBadgesChanged, useApi } from "@/lib/api";
 import { ROLE_LABELS } from "@/lib/format";
 import type { AdminMe, Page, ContentReport } from "@/lib/types";
 
@@ -113,6 +113,16 @@ export function AppSidebar() {
   const kvkk = useApi<{ counts: { dueSoon: number; overdue: number } }>("/data-requests", { limit: 1 });
   // KVKK: only applications that need action soon (due within 7 days or overdue).
   const badges = { openReports: openReports.data?.items.length ?? 0, kvkkDue: (kvkk.data?.counts.dueSoon ?? 0) + (kvkk.data?.counts.overdue ?? 0) };
+  const { reload: reloadReports } = openReports;
+  const { reload: reloadKvkk } = kvkk;
+  useEffect(
+    () =>
+      onBadgesChanged(() => {
+        reloadReports();
+        reloadKvkk();
+      }),
+    [reloadReports, reloadKvkk],
+  );
 
   return (
     <Sidebar collapsible="icon">
