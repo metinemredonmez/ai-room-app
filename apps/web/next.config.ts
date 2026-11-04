@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { DEFAULT_LOCALE_HEADER } from "./src/lib/locale-header";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -43,6 +44,17 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  // Turkish pages are unprefixed but live under app/[locale] as /tr/…. src/proxy.ts marks those requests with a
+  // header and this rewrite maps them. The rewrite sits here, not in the proxy: a proxy rewrite is an absolute URL,
+  // and behind `next start -H 127.0.0.1` Next spells its own origin as localhost there, takes it for an external
+  // URL and proxies it (TLS error, 500 on hazal). A config rewrite is a path and never leaves the server.
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/:path*", has: [{ type: "header", key: DEFAULT_LOCALE_HEADER, value: "1" }], destination: "/tr/:path*" }],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async headers() {
     return [
