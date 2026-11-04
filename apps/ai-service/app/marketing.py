@@ -126,8 +126,8 @@ def _parse(raw: str) -> AsoListing:
 
 
 def _add(a: CallUsage, b: CallUsage) -> CallUsage:
-    return CallUsage(model=b.model, input_tokens=a.input_tokens + b.input_tokens,
-                     output_tokens=a.output_tokens + b.output_tokens, latency_ms=a.latency_ms + b.latency_ms)
+    counts = {k: getattr(a, k) + getattr(b, k) for k in ("input_tokens", "output_tokens", "latency_ms")}
+    return CallUsage(model=b.model, **counts)
 
 
 async def aso(assistant: Assistant, req: AsoRequest) -> AsoResponse:
