@@ -13,6 +13,7 @@ export function SiteFooter() {
         { href: "/studio", label: t.nav.studio },
         { href: "/sohbet", label: t.nav.chat },
         { href: "/fiyatlar", label: t.nav.pricing },
+        { href: "/blog", label: t.nav.blog },
       ],
     },
     {

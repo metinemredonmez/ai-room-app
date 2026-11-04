@@ -278,7 +278,7 @@ export type AsoField =
 export type AsoListing = Record<AsoField, string>;
 export type MarketingDraft<O = AsoListing> = {
   id: string;
-  kind: "aso" | "social" | "campaign" | "report";
+  kind: "aso" | "social" | "campaign" | "report" | "blog" | "seo";
   locale: Locale;
   status: MarketingDraftStatus;
   input: Record<string, unknown> & { brief?: string | null; whatsNew?: string | null };

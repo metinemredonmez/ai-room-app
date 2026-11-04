@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AiClient, AiError } from '../ai/ai.client.js';
+import { BlogService, type BlogDraftInput } from '../blog/blog.service.js';
 import { BroadcastsService } from '../broadcasts/broadcasts.service.js';
 import { LINKS } from '../broadcasts/broadcast.rules.js';
 import { LOCALES, isLocale, type Locale } from '../catalog/catalog.data.js';
@@ -16,12 +17,13 @@ import { SettingsService } from '../settings/settings.service.js';
 import { UsageService, type AiUsageReport } from '../usage/usage.service.js';
 import { hasStylePhoto, renderBeforeAfter, type SocialFormat } from './marketing.images.js';
 import {
-  AsoListingSchema, buildFacts, campaignSchema, campaignViolations, playListings, socialPostSchema, socialViolations,
-  storeConfig, violationsOf, type AsoListing, type AsoRun, type CampaignRun, type Channel, type Platform, type SocialRun,
+  AsoListingSchema, BLOG_LINKS, SEO_PAGES, blogArticleSchema, blogViolations, buildFacts, campaignSchema, campaignViolations,
+  playListings, seoSchema, seoViolations, socialPostSchema, socialViolations, storeConfig, violationsOf, type AsoListing,
+  type AsoRun, type BlogRun, type BlogTranslate, type CampaignRun, type Channel, type Platform, type SocialRun,
 } from './marketing.rules.js';
 import { renderWeeklyReport, weeklyMetrics, type WeeklyMetrics } from './weekly-report.js';
 
-export const DRAFT_KINDS = ['aso', 'social', 'campaign', 'report'] as const;
+export const DRAFT_KINDS = ['aso', 'social', 'campaign', 'report', 'blog', 'seo'] as const;
 export type DraftKind = (typeof DRAFT_KINDS)[number];
 
 type SocialInput = { styleId: string; platform: Platform; brief: string | null };
@@ -50,6 +52,7 @@ export class MarketingService {
     private broadcasts: BroadcastsService,
     private mailer: MailerService,
     @Inject(CONFIG) private cfg: Config,
+    private blog: BlogService,
   ) {}
 
   async facts(locale: Locale = 'en') {
@@ -111,6 +114,33 @@ export class MarketingService {
     return this.queue('campaign', input.locales.map((locale) => ({ locale, input: payload })), userId);
   }
 
+  /** Blog article written from a topic, in one language (Turkish by default). */
+  async runBlog(input: BlogRun, userId: string) {
+    await this.assertBudget();
+    if (input.styleId && !(await this.catalog.styles()).some((s) => s.id === input.styleId)) {
+      throw new AppError(400, 'validation_failed', 'Stil bulunamadı');
+    }
+    const payload: BlogDraftInput = { mode: 'write', topic: input.topic, keywords: input.keywords || null, styleId: input.styleId ?? null };
+    return this.queue('blog', [{ locale: input.locale, input: payload }], userId);
+  }
+
+  /** Translations of a published article; approving one publishes it as that article's language version. */
+  async runBlogTranslate(input: BlogTranslate, userId: string) {
+    await this.assertBudget();
+    const source = await this.prisma.blogPost.findUnique({ where: { id: input.postId } });
+    if (!source || source.status !== 'PUBLISHED') throw new AppError(404, 'not_found', 'Yayındaki yazı bulunamadı');
+    const locales = input.locales.filter((l) => l !== source.locale);
+    if (!locales.length) throw new AppError(400, 'validation_failed', 'Yazının kendi dili dışında bir dil seç');
+    const payload: BlogDraftInput = { mode: 'translate', sourcePostId: source.id, styleId: source.styleId };
+    return this.queue('blog', locales.map((locale) => ({ locale, input: payload })), userId);
+  }
+
+  /** Page titles and descriptions, one draft per language; approved ones are served to the web (§7.18). */
+  async runSeo(locales: Locale[], userId: string) {
+    await this.assertBudget();
+    return this.queue('seo', locales.map((locale) => ({ locale, input: {} })), userId);
+  }
+
   /** Weekly report: numbers now, Claude's reading in the worker; `send` mails it to the SUPER_ADMINs. */
   async runReport(send: boolean, userId: string | null) {
     const metrics = await weeklyMetrics(this.prisma);
@@ -130,6 +160,8 @@ export class MarketingService {
         : draft.kind === 'social' ? await this.writeSocial(draft, draft.locale)
         : draft.kind === 'campaign' ? await this.writeCampaign(draft, draft.locale)
         : draft.kind === 'report' ? await this.writeReport(draft)
+        : draft.kind === 'blog' ? await this.writeBlog(draft, draft.locale)
+        : draft.kind === 'seo' ? await this.writeSeo(draft.locale)
         : null;
       if (!out) throw new AppError(400, 'unknown_kind');
       await this.usage.record(out.usage);
@@ -210,6 +242,31 @@ export class MarketingService {
     }
   }
 
+  private async writeBlog(draft: MarketingDraft, locale: Locale): Promise<Written> {
+    const input = draft.input as BlogDraftInput;
+    let source: { title: string; description: string; body: string } | undefined;
+    if (input.mode === 'translate') {
+      const post = input.sourcePostId ? await this.prisma.blogPost.findUnique({ where: { id: input.sourcePostId } }) : null;
+      if (!post) throw new AppError(409, 'source_missing');
+      source = { title: post.title, description: post.description, body: post.body };
+    }
+    const out = await this.ai.marketingBlog({
+      locale,
+      facts: await this.facts(locale),
+      links: [...BLOG_LINKS],
+      ...(source ? { source } : { topic: input.topic ?? '' }),
+      ...(input.keywords ? { keywords: input.keywords } : {}),
+    });
+    return { output: out.article, violations: blogViolations(out.article as unknown as Record<string, unknown>), usage: out.usage };
+  }
+
+  private async writeSeo(locale: Locale): Promise<Written> {
+    const out = await this.ai.marketingSeo({ locale, facts: await this.facts(locale), pages: SEO_PAGES.map((p) => ({ ...p })) });
+    const output = { pages: out.pages };
+    const missing = SEO_PAGES.filter((p) => !out.pages.some((x) => x.key === p.key)).map((p) => `${p.key}.missing`);
+    return { output, violations: [...seoViolations(output), ...missing], usage: out.usage };
+  }
+
   private async mailReport(draftId: string) {
     const draft = await this.prisma.marketingDraft.findUnique({ where: { id: draftId } });
     const output = draft?.output as { metrics: WeeklyMetrics; text: { summary: string; highlights: string[]; actions: string[] } | null } | null;
@@ -237,6 +294,8 @@ export class MarketingService {
     if (draft.kind === 'aso') return AsoListingSchema;
     if (draft.kind === 'social') return socialPostSchema((draft.input as SocialInput).platform);
     if (draft.kind === 'campaign') return campaignSchema((draft.input as CampaignInput).channel, LINK_PATHS);
+    if (draft.kind === 'blog') return blogArticleSchema;
+    if (draft.kind === 'seo') return seoSchema;
     throw new AppError(409, 'conflict', 'Bu taslak düzenlenemez');
   }
 
@@ -271,9 +330,12 @@ export class MarketingService {
       if (draft.violations.length) {
         throw new AppError(422, 'over_limit', `Düzeltilmesi gereken alanlar var: ${draft.violations.join(', ')}`);
       }
-      if (draft.kind === 'aso') {
-        await tx.marketingDraft.updateMany({ where: { kind: 'aso', locale: draft.locale, status: 'APPROVED' }, data: { status: 'ARCHIVED' } });
+      // Store listing and SEO texts: one current text per language, the previous one is archived.
+      if (draft.kind === 'aso' || draft.kind === 'seo') {
+        await tx.marketingDraft.updateMany({ where: { kind: draft.kind, locale: draft.locale, status: 'APPROVED' }, data: { status: 'ARCHIVED' } });
       }
+      // A blog article goes live on approval.
+      if (draft.kind === 'blog') await this.blog.publish(tx, draft, userId);
       const saved = await tx.marketingDraft.update({ where: { id }, data: { status: 'APPROVED', approvedById: userId, approvedAt: new Date() } });
       return this.dto(saved);
     });

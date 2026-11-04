@@ -11,7 +11,8 @@
       "designs": "マイデザイン",
       "unsubscribe": "配信停止",
       "chat": "AIチャット",
-      "forgotPassword": "パスワードをお忘れの方"
+      "forgotPassword": "パスワードをお忘れの方",
+      "blog": "ブログ"
     }
   },
   "brandTagline": "お部屋を数秒でリデザイン",
@@ -24,7 +25,8 @@
     "logout": "ログアウト",
     "tryFree": "無料で試す",
     "menu": "メニュー",
-    "guest": "ゲスト"
+    "guest": "ゲスト",
+    "blog": "ブログ"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "ページが見つかりません",
     "cta": "ホームに戻る"
+  },
+  "blog": {
+    "title": "ブログ",
+    "subtitle": "インテリアのアイデア、色、狭い空間、スタイル。",
+    "empty": "まだ記事はありません。",
+    "readMore": "続きを読む",
+    "back": "すべての記事",
+    "ctaTitle": "このアイデアを自分の部屋で試してみましょう",
+    "ctaBody": "部屋の写真をアップロードしてスタイルを選ぶか、家具をひとつタップしてそれだけを変更できます。",
+    "ctaButton": "スタジオを開く",
+    "minutes": "{n}分で読めます",
+    "otherLanguages": "ほかの言語"
   }
 }

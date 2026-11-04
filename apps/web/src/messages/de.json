@@ -11,7 +11,8 @@
       "designs": "Meine Designs",
       "unsubscribe": "Abmelden",
       "chat": "KI-Chat",
-      "forgotPassword": "Passwort vergessen"
+      "forgotPassword": "Passwort vergessen",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Gestalte deinen Raum in Sekunden neu",
@@ -24,7 +25,8 @@
     "logout": "Abmelden",
     "tryFree": "Kostenlos testen",
     "menu": "Menü",
-    "guest": "Gast"
+    "guest": "Gast",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Seite nicht gefunden",
     "cta": "Zur Startseite"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Einrichtungsideen, Farben, kleine Räume und Stile.",
+    "empty": "Noch keine Artikel.",
+    "readMore": "Weiterlesen",
+    "back": "Alle Artikel",
+    "ctaTitle": "Probier die Idee in deinem eigenen Raum aus",
+    "ctaBody": "Lade ein Foto deines Raums hoch, wähle einen Stil oder tippe auf ein Möbelstück und ändere nur das.",
+    "ctaButton": "Studio öffnen",
+    "minutes": "{n} Min. Lesezeit",
+    "otherLanguages": "Auch auf"
   }
 }

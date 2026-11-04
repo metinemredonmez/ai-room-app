@@ -294,6 +294,66 @@ class ReportResponse(BaseModel):
     usage: Usage
 
 
+class BlogSource(Strict):
+    title: str = Field(..., max_length=200)
+    description: str = Field(..., max_length=400)
+    body: str = Field(..., max_length=40000)
+
+
+class BlogRequest(Strict):
+    """Blog article (API.md §7.18): written from a topic, or translated from a published article."""
+
+    locale: Locale
+    facts: str = Field(..., min_length=50, max_length=8000)
+    topic: str | None = Field(None, max_length=300)
+    keywords: str | None = Field(None, max_length=300)
+    source: BlogSource | None = None
+    links: list[str] = Field(default_factory=list, max_length=30, description="In-site paths the article may link to")
+
+    @model_validator(mode="after")
+    def _topic_or_source(self):
+        if not self.source and not (self.topic or "").strip():
+            raise ValueError("topic or source required")
+        return self
+
+
+class BlogArticle(BaseModel):
+    title: str
+    description: str
+    slug: str
+    body: str
+
+
+class BlogResponse(BaseModel):
+    article: BlogArticle
+    violations: list[str]
+    usage: Usage
+
+
+class SeoPage(Strict):
+    key: str = Field(..., max_length=40)
+    path: str = Field(..., max_length=80)
+    purpose: str = Field(..., max_length=300)
+
+
+class SeoRequest(Strict):
+    locale: Locale
+    facts: str = Field(..., min_length=50, max_length=8000)
+    pages: list[SeoPage] = Field(..., min_length=1, max_length=12)
+
+
+class SeoMeta(BaseModel):
+    key: str
+    title: str
+    description: str
+
+
+class SeoResponse(BaseModel):
+    pages: list[SeoMeta]
+    violations: list[str]
+    usage: Usage
+
+
 class ProviderState(BaseModel):
     name: str
     state: Literal["closed", "open", "half_open"]

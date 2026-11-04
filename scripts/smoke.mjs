@@ -477,8 +477,41 @@ if (adminToken) {
   ok(repRun.status === 202 && rep?.status === 'READY' && rep.output?.metrics?.thisWeek?.designs?.created >= 1 && repMail?.text?.includes('Yeni kayıtlı kullanıcı'),
     'weekly report built and mailed to the owner', rep?.status);
   await call('POST', `/admin/marketing/drafts/${rep?.id}/archive`, A);
-  const asoAudit = new Set(((await call('GET', '/admin/audit?limit=50', A)).json?.items ?? []).map((a) => a.action));
-  ok(['marketing.aso_run', 'marketing.edit', 'marketing.approve', 'marketing.archive', 'marketing.social_run', 'marketing.campaign_run', 'marketing.to_broadcast', 'marketing.report_run'].every((x) => asoAudit.has(x)), 'marketing actions are audited (LOG-01)');
+
+  // Blog: an approved draft is published; a translation joins its article (hreflang); taking it down hides it.
+  const topic = `Küçük salon dekorasyonu ${Date.now()}`;
+  const blogRun = await call('POST', '/admin/marketing/blog', { ...A, body: { topic, locale: 'tr', styleId: 'japandi' } });
+  const blogDraft = await waitDraft('blog', blogRun.json?.items?.[0]?.id);
+  const blogBadSlug = await call('PATCH', `/admin/marketing/drafts/${blogDraft?.id}`, { ...A, body: { output: { ...blogDraft?.output, slug: '../admin' } } });
+  const blogApprove = await call('POST', `/admin/marketing/drafts/${blogDraft?.id}/approve`, A);
+  const slug = blogDraft?.output?.slug;
+  const pub = await call('GET', `/blog/${slug}?locale=tr`);
+  const pubList = await call('GET', '/blog?locale=tr');
+  ok(blogApprove.status === 200 && blogBadSlug.status === 400 && pub.status === 200 && pub.json?.coverUrl?.includes('/styles/japandi/') && pubList.json?.items?.some((p) => p.slug === slug),
+    'blog article published on approval (slug checked)', `${blogApprove.status} / ${pub.status}`);
+  const trRun = await call('POST', '/admin/marketing/blog/translate', { ...A, body: { postId: pub.json?.id, locales: ['de', 'tr'] } });
+  const trDraft = await waitDraft('blog', trRun.json?.items?.[0]?.id);
+  await call('POST', `/admin/marketing/drafts/${trDraft?.id}/approve`, A);
+  const pub2 = await call('GET', `/blog/${slug}?locale=tr`);
+  ok(trRun.json?.items?.length === 1 && pub2.json?.translations?.some((t) => t.locale === 'de'), 'blog translation joins its article (hreflang)', JSON.stringify(pub2.json?.translations?.map((t) => t.locale)));
+  const siteMap = await call('GET', '/blog/sitemap');
+  const down = await call('POST', `/admin/blog/${pub.json?.id}/unpublish`, A);
+  const gone = await call('GET', `/blog/${slug}?locale=tr`);
+  ok(siteMap.json?.items?.some((p) => p.slug === slug) && down.status === 200 && gone.status === 404, 'unpublished article disappears from the site', `status ${gone.status}`);
+  const deId = (await call('GET', '/admin/blog', A)).json?.items?.find((p) => p.groupId === pub.json?.groupId && p.locale === 'de')?.id;
+  if (deId) await call('POST', `/admin/blog/${deId}/unpublish`, A);
+
+  // SEO: approved titles are served to the web; archiving brings back the site's own texts.
+  const seoRun = await call('POST', '/admin/marketing/seo', { ...A, body: { locales: ['nl'] } });
+  const seoDraft = await waitDraft('seo', seoRun.json?.items?.[0]?.id);
+  const seoApprove = await call('POST', `/admin/marketing/drafts/${seoDraft?.id}/approve`, A);
+  const meta = await call('GET', '/seo/meta?locale=nl');
+  await call('POST', `/admin/marketing/drafts/${seoDraft?.id}/archive`, A);
+  const metaAfter = await call('GET', '/seo/meta?locale=nl');
+  ok(seoApprove.status === 200 && meta.json?.pages?.home?.title && Object.keys(meta.json.pages).length === 5 && Object.keys(metaAfter.json?.pages ?? {}).length === 0,
+    'approved SEO texts served to the web, archived ones not', Object.keys(meta.json?.pages ?? {}).join(','));
+  const asoAudit = new Set(((await call('GET', '/admin/audit?limit=100', A)).json?.items ?? []).map((a) => a.action));
+  ok(['marketing.aso_run', 'marketing.edit', 'marketing.approve', 'marketing.archive', 'marketing.social_run', 'marketing.campaign_run', 'marketing.to_broadcast', 'marketing.report_run', 'marketing.blog_run', 'marketing.blog_translate', 'blog.unpublish', 'marketing.seo_run'].every((x) => asoAudit.has(x)), 'marketing actions are audited (LOG-01)');
 
   const texts = await call('GET', '/admin/legal', A);
   ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');
@@ -491,7 +524,7 @@ if (adminToken) {
   ok(htmlDraft.status === 400 && draft.status === 201 && draftEdit.status === 200 && liveEdit.status === 409 && draftDel.status === 204, 'drafts are editable, published texts are not, HTML is refused');
   const publishNoDraft = await call('POST', '/admin/legal/publish', { ...A, body: { kind: 'marketing', version: '2099-12-31', reason: 'smoke' } });
   ok(publishNoDraft.status === 400, 'nothing to publish without a Turkish draft');
-  const kvkkAudit = await call('GET', '/admin/audit?limit=30', A);
+  const kvkkAudit = await call('GET', '/admin/audit?limit=100', A);
   const kvkkActions = new Set((kvkkAudit.json?.items ?? []).map((a) => a.action));
   ok(['kvkk.request_update', 'kvkk.request_create', 'legal.draft_create', 'legal.draft_delete'].every((a) => kvkkActions.has(a)) && !JSON.stringify(kvkkAudit.json).includes('smoke: verilerinin'), 'KVKK actions are audited without the answer text');
 
@@ -614,7 +647,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

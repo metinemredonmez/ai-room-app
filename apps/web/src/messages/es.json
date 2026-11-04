@@ -11,7 +11,8 @@
       "designs": "Mis diseños",
       "unsubscribe": "Cancelar suscripción",
       "chat": "Chat con IA",
-      "forgotPassword": "Olvidé mi contraseña"
+      "forgotPassword": "Olvidé mi contraseña",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Rediseña tu habitación en segundos",
@@ -24,7 +25,8 @@
     "logout": "Cerrar sesión",
     "tryFree": "Prueba gratis",
     "menu": "Menú",
-    "guest": "Invitado"
+    "guest": "Invitado",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Página no encontrada",
     "cta": "Volver al inicio"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Ideas de decoración, colores, espacios pequeños y estilos.",
+    "empty": "Aún no hay artículos.",
+    "readMore": "Leer más",
+    "back": "Todos los artículos",
+    "ctaTitle": "Prueba esta idea en tu propia habitación",
+    "ctaBody": "Sube una foto de tu habitación, elige un estilo o toca un objeto y cambia solo ese.",
+    "ctaButton": "Abrir el estudio",
+    "minutes": "{n} min de lectura",
+    "otherLanguages": "También en"
   }
 }

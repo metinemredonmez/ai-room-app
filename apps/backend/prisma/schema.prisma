@@ -559,3 +559,31 @@ model MarketingDraft {
   @@index([kind, locale, createdAt])
   @@index([status])
 }
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Public blog (API.md §7.18). One row per article per language; translations share `groupId` (hreflang).
+/// Written by the marketing agent as a MarketingDraft and published here when an ADMIN approves it.
+model BlogPost {
+  id          String     @id @default(uuid()) @db.Uuid
+  groupId     String     @db.Uuid
+  locale      String
+  slug        String
+  title       String
+  description String
+  body        String // Markdown subset (headings, lists, bold/italic, in-site links); rendered without HTML
+  styleId     String? // cover: the style's preview photo
+  status      BlogStatus @default(PUBLISHED)
+  draftId     String?    @db.Uuid
+  publishedBy String?    @db.Uuid
+  publishedAt DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([locale, slug])
+  @@unique([groupId, locale])
+  @@index([locale, status, publishedAt])
+}

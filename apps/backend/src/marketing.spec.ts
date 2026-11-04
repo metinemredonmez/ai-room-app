@@ -69,6 +69,14 @@ function service(opts: { budget?: 'normal' | 'exceeded'; ai?: () => Promise<unkn
       asked.push(input);
       return { message: { title: 'Yeni stiller', body: 'Kapadokya stilini dene.', link: '/studio' }, violations: [], usage: { kind: 'marketing', cost_usd: 0.01 } };
     },
+    marketingBlog: async (input: unknown) => {
+      asked.push(input);
+      return { article: { title: 'Küçük salon için 7 fikir', description: 'd'.repeat(120), slug: 'kucuk-salon', body: 'b'.repeat(400) }, violations: [], usage: { kind: 'marketing', cost_usd: 0.1 } };
+    },
+    marketingSeo: async (input: unknown) => {
+      asked.push(input);
+      return { pages: [{ key: 'home', title: 'Casalume: AI oda tasarımı', description: 'd'.repeat(130) }], violations: [], usage: { kind: 'marketing', cost_usd: 0.01 } };
+    },
     marketingAso: async (input: unknown) => {
       asked.push(input);
       return opts.ai ? opts.ai() : { listing: listing(), violations: [], usage: { provider: 'anthropic', model: 'claude-opus-5-5', kind: 'marketing', cost_usd: 0.07 } };
@@ -81,12 +89,14 @@ function service(opts: { budget?: 'normal' | 'exceeded'; ai?: () => Promise<unkn
     previewUrl: (id: string) => `https://api.example/v1/styles/${id}/preview.jpg`,
   };
   const settings = { current: { freeDailyGenerations: 3, maxVariantsFree: 2 } };
+  const published: unknown[] = [];
+  const blog = { publish: async (_tx: unknown, draft: { id: string }) => void published.push(draft.id) };
   const broadcasts = {
     precheck: (c: { kind: string }) => (opts.commercial ? { signals: ['indirim'], blocked: c.kind === 'SERVICE' } : { signals: [], blocked: false }),
     create: async (input: unknown) => { created.push(input); return { id: 'b1' }; },
   };
-  const svc = new MarketingService(prisma as never, queues as never, ai as never, usage as never, catalog as never, settings as never, broadcasts as never, {} as never, {} as never);
-  return { svc, rows, queued, recorded, asked, created };
+  const svc = new MarketingService(prisma as never, queues as never, ai as never, usage as never, catalog as never, settings as never, broadcasts as never, {} as never, {} as never, blog as never);
+  return { svc, rows, queued, recorded, asked, created, published };
 }
 
 describe('store listing rules', () => {
@@ -267,5 +277,43 @@ describe('weekly report mail', () => {
     expect(mail.text).toContain('Yeni kayıtlı kullanıcı: 2 (+100%)');
     const bare = renderWeeklyReport({ to: 'owner@example.com', metrics, text: null, adminUrl: 'https://admin.example' });
     expect(bare.text).toContain('AI maliyeti: $3.00 (+100%)');
+  });
+});
+
+describe('blog and SEO', () => {
+  it('publishes a blog article only when it is approved', async () => {
+    const { svc, rows, published, asked } = service();
+    await svc.runBlog({ topic: 'Küçük salon dekorasyonu', locale: 'tr' }, 'admin');
+    await svc.process(rows[0].id, false);
+    expect(rows[0]).toMatchObject({ kind: 'blog', status: 'READY', violations: [] });
+    expect((asked[0] as { links: string[] }).links).toEqual(['/studio', '/fiyatlar', '/sohbet', '/blog']);
+    expect(published).toEqual([]);
+    await svc.approve(rows[0].id, 'admin');
+    expect(published).toEqual([rows[0].id]);
+  });
+
+  it('holds article edits to the limits and a safe slug', async () => {
+    const { svc, rows } = service();
+    await svc.runBlog({ topic: 'Küçük salon dekorasyonu', locale: 'tr' }, 'admin');
+    await svc.process(rows[0].id, false);
+    const ok = { title: 'Küçük salon', description: 'd'.repeat(120), slug: 'kucuk-salon', body: 'b'.repeat(300) };
+    await expect(svc.update(rows[0].id, { ...ok, slug: '../admin' })).rejects.toMatchObject({ status: 400 });
+    await expect(svc.update(rows[0].id, { ...ok, description: 'kısa' })).rejects.toMatchObject({ status: 400 });
+    await svc.update(rows[0].id, ok);
+  });
+
+  it('reports SEO pages the model left out, and keeps one approved text per language', async () => {
+    const { svc, rows } = service();
+    await svc.runSeo(['tr'], 'admin');
+    await svc.process(rows[0].id, false);
+    expect(rows[0].violations).toEqual(['studio.missing', 'pricing.missing', 'chat.missing', 'blog.missing']);
+    const full = { pages: ['home', 'studio', 'pricing', 'chat', 'blog'].map((key) => ({ key, title: `Başlık ${key}`, description: 'd'.repeat(130) })) };
+    await svc.update(rows[0].id, full);
+    await svc.approve(rows[0].id, 'admin');
+    await svc.runSeo(['tr'], 'admin');
+    await svc.process(rows[1].id, false);
+    await svc.update(rows[1].id, full);
+    await svc.approve(rows[1].id, 'admin');
+    expect(rows.map((r) => r.status)).toEqual(['ARCHIVED', 'APPROVED']);
   });
 });

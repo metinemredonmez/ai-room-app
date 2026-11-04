@@ -137,18 +137,22 @@ Sıra:
   içinde çıktı; dil başına ≈0,1 $, ≈50 sn.
   - [ ] Mobil (sen): `store.config.json`’u `eas metadata:push` ile yükle; Play metinlerini Console’a yapıştır.
   - [ ] Mağaza ekran görüntüleri her dilde (sosyal medya ajanının görsel altyapısıyla birlikte).
-- [ ] 2. **Sosyal medya gönderisi** — önce/sonra görseli sunucuda (sharp): kare 1080×1080 + story 1080×1920, Casalume
+- [x] 2. **Sosyal medya gönderisi** (API.md §7.18.1) — önce/sonra görseli sunucuda (sharp): kare 1080×1080 + story 1080×1920, Casalume
   imzalı; dile ve platforma göre (Instagram, TikTok, Pinterest) açıklama + etiketler; zip indirme.
   KVKK: kullanıcı fotoğrafı yalnız açık “tanıtımda kullanılabilir” onayıyla (yeni onay türü); o zamana kadar yalnız
   bizim örnek oda ve stil fotoğraflarımız (`assets/styles`).
-- [ ] 3. **Kampanya + haftalık rapor** — toplu gönderim için push/e-posta metni taslağı → ticari ifade kontrolünden
+- [x] 3. **Kampanya + haftalık rapor** (§7.18.2–3) — toplu gönderim için push/e-posta metni taslağı → ticari ifade kontrolünden
   geçip `Broadcast` TASLAK olarak açılır. Haftalık rapor: pazartesi 09:00 (İstanbul) sahibine e-posta — yeni kayıt,
   tasarım, ödeme, AI maliyeti, en çok kullanılan stiller, hatalar + Claude’un 5 satırlık yorumu.
-- [ ] 4. **SEO + blog** — web’e blog (`/blog`, `/<dil>/blog/<slug>`, Markdown, admin’den yayın, sitemap’e girer).
+- [x] 4. **SEO + blog** (§7.18.4–5; web `/blog`, onaylı SEO metni siteye ≈5 dk içinde) — web’e blog (`/blog`, `/<dil>/blog/<slug>`, Markdown, admin’den yayın, sitemap’e girer).
   Ajan: konu → taslak (Türkçe kaynak, diğer diller `i18n_fill` hattıyla), stüdyoya iç bağlantılar; mevcut sayfalar için
   11 dilde başlık ≤60 / açıklama ≤155 önerisi. Sonra: Search Console + GA4 verisi (fal-app deseni, Google hizmet hesabı
   gerekir).
 - Tahmini maliyet: ASO 11 dil ≈ 0,5–1 $; blog yazısı dil başına ≈ 0,2–0,5 $; sosyal gönderi ≈ 0,05 $.
+- [ ] Sosyal medya: kullanıcı tasarımlarını tanıtımda kullanmak için açık onay türü (`showcase`) + admin seçimi.
+- [ ] SEO: Search Console + GA4 verisi (fal-app `seo` deseni) — Google hizmet hesabı gerekir.
+- [ ] Blog: onaylanınca web önbelleğini anında yenileme (şimdi birkaç dakika); yazıya iç bağlantı olarak stil sayfaları.
+- [ ] Instagram'a panelden paylaşım (Meta onayı) — şimdilik elle.
 
 ## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
 Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)” = mobil tarafı sahibinde.

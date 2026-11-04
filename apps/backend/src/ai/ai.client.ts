@@ -93,6 +93,18 @@ export interface ReportOutput {
   usage?: AiUsageReport;
 }
 
+export interface BlogOutput {
+  article: { title: string; description: string; slug: string; body: string };
+  violations: string[];
+  usage?: AiUsageReport;
+}
+
+export interface SeoOutput {
+  pages: Array<{ key: string; title: string; description: string }>;
+  violations: string[];
+  usage?: AiUsageReport;
+}
+
 export interface ChatOutput {
   reply: string;
   suggestions: Array<{ label: string; tool: string; style_id?: string | null; room_id?: string | null; instructions?: string | null }>;
@@ -171,6 +183,17 @@ export class AiClient {
 
   marketingReport(input: { metrics: string }) {
     return this.call<ReportOutput>('POST', '/internal/v1/marketing/report', input, 120_000);
+  }
+
+  marketingBlog(input: {
+    locale: string; facts: string; topic?: string; keywords?: string; links: string[];
+    source?: { title: string; description: string; body: string };
+  }) {
+    return this.call<BlogOutput>('POST', '/internal/v1/marketing/blog', input, 240_000);
+  }
+
+  marketingSeo(input: { locale: string; facts: string; pages: Array<{ key: string; path: string; purpose: string }> }) {
+    return this.call<SeoOutput>('POST', '/internal/v1/marketing/seo', input, 120_000);
   }
 
   /** Advisory capture-quality check; failures are swallowed (never blocks an upload). */

@@ -35,7 +35,7 @@ export function StatusBadge({ status }: { status: MarketingDraftStatus }) {
 }
 
 /** Drafts of one kind; refreshes every 5 s while any is still being written. */
-export function useDrafts<O>(kind: "aso" | "social" | "campaign" | "report") {
+export function useDrafts<O>(kind: "aso" | "social" | "campaign" | "report" | "blog" | "seo") {
   const res = useApi<{ items: MarketingDraft<O>[] }>("/marketing/drafts", { kind });
   const items = useMemo(() => res.data?.items ?? [], [res.data]);
   const pending = items.some((d) => d.status === "PENDING");

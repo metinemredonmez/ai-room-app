@@ -200,3 +200,79 @@ export function campaignViolations(channel: Channel, msg: Record<string, unknown
   const lim = CAMPAIGN_LIMITS[channel];
   return (['title', 'body'] as const).filter((k) => typeof msg[k] !== 'string' || (msg[k] as string).length > lim[k]);
 }
+
+// -------------------------------------------------------------------------------------------- blog and SEO
+
+/** In-site paths an article may link to; the web renders any other link as plain text. */
+export const BLOG_LINKS = ['/studio', '/fiyatlar', '/sohbet', '/blog'] as const;
+export const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const BLOG_LIMITS = { title: 70, description: 160, slug: 80, body: 30000 } as const;
+
+export const blogArticleSchema = z
+  .object({
+    title: z.string().trim().min(5).max(BLOG_LIMITS.title),
+    description: z.string().trim().min(50).max(BLOG_LIMITS.description),
+    slug: z.string().trim().max(BLOG_LIMITS.slug).regex(SLUG_RE, 'Küçük harf, rakam ve tire'),
+    body: z.string().trim().min(200).max(BLOG_LIMITS.body),
+  })
+  .strict();
+export type BlogArticle = z.infer<typeof blogArticleSchema>;
+
+export function blogViolations(a: Record<string, unknown>): string[] {
+  const r = blogArticleSchema.safeParse(a);
+  return r.success ? [] : [...new Set(r.error.issues.map((i) => String(i.path[0] ?? 'body')))];
+}
+
+export const BlogRunSchema = z
+  .object({
+    topic: z.string().trim().min(5).max(300),
+    keywords: z.string().trim().max(300).optional(),
+    locale: z.enum(LOCALES).default('tr'),
+    styleId: z.string().regex(/^[a-z_]{2,40}$/).optional(),
+  })
+  .strict();
+export type BlogRun = z.infer<typeof BlogRunSchema>;
+
+export const BlogTranslateSchema = z
+  .object({ postId: z.uuid(), locales: z.array(z.enum(LOCALES)).min(1).max(LOCALES.length).transform(uniq) })
+  .strict();
+export type BlogTranslate = z.infer<typeof BlogTranslateSchema>;
+
+/** Indexable pages whose <title> and meta description the SEO agent proposes (web keys in lib/page-meta.ts). */
+export const SEO_PAGES = [
+  { key: 'home', path: '/', purpose: 'Landing page: AI interior, exterior and garden redesign from a photo; tap one object and change only it.' },
+  { key: 'studio', path: '/studio', purpose: 'The design studio: upload a room photo, pick a tool and a style, get the redesign in seconds.' },
+  { key: 'pricing', path: '/fiyatlar', purpose: 'Plans: free daily designs, PRO subscription and credit packs (no prices in the text).' },
+  { key: 'chat', path: '/sohbet', purpose: 'AI interior design assistant chat that answers in your language and suggests designs.' },
+  { key: 'blog', path: '/blog', purpose: 'Interior design articles: ideas, colours, small spaces, styles.' },
+] as const;
+export const SEO_KEYS = SEO_PAGES.map((p) => p.key) as unknown as readonly [string, ...string[]];
+export const SEO_LIMITS = { title: 60, description: 160 } as const;
+
+export const SeoRunSchema = z.object({ locales: z.array(z.enum(LOCALES)).min(1).max(LOCALES.length).transform(uniq) }).strict();
+export const seoSchema = z
+  .object({
+    pages: z
+      .array(
+        z
+          .object({
+            key: z.enum(SEO_KEYS),
+            title: z.string().trim().min(5).max(SEO_LIMITS.title),
+            description: z.string().trim().min(50).max(SEO_LIMITS.description),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(SEO_PAGES.length),
+  })
+  .strict();
+export type SeoOutput = z.infer<typeof seoSchema>;
+
+export function seoViolations(o: { pages?: Array<{ key: string; title: string; description: string }> }): string[] {
+  const out: string[] = [];
+  for (const p of o.pages ?? []) {
+    if (p.title.length > SEO_LIMITS.title) out.push(`${p.key}.title`);
+    if (p.description.length > SEO_LIMITS.description) out.push(`${p.key}.description`);
+  }
+  return out;
+}

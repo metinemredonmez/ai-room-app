@@ -11,7 +11,8 @@
       "designs": "Mes designs",
       "unsubscribe": "Se désabonner",
       "chat": "Chat IA",
-      "forgotPassword": "Mot de passe oublié"
+      "forgotPassword": "Mot de passe oublié",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Réinventez votre pièce en quelques secondes",
@@ -24,7 +25,8 @@
     "logout": "Déconnexion",
     "tryFree": "Essai gratuit",
     "menu": "Menu",
-    "guest": "Invité"
+    "guest": "Invité",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Page introuvable",
     "cta": "Retour à l'accueil"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Idées déco, couleurs, petits espaces et styles.",
+    "empty": "Aucun article pour l’instant.",
+    "readMore": "Lire la suite",
+    "back": "Tous les articles",
+    "ctaTitle": "Essayez cette idée dans votre propre pièce",
+    "ctaBody": "Importez une photo de votre pièce, choisissez un style ou touchez un objet pour ne changer que lui.",
+    "ctaButton": "Ouvrir le studio",
+    "minutes": "{n} min de lecture",
+    "otherLanguages": "Aussi en"
   }
 }

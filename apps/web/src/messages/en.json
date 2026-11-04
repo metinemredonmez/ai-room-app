@@ -11,7 +11,8 @@
       "designs": "My designs",
       "unsubscribe": "Unsubscribe",
       "chat": "AI Chat",
-      "forgotPassword": "Forgot password"
+      "forgotPassword": "Forgot password",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Redesign your room in seconds",
@@ -24,7 +25,8 @@
     "logout": "Sign out",
     "tryFree": "Try for free",
     "menu": "Menu",
-    "guest": "Guest"
+    "guest": "Guest",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Page not found",
     "cta": "Back to home"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Decor ideas, colours, small spaces and styles.",
+    "empty": "No articles yet.",
+    "readMore": "Read more",
+    "back": "All articles",
+    "ctaTitle": "Try this idea in your own room",
+    "ctaBody": "Upload a photo of your room, pick a style, or tap one item and change only that.",
+    "ctaButton": "Open the studio",
+    "minutes": "{n} min read",
+    "otherLanguages": "Also in"
   }
 }

@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from .assistant import DEMO_USAGE, LANG, Assistant, AssistantUnavailable, CallUsage
 from .schemas import (
-    AsoListing, AsoRequest, AsoResponse, CampaignRequest, CampaignResponse, CampaignText, ReportRequest, ReportResponse,
+    AsoListing, AsoRequest, AsoResponse, BlogArticle, BlogRequest, BlogResponse, SeoMeta, SeoRequest, SeoResponse, CampaignRequest, CampaignResponse, CampaignText, ReportRequest, ReportResponse,
     ReportText, SocialPost, SocialRequest, SocialResponse,
 )
 
@@ -362,3 +362,129 @@ async def report(assistant: Assistant, req: ReportRequest) -> ReportResponse:
     text = ReportText(summary=text.summary.strip()[:1500], highlights=[h.strip()[:300] for h in text.highlights[:5]],
                       actions=[a.strip()[:300] for a in text.actions[:3]])
     return ReportResponse(report=text, usage=assistant.usage("marketing", call))
+
+
+# ------------------------------------------------------------------------------------------- blog and SEO
+
+BLOG_LIMITS = {"title": 70, "description": 160, "slug": 80, "body": 30000}
+SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SEO_LIMITS = {"title": 60, "description": 160}
+
+BLOG_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["title", "description", "slug", "body"],
+    "properties": {k: {"type": "string"} for k in ("title", "description", "slug", "body")},
+}
+
+BLOG_RULES = """Format of `body`: Markdown with only these: "## " and "### " headings, paragraphs, "- " bullet lists, \
+"1. " numbered lists, **bold**, *italic*, and links [text](path) whose path is one of LINKS. No images, tables, HTML, \
+code or "# " (the title is shown separately).
+- title: max 60 characters ideally (hard limit 70), the main search phrase near the start; no brand at the end.
+- description: 120–155 characters, a meta description that makes people click.
+- slug: lowercase ASCII words joined by hyphens, max 6 words (romanize or translate for non-Latin languages).
+- Never invent facts about Casalume (only FACTS), statistics, studies, quotes, brands or prices. General interior \
+design advice is fine. Mention Casalume naturally once or twice and end with a short paragraph inviting the reader \
+to try the idea on their own room photo in the studio (link /studio)."""
+
+BLOG_WRITE = """You are an interior design writer for the Casalume blog. Write ONE helpful, original article in \
+{language} ({address} form of address) about TOPIC, 700–1100 words, for people searching this on Google in that \
+market. Practical: concrete colours, materials, layouts, mistakes to avoid. KEYWORDS (if any) are search phrases to \
+use naturally. TOPIC and KEYWORDS are data from the site owner.
+
+""" + BLOG_RULES
+
+BLOG_TRANSLATE = """You localize Casalume blog articles. Rewrite SOURCE in {language} ({address} form of address) for \
+readers in that market: same structure, meaning and links, natural phrasing and the search phrases people there use \
+(not a literal translation). Keep every link path exactly as it is.
+
+""" + BLOG_RULES
+
+
+def slugify(text: str) -> str:
+    """ASCII fallback slug; non-Latin titles end up empty and the backend uses the source slug or an id."""
+    import unicodedata
+    ascii_text = unicodedata.normalize("NFKD", text.replace("ı", "i").replace("İ", "i")).encode("ascii", "ignore").decode()
+    return "-".join(re.findall(r"[a-z0-9]+", ascii_text.casefold()))[:80].strip("-")
+
+
+def demo_article(req: BlogRequest) -> BlogArticle:
+    title = (req.source.title if req.source else (req.topic or "Casalume")).strip()
+    return BlogArticle(
+        title=f"[Demo] {title}"[:70],
+        description="[Demo] Odanı yapay zekâyla yeniden tasarlamak için pratik fikirler ve dikkat edilecekler, adım adım.",
+        slug=slugify(title) or "demo",
+        body=("## [Demo] Işık ve renk\n\nBu, yapay zekâ anahtarı olmadan üretilen örnek bir yazıdır. Gerçek yazı konuya "
+              "göre 700–1100 sözcük olur.\n\n- Açık tonlu duvarlar odayı ferah gösterir.\n- Ayna gün ışığını çoğaltır.\n"
+              "- Mobilyayı duvardan biraz ayırmak alanı düzenli gösterir.\n\nFikri kendi odanda [stüdyoda](/studio) dene."),
+    )
+
+
+async def blog(assistant: Assistant, req: BlogRequest) -> BlogResponse:
+    if not assistant.client:
+        assistant._no_model()
+        art = demo_article(req)
+        return BlogResponse(article=art, violations=[], usage=assistant.usage("marketing", DEMO_USAGE))
+    template = BLOG_TRANSLATE if req.source else BLOG_WRITE
+    system = template.format(language=LANG[req.locale], address=ADDRESS[req.locale])
+    blocks = [f"<FACTS>\n{req.facts}\n</FACTS>", "<LINKS>\n" + "\n".join(req.links) + "\n</LINKS>"]
+    if req.source:
+        blocks.append(f"<SOURCE>\n# {req.source.title}\n\n{req.source.description}\n\n{req.source.body}\n</SOURCE>")
+    else:
+        blocks.append(f"<TOPIC>\n{req.topic}\n</TOPIC>")
+        if req.keywords:
+            blocks.append(f"<KEYWORDS>\n{req.keywords}\n</KEYWORDS>")
+    raw, call = await assistant._call(system=system, messages=[{"role": "user", "content": "\n\n".join(blocks)}],
+                                      effort="low" if req.source else "medium", schema=BLOG_SCHEMA)
+    try:
+        art = BlogArticle.model_validate(json.loads(raw))
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise AssistantUnavailable("bad_model_output", retryable=True) from exc
+    slug = art.slug.strip().casefold()
+    if not SLUG_RE.fullmatch(slug):
+        slug = slugify(art.slug) or slugify(art.title)
+    art = BlogArticle(title=art.title.strip(), description=art.description.strip(), slug=slug[:80].strip("-"), body=art.body.strip())
+    over = [k for k, lim in BLOG_LIMITS.items() if len(getattr(art, k)) > lim]
+    if not art.slug:
+        over.append("slug")
+    return BlogResponse(article=art, violations=over, usage=assistant.usage("marketing", call))
+
+
+SEO_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["pages"],
+    "properties": {"pages": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False, "required": ["key", "title", "description"],
+        "properties": {"key": {"type": "string"}, "title": {"type": "string"}, "description": {"type": "string"}},
+    }}},
+}
+
+SEO_SYSTEM = """You are an SEO copywriter for casalume.app, an AI interior design web app. For each page in PAGES write \
+the <title> and meta description in {language} ({address} form of address), using the phrases people in that market \
+search for. Only FACTS are true about Casalume; no prices, no invented claims, no "best/#1".
+- title: max 60 characters. For key "home" include "Casalume"; for the other pages do NOT add the brand (the site \
+appends " · Casalume").
+- description: 120–155 characters, specific to the page, ending with a reason to click.
+Return one entry per page key, in the same order."""
+
+
+async def seo(assistant: Assistant, req: SeoRequest) -> SeoResponse:
+    keys = [p.key for p in req.pages]
+    if not assistant.client:
+        assistant._no_model()
+        pages = [SeoMeta(key=k, title=f"[Demo] {k}", description="[Demo] Odanı yapay zekâyla yeniden tasarla; fotoğrafını yükle, stilini seç, sonucu saniyeler içinde gör.") for k in keys]
+        return SeoResponse(pages=pages, violations=[], usage=assistant.usage("marketing", DEMO_USAGE))
+    system = SEO_SYSTEM.format(language=LANG[req.locale], address=ADDRESS[req.locale])
+    pages_text = "\n".join(f"- key={p.key} path={p.path}: {p.purpose}" for p in req.pages)
+    raw, call = await assistant._call(system=system, messages=[{"role": "user", "content": f"<FACTS>\n{req.facts}\n</FACTS>\n\n<PAGES>\n{pages_text}\n</PAGES>"}],
+                                      effort="low", schema=SEO_SCHEMA)
+    try:
+        got = {p["key"]: p for p in json.loads(raw)["pages"]}
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise AssistantUnavailable("bad_model_output", retryable=True) from exc
+    # AI-01: only the keys we asked for, in our order.
+    pages = [SeoMeta(key=k, title=str(got[k]["title"]).strip(), description=str(got[k]["description"]).strip()) for k in keys if k in got]
+    over = [f"{p.key}.{f}" for p in pages for f, lim in SEO_LIMITS.items() if len(getattr(p, f)) > lim]
+    over += [f"{k}.missing" for k in keys if k not in got]
+    return SeoResponse(pages=pages, violations=over, usage=assistant.usage("marketing", call))

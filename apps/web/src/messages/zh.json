@@ -11,7 +11,8 @@
       "designs": "我的设计",
       "unsubscribe": "退订",
       "chat": "AI 对话",
-      "forgotPassword": "忘记密码"
+      "forgotPassword": "忘记密码",
+      "blog": "博客"
     }
   },
   "brandTagline": "几秒钟，重新设计你的房间",
@@ -24,7 +25,8 @@
     "logout": "退出",
     "tryFree": "免费试用",
     "menu": "菜单",
-    "guest": "访客"
+    "guest": "访客",
+    "blog": "博客"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "页面未找到",
     "cta": "返回首页"
+  },
+  "blog": {
+    "title": "博客",
+    "subtitle": "家居装饰灵感、配色、小空间与风格。",
+    "empty": "暂无文章。",
+    "readMore": "阅读全文",
+    "back": "全部文章",
+    "ctaTitle": "在你自己的房间里试试这个想法",
+    "ctaBody": "上传房间照片，选择一种风格，或点选一件物品只改变它。",
+    "ctaButton": "打开工作室",
+    "minutes": "{n} 分钟阅读",
+    "otherLanguages": "其他语言"
   }
 }

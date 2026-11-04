@@ -732,7 +732,7 @@ Diller (maeyja ile aynı): `tr` (varsayılan), `en`, `de`, `es`, `fr`, `it`, `ru
 - Sohbet ve maliyet analizi 11 dilde yanıt verir (`locale`).
 - Görsel talimatları İngilizce kalır.
 
-### 7.18 Pazarlama ajanları — mağaza metni (ASO) — backend + admin + AI servisi
+### 7.18 Pazarlama ajanları — backend + admin + AI servisi + web
 Ajanlar yalnız **taslak** üretir. Buradan hiçbir şey yayınlanmaz ya da gönderilmez (AI-02). Taslağı sahibi düzenler ve
 onaylar; mağazaya yüklemeyi kendisi yapar.
 
@@ -783,3 +783,73 @@ onaylar; mağazaya yüklemeyi kendisi yapar.
 | POST | `/admin/marketing/drafts/:id/archive` | EDITOR | |
 
 Bütün yazma işlemleri denetim kaydına girer: `marketing.aso_run`, `.edit`, `.approve`, `.archive`.
+
+Taslaklar ortak uçtan okunur: `GET /admin/marketing/drafts?kind=aso|social|campaign|report|blog|seo` (EDITOR).
+Her çalıştırma (`POST /admin/marketing/<tür>`) aynı bütçe kesicisine ve saatte 10 çalıştırma sınırına tabidir.
+
+#### 7.18.1 Sosyal medya gönderisi
+- Görsel yalnız bizim fotoğraflarımızdır, kullanıcı fotoğrafı kullanılmaz (KVKK):
+  - "Önce": örnek salon. "Sonra": o salondan üretilmiş stil fotoğrafı.
+  - Stil fotoğrafının "Yapay zekâ ile oluşturulmuştur" etiketi kırpılmaz; iki fotoğraf alttan hizalanır.
+- Biçimler: `square` 1080×1080, `story` 1080×1920, `pin` 1000×1500; alt şeritte `casalume.app` yazar.
+  `GET /admin/marketing/drafts/:id/image?format=` → `{ dataUrl, width, height }`.
+- Metin: platforma göre `title` ≤100, `caption` (Instagram/TikTok ≤2200, Pinterest ≤500), `hashtags` ≤5 (`#`
+  olmadan), `alt_text` ≤250. Fiyat yok; "sonra"nın yapay zekâ tasarımı olduğu açıkça yazılır.
+- `POST /admin/marketing/social` `{ styleIds[≤5], platforms[], locales[], brief? }`: stil × platform × dil, en çok 30.
+- `GET /admin/marketing/social/styles`: kullanılabilecek stiller (örnek odadan fotoğrafı olanlar).
+- Paylaşım elle yapılır; TikTok'ta "AI ile oluşturuldu" etiketi açılmalıdır.
+
+#### 7.18.2 Kampanya metni
+- `POST /admin/marketing/campaign` `{ locales[], channel: PUSH|EMAIL, kind: SERVICE|MARKETING, goal }`: dil başına
+  bir metin.
+- Sınırlar: PUSH başlık ≤50, metin ≤300; EMAIL konu ≤80, metin ≤2000.
+- Bağlantı yalnız uygulama içi yollardan seçilir; `/fiyatlar` yalnız kampanya türünde sunulur.
+- Toplu Gönderim'in ticari ifade kontrolü taslakta da çalışır. "Bilgilendirme" metninde ticari ifade varsa ihlal
+  `looks_commercial` olur ve metin onaylanamaz.
+- `POST /admin/marketing/drafts/:id/broadcast` (ADMIN): onaylı metin, o dildeki kullanıcılara giden bir Toplu
+  Gönderim **TASLAĞI** olur (`audience.locale`). Bir metinden bir kez açılır. Gönderim Toplu Gönderim ekranından,
+  kendi kurallarıyla (izin, haftalık sınır, sessiz saatler) yapılır.
+
+#### 7.18.3 Haftalık rapor
+- Her pazartesi 09:00 (İstanbul) zamanlı iş `weekly-report` çalışır. Elle tetiklemek için
+  `POST /admin/marketing/report` `{ send }` (ADMIN).
+- Son 7 gün ile önceki 7 gün karşılaştırılır:
+  - kayıt, misafir, aktif kullanıcı
+  - başarılı ve hatalı tasarım
+  - yeni abonelik, yenileme, iptal, kredi paketi
+  - AI maliyeti ve tasarım başına maliyet
+  - hatalı zamanlı iş, gönderilen toplu ileti
+  - en çok kullanılan araç ve stiller
+  - açık içerik bildirimi ve KVKK başvurusu
+- Yalnız sayılar vardır, kişisel veri yoktur.
+- Claude'un Türkçe yorumu eklenir (özet, öne çıkanlar, öneriler). Yorum alınamazsa sayılar yine gider.
+- Rapor SUPER_ADMIN adreslerine e-postayla gider.
+
+#### 7.18.4 Blog
+- `BlogPost`: dil başına bir satır; çeviriler `groupId` paylaşır (hreflang). `(locale, slug)` benzersizdir.
+- `POST /admin/marketing/blog` `{ topic, keywords?, locale=tr, styleId? }`: 700–1100 sözcüklük yazı. Kapak, stilin
+  fotoğrafıdır.
+- `POST /admin/marketing/blog/translate` `{ postId, locales[] }`: yayındaki yazının diğer dillere uyarlanması.
+- Taslak sınırları: başlık ≤70, açıklama 50–160, adres `^[a-z0-9]+(-[a-z0-9]+)*$` ≤80, metin 200–30000.
+- Onay (ADMIN) yazıyı **yayına alır**. Adres o dilde başka bir yazıda kullanılıyorsa 409 `slug_taken` döner.
+- `POST /admin/blog/:id/unpublish|publish` (ADMIN); `GET /admin/blog`.
+- Herkese açık uçlar:
+  - `GET /v1/blog?locale=`
+  - `GET /v1/blog/:slug?locale=` (`translations` ile)
+  - `GET /v1/blog/sitemap`
+- Web:
+  - Adresler `/blog` ve `/<dil>/blog/<adres>`.
+  - Metin küçük bir Markdown alt kümesidir (`##`, `###`, listeler, kalın/eğik, bağlantı). HTML olarak değil React
+    öğeleri olarak çizilir (WEB-01).
+  - Yalnız `/studio`, `/fiyatlar`, `/sohbet`, `/blog…` bağlantıları çalışır; diğerleri düz metin olur (EXT-02).
+  - Sayfada canonical, hreflang ve Open Graph bulunur. Site haritasına yazılar eklenir.
+  - Önbellek birkaç dakikadır: onaylanan yazı deploy gerekmeden sitede görünür.
+
+#### 7.18.5 SEO
+- `POST /admin/marketing/seo` `{ locales[] }`: dil başına ana sayfa, stüdyo, fiyatlar, sohbet ve blog için başlık
+  (≤60) ve açıklama (≤160).
+- Eksik sayfa ihlal olarak bildirilir (`<sayfa>.missing`).
+- Onaylanan metin o dilin güncel SEO metni olur; öncekisi arşivlenir.
+- `GET /v1/seo/meta?locale=` → `{ pages: { home: { title, description }, … } }`.
+- Web bu metni birkaç dakikalık önbellekle sayfa başlığına ve açıklamasına uygular. Onaylı metin yoksa ya da API
+  yanıt vermezse sitenin kendi metni geçerlidir.

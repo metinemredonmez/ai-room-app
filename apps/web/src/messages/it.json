@@ -11,7 +11,8 @@
       "designs": "I miei progetti",
       "unsubscribe": "Annulla iscrizione",
       "chat": "Chat AI",
-      "forgotPassword": "Password dimenticata"
+      "forgotPassword": "Password dimenticata",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Riprogetta la tua stanza in pochi secondi",
@@ -24,7 +25,8 @@
     "logout": "Esci",
     "tryFree": "Prova gratis",
     "menu": "Menu",
-    "guest": "Ospite"
+    "guest": "Ospite",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Pagina non trovata",
     "cta": "Torna alla home"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Idee d’arredo, colori, spazi piccoli e stili.",
+    "empty": "Ancora nessun articolo.",
+    "readMore": "Continua a leggere",
+    "back": "Tutti gli articoli",
+    "ctaTitle": "Prova questa idea nella tua stanza",
+    "ctaBody": "Carica una foto della tua stanza, scegli uno stile o tocca un oggetto e cambia solo quello.",
+    "ctaButton": "Apri lo studio",
+    "minutes": "{n} min di lettura",
+    "otherLanguages": "Anche in"
   }
 }

@@ -140,3 +140,41 @@ def test_campaign_and_report_demo():
     assert res.status_code == 200 and res.json()["message"]["link"] == "/studio"
     rep = client.post("/internal/v1/marketing/report", headers=AUTH, json={"metrics": json.dumps({"users": {"new": 3}})})
     assert rep.status_code == 200 and rep.json()["report"]["summary"].startswith("[Demo]")
+
+
+def test_blog_slug_and_limits():
+    from app.marketing import blog, slugify
+    from app.schemas import BlogRequest
+
+    assert slugify("Küçük Salon Dekorasyonu: 7 İpucu") == "kucuk-salon-dekorasyonu-7-ipucu"
+    fake = FakeAssistant([json.dumps({"title": "小さなリビング", "description": "d" * 170, "slug": "Small Living Room!", "body": "## A\n\ntext"})])
+    out = asyncio.run(blog(fake, BlogRequest(locale="ja", facts=FACTS, topic="Small living room", links=["/studio"])))
+    assert out.article.slug == "small-living-room" and out.violations == ["description"]
+    assert "Japanese" in fake.calls[0]["system"] and "<TOPIC>\nSmall living room" in fake.calls[0]["messages"][0]["content"]
+    assert client.post("/internal/v1/marketing/blog", headers=AUTH, json={"locale": "tr", "facts": FACTS}).status_code == 400
+
+
+def test_blog_translation_uses_the_source():
+    from app.marketing import blog
+    from app.schemas import BlogRequest, BlogSource
+
+    fake = FakeAssistant([json.dumps({"title": "Kleines Wohnzimmer", "description": "x" * 140, "slug": "kleines-wohnzimmer", "body": "## A"})])
+    src = BlogSource(title="Küçük salon", description="Açıklama", body="## Başlık\n\nMetin [stüdyo](/studio)")
+    out = asyncio.run(blog(fake, BlogRequest(locale="de", facts=FACTS, source=src, links=["/studio"])))
+    assert out.violations == [] and fake.calls[0]["effort"] == "low"
+    assert "<SOURCE>\n# Küçük salon" in fake.calls[0]["messages"][0]["content"] and "localize" in fake.calls[0]["system"]
+
+
+def test_seo_keeps_only_requested_keys():
+    from app.marketing import seo
+    from app.schemas import SeoPage, SeoRequest
+
+    answer = {"pages": [{"key": "home", "title": "Casalume: AI oda tasarımı", "description": "d" * 130},
+                        {"key": "evil", "title": "x", "description": "y"},
+                        {"key": "studio", "title": "t" * 61, "description": "d" * 130}]}
+    fake = FakeAssistant([json.dumps(answer)])
+    pages = [SeoPage(key="home", path="/", purpose="Landing"), SeoPage(key="studio", path="/studio", purpose="Studio"),
+             SeoPage(key="chat", path="/sohbet", purpose="Chat")]
+    out = asyncio.run(seo(fake, SeoRequest(locale="tr", facts=FACTS, pages=pages)))
+    assert [p.key for p in out.pages] == ["home", "studio"]
+    assert out.violations == ["studio.title", "chat.missing"]

@@ -11,7 +11,8 @@
       "designs": "Mijn ontwerpen",
       "unsubscribe": "Afmelden",
       "chat": "AI-chat",
-      "forgotPassword": "Wachtwoord vergeten"
+      "forgotPassword": "Wachtwoord vergeten",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
@@ -24,7 +25,8 @@
     "logout": "Uitloggen",
     "tryFree": "Gratis proberen",
     "menu": "Menu",
-    "guest": "Gast"
+    "guest": "Gast",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Pagina niet gevonden",
     "cta": "Terug naar home"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Interieurideeën, kleuren, kleine ruimtes en stijlen.",
+    "empty": "Nog geen artikelen.",
+    "readMore": "Lees verder",
+    "back": "Alle artikelen",
+    "ctaTitle": "Probeer dit idee in je eigen kamer",
+    "ctaBody": "Upload een foto van je kamer, kies een stijl of tik op één item en verander alleen dat.",
+    "ctaButton": "Studio openen",
+    "minutes": "{n} min lezen",
+    "otherLanguages": "Ook in"
   }
 }

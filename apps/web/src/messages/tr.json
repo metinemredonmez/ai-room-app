@@ -11,7 +11,8 @@
       "designs": "Tasarımlarım",
       "unsubscribe": "Abonelikten çık",
       "chat": "AI Sohbet",
-      "forgotPassword": "Şifremi unuttum"
+      "forgotPassword": "Şifremi unuttum",
+      "blog": "Blog"
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
@@ -24,7 +25,8 @@
     "logout": "Çıkış",
     "tryFree": "Ücretsiz dene",
     "menu": "Menü",
-    "guest": "Misafir"
+    "guest": "Misafir",
+    "blog": "Blog"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "Sayfa bulunamadı",
     "cta": "Ana sayfaya dön"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Dekorasyon fikirleri, renkler, küçük alanlar ve stiller.",
+    "empty": "Henüz yazı yok.",
+    "readMore": "Devamını oku",
+    "back": "Tüm yazılar",
+    "ctaTitle": "Bu fikri kendi odanda dene",
+    "ctaBody": "Odanın fotoğrafını yükle, bir stil seç ya da tek bir eşyaya dokunup yalnız onu değiştir.",
+    "ctaButton": "Stüdyoyu aç",
+    "minutes": "{n} dk okuma",
+    "otherLanguages": "Bu yazı başka dillerde"
   }
 }

@@ -10,7 +10,7 @@ import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js'
 import { LIMITS, RateLimiter } from '../common/infra.js';
 import { Doc } from '../common/openapi.js';
 import { SOCIAL_FORMATS, isSocialFormat } from './marketing.images.js';
-import { AsoRunSchema, CampaignRunSchema, SocialRunSchema } from './marketing.rules.js';
+import { AsoRunSchema, BlogRunSchema, BlogTranslateSchema, CampaignRunSchema, SeoRunSchema, SocialRunSchema } from './marketing.rules.js';
 import { DRAFT_KINDS, MarketingService } from './marketing.service.js';
 
 const Id = z.uuid();
@@ -39,7 +39,7 @@ export class AdminMarketingController {
 
   @Get('drafts')
   @MinRole('EDITOR')
-  @Doc('Taslaklar', { description: '`?kind=aso|social|campaign|report`; arşivlenmemişler, yeniden eskiye (en çok 200).', errors: [400, 401, 403] })
+  @Doc('Taslaklar', { description: '`?kind=aso|social|campaign|report|blog|seo`; arşivlenmemişler, yeniden eskiye (en çok 200).', errors: [400, 401, 403] })
   list(@Query('kind') kind: unknown) {
     return this.marketing.list(parse(Kind, kind));
   }
@@ -97,6 +97,42 @@ export class AdminMarketingController {
     return out;
   }
 
+  @Post('blog')
+  @HttpCode(202)
+  @MinRole('EDITOR')
+  @Doc('Blog yazısı yaz', { body: BlogRunSchema, status: 202, description: 'Konudan bir yazı (varsayılan Türkçe, ≈1–2 dk, ≈0,1 $). Onaylanınca yayına girer.', errors: [400, 401, 403, 429, 503] })
+  async runBlog(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(BlogRunSchema, body);
+    await this.limiter.hit(LIMITS.marketing, auth.userId);
+    const out = await this.marketing.runBlog(input, auth.userId);
+    await this.audit.record(auth.userId, 'marketing.blog_run', 'marketing', null, { topic: input.topic, locale: input.locale }, req.clientIp);
+    return out;
+  }
+
+  @Post('blog/translate')
+  @HttpCode(202)
+  @MinRole('EDITOR')
+  @Doc('Yayındaki yazıyı başka dillere çevir', { body: BlogTranslateSchema, status: 202, description: 'Dil başına bir taslak; onaylanan çeviri yazının o dildeki sürümü olarak yayına girer.', errors: [400, 401, 403, 404, 429, 503] })
+  async translateBlog(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(BlogTranslateSchema, body);
+    await this.limiter.hit(LIMITS.marketing, auth.userId);
+    const out = await this.marketing.runBlogTranslate(input, auth.userId);
+    await this.audit.record(auth.userId, 'marketing.blog_translate', 'blog', input.postId, { locales: input.locales }, req.clientIp);
+    return out;
+  }
+
+  @Post('seo')
+  @HttpCode(202)
+  @MinRole('EDITOR')
+  @Doc('Sayfa başlığı ve açıklaması yaz', { body: SeoRunSchema, status: 202, description: 'Dil başına ana sayfa, stüdyo, fiyatlar, sohbet ve blog için; onaylanan metin sitede kullanılır (≈5 dk içinde).', errors: [400, 401, 403, 429, 503] })
+  async runSeo(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(SeoRunSchema, body);
+    await this.limiter.hit(LIMITS.marketing, auth.userId);
+    const out = await this.marketing.runSeo(input.locales, auth.userId);
+    await this.audit.record(auth.userId, 'marketing.seo_run', 'marketing', null, { locales: input.locales }, req.clientIp);
+    return out;
+  }
+
   @Post('drafts/:id/broadcast')
   @HttpCode(201)
   @MinRole('ADMIN')
@@ -141,7 +177,7 @@ export class AdminMarketingController {
   @Post('drafts/:id/approve')
   @HttpCode(200)
   @MinRole('ADMIN')
-  @Doc('Taslağı onayla', { description: 'Mağaza metninde dilin güncel metni olur; önceki onaylı metin arşivlenir.', errors: [401, 403, 404, 409, 422] })
+  @Doc('Taslağı onayla', { description: 'Mağaza metni ve SEO: dilin güncel metni olur, öncekisi arşivlenir. Blog: yazı yayına girer.', errors: [401, 403, 404, 409, 422] })
   async approve(@Auth() auth: AuthContext, @Param('id') id: string, @Req() req: AppRequest) {
     const draftId = parse(Id, id);
     const out = await this.marketing.approve(draftId, auth.userId);

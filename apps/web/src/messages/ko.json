@@ -11,7 +11,8 @@
       "designs": "내 디자인",
       "unsubscribe": "수신 거부",
       "chat": "AI 채팅",
-      "forgotPassword": "비밀번호 찾기"
+      "forgotPassword": "비밀번호 찾기",
+      "blog": "블로그"
     }
   },
   "brandTagline": "몇 초 만에 방을 새롭게 디자인해 보세요",
@@ -24,7 +25,8 @@
     "logout": "로그아웃",
     "tryFree": "무료로 체험하기",
     "menu": "메뉴",
-    "guest": "게스트"
+    "guest": "게스트",
+    "blog": "블로그"
   },
   "credits": {
     "pro": "PRO",
@@ -452,5 +454,17 @@
   "notFound": {
     "title": "페이지를 찾을 수 없어요",
     "cta": "홈으로 돌아가기"
+  },
+  "blog": {
+    "title": "블로그",
+    "subtitle": "인테리어 아이디어, 색상, 작은 공간과 스타일.",
+    "empty": "아직 글이 없어요.",
+    "readMore": "더 읽기",
+    "back": "모든 글",
+    "ctaTitle": "이 아이디어를 내 방에서 시도해 보세요",
+    "ctaBody": "방 사진을 올리고 스타일을 고르거나, 물건 하나를 탭해서 그것만 바꿔 보세요.",
+    "ctaButton": "스튜디오 열기",
+    "minutes": "{n}분 읽기",
+    "otherLanguages": "다른 언어"
   }
 }

@@ -14,8 +14,10 @@ from .assistant import Assistant, AssistantUnavailable, CallUsage
 from .config import Settings, get_settings
 from .images import NO_CHANGE_BELOW, ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
 from .marketing import aso as write_aso
+from .marketing import blog as write_blog
 from .marketing import campaign as write_campaign
 from .marketing import report as write_report
+from .marketing import seo as write_seo
 from .marketing import social as write_social
 from .monitoring import init_monitoring
 from .prompts import build_prompt, clean
@@ -27,9 +29,10 @@ from .region import (
 )
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
-    AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
+    AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, BlogRequest, BlogResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
     ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, QualityRequest, QualityResponse, RegionInfo,
-    ReportRequest, ReportResponse, SegmentRequest, SegmentResponse, SocialRequest, SocialResponse, Usage,
+    ReportRequest, ReportResponse, SegmentRequest, SegmentResponse, SeoRequest, SeoResponse, SocialRequest, SocialResponse,
+    Usage,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -406,6 +409,20 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
               summary="Turkish reading of the owner's weekly numbers")
     async def marketing_report(req: ReportRequest) -> ReportResponse:
         return await write_report(assistant, req)
+
+    @app.post("/internal/v1/marketing/blog", tags=["marketing"], response_model=BlogResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "Assistant unavailable"}},
+              summary="Blog article: written from a topic or translated from a published one")
+    async def marketing_blog(req: BlogRequest) -> BlogResponse:
+        return await write_blog(assistant, req)
+
+    @app.post("/internal/v1/marketing/seo", tags=["marketing"], response_model=SeoResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "Assistant unavailable"}},
+              summary="Page titles and meta descriptions for one language")
+    async def marketing_seo(req: SeoRequest) -> SeoResponse:
+        return await write_seo(assistant, req)
 
     return app
 
