@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { CONFIG, type Config } from '../config.js';
 import { AppError } from '../common/errors.js';
@@ -10,6 +11,12 @@ import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
 import { LegalService } from '../kvkk/legal.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
+
+// Curated style photos (assets/styles/<id>.jpg): the sample living room redesigned in that style with the
+// production image model. src/catalog and dist/catalog both resolve to apps/backend/assets. Bump the version
+// when the photos change so cached previews are rebuilt.
+const STYLE_PHOTOS = fileURLToPath(new URL('../../assets/styles/', import.meta.url));
+const STYLE_PHOTOS_VERSION = 'nb2-1';
 
 @Injectable()
 export class CatalogService {
@@ -81,18 +88,29 @@ export class CatalogService {
     };
   }
 
-  /** Palette-tinted preview of the sample living room photo, cached on disk; public, contains no user data. */
+  /**
+   * Style preview, cached on disk; public, contains no user data. A curated photo when the style has one,
+   * otherwise (e.g. a style added in the admin) the sample living room tinted with the style's palette.
+   */
   async preview(id: string): Promise<Buffer> {
     if (!/^[a-z_]{2,40}$/.test(id)) throw new AppError(404, 'not_found', 'Bulunamadı');
     const style = (await this.styles(true)).find((s) => s.id === id);
     if (!style) throw new AppError(404, 'not_found', 'Bulunamadı');
     const dir = path.resolve(this.cfg.DATA_DIR, 'previews');
-    const key = `${id}-${SAMPLES_VERSION}-${style.palette.join('').replace(/#/g, '')}.jpg`;
+    const curated = await readFile(path.join(STYLE_PHOTOS, `${id}.jpg`)).catch(() => null);
+    const key = curated
+      ? `${id}-${STYLE_PHOTOS_VERSION}.jpg`
+      : `${id}-${SAMPLES_VERSION}-${style.palette.join('').replace(/#/g, '')}.jpg`;
     const file = path.join(dir, key);
     try {
       return await readFile(file);
     } catch {
       await mkdir(dir, { recursive: true });
+      if (curated) {
+        const buf = await sharp(curated).resize(640).jpeg({ quality: 82 }).toBuffer();
+        await writeFile(file, buf);
+        return buf;
+      }
       const base = await loadSample('living_room');
       const [c1 = '#cccccc', c2 = c1, c3 = c2, c4 = c3] = style.palette;
       const w = 1280;

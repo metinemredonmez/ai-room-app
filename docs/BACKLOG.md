@@ -3,9 +3,22 @@
 Hedef kitle: **herkes** — ev sahibi, kiracı, dekorasyon meraklısı **ve** mimar / iç mimar. Varsayılan deneyim basit
 kalır; profesyonel ihtiyaçlar (proje, müşteri, sunum) PRO ve “Profesyonel” katmanında toplanır.
 
+## Ana fark: seçilen nesneyi değiştirmek (en önemli)
+Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamını değiştirmek kolay ve çoğu uygulamada var,
+üstelik kemer, pencere gibi mimariyi de değiştirebiliyor. Casalume’un farkı: kullanıcı odadaki **bir şeye odaklanır**
+(yastıklar, koltuk, sehpa, avize…) ve **yalnız o** değişir, odanın geri kalanı piksel piksel aynı kalır.
+- Bugün: “Değiştir” aracı yazıyla hedef alır (“koltuk”), fal.ai SAM 3 eşleşen her şeyi maskeler, bölge kilidi maske dışını korur.
+- [ ] Canlıda `FAL_KEY` (SAM 3 maske) — yoksa nesne kilidi zayıf kalır.
+- [ ] Dokun-seç: fotoğrafta tek dokunuş ya da kutu → yalnız o nesnenin maskesi (SAM 3 nokta/kutu istemi; tek örnek, “tüm koltuklar” değil).
+- [ ] Üretmeden önce maske önizlemesi: seçili nesne vurgulanır, kullanıcı ekler/çıkarır (çoklu seçim: bütün yastıklar).
+- [ ] Nesneye komut: renk, kumaş/malzeme, stil, kaldır, başka ürünle değiştir (referans görsel), varyant karşılaştırma.
+- [ ] Kalite ölçümü: maske dışı fark ≈ 0 (bugünkü `masked_mean_abs_diff`), maske içi gerçekten değişmiş; değerlendirme setine nesne vakaları.
+- [ ] Web stüdyo arayüzü (sen: mobil arayüz).
+
 ## Şu an
 - [x] Dört renk teması (Kil · Pirinç · Mürekkep · Erik): web (başlıktaki seçici) ve admin (kullanıcı menüsü). Açık tema varsayılan.
-- [ ] Web ana sayfası: gerçek fotoğraflar (Nano Banana 2 önce/sonra), Casalume logosu, görsel ağırlıklı bölümler.
+- [x] Web ana sayfası: gerçek fotoğraflar (Nano Banana 2 önce/sonra), Casalume logosu, ince serif başlıklar.
+- [x] Stil kartları: 15 stilin gerçek önizlemesi Nano Banana 2 ile (`apps/backend/assets/styles/`).
 - [ ] Web fiyatlar: “Seç” → “Uygulamadan abone ol” (App Store / Google Play); canlıda demo PRO düğmesi gizli.
 - [ ] Admin “Planlar”: web’de görünen plan fiyatları ve rozetler koddan değil ayarlardan (gerçek ücret mağazalarda).
 
@@ -33,16 +46,52 @@ kalır; profesyonel ihtiyaçlar (proje, müşteri, sunum) PRO ve “Profesyonel�
 - [ ] Ekip hesabı (birden çok mimar), fatura bilgisi.
 - [ ] Malzeme ve ürün listesi marka/ürün koduyla; ölçü ve kat planı (araştırılacak).
 
+## Çok dilli sürüm
+Bugün: web TR/EN (dil uygulama içinde seçiliyor, adreste değil), admin TR, kullanıcıda `locale` alanı ve TR/EN sürümlü
+yasal metin altyapısı var. Görsel talimatları İngilizce kalır (modelin en iyi anladığı dil); kullanıcı dili ayrı.
+- [ ] Dil sırası önerisi: TR, EN (var) → DE (Almanya’daki Türkiye kökenli kitle, büyük dekorasyon pazarı) → AR (Körfez,
+  iç mimarlık pazarı büyük; sağdan sola düzen gerekir) → RU → ES / FR / IT.
+- [ ] Web: dile göre ayrı adresler (`/en`, `/de`), hreflang ve sitemap — arama motorlarında her dil ayrı görünsün.
+- [ ] Backend: e-posta, push, stil/oda adları ve hata mesajları kullanıcının dilinde.
+- [ ] AI sohbet ve alışveriş listesi kullanıcının dilinde; para birimi (TL, EUR, USD) ve mağaza bağlantıları ülkeye göre.
+- [ ] Yasal metinler her dilde (KVKK + AB için GDPR); mağaza sayfaları ve ekran görüntüleri her dilde.
+- [ ] Admin: TR içerikten diğer dilleri AI ile doldurma (maeyja `translation-fill` deseni), insan onayıyla yayın.
+- [ ] Mobil dil seçimi (sen).
+
+## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
+Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)” = mobil tarafı sahibinde.
+- [ ] Web hesap sayfası (hesap silme, veri indirme, izinler) + yasal sayfalar + robots/sitemap/OG — Google Play hesap
+  silme için web bağlantısı ister; backend (`DELETE /me`, `/me/export`) hazır. Kaynak: palemi `hesap/`, fal-app `legal/`.
+- [ ] Mobilde KVKK başvurusu ve veri indirme ekranı (sen) — backend hazır.
+- [ ] Destek talebi: kullanıcı formu (hata ekranındaki istek/iş kimliğiyle) + admin destek kutusu + yanıt bildirimi (palemi, fal-app).
+- [ ] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
+  da temeli (fal-app `share/`); mobilde story kartı 1080×1920 (sen, palemi).
+- [ ] Uygulama içi olay ölçümü (KVKK uyumlu beyaz liste) + admin kohort/huni ekranları (fal-app `olaylar/`).
+- [ ] Deneme süresi + dürüst paywall (ilk ücret tarihi düğmenin üstünde) + “Aboneliği yönet” + deneme hatırlatması (sen, palemi).
+- [ ] Davet et – kazan (ücretsiz tasarım hakkı) + promosyon/hediye kodu + mimar/influencer ortaklık bağlantısı (fal-app).
+- [ ] Panelden toplu push/kampanya (pazarlama izni ayrımı, test gönderimi, teslim raporu) + yaşam döngüsü e-postaları ve
+  geri çağırma (fal-app).
+- [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
+- [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
+- [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
+- [ ] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi), admin CMS (SSS, ana sayfa) (fal-app, maeyja).
+- [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).
+- [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
+  Keychain temizliği, uygulama içi değerlendirme istemi.
+
 ## Admin
 - [ ] Eski görünümdeki 8 ekranı yeni tasarıma taşı (Kullanıcılar + detay, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim, Sistem, Ayarlar kısmen).
 - [ ] Admin’e her yerden güvenli erişim: Tailscale (şimdilik yalnız sahibin ev IP’si açık).
 
 ## Belgeler
-- [ ] Masaüstündeki diğer uygulamalarla (yoga, fal-app, palemi, maeyja, …) özellik karşılaştırması.
-- [ ] `Casalume-API-ve-Hesaplar.pdf`: kullanılan teknolojiler, bildirimler, diğer uygulamalardan alınacaklar.
+- [x] Masaüstündeki diğer uygulamalarla (yoga, fal-app, palemi, maeyja) özellik karşılaştırması — yukarıda.
+- [x] `Casalume-API-ve-Hesaplar.pdf` (Masaüstü): yedek yol haritası, servis başına kayıt adımları, teknolojiler, bildirimler.
+- [ ] Dünyadaki benzer uygulamaların özellik karşılaştırması (nesne seçip değiştirme odağıyla).
 - [ ] Codex için bağımsız test ve denetim komutu (en sonda).
 
 ## İşletim
 - [ ] Mağazalar: Apple Developer, Google Play Console, RevenueCat ürünleri (`casalume_*`).
 - [ ] Sunucu dışı yedek (şifreli), uptime izleyici, Sentry (AB bölgesi).
 - [ ] hazal’a fail2ban (e-posta girişlerine kaba kuvvet denemeleri görülüyor).
+- [ ] Admin ilk girişi: Google Authenticator kurulumu ve `admin-credentials.txt`’nin silinmesi (sahibi yapıyor).
+- [ ] hazal’daki diğer siteler (bilgi): maeyja.com 503 veriyor (Casalume öncesinden); uzmanumre.com’da DKIM/DMARC yok.
