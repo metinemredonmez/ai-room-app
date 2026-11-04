@@ -11,16 +11,22 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
 - [x] Dokun-seç (API.md §7.15): Değiştir, Nesne Sil ve Duvar Boyası’nda fotoğrafa dokunulur; her dokunuş bir nesne (SAM 3
   nokta istemi), en çok 8. Maske üretimden önce çıkarılır; hiçbir şey bulunamazsa görsel üretilmez, hak iade edilir.
 - [x] Maske önizlemesi (`POST /v1/uploads/:id/selection`), çoklu seçim, geri al/temizle — web stüdyosunda.
-- [ ] Canlıda `FAL_KEY` (SAM 3) — **olmadan dokun-seç kapalı** (503, web yazarak seçime döner) ve otomatik kilit de çalışmaz.
-- [ ] `FAL_KEY` girilince canlıda gerçek fotoğrafla dene: metinsiz nokta istemi doğru nesneyi veriyor mu (belgede varsayılan
-  `prompt` “wheel” görünüyor), maske sınırları iyi mi.
+- [x] `FAL_KEY` sunucuda (4 Kasım). Ama fal.ai hesabı **“User is locked. Reason: TOP_UP”** — bakiye yüklenene kadar
+  her SAM 3 isteği 403 (sahibi yükleyecek: https://fal.ai/dashboard/billing). O zamana dek seçim 502 verir.
+- [ ] Bakiye gelince canlıda gerçek fotoğrafla dene (hazır betik: tek misafir hesap, 5 seçim + 1 tasarım):
+  - metinsiz nokta istemi doğru nesneyi veriyor mu (belgede varsayılan `prompt` “wheel” görünüyor), maske sınırları iyi mi;
+  - **yazarak seçimde Türkçe ad** (“yastık”, “koltuk”): SAM 3 İngilizce kelime bekliyor olabilir — anlamazsa hedef
+    İngilizceye çevrilmeli (bu, mevcut otomatik kilidi de etkiler).
 - [ ] Mobil dokun-seç arayüzü (sen): aynı uç ve `points` alanı; katalogda `needs.points`.
 - Gemini ile maske denendi (4 Kasım, `gemini-3.8-flash`, örnek salon): nesneyi ve kutusunu doğru buluyor ama piksel
   maskesi yok, çokgen maske kayık ya da tamamen yanlış (koltuğa dokununca duvarı seçti). Bölge kilidi için **kullanılamaz**;
   `gemini-2.5-flash` yeni hesaplara kapalı.
 - [ ] Kendi segmentasyon motorumuz (fal.ai’ye yedek, veri bizde kalır). Karar: ikisi birden — fal.ai SAM 3 birincil, bu yedek.
-  Adaylar, önce denenecek:
-  - Google MediaPipe Interactive Segmenter: dokunulan noktadan maske, ücretsiz, hafif (hazal’ı yormaz; tarayıcı/telefonda da çalışır).
+  Adaylar:
+  - Google MediaPipe Interactive Segmenter (MagicTouch) — **denendi** (4 Kasım, hazal, örnek salon): dokunuş başına 0,3 sn,
+    ücretsiz. Koltuk ve sehpa sınırları keskin; ama yastığa dokununca bütün koltuğu seçiyor, duvarda parça parça leke.
+    → Değiştir / Nesne Sil için büyük eşyada yedek olur; Duvar Boyası için olmaz. hazal’da yalnız `mediapipe==0.10.21`
+    çalıştı (0.10.35 ve 1.2 sistemde libGLES/libEGL istiyor; sistem paketi kurulmadı) + `opencv-contrib-python-headless`.
   - SAM 2.1 (Apache 2.0) ONNX: daha keskin ama hazal’da (2 çekirdek / 5 GB paylaşımlı) ilk dokunuşta birkaç sn CPU dolu;
     daha iyisi Kaptan GPU’su.
   - Vertex AI `image-segmentation-001`: servis hesabı ister, izin listesine bağlı görünüyor (Kasım 2026) — şimdilik değil.
