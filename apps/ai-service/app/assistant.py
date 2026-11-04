@@ -130,6 +130,12 @@ class Assistant:
         self.settings = settings
         self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key) if settings.chat_enabled else None
 
+    def _no_model(self) -> None:
+        """Without a language model, development gets labelled demo answers; production says "unavailable"
+        instead of serving made-up shopping lists and budgets as if they were real (EXC-01, fail closed)."""
+        if self.settings.env == "production":
+            raise AssistantUnavailable("assistant_not_configured")
+
     def usage(self, kind: UsageKind, call: CallUsage) -> Usage:
         if call is DEMO_USAGE:
             return Usage(provider="demo", model="demo", kind=kind)
@@ -179,6 +185,7 @@ class Assistant:
 
     async def chat(self, req: ChatRequest) -> ChatResponse:
         if not self.client:
+            self._no_model()
             return mock_chat(req).model_copy(update={"usage": self.usage("chat", DEMO_USAGE)})
         cat = req.catalog
         system = (
@@ -216,6 +223,7 @@ class Assistant:
     async def analyze(self, req: AnalyzeRequest, image: bytes) -> AnalyzeResponse:
         palette = palette_of(image)
         if not self.client:
+            self._no_model()
             return mock_analyze(req, palette).model_copy(update={"usage": self.usage("analyze", DEMO_USAGE)})
         system = (
             "You are a Turkish interior design quantity surveyor. Look at the room image and list the visible "
@@ -242,6 +250,7 @@ class Assistant:
 
     async def describe_reference(self, image: bytes) -> tuple[str, CallUsage]:
         if not self.client:
+            self._no_model()
             return ("warm contemporary interior with natural oak, linen and boucle textiles, soft beige and olive "
                     "palette, rounded furniture, brass accents and layered ambient lighting"), DEMO_USAGE
         system = (

@@ -270,6 +270,19 @@ def test_fallback_configuration_is_validated(monkeypatch):
     assert ok.provider_chain == ["mock", "gemini", "replicate"]
 
 
+def test_production_without_language_model_is_unavailable_not_demo():
+    """EXC-01: no made-up chat answers or budgets in production; images keep working without Claude."""
+    prod = Settings(INTERNAL_TOKEN=TOKEN, ENV="production", IMAGE_PROVIDER="gemini", GEMINI_API_KEY="k" * 20)  # type: ignore[call-arg]
+    app = TestClient(create_app(prod))
+    headers = {"X-Internal-Token": TOKEN}
+    r = app.post("/internal/v1/chat", headers=headers, json={"messages": [{"role": "user", "text": "Salonuma ne yakışır?"}]})
+    assert r.status_code == 502 and r.json()["error"]["code"] == "ai_unavailable"
+    assert app.get("/internal/v1/health", headers=headers).json()["chat_enabled"] is False
+    # development still answers with labelled demo data
+    dev = TestClient(create_app(settings()))
+    assert dev.post("/internal/v1/chat", headers=headers, json={"messages": [{"role": "user", "text": "Merhaba"}]}).status_code == 200
+
+
 def test_turkish_free_text_normalisation():
     assert clean("K A N E P E  ve İSTANBUL​ ISPARTA", user_text=True) == "kanepe ve istanbul ısparta"
     assert clean("Japandi Style", 40) == "Japandi Style"  # system text keeps its case
