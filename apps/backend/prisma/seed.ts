@@ -17,12 +17,17 @@ async function main() {
   }
   console.log(`styles: ${STYLE_SEED.length} ensured`);
 
-  const email = (process.env.ADMIN_EMAIL ?? 'admin@airoom.local').toLowerCase();
+  // A real deployment names its first super admin; the local default never reaches a server (an empty
+  // ADMIN_EMAIL= line would otherwise create an account with an empty address).
+  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_EMAIL?.trim()) {
+    throw new Error('ADMIN_EMAIL is required to seed a production database');
+  }
+  const email = (process.env.ADMIN_EMAIL?.trim() || 'admin@airoom.local').toLowerCase();
   if (await prisma.user.findUnique({ where: { email } })) {
     console.log(`admin ${email} already exists — credentials unchanged`);
     return;
   }
-  const password = process.env.ADMIN_PASSWORD ?? randomBytes(18).toString('base64url');
+  const password = process.env.ADMIN_PASSWORD?.trim() || randomBytes(18).toString('base64url');
   const totpSecret = newTotpSecret();
   const backupCodes = Array.from({ length: BACKUP_CODE_COUNT }, newBackupCode);
   const pepper = process.env.DEVICE_PEPPER!;
