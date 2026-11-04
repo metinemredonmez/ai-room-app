@@ -255,7 +255,14 @@
     "kvkk": "続行することで、利用規約およびKVKKプライバシー通知に同意したものとみなされます。",
     "invalid": "メールアドレスまたはパスワードが正しくありません。",
     "tooShort": "パスワードは10文字以上で入力してください。",
-    "forgotLink": "パスワードをお忘れですか？"
+    "forgotLink": "パスワードをお忘れですか？",
+    "loginTitle": "おかえりなさい",
+    "registerTitle": "アカウントを作成",
+    "registerSubtitle": "デザインを保存して、どの端末からでも続けられます。",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "haveAccount": "すでにアカウントをお持ちですか？",
+    "showPassword": "パスワードを表示",
+    "hidePassword": "パスワードを隠す"
   },
   "account": {
     "forgotTitle": "パスワードをお忘れですか？",

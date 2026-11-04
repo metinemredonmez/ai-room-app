@@ -255,7 +255,14 @@
     "kvkk": "Door verder te gaan, ga je akkoord met de Gebruiksvoorwaarden en de KVKK-privacyverklaring.",
     "invalid": "E-mail of wachtwoord onjuist.",
     "tooShort": "Je wachtwoord moet minstens 10 tekens hebben.",
-    "forgotLink": "Wachtwoord vergeten?"
+    "forgotLink": "Wachtwoord vergeten?",
+    "loginTitle": "Welkom terug",
+    "registerTitle": "Maak je account aan",
+    "registerSubtitle": "Bewaar je ontwerpen en ga verder op elk apparaat.",
+    "noAccount": "Nog geen account?",
+    "haveAccount": "Heb je al een account?",
+    "showPassword": "Wachtwoord tonen",
+    "hidePassword": "Wachtwoord verbergen"
   },
   "account": {
     "forgotTitle": "Wachtwoord vergeten?",

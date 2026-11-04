@@ -105,11 +105,11 @@ export function SiteHeader() {
               </button>
             </div>
           ) : (
-            <Link href="/giris" className={`${btn.base} ${btn.ghost} ${btn.sm} hidden lg:inline-flex`}>
+            <Link href="/giris" className={`${btn.base} ${btn.ghost} ${btn.sm} max-lg:hidden`}>
               {t.nav.login}
             </Link>
           )}
-          <Link href="/studio" className={`${btn.base} ${btn.primary} ${btn.sm} hidden lg:inline-flex`}>
+          <Link href="/studio" className={`${btn.base} ${btn.primary} ${btn.sm} max-lg:hidden`}>
             {t.nav.tryFree}
           </Link>
           <button

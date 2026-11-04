@@ -255,7 +255,14 @@
     "kvkk": "En continuant, vous acceptez les Conditions d'utilisation et la Notice d'information KVKK.",
     "invalid": "E-mail ou mot de passe incorrect.",
     "tooShort": "Le mot de passe doit comporter au moins 10 caractères.",
-    "forgotLink": "Mot de passe oublié ?"
+    "forgotLink": "Mot de passe oublié ?",
+    "loginTitle": "Bon retour parmi nous",
+    "registerTitle": "Créez votre compte",
+    "registerSubtitle": "Enregistrez vos designs et reprenez sur n'importe quel appareil.",
+    "noAccount": "Pas encore de compte ?",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "account": {
     "forgotTitle": "Mot de passe oublié ?",

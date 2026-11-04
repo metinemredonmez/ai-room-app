@@ -255,7 +255,14 @@
     "kvkk": "继续即表示你同意《使用条款》和《KVKK 隐私告知》。",
     "invalid": "邮箱或密码错误。",
     "tooShort": "密码至少需要 10 个字符。",
-    "forgotLink": "忘记密码"
+    "forgotLink": "忘记密码",
+    "loginTitle": "欢迎回来",
+    "registerTitle": "创建账户",
+    "registerSubtitle": "保存你的设计，在任何设备上继续。",
+    "noAccount": "还没有账户？",
+    "haveAccount": "已经有账户了？",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码"
   },
   "account": {
     "forgotTitle": "忘记密码了？",

@@ -255,7 +255,14 @@
     "kvkk": "Devam ederek Kullanım Koşulları ve KVKK Aydınlatma Metni'ni kabul etmiş olursun.",
     "invalid": "E-posta veya parola hatalı.",
     "tooShort": "Parola en az 10 karakter olmalı.",
-    "forgotLink": "Şifremi unuttum"
+    "forgotLink": "Şifremi unuttum",
+    "loginTitle": "Tekrar hoş geldin",
+    "registerTitle": "Hesabını oluştur",
+    "registerSubtitle": "Tasarımların kaydedilsin, her cihazdan devam et.",
+    "noAccount": "Hesabın yok mu?",
+    "haveAccount": "Zaten hesabın var mı?",
+    "showPassword": "Parolayı göster",
+    "hidePassword": "Parolayı gizle"
   },
   "account": {
     "forgotTitle": "Şifreni mi unuttun?",

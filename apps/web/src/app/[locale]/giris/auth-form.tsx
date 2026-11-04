@@ -3,33 +3,44 @@
 import Link from "@/components/locale-link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LoaderCircle, UserRound } from "lucide-react";
+import { Check, Eye, EyeOff, LoaderCircle, UserRound } from "lucide-react";
 import { ApiError, authApi } from "@/lib/api";
 import { useApp } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { LogoMark } from "@/components/logo";
-import { btn, card, input, label } from "@/components/ui";
+import { btn, input, label } from "@/components/ui";
+
+// Giriş / kayıt: sade iki sütun. Solda form, geniş ekranda sağda gerçek bir önce/sonra görseli ve kısa tanıtım
+// (metinler ana sayfanınkiyle aynı, 11 dilde hazır). Görselin kendi "yapay zekâ ile oluşturuldu" etiketi sağ altta görünür kalır.
 
 export function AuthForm() {
   const { t, user, setUser, refreshUser, href } = useApp();
+  const L = t.landing;
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState<"form" | "guest" | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const login = mode === "login";
+
+  function switchMode(next: "login" | "register") {
+    setMode(next);
+    setError(null);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (mode === "register" && password.length < 10) {
+    if (!login && password.length < 10) {
       setError(new ApiError(400, "validation_failed", t.auth.tooShort));
       return;
     }
     setBusy("form");
     try {
-      const res = mode === "login" ? await authApi.login(email, password) : await authApi.register(email, password, name || undefined);
+      const res = login ? await authApi.login(email, password) : await authApi.register(email, password, name || undefined);
       setUser(res.user);
       await refreshUser();
       router.push(href("/studio"));
@@ -55,36 +66,16 @@ export function AuthForm() {
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col px-4 py-12 sm:py-20">
-      <div className={`${card} p-6 sm:p-8`}>
-        <LogoMark className="h-11 w-11" />
-        <h1 className="mt-5 text-3xl font-display font-light">{t.auth.title}</h1>
-        <p className="mt-1.5 text-sm text-muted">{t.auth.subtitle}</p>
+    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-stretch lg:gap-16">
+      <div className="mx-auto flex w-full max-w-sm flex-col justify-center">
+        <LogoMark className="h-10 w-10" />
+        <h1 className="mt-8 font-display text-4xl font-light tracking-tight">{login ? t.auth.loginTitle : t.auth.registerTitle}</h1>
+        <p className="mt-2 text-sm text-muted">{login ? t.auth.subtitle : t.auth.registerSubtitle}</p>
 
-        <div className="mt-6 grid grid-cols-2 rounded-full bg-surface-2 p-1" role="tablist">
-          {(["login", "register"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => {
-                setMode(m);
-                setError(null);
-              }}
-              className={`rounded-full py-2 text-sm font-medium transition ${mode === m ? "bg-surface text-text shadow-card" : "text-muted"}`}
-            >
-              {m === "login" ? t.auth.loginTab : t.auth.registerTab}
-            </button>
-          ))}
-        </div>
+        {!login && user?.isGuest && <p className="mt-6 rounded-2xl bg-primary-soft px-4 py-3 text-sm text-primary">{t.auth.upgradeNote}</p>}
 
-        {mode === "register" && user?.isGuest && (
-          <p className="mt-4 rounded-2xl bg-primary-soft p-3 text-sm text-primary">{t.auth.upgradeNote}</p>
-        )}
-
-        <form onSubmit={submit} className="mt-6 space-y-4">
-          {mode === "register" && (
+        <form onSubmit={submit} className="mt-8 space-y-5">
+          {!login && (
             <div>
               <label htmlFor="name" className={label}>
                 {t.auth.name}
@@ -104,41 +95,62 @@ export function AuthForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              inputMode="email"
               maxLength={254}
             />
           </div>
           <div>
-            <label htmlFor="password" className={label}>
-              {t.auth.password}
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={mode === "register" ? 10 : 1}
-              maxLength={200}
-              className={input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-            {mode === "register" && <p className="mt-1.5 text-xs text-muted">{t.auth.passwordHint}</p>}
-            {mode === "login" && (
-              <Link href="/sifremi-unuttum" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
-                {t.auth.forgotLink}
-              </Link>
-            )}
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <label htmlFor="password" className="text-sm font-medium text-text">
+                {t.auth.password}
+              </label>
+              {login && (
+                <Link href="/sifremi-unuttum" className="text-sm text-muted transition hover:text-primary">
+                  {t.auth.forgotLink}
+                </Link>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={login ? 1 : 10}
+                maxLength={200}
+                className={`${input} pr-12`}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={login ? "current-password" : "new-password"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-2xl text-muted transition hover:text-text"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+              </button>
+            </div>
+            {!login && <p className="mt-1.5 text-xs text-muted">{t.auth.passwordHint}</p>}
           </div>
           {error ? <ErrorNotice error={error} /> : null}
           <button type="submit" disabled={busy !== null} className={`${btn.base} ${btn.primary} ${btn.md} w-full`}>
             {busy === "form" && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
-            {mode === "login" ? t.auth.submitLogin : t.auth.submitRegister}
+            {login ? t.auth.submitLogin : t.auth.submitRegister}
           </button>
         </form>
 
+        <p className="mt-5 text-center text-sm text-muted">
+          {login ? t.auth.noAccount : t.auth.haveAccount}{" "}
+          <button type="button" onClick={() => switchMode(login ? "register" : "login")} className="font-medium text-primary hover:underline">
+            {login ? t.auth.registerTab : t.auth.loginTab}
+          </button>
+        </p>
+
         {!user && (
           <>
-            <div className="my-5 flex items-center gap-3 text-xs text-muted">
+            <div className="my-6 flex items-center gap-3 text-xs text-muted">
               <span className="h-px flex-1 bg-border" /> {t.common.or} <span className="h-px flex-1 bg-border" />
             </div>
             <button type="button" onClick={guest} disabled={busy !== null} className={`${btn.base} ${btn.ghost} ${btn.md} w-full`}>
@@ -148,8 +160,25 @@ export function AuthForm() {
             <p className="mt-2 text-center text-xs text-muted">{t.auth.guestNote}</p>
           </>
         )}
-        <p className="mt-6 text-center text-xs text-muted">{t.auth.kvkk}</p>
+        <p className="mt-8 text-xs leading-relaxed text-muted">{t.auth.kvkk}</p>
       </div>
+
+      <aside className="relative hidden min-h-[560px] overflow-hidden rounded-3xl bg-surface-2 lg:block" aria-label={L.badge}>
+        <img src="/landing/hero-sonra.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" aria-hidden />
+        <span className="absolute right-4 top-4 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{L.after}</span>
+        <div className="absolute inset-x-0 bottom-0 p-8 pb-14 text-white">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/75">{L.badge}</p>
+          <p className="mt-3 max-w-md font-display text-3xl font-light leading-tight">{L.heroTitle}</p>
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {L.trust.map((item: string) => (
+              <li key={item} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs backdrop-blur-sm">
+                <Check className="h-3.5 w-3.5" aria-hidden /> {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
     </div>
   );
 }

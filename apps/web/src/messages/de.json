@@ -255,7 +255,14 @@
     "kvkk": "Mit dem Fortfahren akzeptierst du die Nutzungsbedingungen und die KVKK-Datenschutzhinweise.",
     "invalid": "E-Mail oder Passwort ist falsch.",
     "tooShort": "Das Passwort muss mindestens 10 Zeichen lang sein.",
-    "forgotLink": "Passwort vergessen"
+    "forgotLink": "Passwort vergessen",
+    "loginTitle": "Willkommen zurück",
+    "registerTitle": "Konto erstellen",
+    "registerSubtitle": "Speichere deine Designs und mach auf jedem Gerät weiter.",
+    "noAccount": "Noch kein Konto?",
+    "haveAccount": "Schon ein Konto?",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen"
   },
   "account": {
     "forgotTitle": "Passwort vergessen?",

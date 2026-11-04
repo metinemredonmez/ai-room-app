@@ -255,7 +255,14 @@
     "kvkk": "Continuando accetti i Termini d'uso e l'Informativa sulla privacy KVKK.",
     "invalid": "E-mail o password errate.",
     "tooShort": "La password deve avere almeno 10 caratteri.",
-    "forgotLink": "Password dimenticata?"
+    "forgotLink": "Password dimenticata?",
+    "loginTitle": "Bentornato",
+    "registerTitle": "Crea il tuo account",
+    "registerSubtitle": "Salva i tuoi design e continua da qualsiasi dispositivo.",
+    "noAccount": "Non hai un account?",
+    "haveAccount": "Hai già un account?",
+    "showPassword": "Mostra password",
+    "hidePassword": "Nascondi password"
   },
   "account": {
     "forgotTitle": "Hai dimenticato la password?",

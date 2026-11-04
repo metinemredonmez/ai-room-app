@@ -255,7 +255,14 @@
     "kvkk": "계속하면 이용약관 및 KVKK 개인정보 고지에 동의하게 돼요.",
     "invalid": "이메일 또는 비밀번호가 올바르지 않아요.",
     "tooShort": "비밀번호는 10자 이상이어야 해요.",
-    "forgotLink": "비밀번호를 잊으셨나요?"
+    "forgotLink": "비밀번호를 잊으셨나요?",
+    "loginTitle": "다시 오신 걸 환영해요",
+    "registerTitle": "계정 만들기",
+    "registerSubtitle": "디자인을 저장하고 어느 기기에서든 이어서 작업하세요.",
+    "noAccount": "계정이 없으신가요?",
+    "haveAccount": "이미 계정이 있으신가요?",
+    "showPassword": "비밀번호 표시",
+    "hidePassword": "비밀번호 숨기기"
   },
   "account": {
     "forgotTitle": "비밀번호를 잊으셨나요?",
