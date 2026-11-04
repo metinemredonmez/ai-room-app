@@ -6032,8 +6032,8 @@
     }
   },
   "info": {
-    "title": "AI Room API",
-    "description": "AI Room backend (NestJS). Sözleşme: docs/API.md. Kullanıcı uçları `user`, yönetim uçları `admin` (parola + TOTP ile alınan) Bearer token ister. Hata gövdesi her zaman `{ error: { code, message } }`. Bu sayfa üretimde varsayılan olarak kapalıdır (SWAGGER_ENABLED).",
+    "title": "Casalume API",
+    "description": "Casalume backend (NestJS). Sözleşme: docs/API.md. Kullanıcı uçları `user`, yönetim uçları `admin` (parola + TOTP ile alınan) Bearer token ister. Hata gövdesi her zaman `{ error: { code, message } }`. Bu sayfa üretimde varsayılan olarak kapalıdır (SWAGGER_ENABLED).",
     "version": "0.1.0",
     "contact": {}
   },
@@ -6049,13 +6049,13 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http",
-        "description": "aud=ai-room-app"
+        "description": "aud=casalume-app"
       },
       "admin": {
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http",
-        "description": "aud=ai-room-admin, MFA tamam"
+        "description": "aud=casalume-admin, MFA tamam"
       }
     },
     "schemas": {

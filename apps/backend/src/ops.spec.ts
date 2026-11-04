@@ -53,7 +53,7 @@ describe('force update (426)', () => {
 
   it('only accepts official store links and min ≤ latest in settings', () => {
     const v = (ios: object) => SettingsSchema.shape.appVersions.safeParse({ ios, android: { min: '0.0.0', latest: '0.0.0', storeUrl: '' } }).success;
-    expect(v({ min: '1.0.0', latest: '1.2.0', storeUrl: 'https://apps.apple.com/tr/app/ai-room/id1' })).toBe(true);
+    expect(v({ min: '1.0.0', latest: '1.2.0', storeUrl: 'https://apps.apple.com/tr/app/casalume/id1' })).toBe(true);
     expect(v({ min: '1.0.0', latest: '1.2.0', storeUrl: 'https://evil.example.com/apps.apple.com' })).toBe(false);
     expect(v({ min: '1.0.0', latest: '1.2.0', storeUrl: 'http://apps.apple.com/app' })).toBe(false);
     expect(v({ min: '1.3.0', latest: '1.2.0', storeUrl: '' })).toBe(false);
@@ -74,8 +74,8 @@ describe('error reports carry no personal data (LOG-02 / KVKK)', () => {
     const event = {
       user: { id: 'u1', email: 'a@b.co', ip_address: '1.2.3.4' },
       request: {
-        method: 'POST', url: 'https://api.airoom.app/v1/designs?sig=abc', query_string: 'sig=abc', data: '{"password":"p"}', cookies: { s: '1' },
-        headers: { authorization: 'Bearer t0k3n-t0k3n', 'x-internal-token': 'secret', 'user-agent': 'AIRoom/1.4.0', 'x-forwarded-for': '1.2.3.4' },
+        method: 'POST', url: 'https://api.casalume.app/v1/designs?sig=abc', query_string: 'sig=abc', data: '{"password":"p"}', cookies: { s: '1' },
+        headers: { authorization: 'Bearer t0k3n-t0k3n', 'x-internal-token': 'secret', 'user-agent': 'Casalume/1.4.0', 'x-forwarded-for': '1.2.3.4' },
       },
       exception: { values: [{ type: 'Error', value: 'duplicate email ayse@example.com', stacktrace: { frames: [{ function: 'f', vars: { password: 'p' } }] } }] },
       breadcrumbs: [
@@ -86,7 +86,7 @@ describe('error reports carry no personal data (LOG-02 / KVKK)', () => {
     } as unknown as ErrorEvent;
     const out = JSON.stringify(scrubEvent(event));
     for (const leak of ['u1', 'a@b.co', '1.2.3.4', 'sig=abc', 'password', 't0k3n', 'secret', 'ayse@', 'key=K', 'x@y.zz', '"s":"1"']) expect(out).not.toContain(leak);
-    expect(out).toContain('AIRoom/1.4.0');
+    expect(out).toContain('Casalume/1.4.0');
     expect(out).toContain('design_done');
     expect(out).toContain('r1');
   });

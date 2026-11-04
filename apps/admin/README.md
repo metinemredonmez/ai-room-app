@@ -1,6 +1,6 @@
-# AI Room Admin
+# Casalume Admin
 
-AI Room yönetim paneli: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4. Port **3001**.
+Casalume yönetim paneli: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4. Port **3001**.
 Backend sözleşmesi: [`docs/API.md` §4](../../docs/API.md).
 
 ## Çalıştırma
@@ -40,7 +40,7 @@ PRO/aktif), Denetim kaydı, Sistem (AI/DB/Redis durumu).
   `frame-ancestors 'none'`), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`,
   `X-Robots-Tag: noindex`, `robots.txt` her şeyi kapatır.
 - `src/proxy.ts` yalnız iyimser yönlendirme yapar; yetki kararı her istekte backend'dedir
-  (`aud=ai-room-admin`, rol ADMIN, MFA tamam — AZ-05).
+  (`aud=casalume-admin`, rol ADMIN, MFA tamam — AZ-05).
 - Kullanıcı ve AI kaynaklı metinler yalnız React metni olarak basılır; HTML olarak işlenmez.
 
 ## v1.1 ekranları

@@ -66,10 +66,10 @@ export const prefs = {
 };
 
 export const KEYS = {
-  accessToken: 'airoom.accessToken',
-  refreshToken: 'airoom.refreshToken',
-  deviceId: 'airoom.deviceId',
-  locale: 'airoom.locale',
-  onboardingDone: 'airoom.onboardingDone',
-  pushToken: 'airoom.pushToken',
+  accessToken: 'casalume.accessToken',
+  refreshToken: 'casalume.refreshToken',
+  deviceId: 'casalume.deviceId',
+  locale: 'casalume.locale',
+  onboardingDone: 'casalume.onboardingDone',
+  pushToken: 'casalume.pushToken',
 } as const;

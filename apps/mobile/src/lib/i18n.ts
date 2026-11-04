@@ -1,7 +1,7 @@
 import type { Locale } from '@/lib/api';
 
 const tr = {
-  'app.name': 'AI Room',
+  'app.name': 'Casalume',
   'app.tagline': 'Odanı saniyeler içinde yeniden tasarla',
 
   'tab.home': 'Ana Sayfa',
@@ -120,7 +120,7 @@ const tr = {
   'design.regionWall': 'Yalnız duvarlar değişti; pencere, kapı ve eşyalar korundu.',
   'design.regionFloor': 'Yalnız zemin değişti; geri kalan her şey korundu.',
   'design.regionObject': 'Yalnız seçtiğin nesne değişti; geri kalan her şey korundu.',
-  'design.shareText': 'AI Room ile yeniden tasarladım:',
+  'design.shareText': 'Casalume ile yeniden tasarladım:',
 
   'analysis.title': 'Alışveriş listesi ve bütçe',
   'analysis.items': 'Ürünler',
@@ -147,7 +147,7 @@ const tr = {
   'chat.suggestionHint': 'Öneriye dokununca tasarım ekranı hazır gelir; üretimi sen başlatırsın.',
   'chat.imageAttached': 'Görsel eklendi',
 
-  'paywall.title': 'AI Room PRO',
+  'paywall.title': 'Casalume PRO',
   'paywall.subtitle': 'Sınırsıza yakın tasarım, tüm stiller ve ürün analizi',
   'paywall.b1': 'Günde 100 tasarıma kadar (adil kullanım)',
   'paywall.b2': 'Tüm PRO stiller ve araçlar',
@@ -212,7 +212,7 @@ const tr = {
 export type MessageKey = keyof typeof tr;
 
 const en: Record<MessageKey, string> = {
-  'app.name': 'AI Room',
+  'app.name': 'Casalume',
   'app.tagline': 'Redesign your room in seconds',
 
   'tab.home': 'Home',
@@ -331,7 +331,7 @@ const en: Record<MessageKey, string> = {
   'design.regionWall': 'Only the walls changed; windows, doors and furniture were kept.',
   'design.regionFloor': 'Only the floor changed; everything else was kept.',
   'design.regionObject': 'Only the selected object changed; everything else was kept.',
-  'design.shareText': 'I redesigned this with AI Room:',
+  'design.shareText': 'I redesigned this with Casalume:',
 
   'analysis.title': 'Shopping list & budget',
   'analysis.items': 'Products',
@@ -358,7 +358,7 @@ const en: Record<MessageKey, string> = {
   'chat.suggestionHint': 'Tapping a suggestion pre-fills the design screen; you start the generation.',
   'chat.imageAttached': 'Image attached',
 
-  'paywall.title': 'AI Room PRO',
+  'paywall.title': 'Casalume PRO',
   'paywall.subtitle': 'Near-unlimited designs, every style and product analysis',
   'paywall.b1': 'Up to 100 designs a day (fair use)',
   'paywall.b2': 'All PRO styles and tools',

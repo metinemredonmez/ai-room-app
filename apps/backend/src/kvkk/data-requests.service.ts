@@ -56,7 +56,7 @@ export class DataRequestsService {
     const row = await this.insert({ userId: user.id, type, details, channel: 'app', contactEmail: null, receivedAt: new Date() });
     log.info('kvkk_request_created', { reference: row.reference, type, channel: 'app' });
     if (user.email) {
-      this.mail(user.email, `AI Room · KVKK başvurun alındı (${row.reference})`, 'KVKK başvurun alındı', [
+      this.mail(user.email, `Casalume · KVKK başvurun alındı (${row.reference})`, 'KVKK başvurun alındı', [
         `Başvuru numaran: ${row.reference}`,
         `Konu: ${TYPE_TR[type]}`,
         `Başvurun en geç ${fmt(row.dueAt)} tarihine kadar sonuçlandırılacak. Durumunu uygulamada Profil → Gizlilik ekranından izleyebilirsin.`,
@@ -125,7 +125,7 @@ export class DataRequestsService {
     const updated = await this.prisma.dataRequest.findUniqueOrThrow({ where: { id } });
     const to = row.user?.email ?? row.contactEmail;
     if (closing && to) {
-      this.mail(to, `AI Room · KVKK başvurun sonuçlandı (${row.reference})`, 'KVKK başvurun sonuçlandı', [
+      this.mail(to, `Casalume · KVKK başvurun sonuçlandı (${row.reference})`, 'KVKK başvurun sonuçlandı', [
         `Başvuru numaran: ${row.reference}`,
         `Sonuç: ${input.status === 'COMPLETED' ? 'Tamamlandı' : 'Reddedildi'}`,
         input.response!,
@@ -154,7 +154,7 @@ export class DataRequestsService {
       return `${r.reference} · ${TYPE_TR[r.type as DataRequestType] ?? r.type} · son gün ${fmt(r.dueAt)} (${d < 0 ? `${-d} gün gecikti` : `${d} gün kaldı`})`;
     });
     for (const to of recipients) {
-      this.mail(to, `AI Room · KVKK başvuru süreleri: ${overdue} gecikmiş, ${rows.length - overdue} yaklaşan`, 'KVKK başvuru süreleri', lines, this.cfg.ADMIN_APP_URL, 'Yönetim paneline git');
+      this.mail(to, `Casalume · KVKK başvuru süreleri: ${overdue} gecikmiş, ${rows.length - overdue} yaklaşan`, 'KVKK başvuru süreleri', lines, this.cfg.ADMIN_APP_URL, 'Yönetim paneline git');
     }
     log.warn('kvkk_deadlines', { dueSoon: rows.length - overdue, overdue, notified: recipients.length });
     return { dueSoon: rows.length - overdue, overdue, notified: recipients.length };
@@ -179,14 +179,14 @@ export class DataRequestsService {
 
   /** The privacy contact learns that an application arrived — reference and deadline only. */
   private notifyController(row: DataRequest) {
-    this.mail(this.cfg.LEGAL_CONTACT_EMAIL, `AI Room · Yeni KVKK başvurusu (${row.reference})`, 'Yeni KVKK başvurusu', [
+    this.mail(this.cfg.LEGAL_CONTACT_EMAIL, `Casalume · Yeni KVKK başvurusu (${row.reference})`, 'Yeni KVKK başvurusu', [
       `Başvuru numarası: ${row.reference}`,
       `Konu: ${TYPE_TR[row.type as DataRequestType] ?? row.type}`,
       `Son yanıt tarihi: ${fmt(row.dueAt)}`,
     ], this.cfg.ADMIN_APP_URL, 'Yönetim paneline git');
   }
 
-  private mail(to: string, subject: string, heading: string, lines: string[], url = this.cfg.WEB_APP_URL, cta = 'AI Room') {
+  private mail(to: string, subject: string, heading: string, lines: string[], url = this.cfg.WEB_APP_URL, cta = 'Casalume') {
     void this.mailer
       .send(renderActionMail({ to, subject, heading, lines, cta, url, footer: 'Bu e-posta KVKK başvurunla ilgili olarak gönderildi.' }))
       .catch((e: Error) => log.error('kvkk_mail_failed', { error: e.name }));

@@ -1,6 +1,6 @@
 # Consent to Marketing Messages
 
-If you agree, {{controller.name}} may send you e-mails and app notifications about AI Room news, new styles, campaigns
+If you agree, {{controller.name}} may send you e-mails and app notifications about Casalume news, new styles, campaigns
 and discounts. For this your name, e-mail address, push token and app preferences (e.g. styles you like) are processed.
 
 - Consent is optional; refusing does not affect your use of the Service.

@@ -74,9 +74,9 @@ function SecurityCard({ me, onChanged }: { me: AdminMe; onChanged: () => void })
   }
 
   function download() {
-    const text = `AI Room yönetim paneli yedek kodları (${me.email})\nHer kod bir kez kullanılabilir.\n\n${codes!.join("\n")}\n`;
+    const text = `Casalume yönetim paneli yedek kodları (${me.email})\nHer kod bir kez kullanılabilir.\n\n${codes!.join("\n")}\n`;
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: "airoom-admin-yedek-kodlar.txt" });
+    const a = Object.assign(document.createElement("a"), { href: url, download: "casalume-yonetim-yedek-kodlar.txt" });
     a.click();
     URL.revokeObjectURL(url);
   }

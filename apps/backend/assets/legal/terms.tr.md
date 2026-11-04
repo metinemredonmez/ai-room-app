@@ -1,11 +1,11 @@
 # Kullanım Koşulları
 
-Bu koşullar, {{controller.name}} ("biz") tarafından sunulan AI Room uygulamasını ve web sitesini ("Hizmet") kullanımını
+Bu koşullar, {{controller.name}} ("biz") tarafından sunulan Casalume uygulamasını ve web sitesini ("Hizmet") kullanımını
 düzenler. Hizmeti kullanarak bu koşulları kabul etmiş olursun.
 
 ## 1. Hizmet
 
-AI Room, yüklediğin fotoğraflardan yapay zekâ ile iç mekân, dış cephe ve bahçe tasarım önerileri üretir. Üretilen görseller
+Casalume, yüklediğin fotoğraflardan yapay zekâ ile iç mekân, dış cephe ve bahçe tasarım önerileri üretir. Üretilen görseller
 **görselleştirme** amaçlıdır; mimari, mühendislik veya yapı denetimi tavsiyesi değildir. Ürün, malzeme ve fiyat önerileri
 yaklaşık ve bilgi amaçlıdır.
 

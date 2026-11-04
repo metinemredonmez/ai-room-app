@@ -12,9 +12,9 @@ import { log } from '../common/log.js';
 import { randomToken, sha256 } from './crypto.js';
 
 // TOK-01 / TOK-02: HS256 only, fixed issuer, one audience per purpose, explicit token type.
-const ISSUER = 'ai-room';
-export const AUD_APP = 'ai-room-app';
-export const AUD_ADMIN = 'ai-room-admin';
+const ISSUER = 'casalume';
+export const AUD_APP = 'casalume-app';
+export const AUD_ADMIN = 'casalume-admin';
 const ACCESS_TTL_SEC = 15 * 60;
 const ADMIN_TTL_SEC = 2 * 60 * 60;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;

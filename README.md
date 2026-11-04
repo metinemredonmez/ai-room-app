@@ -1,4 +1,4 @@
-# AI Room
+# Casalume
 
 **Odanı saniyeler içinde yeniden tasarla.** Türkiye öncelikli, yapay zekâ destekli iç mekân, dış cephe ve
 bahçe tasarım platformu. Fotoğraf yükle, stil seç, yapay zekâ yeniden tasarlasın. Ardından tasarımdaki

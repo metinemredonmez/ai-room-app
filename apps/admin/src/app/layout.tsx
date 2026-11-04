@@ -4,8 +4,8 @@ import { FeedbackProvider } from "@/components/feedback";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "AI Room Admin", template: "%s · AI Room Admin" },
-  description: "AI Room yönetim paneli",
+  title: { default: "Casalume Admin", template: "%s · Casalume Admin" },
+  description: "Casalume yönetim paneli",
   robots: { index: false, follow: false, nocache: true },
 };
 

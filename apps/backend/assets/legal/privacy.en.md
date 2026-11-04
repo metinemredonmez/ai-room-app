@@ -1,7 +1,7 @@
 # Privacy Notice
 
 This notice explains, under Article 10 of the Turkish Personal Data Protection Law No. 6698 ("KVKK"), how your personal
-data is processed when you use the AI Room app and website. The Turkish version prevails.
+data is processed when you use the Casalume app and website. The Turkish version prevails.
 
 ## 1. Data controller
 

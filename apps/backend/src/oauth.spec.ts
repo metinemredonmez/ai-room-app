@@ -6,7 +6,7 @@ import { FieldCipher } from './common/field-crypto.js';
 import { loadConfig } from './config.js';
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
-const CLIENT = 'com.airoom.app';
+const CLIENT = 'app.casalume';
 const APPLE_ISS = 'https://appleid.apple.com';
 
 describe('Apple / Google ID tokens (TOK-01 / TOK-02 / TOK-03)', () => {
@@ -143,9 +143,9 @@ describe('Sign in with Apple configuration (KEY-01)', () => {
 
   it('requires the Apple key in production when Sign in with Apple is on', () => {
     const prod = {
-      ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com',
-      ADMIN_APP_URL: 'https://admin.airoom.example.com', MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com', PUSH_TRANSPORT: 'expo',
-      LEGAL_CONTROLLER_NAME: 'AI Room Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@airoom.example.com',
+      ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://casalume.example.com',
+      ADMIN_APP_URL: 'https://admin.casalume.example.com', MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com', PUSH_TRANSPORT: 'expo',
+      LEGAL_CONTROLLER_NAME: 'Casalume Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@casalume.example.com',
     };
     expect(() => loadConfig({ ...prod, APPLE_CLIENT_IDS: CLIENT })).toThrow(/APPLE_PRIVATE_KEY/);
     const key = randomBytes(32).toString('base64');

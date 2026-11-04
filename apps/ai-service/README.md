@@ -1,4 +1,4 @@
-# AI Room — AI servisi (FastAPI)
+# Casalume — AI servisi (FastAPI)
 
 Yalnız backend'in çağırdığı iç servis (`X-Internal-Token`). Dışarı açılmaz. Sözleşme: `docs/API.md` §5 ve §7.
 

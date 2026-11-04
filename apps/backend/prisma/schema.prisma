@@ -1,4 +1,4 @@
-// AI Room — backend data model (PostgreSQL)
+// Casalume — backend data model (PostgreSQL)
 
 generator client {
   provider            = "prisma-client"

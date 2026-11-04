@@ -30,7 +30,7 @@ log = logging.getLogger("ai-service")
 MAX_BODY_BYTES = 40 * 1024 * 1024
 OUTPUT_MAX_BYTES = 25 * 1024 * 1024
 
-DESCRIPTION = """Internal AI service of AI Room. Only the backend calls it (header `X-Internal-Token`).
+DESCRIPTION = """Internal AI service of Casalume. Only the backend calls it (header `X-Internal-Token`).
 
 * image generation with a provider fallback chain, circuit breakers and a 150 s time budget
 * region lock for paint / flooring / replace / targeted declutter: SAM 3 mask, pixels outside it stay the user's
@@ -86,7 +86,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
                     settings.sentry_traces_sample_rate)
 
     app = FastAPI(
-        title="AI Room AI Service",
+        title="Casalume AI Service",
         version="1.1.0",
         description=DESCRIPTION,
         openapi_tags=TAGS,

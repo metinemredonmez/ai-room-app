@@ -1,4 +1,4 @@
-# AI Room — Sistem mimarisi ve API sözleşmesi (v1)
+# Casalume — Sistem mimarisi ve API sözleşmesi (v1)
 
 Bu belge tüm uygulamaların (backend, ai-service, web, admin, mobile) uyduğu tek sözleşmedir.
 Değişiklik önce burada yapılır.
@@ -27,8 +27,8 @@ Güvenlik ilkeleri (red-team kataloğu kimlikleri):
 - **SES-01 / WEB-03:** Web ve admin tarayıcıda token tutmaz. Token'lar Next.js sunucu tarafında
   `HttpOnly; Secure (prod); SameSite=Lax; Path=/` çerezlerinde durur. Durum değiştiren BFF uçları
   `Origin` başlığını kendi origin'iyle karşılaştırır (CSRF). Mobil, token'ı `expo-secure-store`'da tutar.
-- **TOK-01 / TOK-02:** JWT yalnız HS256, `iss=ai-room`, `aud` = `ai-room-app` (kullanıcı) veya
-  `ai-room-admin` (yönetici), `typ=access`. Admin token'ı yalnız MFA tamamlanınca verilir (`amr: ["pwd","otp"]`).
+- **TOK-01 / TOK-02:** JWT yalnız HS256, `iss=casalume`, `aud` = `casalume-app` (kullanıcı) veya
+  `casalume-admin` (yönetici), `typ=access`. Admin token'ı yalnız MFA tamamlanınca verilir (`amr: ["pwd","otp"]`).
 - **AUT-01:** Admin girişi parola + TOTP (6 hane) ister. TOTP kayıtlı olmayan admin giriş yapamaz.
 - **AZ-01 / AZ-02:** Her sorgu `userId` ile filtrelenir; başkasının kaydı 404 döner.
 - **NET-02 / NET-04:** AI servisi dışarı açılmaz; `X-Internal-Token` olmadan 401.
@@ -152,7 +152,7 @@ klasörüne yazılır, üretimde SMTP zorunludur.
 
 Sohbet önerileri yalnız öneridir; istemci kullanıcı dokunmadan üretim başlatmaz (AI-01).
 
-## 4. Admin uçları (`aud=ai-room-admin`, rol ADMIN, MFA tamam)
+## 4. Admin uçları (`aud=casalume-admin`, rol ADMIN, MFA tamam)
 
 | Metot | Yol | Gövde | Yanıt |
 |---|---|---|---|
@@ -216,7 +216,7 @@ demo yanıtı döner (uygulama anahtarsız uçtan uca çalışır).
 | `border` | `#E6E1D8` | `#2A332F` |
 
 Köşe yarıçapı 14–20, yumuşak gölge, Türkçe öncelikli metinler, ikonlar Ionicons/Lucide.
-Marka: **AI Room** — "Odanı saniyeler içinde yeniden tasarla".
+Marka: **Casalume** — "Odanı saniyeler içinde yeniden tasarla".
 
 ## 7. v1.1 eklemeleri (backend + AI servisi)
 
@@ -373,7 +373,7 @@ Rakiplerde en sık şikâyet: "boyamak istedim, pencerelerimi de değiştirdi". 
 - İçerik kullanıcının diline göre (TR/EN):
   - Başarılı: "Tasarımın hazır" + `"<başlık>" tamamlandı`.
   - Başarısız: "Tasarım oluşturulamadı" + "Hakkın iade edildi".
-  - `data: { type: 'design', designId, status, url: 'airoom://design/<id>' }`. Uygulama yalnız UUID biçimindeki `designId`'yi kullanır,
+  - `data: { type: 'design', designId, status, url: 'casalume://design/<id>' }`. Uygulama yalnız UUID biçimindeki `designId`'yi kullanır,
     yükteki URL'ye gitmez.
 - Taşıma: `PUSH_TRANSPORT=outbox` (geliştirme: `DATA_DIR/push-outbox/*.json`) | `expo` (Expo Push API, üretimde zorunlu).
   `EXPO_ACCESS_TOKEN`, Expo projesinde "enhanced push security" açıksa gerekir.

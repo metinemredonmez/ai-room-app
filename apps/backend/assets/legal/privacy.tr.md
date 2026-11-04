@@ -1,6 +1,6 @@
 # KVKK Aydınlatma Metni
 
-Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun ("KVKK") 10. maddesi uyarınca, AI Room uygulamasını ve
+Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun ("KVKK") 10. maddesi uyarınca, Casalume uygulamasını ve
 web sitesini kullanırken kişisel verilerinin nasıl işlendiğini açıklar.
 
 ## 1. Veri sorumlusu

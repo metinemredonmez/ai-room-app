@@ -290,7 +290,7 @@ export class AdminAuthController {
     if (remaining !== null) {
       log.warn('admin_backup_code_used', { userId: user.id, remaining });
       this.security.notify(user, 'Yedek kodla giriş yapıldı', [
-        'AI Room yönetim hesabına tek kullanımlık bir yedek kodla giriş yapıldı.',
+        'Casalume yönetim hesabına tek kullanımlık bir yedek kodla giriş yapıldı.',
         `Kalan yedek kod: ${remaining}. ${remaining <= 3 ? 'Panelden yeni kodlar oluşturmanı öneririz.' : ''}`.trim(),
       ]);
     }
@@ -330,7 +330,7 @@ export class AdminAuthController {
     const backupCodes = await this.security.regenerateBackupCodes(user.id);
     await this.audit.record(user.id, 'admin.mfa_enrolled', 'user', user.id, {}, req.clientIp);
     this.security.notify(user, 'Doğrulayıcı uygulaman kaydedildi', [
-      'AI Room yönetim hesabına yeni bir doğrulayıcı uygulama ve 10 yedek kod tanımlandı.',
+      'Casalume yönetim hesabına yeni bir doğrulayıcı uygulama ve 10 yedek kod tanımlandı.',
     ]);
     const fresh = await this.prisma.user.findUniqueOrThrow({ where: { id: user.id } });
     return { ...(await this.tokens.issueAdmin(fresh)), admin: this.users.toDto(fresh), backupCodes };

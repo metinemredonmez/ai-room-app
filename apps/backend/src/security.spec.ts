@@ -111,23 +111,23 @@ describe('configuration (KEY-01)', () => {
     expect(() =>
       loadConfig({ ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', IMAGE_URL_SECRET: base.JWT_SECRET }),
     ).toThrow(/distinct/);
-    const prod = { ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://airoom.example.com', ADMIN_APP_URL: 'https://admin.airoom.example.com' };
-    expect(() => loadConfig({ ...prod, ADMIN_APP_URL: 'http://admin.airoom.example.com' })).toThrow(/ADMIN_APP_URL/);
+    const prod = { ...base, NODE_ENV: 'production', PUBLIC_BASE_URL: 'https://api.example.com', WEB_APP_URL: 'https://casalume.example.com', ADMIN_APP_URL: 'https://admin.casalume.example.com' };
+    expect(() => loadConfig({ ...prod, ADMIN_APP_URL: 'http://admin.casalume.example.com' })).toThrow(/ADMIN_APP_URL/);
     expect(() => loadConfig(prod)).toThrow(/SMTP/);
     const mail = { MAIL_TRANSPORT: 'smtp', SMTP_URL: 'smtps://u:p@smtp.example.com' };
     expect(() => loadConfig({ ...prod, ...mail })).toThrow(/PUSH_TRANSPORT/);
     // KVKK m.10: the legal texts must name the real data controller, never the development defaults.
     expect(() => loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo' })).toThrow(/LEGAL_CONTROLLER_NAME/);
-    expect(loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo', LEGAL_CONTROLLER_NAME: 'AI Room Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@airoom.example.com' }).isProd).toBe(true);
+    expect(loadConfig({ ...prod, ...mail, PUSH_TRANSPORT: 'expo', LEGAL_CONTROLLER_NAME: 'Casalume Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@casalume.example.com' }).isProd).toBe(true);
   });
 });
 
 describe('e-mailed links (MAIL-01 / AUT-03)', () => {
-  const svc = new EmailTokensService({} as never, {} as never, { WEB_APP_URL: 'https://airoom.example.com' } as Config);
+  const svc = new EmailTokensService({} as never, {} as never, { WEB_APP_URL: 'https://casalume.example.com' } as Config);
 
   it('builds links only from the configured origin and keeps the token in the fragment', () => {
     const url = new URL(svc.link('RESET_PASSWORD', 'tok_123'));
-    expect(url.origin).toBe('https://airoom.example.com');
+    expect(url.origin).toBe('https://casalume.example.com');
     expect(url.pathname).toBe('/sifre-sifirla');
     expect(url.search).toBe('');
     expect(url.hash).toBe('#token=tok_123');
@@ -155,7 +155,7 @@ describe('RevenueCat webhook authentication (yoga BE-01 lesson: verify before wr
   const secret = 'whsec_test_0123456789abcdef';
   const auth = 'Bearer rc-webhook-auth-0123456789';
   const svc = (cfg: Partial<Record<string, string>>) =>
-    new BillingService({} as never, {} as never, { CREDIT_PACKS: 'airoom_credits_10:10', ...cfg } as never);
+    new BillingService({} as never, {} as never, { CREDIT_PACKS: 'casalume_credits_10:10', ...cfg } as never);
   const body = Buffer.from(JSON.stringify({ api_version: '1.0', event: { id: 'evt_1', type: 'INITIAL_PURCHASE' } }));
   const sign = (t: number, b: Buffer = body) => `t=${t},v1=${createHmac('sha256', secret).update(`${t}.`).update(b).digest('hex')}`;
   const now = 1_800_000_000_000;
@@ -181,7 +181,7 @@ describe('RevenueCat webhook authentication (yoga BE-01 lesson: verify before wr
 
 describe('object store (local driver)', () => {
   it('puts, reads and deletes by server-generated key', async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), 'airoom-store-'));
+    const dir = await mkdtemp(path.join(tmpdir(), 'casalume-store-'));
     const store = new LocalStore(dir);
     await store.put('0f8fad5b-d9cb-469f-a165-70867728950e.jpg', Buffer.from('jpeg-bytes'), 'image/jpeg');
     expect((await store.get('0f8fad5b-d9cb-469f-a165-70867728950e.jpg'))?.toString()).toBe('jpeg-bytes');

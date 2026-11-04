@@ -103,7 +103,7 @@ export class AdminSecurityService {
     if (before.role === after.role) return after;
     await this.audit.record(actorId, 'admin.role_change', 'user', targetId, { from: before.role, to: after.role, reason }, ip);
     this.notify(after, 'Yönetici rolün değişti', [
-      `AI Room yönetici rolün ${ROLE_TR[before.role]} → ${ROLE_TR[after.role]} olarak değiştirildi.`,
+      `Casalume yönetici rolün ${ROLE_TR[before.role]} → ${ROLE_TR[after.role]} olarak değiştirildi.`,
       `Gerekçe: ${reason}`,
       after.mfaEnrollBefore ? 'Panele ilk girişinde doğrulayıcı uygulamanı kaydetmen gerekiyor (72 saat içinde).' : 'Açık oturumların kapatıldı.',
     ]);
@@ -128,7 +128,7 @@ export class AdminSecurityService {
     });
     await this.audit.record(actorId, 'admin.mfa_reset', 'user', targetId, { reason }, ip);
     this.notify(target, 'İki adımlı doğrulaman sıfırlandı', [
-      'Bir süper yönetici, AI Room yönetim hesabının doğrulayıcı uygulamasını ve yedek kodlarını sıfırladı.',
+      'Bir süper yönetici, Casalume yönetim hesabının doğrulayıcı uygulamasını ve yedek kodlarını sıfırladı.',
       `Gerekçe: ${reason}`,
       'Açık oturumların kapatıldı. 72 saat içinde panele girip yeni doğrulayıcını kaydet.',
     ]);
@@ -163,7 +163,7 @@ export class AdminSecurityService {
     void this.mailer
       .send(
         renderActionMail({
-          to: user.email, subject: `AI Room · ${subject}`, heading: subject, lines,
+          to: user.email, subject: `Casalume · ${subject}`, heading: subject, lines,
           cta: 'Yönetim paneline git', url: this.cfg.ADMIN_APP_URL,
           footer: 'Bu işlemden haberin yoksa hemen bir süper yöneticiyle iletişime geç.',
         }),

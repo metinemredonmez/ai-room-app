@@ -15,12 +15,12 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Room — Odanı saniyeler içinde yeniden tasarla",
-    template: "%s · AI Room",
+    default: "Casalume — Odanı saniyeler içinde yeniden tasarla",
+    template: "%s · Casalume",
   },
   description:
     "Yapay zekâ ile iç mekân, dış cephe ve bahçe tasarımı. Türk ve Anadolu stilleri, TL bütçe tahmini ve Türk mağazalarından alışveriş listesi.",
-  applicationName: "AI Room",
+  applicationName: "Casalume",
 };
 
 export const viewport: Viewport = {

@@ -25,7 +25,7 @@ const Env = z.object({
   ADMIN_APP_URL: z.url().default('http://localhost:3001'),
   MAIL_TRANSPORT: z.enum(['outbox', 'smtp']).default('outbox'),
   SMTP_URL: z.string().optional(),
-  MAIL_FROM: z.string().default('AI Room <no-reply@airoom.local>'),
+  MAIL_FROM: z.string().default('Casalume <no-reply@casalume.local>'),
   AI_INTERNAL_TOKEN: secret('AI_INTERNAL_TOKEN'),
   DATA_DIR: z.string().default('./data'),
   // Image storage: local disk (single server / dev) or any S3-compatible bucket (Cloudflare R2, AWS S3, MinIO).
@@ -51,7 +51,7 @@ const Env = z.object({
   REVENUECAT_API_KEY: z.string().min(10).optional(),
   REVENUECAT_ENTITLEMENT: z.string().default('pro'),
   // Consumable credit packs: productId:credits pairs.
-  CREDIT_PACKS: z.string().default('airoom_credits_10:10,airoom_credits_50:50'),
+  CREDIT_PACKS: z.string().default('casalume_credits_10:10,casalume_credits_50:50'),
   // "Tasarımın hazır" push: outbox (DATA_DIR/push-outbox, development) | expo (Expo Push service).
   PUSH_TRANSPORT: z.enum(['outbox', 'expo']).default('outbox'),
   // Optional Expo access token (required once "enhanced push security" is enabled for the Expo project).
@@ -73,9 +73,9 @@ const Env = z.object({
   // Local development only: admin login with e-mail + password, no TOTP. Refused outside NODE_ENV=development.
   ADMIN_DEV_SKIP_MFA: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   // KVKK data controller, filled into the legal texts ({{controller.*}}); required in production.
-  LEGAL_CONTROLLER_NAME: z.string().trim().min(2).max(200).default('AI Room (geliştirme)'),
+  LEGAL_CONTROLLER_NAME: z.string().trim().min(2).max(200).default('Casalume (geliştirme)'),
   LEGAL_CONTROLLER_ADDRESS: z.string().trim().min(2).max(300).default('Adres henüz tanımlanmadı'),
-  LEGAL_CONTACT_EMAIL: z.email().default('kvkk@airoom.local'),
+  LEGAL_CONTACT_EMAIL: z.email().default('kvkk@casalume.local'),
   LEGAL_KEP_ADDRESS: z.string().trim().max(200).optional(),
   // Error reporting (Sentry). Unset = off. Reports carry no personal data (src/common/monitoring.ts).
   SENTRY_DSN: z.url().optional(),

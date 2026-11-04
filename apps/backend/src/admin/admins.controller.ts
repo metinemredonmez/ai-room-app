@@ -52,7 +52,7 @@ export class AdminSelfController {
     if (!(await this.security.claimTotp(user, input.otp))) throw new AppError(403, 'step_up_failed', 'Kod hatalı ya da zaten kullanıldı');
     const backupCodes = await this.security.regenerateBackupCodes(user.id);
     await this.audit.record(user.id, 'admin.backup_codes_regenerated', 'user', user.id, {}, req.clientIp);
-    this.security.notify(user, 'Yedek kodların yenilendi', ['AI Room yönetim hesabının yedek kodları yenilendi; eski kodlar artık geçersiz.']);
+    this.security.notify(user, 'Yedek kodların yenilendi', ['Casalume yönetim hesabının yedek kodları yenilendi; eski kodlar artık geçersiz.']);
     return { backupCodes };
   }
 }

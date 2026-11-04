@@ -9,8 +9,8 @@ import type { MailerService } from './mail/mailer.service.js';
 
 const DAY = 86_400_000;
 const cfg = {
-  LEGAL_CONTROLLER_NAME: 'AI Room Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@airoom.example.com',
-  WEB_APP_URL: 'https://airoom.example.com', ADMIN_APP_URL: 'https://admin.airoom.example.com',
+  LEGAL_CONTROLLER_NAME: 'Casalume Teknoloji A.Ş.', LEGAL_CONTROLLER_ADDRESS: 'İstanbul', LEGAL_CONTACT_EMAIL: 'kvkk@casalume.example.com',
+  WEB_APP_URL: 'https://casalume.example.com', ADMIN_APP_URL: 'https://admin.casalume.example.com',
 } as Config;
 
 type Row = { kind: string; version: string; requiresConsent: boolean; publishedAt: Date | null };
@@ -56,7 +56,7 @@ describe('legal texts (KVKK m.10)', () => {
   it('fills the controller placeholders and leaves unknown ones visible', () => {
     const { legal } = legalWith([]);
     expect(legal.render('{{controller.name}} · {{ controller.email }} · KEP {{controller.kep}} · {{controller.phone}}'))
-      .toBe('AI Room Teknoloji A.Ş. · kvkk@airoom.example.com · KEP — · {{controller.phone}}');
+      .toBe('Casalume Teknoloji A.Ş. · kvkk@casalume.example.com · KEP — · {{controller.phone}}');
   });
 
   it('refuses HTML in drafts (WEB-01) and versions that are not newer than the published one', async () => {
@@ -147,7 +147,7 @@ describe('KVKK m.11 applications', () => {
     await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
     const mails = JSON.stringify(send.mock.calls);
     expect(mails).toContain('user@example.com');
-    expect(mails).toContain('kvkk@airoom.example.com');
+    expect(mails).toContain('kvkk@casalume.example.com');
     expect(mails).not.toContain('0555');
   });
 

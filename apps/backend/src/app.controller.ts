@@ -367,7 +367,7 @@ export class UserController {
       this.prisma.dataRequest.findMany({ where: { userId: auth.userId }, orderBy: { createdAt: 'desc' } }),
     ]);
     log.info('data_export', { userId: auth.userId });
-    res.setHeader('Content-Disposition', `attachment; filename="ai-room-verilerim-${new Date().toISOString().slice(0, 10)}.json"`);
+    res.setHeader('Content-Disposition', `attachment; filename="casalume-verilerim-${new Date().toISOString().slice(0, 10)}.json"`);
     const locale = localeOf(req, user.locale);
     return {
       exportedAt: new Date().toISOString(),

@@ -54,7 +54,7 @@ const tr = {
     badge: "Türkiye'nin yapay zekâ destekli iç mimarı",
     heroTitle: "Odanı saniyeler içinde yeniden tasarla.",
     heroText:
-      "Bir fotoğraf yükle, stilini seç; AI Room odanı yeniden döşesin, duvarını boyasın, zeminini değiştirsin. Üstelik beğendiğin tasarımın alışveriş listesini ve TL bütçesini de çıkarsın.",
+      "Bir fotoğraf yükle, stilini seç; Casalume odanı yeniden döşesin, duvarını boyasın, zeminini değiştirsin. Üstelik beğendiğin tasarımın alışveriş listesini ve TL bütçesini de çıkarsın.",
     ctaPrimary: "Hemen tasarla",
     ctaSecondary: "Nasıl çalışır?",
     trust: ["Kayıt gerekmez", "Günde 3 ücretsiz tasarım", "KVKK uyumlu"],
@@ -98,7 +98,7 @@ const tr = {
       },
       {
         q: "Odamın duvarları ve pencereleri değişir mi?",
-        a: "Hayır. AI Room oda geometrisini, pencereleri ve kamera açısını koruyarak yalnızca dekorasyonu, mobilyayı ve yüzeyleri değiştirir.",
+        a: "Hayır. Casalume oda geometrisini, pencereleri ve kamera açısını koruyarak yalnızca dekorasyonu, mobilyayı ve yüzeyleri değiştirir.",
       },
       {
         q: "PRO aboneliği nasıl iptal ederim?",
@@ -109,7 +109,7 @@ const tr = {
     finalCta: "Ücretsiz tasarla",
   },
   auth: {
-    title: "AI Room'a hoş geldin",
+    title: "Casalume'ye hoş geldin",
     subtitle: "Tasarımlarını kaydetmek ve her cihazdan erişmek için giriş yap.",
     loginTab: "Giriş yap",
     registerTab: "Kayıt ol",
@@ -351,7 +351,7 @@ const en: Dict = {
     badge: "AI interior designer, built for Türkiye",
     heroTitle: "Redesign your room in seconds.",
     heroText:
-      "Upload a photo and pick a style. AI Room refurnishes the room, repaints the walls and swaps the floor — then turns the design into a shopping list with a budget in Turkish lira.",
+      "Upload a photo and pick a style. Casalume refurnishes the room, repaints the walls and swaps the floor — then turns the design into a shopping list with a budget in Turkish lira.",
     ctaPrimary: "Start designing",
     ctaSecondary: "How it works",
     trust: ["No sign-up needed", "3 free designs a day", "KVKK compliant"],
@@ -395,7 +395,7 @@ const en: Dict = {
       },
       {
         q: "Will my walls and windows change?",
-        a: "No. AI Room keeps the room geometry, windows and camera angle and only changes decor, furniture and surfaces.",
+        a: "No. Casalume keeps the room geometry, windows and camera angle and only changes decor, furniture and surfaces.",
       },
       {
         q: "How do I cancel PRO?",
@@ -406,7 +406,7 @@ const en: Dict = {
     finalCta: "Design for free",
   },
   auth: {
-    title: "Welcome to AI Room",
+    title: "Welcome to Casalume",
     subtitle: "Sign in to save your designs and access them from any device.",
     loginTab: "Sign in",
     registerTab: "Sign up",

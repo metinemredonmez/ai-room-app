@@ -133,7 +133,7 @@ export function AppSidebar() {
               <Link href="/" onClick={() => setOpenMobile(false)}>
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">AI</span>
                 <span className="grid leading-tight">
-                  <span className="truncate font-semibold">AI Room</span>
+                  <span className="truncate font-semibold">Casalume</span>
                   <span className="truncate text-xs text-muted-foreground">Yönetim paneli</span>
                 </span>
               </Link>

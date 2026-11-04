@@ -78,7 +78,7 @@ class MockProvider:
         draw = ImageDraw.Draw(img, "RGBA")
         size = max(14, h // 30)
         font = ImageFont.load_default(size=size)
-        label = f"AI ROOM · DEMO · V{variant + 1}"
+        label = f"CASALUME · DEMO · V{variant + 1}"
         box = draw.textbbox((0, 0), label, font=font)
         pad = size // 2
         draw.rounded_rectangle(

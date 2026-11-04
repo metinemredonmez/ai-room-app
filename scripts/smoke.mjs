@@ -211,7 +211,7 @@ for (let i = 0; i < 40 && !pushed; i++) {
   }
   if (!pushed) await new Promise((r) => setTimeout(r, 250));
 }
-ok(pushed?.title === 'Tasarımın hazır' && pushed.data.url === `airoom://design/${a1.json.id}`, '"Tasarımın hazır" push sent for the queued design', pushed?.body);
+ok(pushed?.title === 'Tasarımın hazır' && pushed.data.url === `casalume://design/${a1.json.id}`, '"Tasarımın hazır" push sent for the queued design', pushed?.body);
 const moved = await call('POST', '/me/push-tokens', { token: other.json.accessToken, body: { token: pushToken, platform: 'ios' } });
 const strangerDelete = await call('DELETE', '/me/push-tokens', { token: vt, body: { token: pushToken } });
 ok(moved.status === 204 && strangerDelete.status === 204, 'same device on another account moves the token (old account no longer owns it)');
@@ -371,7 +371,7 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
   };
   const waitFor = async (fn) => { for (let i = 0; i < 30; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 300)); } return null; };
   const evId = `smoke_${crypto.randomUUID()}`;
-  const purchase = { id: evId, type: 'INITIAL_PURCHASE', app_user_id: rcUser.id, product_id: 'airoom_pro_monthly', entitlement_ids: ['pro'], period_type: 'NORMAL', expiration_at_ms: Date.now() + 30 * 86400_000, environment: 'SANDBOX', store: 'APP_STORE' };
+  const purchase = { id: evId, type: 'INITIAL_PURCHASE', app_user_id: rcUser.id, product_id: 'casalume_pro_monthly', entitlement_ids: ['pro'], period_type: 'NORMAL', expiration_at_ms: Date.now() + 30 * 86400_000, environment: 'SANDBOX', store: 'APP_STORE' };
   const forged = await rc(purchase, { secret: 'wrong-secret-0123456789' });
   ok(forged.status === 401, 'forged RevenueCat signature rejected before any write');
   const stale = await rc(purchase, { age: 600 });
@@ -382,7 +382,7 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
   const proNow = await waitFor(async () => { const m = (await call('GET', '/me', { token: vt })).json; return m?.plan === 'PRO' ? m : null; });
   ok(proNow?.plan === 'PRO' && proNow.planExpiresAt, 'INITIAL_PURCHASE → user is PRO until the store expiry');
   const creditsBefore = proNow?.credits ?? 0;
-  const pack = { id: `smoke_${crypto.randomUUID()}`, type: 'NON_RENEWING_PURCHASE', app_user_id: rcUser.id, product_id: 'airoom_credits_10', transaction_id: `txn_${Date.now()}`, store: 'PLAY_STORE', environment: 'SANDBOX' };
+  const pack = { id: `smoke_${crypto.randomUUID()}`, type: 'NON_RENEWING_PURCHASE', app_user_id: rcUser.id, product_id: 'casalume_credits_10', transaction_id: `txn_${Date.now()}`, store: 'PLAY_STORE', environment: 'SANDBOX' };
   await rc(pack);
   await rc({ ...pack, id: `smoke_${crypto.randomUUID()}` }); // same transaction delivered as a different event
   const withCredits = await waitFor(async () => { const m = (await call('GET', '/me', { token: vt })).json; return m?.credits >= creditsBefore + 10 ? m : null; });

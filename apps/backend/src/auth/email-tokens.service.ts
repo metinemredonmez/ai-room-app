@@ -66,11 +66,11 @@ export class EmailTokensService {
     await this.mailer.send(
       renderActionMail({
         to: user.email!,
-        subject: en ? 'Confirm your e-mail — AI Room' : 'E-posta adresini doğrula — AI Room',
+        subject: en ? 'Confirm your e-mail — Casalume' : 'E-posta adresini doğrula — Casalume',
         heading: en ? 'Confirm your e-mail address' : 'E-posta adresini doğrula',
         lines: en
-          ? ['Thanks for joining AI Room. Confirm this address to secure your account and recover it if you ever forget your password.']
-          : ["AI Room'a hoş geldin. Hesabını güvene almak ve şifreni unutursan kurtarabilmek için bu adresi doğrula."],
+          ? ['Thanks for joining Casalume. Confirm this address to secure your account and recover it if you ever forget your password.']
+          : ["Casalume'ye hoş geldin. Hesabını güvene almak ve şifreni unutursan kurtarabilmek için bu adresi doğrula."],
         cta: en ? 'Confirm e-mail' : 'E-postamı doğrula',
         url: this.link('VERIFY_EMAIL', token),
         footer: en ? 'The link is valid for 48 hours. If you did not sign up, ignore this e-mail.' : 'Bağlantı 48 saat geçerlidir. Kayıt olmadıysan bu e-postayı yok sayabilirsin.',
@@ -84,11 +84,11 @@ export class EmailTokensService {
     await this.mailer.send(
       renderActionMail({
         to: user.email!,
-        subject: en ? 'Reset your password — AI Room' : 'Şifre sıfırlama — AI Room',
+        subject: en ? 'Reset your password — Casalume' : 'Şifre sıfırlama — Casalume',
         heading: en ? 'Reset your password' : 'Şifreni sıfırla',
         lines: en
-          ? ['We received a request to reset the password of your AI Room account.', 'After the reset you will be signed out on every device.']
-          : ['AI Room hesabın için şifre sıfırlama isteği aldık.', 'Şifreni değiştirdiğinde tüm cihazlardaki oturumların kapatılır.'],
+          ? ['We received a request to reset the password of your Casalume account.', 'After the reset you will be signed out on every device.']
+          : ['Casalume hesabın için şifre sıfırlama isteği aldık.', 'Şifreni değiştirdiğinde tüm cihazlardaki oturumların kapatılır.'],
         cta: en ? 'Choose a new password' : 'Yeni şifre belirle',
         url: this.link('RESET_PASSWORD', token),
         footer: en ? 'The link is valid for 30 minutes and works once. If you did not ask for this, ignore this e-mail.' : 'Bağlantı 30 dakika geçerlidir ve tek kullanımlıktır. Bu isteği sen yapmadıysan e-postayı yok sayabilirsin.',

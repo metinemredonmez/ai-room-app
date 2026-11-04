@@ -28,7 +28,7 @@ async function main() {
   const pepper = process.env.DEVICE_PEPPER!;
   await prisma.user.create({
     data: {
-      email, emailVerifiedAt: new Date(), passwordHash: await hashPassword(password), name: 'AI Room Admin', role: 'SUPER_ADMIN', isGuest: false, totpSecret,
+      email, emailVerifiedAt: new Date(), passwordHash: await hashPassword(password), name: 'Casalume Admin', role: 'SUPER_ADMIN', isGuest: false, totpSecret,
       backupCodes: { create: backupCodes.map((c) => ({ codeHash: hashBackupCode(pepper, normalizeBackupCode(c)!) })) },
     },
   });

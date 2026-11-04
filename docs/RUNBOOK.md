@@ -1,4 +1,4 @@
-# AI Room — sunucu kurulumu, yayın ve yedek (runbook)
+# Casalume — sunucu kurulumu, yayın ve yedek (runbook)
 
 Hedef: tek bir Ubuntu 24.04 sunucu, Docker yok. Servisler systemd ile çalışır; Postgres ve Redis aynı makinededir ve
 yalnız `localhost`'tan erişilir. HTTPS ve ters vekil (reverse proxy) Caddy'dir; sertifikayı kendisi alır ve yeniler.
@@ -90,7 +90,7 @@ DEVICE_PEPPER=
 AI_INTERNAL_TOKEN=                     # ai-service.env içindeki INTERNAL_TOKEN ile aynı
 MAIL_TRANSPORT=smtp
 SMTP_URL=smtps://<kullanıcı>:<parola>@<sunucu>:465
-MAIL_FROM=AI Room <no-reply@<alan>>
+MAIL_FROM=Casalume <no-reply@<alan>>
 PUSH_TRANSPORT=expo
 LEGAL_CONTROLLER_NAME=
 LEGAL_CONTROLLER_ADDRESS=
@@ -114,7 +114,7 @@ Backend ve AI servisi güvensiz bir üretim ayarında **açılmaz**; hata mesaj�
 `/etc/systemd/system/airoom-ai.service`
 ```ini
 [Unit]
-Description=AI Room AI service
+Description=Casalume AI service
 After=network-online.target
 Wants=network-online.target
 
@@ -147,7 +147,7 @@ WantedBy=multi-user.target
 `/etc/systemd/system/airoom-backend.service`: aynı sertleştirme satırları, şu farklarla:
 ```ini
 [Unit]
-Description=AI Room backend API
+Description=Casalume backend API
 After=network-online.target postgresql.service redis-server.service airoom-ai.service
 Wants=network-online.target
 
@@ -247,10 +247,10 @@ find "$DIR" -name '*.age' -mtime +14 -delete
 **Geri yükleme provası (ayda bir):** yedek, geri yüklenebildiği kanıtlanana kadar yedek sayılmaz.
 ```bash
 age -d -i ~/airoom-backup.key db-<tarih>.dump.age > /tmp/db.dump          # kendi bilgisayarında ya da sunucuda
-sudo -u postgres createdb airoom_restore_test
-sudo -u postgres pg_restore -d airoom_restore_test --no-owner /tmp/db.dump
-sudo -u postgres psql -d airoom_restore_test -c 'select count(*) from "User";'
-sudo -u postgres dropdb airoom_restore_test && rm /tmp/db.dump
+sudo -u postgres createdb casalume_restore_test
+sudo -u postgres pg_restore -d casalume_restore_test --no-owner /tmp/db.dump
+sudo -u postgres psql -d casalume_restore_test -c 'select count(*) from "User";'
+sudo -u postgres dropdb casalume_restore_test && rm /tmp/db.dump
 ```
 Gerçek geri yükleme: servisleri durdur, `pg_restore --clean --if-exists -d airoom`, servisleri başlat, `/v1/health` kontrol et.
 

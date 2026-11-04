@@ -15,7 +15,7 @@ export class ApiError extends Error {
 
 type Query = Record<string, string | number | boolean | null | undefined>;
 
-const BADGES_EVENT = "airoom:badges";
+const BADGES_EVENT = "casalume:badges";
 
 /** Tells the sidebar that its counters (open reports, KVKK deadlines) may have changed. */
 export function notifyBadges() {

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     return new Response(buf, {
       headers: {
         "content-type": "image/jpeg",
-        "content-disposition": `attachment; filename="ai-room-${id}.jpg"`,
+        "content-disposition": `attachment; filename="casalume-${id}.jpg"`,
         "cache-control": "private, no-store",
         "x-content-type-options": "nosniff",
       },

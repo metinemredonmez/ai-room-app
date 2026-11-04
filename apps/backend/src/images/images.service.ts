@@ -124,7 +124,7 @@ export class ImagesService implements OnModuleInit {
   async watermark(buffer: Buffer): Promise<Buffer> {
     const { width, height } = await sharp(buffer).metadata();
     const fs = Math.max(14, Math.round(height * 0.026));
-    const label = 'AI Room · Yapay zekâ ile oluşturulmuştur';
+    const label = 'Casalume · Yapay zekâ ile oluşturulmuştur';
     const w = Math.round(label.length * fs * 0.56) + fs * 2;
     const h = Math.round(fs * 2);
     const svg = Buffer.from(

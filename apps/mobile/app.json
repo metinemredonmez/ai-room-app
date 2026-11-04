@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "AI Room",
-    "slug": "ai-room",
+    "name": "Casalume",
+    "slug": "casalume",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "airoom",
+    "scheme": "casalume",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.airoom.app",
+      "bundleIdentifier": "app.casalume",
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.airoom.app",
+      "package": "app.casalume",
       "adaptiveIcon": {
         "backgroundColor": "#1F6F5C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,8 +42,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "AI Room, yeniden tasarlamak istediğin oda fotoğraflarını seçebilmen için fotoğraflarına erişir.",
-          "cameraPermission": "AI Room, odanın fotoğrafını çekip yeniden tasarlayabilmen için kameraya erişir.",
+          "photosPermission": "Casalume, yeniden tasarlamak istediğin oda fotoğraflarını seçebilmen için fotoğraflarına erişir.",
+          "cameraPermission": "Casalume, odanın fotoğrafını çekip yeniden tasarlayabilmen için kameraya erişir.",
           "microphonePermission": false
         }
       ],

@@ -101,7 +101,7 @@ export function LoginForm({ expired, next, mfa }: { expired: boolean; next: stri
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <Logo />
-            <span className="font-semibold">AI Room</span>
+            <span className="font-semibold">Casalume</span>
           </div>
 
           {step.kind === "codes" ? (
@@ -146,7 +146,7 @@ export function LoginForm({ expired, next, mfa }: { expired: boolean; next: stri
                           id="email"
                           type="email"
                           autoComplete="username"
-                          placeholder="ad@airoom.app"
+                          placeholder="ad@casalume.app"
                           required
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
@@ -252,9 +252,9 @@ function BackupCodes({ codes, email, onDone }: { codes: string[]; email: string;
   const [copied, setCopied] = useState(false);
 
   function download() {
-    const text = `AI Room yönetim paneli yedek kodları (${email})\nHer kod bir kez kullanılabilir.\n\n${codes.join("\n")}\n`;
+    const text = `Casalume yönetim paneli yedek kodları (${email})\nHer kod bir kez kullanılabilir.\n\n${codes.join("\n")}\n`;
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: "airoom-admin-yedek-kodlar.txt" });
+    const a = Object.assign(document.createElement("a"), { href: url, download: "casalume-yonetim-yedek-kodlar.txt" });
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -310,7 +310,7 @@ function BrandPanel() {
 
       <div className="relative flex items-center gap-2.5">
         <span className="flex size-9 items-center justify-center rounded-xl bg-white/15 text-sm font-bold ring-1 ring-white/25 backdrop-blur">AI</span>
-        <span className="font-semibold">AI Room</span>
+        <span className="font-semibold">Casalume</span>
       </div>
 
       <RoomDrawing />
@@ -329,7 +329,7 @@ function BrandPanel() {
         </ul>
       </div>
 
-      <p className="relative text-xs text-white/60">© {new Date().getFullYear()} AI Room · Yönetim paneli</p>
+      <p className="relative text-xs text-white/60">© {new Date().getFullYear()} Casalume · Yönetim paneli</p>
     </aside>
   );
 }

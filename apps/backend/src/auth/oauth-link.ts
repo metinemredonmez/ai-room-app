@@ -32,7 +32,7 @@ export function decideLink(i: LinkInput): LinkDecision {
   if (i.identityUserId) {
     // A registered user explicitly linking someone else's provider account is refused; a guest just switches.
     if (i.current && !i.current.isGuest && i.current.id !== i.identityUserId) {
-      return { kind: 'reject', status: 409, code: 'identity_in_use', message: 'Bu hesap başka bir AI Room hesabına bağlı' };
+      return { kind: 'reject', status: 409, code: 'identity_in_use', message: 'Bu hesap başka bir Casalume hesabına bağlı' };
     }
     return { kind: 'login', userId: i.identityUserId };
   }

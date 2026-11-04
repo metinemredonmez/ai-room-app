@@ -1,4 +1,4 @@
-# AI Room — Web uygulaması
+# Casalume — Web uygulaması
 
 Son kullanıcıya dönük Next.js (App Router, Next 16, Tailwind 4) uygulaması. Türkçe öncelikli, EN desteği var.
 API sözleşmesi: [`docs/API.md`](../../docs/API.md).

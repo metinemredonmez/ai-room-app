@@ -225,9 +225,9 @@ export class OAuthService {
         if (!u.email) return;
         return this.mailer.send(
           renderActionMail({
-            to: u.email, subject: `AI Room · ${PROVIDER_TR[provider]} hesabın bağlandı`, heading: `${PROVIDER_TR[provider]} hesabın bağlandı`,
-            lines: [`AI Room hesabına artık ${PROVIDER_TR[provider]} ile de giriş yapabilirsin.`, 'Bunu sen yapmadıysan şifreni değiştir ve bize yaz.'],
-            cta: 'AI Room', url: this.cfg.WEB_APP_URL, footer: 'Bu e-posta hesap güvenliğin için gönderildi.',
+            to: u.email, subject: `Casalume · ${PROVIDER_TR[provider]} hesabın bağlandı`, heading: `${PROVIDER_TR[provider]} hesabın bağlandı`,
+            lines: [`Casalume hesabına artık ${PROVIDER_TR[provider]} ile de giriş yapabilirsin.`, 'Bunu sen yapmadıysan şifreni değiştir ve bize yaz.'],
+            cta: 'Casalume', url: this.cfg.WEB_APP_URL, footer: 'Bu e-posta hesap güvenliğin için gönderildi.',
           }),
         );
       })

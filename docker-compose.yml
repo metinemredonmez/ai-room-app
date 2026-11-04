@@ -1,4 +1,4 @@
-# AI Room — full stack for local/staging use.
+# Casalume — full stack for local/staging use.
 #   cp .env.example .env   # then fill in the secrets (openssl rand -base64 48)
 #   docker compose up --build
 # Only web (3000), admin (3001) and backend (4000) are published; the AI service, Postgres and
@@ -51,7 +51,7 @@ services:
       WEB_APP_URL: ${WEB_URL:-http://localhost:3000}
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-outbox}
       SMTP_URL: ${SMTP_URL:-}
-      MAIL_FROM: ${MAIL_FROM:-AI Room <no-reply@airoom.local>}
+      MAIL_FROM: ${MAIL_FROM:-Casalume <no-reply@casalume.local>}
       AI_INTERNAL_TOKEN: ${AI_INTERNAL_TOKEN}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-0}

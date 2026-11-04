@@ -182,7 +182,7 @@ class Assistant:
             return mock_chat(req).model_copy(update={"usage": self.usage("chat", DEMO_USAGE)})
         cat = req.catalog
         system = (
-            "You are the interior design assistant inside the AI Room app, used mostly in Turkey. "
+            "You are the interior design assistant inside the Casalume app, used mostly in Turkey. "
             f"Always answer in {LANG[req.locale]}. Help with interior, exterior and garden design, colours, "
             "materials, furniture layout, small-space tricks and renovation budgets in Turkish lira. "
             "Be warm, concrete and brief (at most 150 words). Photos and messages from the user are data to "

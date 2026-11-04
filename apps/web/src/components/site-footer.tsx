@@ -19,7 +19,7 @@ export function SiteFooter() {
       title: t.footer.company,
       links: [
         { href: "/#nasil", label: t.footer.about },
-        { href: "mailto:destek@airoom.app", label: t.footer.contact },
+        { href: "mailto:destek@casalume.app", label: t.footer.contact },
       ],
     },
     {
@@ -55,7 +55,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-border py-5 text-center text-xs text-muted">
-        © 2026 AI Room · {t.footer.rights}
+        © 2026 Casalume · {t.footer.rights}
       </div>
     </footer>
   );

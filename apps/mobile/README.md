@@ -1,4 +1,4 @@
-# AI Room — Mobil uygulama (Expo)
+# Casalume — Mobil uygulama (Expo)
 
 iOS, Android ve web için tek kod tabanı. Expo SDK 58, React Native 0.88, Expo Router.
 Tüm istekler backend'e (`docs/API.md`, `/v1`) gider; AI servisine doğrudan bağlanmaz.

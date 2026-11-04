@@ -1,5 +1,5 @@
 /**
- * AI Room design tokens (docs/API.md §6). Every screen reads colours through `useTheme()`.
+ * Casalume design tokens (docs/API.md §6). Every screen reads colours through `useTheme()`.
  */
 
 import '@/global.css';

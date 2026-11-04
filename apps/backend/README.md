@@ -1,4 +1,4 @@
-# AI Room — Backend (NestJS)
+# Casalume — Backend (NestJS)
 
 Ana API: kimlik doğrulama (misafir / e-posta / admin TOTP), tasarım üretimi, kredi ve kota, görsel
 deposu (imzalı URL), katalog, sohbet, analiz ve admin uçları. Sözleşme: [`docs/API.md`](../../docs/API.md).

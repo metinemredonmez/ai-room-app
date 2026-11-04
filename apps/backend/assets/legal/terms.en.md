@@ -1,11 +1,11 @@
 # Terms of Use
 
-These terms govern your use of the AI Room app and website (the "Service") provided by {{controller.name}} ("we"). By
+These terms govern your use of the Casalume app and website (the "Service") provided by {{controller.name}} ("we"). By
 using the Service you accept them. The Turkish version prevails.
 
 ## 1. The Service
 
-AI Room creates interior, exterior and garden design ideas from your photos with AI. Generated images are
+Casalume creates interior, exterior and garden design ideas from your photos with AI. Generated images are
 **visualisations**, not architectural, engineering or building advice. Product, material and price suggestions are
 approximate and for information only.
 

@@ -96,7 +96,7 @@ export class PushService {
       to: token,
       title: copy.title,
       body: copy.body(title),
-      data: { type: 'design', designId: design.id, status: design.status, url: `airoom://design/${design.id}` },
+      data: { type: 'design', designId: design.id, status: design.status, url: `casalume://design/${design.id}` },
       sound: 'default',
       priority: 'high',
       channelId: 'designs',

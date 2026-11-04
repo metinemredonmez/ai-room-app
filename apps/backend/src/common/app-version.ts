@@ -38,7 +38,7 @@ export class VersionGate implements CanActivate {
     throw new AppError(
       426,
       'update_required',
-      en ? 'A new version of AI Room is required. Please update the app.' : 'AI Room’un yeni sürümü gerekiyor. Lütfen uygulamayı güncelle.',
+      en ? 'A new version of Casalume is required. Please update the app.' : 'Casalume’nin yeni sürümü gerekiyor. Lütfen uygulamayı güncelle.',
       {},
       { minVersion: rule.min, storeUrl: rule.storeUrl || null },
     );

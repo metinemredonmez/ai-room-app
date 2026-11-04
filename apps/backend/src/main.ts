@@ -49,19 +49,19 @@ export async function createApp() {
     const doc = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('AI Room API')
+        .setTitle('Casalume API')
         .setDescription(
-          'AI Room backend (NestJS). Sözleşme: docs/API.md. Kullanıcı uçları `user`, yönetim uçları `admin` (parola + TOTP ile alınan) Bearer token ister. ' +
+          'Casalume backend (NestJS). Sözleşme: docs/API.md. Kullanıcı uçları `user`, yönetim uçları `admin` (parola + TOTP ile alınan) Bearer token ister. ' +
             'Hata gövdesi her zaman `{ error: { code, message } }`. Bu sayfa üretimde varsayılan olarak kapalıdır (SWAGGER_ENABLED).',
         )
         .setVersion(process.env.npm_package_version ?? '0.1.0')
         .addServer(cfg.PUBLIC_BASE_URL)
-        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'aud=ai-room-app' }, 'user')
-        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'aud=ai-room-admin, MFA tamam' }, 'admin')
+        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'aud=casalume-app' }, 'user')
+        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'aud=casalume-admin, MFA tamam' }, 'admin')
         .build(),
     );
     doc.components = { ...doc.components, schemas: Object.assign({}, doc.components?.schemas, COMPONENTS) };
-    SwaggerModule.setup('docs', app, doc, { jsonDocumentUrl: 'docs/openapi.json', customSiteTitle: 'AI Room API' });
+    SwaggerModule.setup('docs', app, doc, { jsonDocumentUrl: 'docs/openapi.json', customSiteTitle: 'Casalume API' });
   }
   return { app, cfg };
 }
