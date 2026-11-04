@@ -115,11 +115,37 @@ iyi anladığı dil); kullanıcı dili ayrı.
   Şimdilik yeni stil adı Türkçe dışı dillerde İngilizce görünür.
 - [ ] Mağaza sayfaları ve ekran görüntüleri her dilde; mobil dil seçimi (sen).
 
-## Pazarlama AI ajanları (sahibinin isteği, 4 Kasım)
-- [ ] Admin’de “Pazarlama” bölümü: SEO ajanı (sayfa başlık/açıklama önerisi, anahtar kelime, blog taslağı), mağaza metni
-  ajanı (App Store / Play açıklaması 11 dilde), sosyal medya gönderi ajanı, kampanya metni ajanı (toplu gönderime taslak).
-  Hepsi taslak üretir, yayın insan onayıyla. Kaynak: fal-app `seo` modülü, maeyja `ai-tools` / `ai-studio`.
-  Mobil sürümün pazarlaması için de kullanılacak. Kapsam sahibiyle konuşulacak.
+## Pazarlama AI ajanları (sahibinin isteği, 4 Kasım; kapsam seçildi)
+Mobil sürümün ve sitenin pazarlaması için. Hepsi admin’de **Pazarlama** bölümünde **taslak** üretir; sahibi onaylamadan
+hiçbir şey yayınlanmaz, gönderilmez (AI-02: ajanların aracı yok, yalnız metin/görsel üretir). Instagram/TikTok’a
+paylaşım **elle** (Meta onayı gerekmez). Örnekler: maeyja `ai-tools` (yanıt taslağı, Instagram açıklaması, haftalık özet),
+`ai-studio` (onay kuyruğu); fal-app `seo` (Search Console + GA4 raporu, sayfa ayarları).
+
+Ortak altyapı (ilk adım):
+- AI servisi `/internal/v1/marketing/<tür>`: Claude Opus 5.5, yapılandırılmış çıktı (tür başına JSON şeması), Casalume
+  ses tonu + doğru bilgi sayfası (özellikler, fiyatlar katalogdan, 11 dil). Bilmediği özelliği uydurmaz.
+- Maliyet `AiUsage` defterine (`kind=marketing`); günlük bütçe kesicisi geçerli. Admin başına hız sınırı (RES).
+- Backend `MarketingDraft` tablosu (tür, dil, girdi, çıktı, durum TASLAK/ONAYLI/ARŞİV, yazan, maliyet);
+  `v1/admin/marketing/*`; üretmek EDITOR+, onaylamak ADMIN+; denetim kaydı. Uzunluk sınırları sunucuda da denetlenir.
+- Admin: kenar çubuğunda “Pazarlama” grubu.
+
+Sıra:
+- [ ] 1. **Mağaza metni (ASO)** — App Store: ad ≤30, alt başlık ≤30, anahtar kelime ≤100 (virgülle, addaki sözcükler
+  tekrar edilmez), tanıtım metni ≤170, açıklama ≤4000, yenilikler. Google Play: başlık ≤30, kısa açıklama ≤80,
+  açıklama ≤4000. 11 dilde tek seferde; sınırı aşan alan bir kez yeniden istenir. Dışa aktarma: EAS Metadata
+  `store.config.json` (App Store) + Play için dil başına metin paketi.
+- [ ] 2. **Sosyal medya gönderisi** — önce/sonra görseli sunucuda (sharp): kare 1080×1080 + story 1080×1920, Casalume
+  imzalı; dile ve platforma göre (Instagram, TikTok, Pinterest) açıklama + etiketler; zip indirme.
+  KVKK: kullanıcı fotoğrafı yalnız açık “tanıtımda kullanılabilir” onayıyla (yeni onay türü); o zamana kadar yalnız
+  bizim örnek oda ve stil fotoğraflarımız (`assets/styles`).
+- [ ] 3. **Kampanya + haftalık rapor** — toplu gönderim için push/e-posta metni taslağı → ticari ifade kontrolünden
+  geçip `Broadcast` TASLAK olarak açılır. Haftalık rapor: pazartesi 09:00 (İstanbul) sahibine e-posta — yeni kayıt,
+  tasarım, ödeme, AI maliyeti, en çok kullanılan stiller, hatalar + Claude’un 5 satırlık yorumu.
+- [ ] 4. **SEO + blog** — web’e blog (`/blog`, `/<dil>/blog/<slug>`, Markdown, admin’den yayın, sitemap’e girer).
+  Ajan: konu → taslak (Türkçe kaynak, diğer diller `i18n_fill` hattıyla), stüdyoya iç bağlantılar; mevcut sayfalar için
+  11 dilde başlık ≤60 / açıklama ≤155 önerisi. Sonra: Search Console + GA4 verisi (fal-app deseni, Google hizmet hesabı
+  gerekir).
+- Tahmini maliyet: ASO 11 dil ≈ 0,5–1 $; blog yazısı dil başına ≈ 0,2–0,5 $; sosyal gönderi ≈ 0,05 $.
 
 ## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
 Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)” = mobil tarafı sahibinde.
@@ -158,7 +184,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Masaüstündeki diğer uygulamalarla (yoga, fal-app, palemi, maeyja) özellik karşılaştırması — yukarıda.
 - [x] `Casalume-API-ve-Hesaplar.pdf` (Masaüstü): yedek yol haritası, servis başına kayıt adımları, teknolojiler, bildirimler.
 - [x] Dünyadaki benzer uygulamaların özellik karşılaştırması — “Ana fark” bölümünde.
-- [ ] Codex için bağımsız test ve denetim komutu (en sonda).
+- [ ] Codex için bağımsız test ve denetim komutu — sahibi istedi: her şey bittikten sonra, en sonda yazılacak.
 
 ## İşletim
 - [ ] Mağazalar: Apple Developer, Google Play Console, RevenueCat ürünleri (`casalume_*`).
