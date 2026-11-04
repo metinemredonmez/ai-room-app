@@ -1,15 +1,25 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProvider } from "@/components/app-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { HeaderFallback, SiteHeader } from "@/components/site-header";
 import { VerifyBanner } from "@/components/verify-banner";
+import { PALETTE_BOOT_SCRIPT } from "@/lib/palette";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500"],
+  display: "swap",
+});
+
+// Thin serif for headings and the wordmark (owner: minimal, not bold).
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
@@ -24,15 +34,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f4ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e1311" },
-  ],
+  themeColor: "#f6f1ea",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={`${jakarta.variable} h-full antialiased`}>
+    // The boot script may set data-palette before React hydrates, hence suppressHydrationWarning on <html> only.
+    <html lang="tr" className={`${jakarta.variable} ${cormorant.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PALETTE_BOOT_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <AppProvider>
           <Suspense fallback={<HeaderFallback />}>

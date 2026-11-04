@@ -34,7 +34,7 @@ export function ForgotForm() {
     <div className="mx-auto flex max-w-md flex-col px-4 py-12 sm:py-20">
       <div className={`${card} p-6 sm:p-8`}>
         <LogoMark className="h-11 w-11" />
-        <h1 className="mt-5 text-2xl font-extrabold tracking-tight">{t.account.forgotTitle}</h1>
+        <h1 className="mt-5 text-3xl font-display font-light">{t.account.forgotTitle}</h1>
         {sent ? (
           <div className="mt-5 flex gap-3 rounded-2xl bg-primary-soft p-4 text-sm text-primary" role="status">
             <MailCheck className="h-5 w-5 shrink-0" aria-hidden />
@@ -67,7 +67,7 @@ export function ForgotForm() {
             </form>
           </>
         )}
-        <Link href="/giris" className="mt-6 inline-block text-sm font-semibold text-primary hover:underline">
+        <Link href="/giris" className="mt-6 inline-block text-sm font-medium text-primary hover:underline">
           {t.account.toLogin}
         </Link>
       </div>

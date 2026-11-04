@@ -76,7 +76,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
         <div className="flex items-start gap-3">
           <TriangleAlert className="h-5 w-5 text-danger" aria-hidden />
           <div>
-            <p className="font-semibold">{t.result.failed}</p>
+            <p className="font-medium">{t.result.failed}</p>
             {design.error && <p className="mt-1 text-sm text-muted">{design.error}</p>}
           </div>
         </div>
@@ -89,7 +89,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="min-w-[14rem] flex-1">
-          <h2 className="text-xl font-bold sm:text-2xl">{design.title}</h2>
+          <h2 className="text-xl font-medium sm:text-2xl">{design.title}</h2>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted">
             <ToolIcon tool={design.tool} className="h-4 w-4" /> {toolName} · {formatDate(design.createdAt, locale)}
           </p>
@@ -128,7 +128,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
 
       {design.results.length > 1 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-muted">{t.result.variants}</p>
+          <p className="mb-2 text-sm font-medium text-muted">{t.result.variants}</p>
           <div className="flex gap-3 overflow-x-auto pb-1">
             {design.results.map((r, i) => (
               <button
@@ -142,7 +142,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
                 aria-pressed={i === selected}
               >
                 <img src={r.url} alt="" className="h-full w-full object-cover" />
-                <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-2 text-[10px] font-bold text-white">{i + 1}</span>
+                <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-2 text-[10px] font-medium text-white">{i + 1}</span>
               </button>
             ))}
           </div>

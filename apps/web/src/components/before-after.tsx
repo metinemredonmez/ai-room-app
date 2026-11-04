@@ -32,10 +32,10 @@ export function BeforeAfter({
         style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
         draggable={false}
       />
-      <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white">
+      <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-xs font-medium text-white">
         {beforeLabel}
       </span>
-      <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-primary/90 px-3 py-1 text-xs font-semibold text-white">
+      <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-white">
         {afterLabel}
       </span>
       <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-white/95 shadow" style={{ left: `${pos}%` }}>

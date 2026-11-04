@@ -27,11 +27,11 @@ export function VerifyBanner() {
         <MailWarning className="h-4 w-4 shrink-0 text-accent" aria-hidden />
         <span>{t.account.bannerText}</span>
         {state === "sent" ? (
-          <span className="font-semibold text-primary" role="status">
+          <span className="font-medium text-primary" role="status">
             {t.account.bannerSent}
           </span>
         ) : (
-          <button type="button" onClick={resend} disabled={state === "busy"} className="font-semibold text-accent underline-offset-2 hover:underline">
+          <button type="button" onClick={resend} disabled={state === "busy"} className="font-medium text-accent underline-offset-2 hover:underline">
             {t.account.bannerResend}
           </button>
         )}

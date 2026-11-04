@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { isPalette, PALETTE_COOKIE } from "@/lib/palette";
 import { FeedbackProvider } from "@/components/feedback";
 import "./globals.css";
 
@@ -13,8 +14,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Reading the request headers keeps every page request-time rendered, so Next.js can stamp
   // the per-request CSP nonce set in src/proxy.ts onto its scripts.
   await headers();
+  const saved = (await cookies()).get(PALETTE_COOKIE)?.value;
+  const palette = isPalette(saved) && saved !== "kil" ? saved : undefined;
   return (
-    <html lang="tr" className="h-full antialiased">
+    <html lang="tr" className="h-full antialiased" data-palette={palette}>
       <body className="min-h-full font-sans">
         <FeedbackProvider>{children}</FeedbackProvider>
       </body>

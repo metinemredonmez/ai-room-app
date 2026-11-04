@@ -58,7 +58,7 @@ export function AuthForm() {
     <div className="mx-auto flex max-w-md flex-col px-4 py-12 sm:py-20">
       <div className={`${card} p-6 sm:p-8`}>
         <LogoMark className="h-11 w-11" />
-        <h1 className="mt-5 text-2xl font-extrabold tracking-tight">{t.auth.title}</h1>
+        <h1 className="mt-5 text-3xl font-display font-light">{t.auth.title}</h1>
         <p className="mt-1.5 text-sm text-muted">{t.auth.subtitle}</p>
 
         <div className="mt-6 grid grid-cols-2 rounded-full bg-surface-2 p-1" role="tablist">
@@ -72,7 +72,7 @@ export function AuthForm() {
                 setMode(m);
                 setError(null);
               }}
-              className={`rounded-full py-2 text-sm font-semibold transition ${mode === m ? "bg-surface text-text shadow-card" : "text-muted"}`}
+              className={`rounded-full py-2 text-sm font-medium transition ${mode === m ? "bg-surface text-text shadow-card" : "text-muted"}`}
             >
               {m === "login" ? t.auth.loginTab : t.auth.registerTab}
             </button>
@@ -124,7 +124,7 @@ export function AuthForm() {
             />
             {mode === "register" && <p className="mt-1.5 text-xs text-muted">{t.auth.passwordHint}</p>}
             {mode === "login" && (
-              <Link href="/sifremi-unuttum" className="mt-2 inline-block text-sm font-semibold text-primary hover:underline">
+              <Link href="/sifremi-unuttum" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
                 {t.auth.forgotLink}
               </Link>
             )}

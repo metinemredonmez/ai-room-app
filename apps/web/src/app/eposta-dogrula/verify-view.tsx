@@ -35,7 +35,7 @@ export function VerifyView() {
     <div className="mx-auto flex max-w-md flex-col px-4 py-12 sm:py-20">
       <div className={`${card} p-6 sm:p-8`}>
         <LogoMark className="h-11 w-11" />
-        <h1 className="mt-5 text-2xl font-extrabold tracking-tight">{t.account.verifyTitle}</h1>
+        <h1 className="mt-5 text-3xl font-display font-light">{t.account.verifyTitle}</h1>
         {state === "working" && (
           <p className="mt-5 flex items-center gap-2 text-sm text-muted" role="status">
             <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> {t.account.verifying}

@@ -38,10 +38,10 @@ export function Pricing() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">{t.pricing.title}</h1>
+        <h1 className="text-4xl font-display font-light sm:text-6xl">{t.pricing.title}</h1>
         <p className="mt-3 text-muted">{t.pricing.subtitle}</p>
         {user?.plan === "PRO" && user.planExpiresAt && (
-          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-2 text-sm font-semibold text-accent">
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-2 text-sm font-medium text-accent">
             <CircleCheck className="h-4 w-4" aria-hidden /> {t.credits.proUntil(formatDate(user.planExpiresAt, locale))}
           </p>
         )}
@@ -53,7 +53,7 @@ export function Pricing() {
             plans={catalog.plans}
             footer={() =>
               user?.plan === "PRO" ? (
-                <p className="mt-6 text-sm font-semibold text-primary">{t.pricing.current}</p>
+                <p className="mt-6 text-sm font-medium text-primary">{t.pricing.current}</p>
               ) : (
                 <a href="#demo" className={`${btn.base} ${btn.primary} ${btn.md} mt-6`}>
                   {t.pricing.choose}
@@ -73,14 +73,14 @@ export function Pricing() {
       </div>
 
       <div id="demo" className={`${card} mx-auto mt-12 max-w-2xl scroll-mt-24 p-6`}>
-        <h2 className="flex items-center gap-2 font-bold">
+        <h2 className="flex items-center gap-2 font-medium">
           <FlaskConical className="h-5 w-5 text-accent" aria-hidden /> {t.pricing.demoTitle}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">{t.pricing.demoText}</p>
         <div className="mt-4 space-y-3">
           {error ? <ErrorNotice error={error} /> : null}
           {done ? (
-            <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+            <p className="flex items-center gap-2 text-sm font-medium text-primary">
               <CircleCheck className="h-4 w-4" aria-hidden /> {t.pricing.demoDone}
             </p>
           ) : (

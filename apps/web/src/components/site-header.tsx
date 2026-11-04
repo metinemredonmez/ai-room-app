@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/format";
 import { useApp } from "./app-provider";
 import { Logo } from "./logo";
 import { btn } from "./ui";
+import { PalettePicker } from "./palette-picker";
 
 function CreditsPill() {
   const { user, t, locale } = useApp();
@@ -15,7 +16,7 @@ function CreditsPill() {
   if (user.plan === "PRO") {
     return (
       <span
-        className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-bold text-accent"
+        className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent"
         title={user.planExpiresAt ? t.credits.proUntil(formatDate(user.planExpiresAt, locale)) : undefined}
       >
         <Crown className="h-3.5 w-3.5" aria-hidden /> {t.credits.pro}
@@ -25,7 +26,7 @@ function CreditsPill() {
   return (
     <Link
       href="/fiyatlar"
-      className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-xs font-semibold text-primary hover:brightness-95"
+      className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:brightness-95"
     >
       <Sparkles className="h-3.5 w-3.5" aria-hidden />
       {t.credits.pill(user.dailyFreeRemaining, user.credits)}
@@ -88,6 +89,7 @@ export function SiteHeader() {
           <div className="hidden sm:block">
             <CreditsPill />
           </div>
+          <PalettePicker />
           <button
             type="button"
             onClick={() => setLocale(locale === "tr" ? "en" : "tr")}

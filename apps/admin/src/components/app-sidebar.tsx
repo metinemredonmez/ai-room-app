@@ -30,7 +30,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -50,6 +55,7 @@ import {
 } from "@/components/ui/sidebar";
 import { onBadgesChanged, useApi } from "@/lib/api";
 import { ROLE_LABELS } from "@/lib/format";
+import { isPalette, PALETTES, setPalette, type PaletteId } from "@/lib/palette";
 import type { AdminMe, Page, ContentReport } from "@/lib/types";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "openReports" | "kvkkDue"; superAdminOnly?: boolean };
@@ -217,6 +223,7 @@ function UserMenu({ me }: { me: AdminMe | null }) {
                 <UserRound aria-hidden /> Hesabım
               </Link>
             </DropdownMenuItem>
+            <PaletteMenu />
             <DropdownMenuItem onSelect={logout} disabled={loggingOut}>
               <LogOut aria-hidden /> Çıkış yap
             </DropdownMenuItem>
@@ -224,5 +231,38 @@ function UserMenu({ me }: { me: AdminMe | null }) {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+  );
+}
+
+/** "Panel rengi": the four colour themes; the cookie lets the server render the choice on the next page load. */
+function PaletteMenu() {
+  // Rendered only inside the opened menu (client), so the DOM can be read directly.
+  const [active, setActive] = useState<PaletteId>(() => {
+    const p = document.documentElement.dataset.palette;
+    return isPalette(p) ? p : "kil";
+  });
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        <Palette aria-hidden /> Panel rengi
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="min-w-44">
+        <DropdownMenuRadioGroup
+          value={active}
+          onValueChange={(v) => {
+            if (!isPalette(v)) return;
+            setPalette(v);
+            setActive(v);
+          }}
+        >
+          {PALETTES.map((p) => (
+            <DropdownMenuRadioItem key={p.id} value={p.id} onSelect={(e) => e.preventDefault()}>
+              <span className="size-3.5 rounded-full ring-1 ring-black/10" style={{ background: p.swatch }} aria-hidden />
+              {p.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   );
 }

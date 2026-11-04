@@ -15,17 +15,25 @@ import { btn, card, chip, input, label } from "@/components/ui";
 const SAMPLES: SampleId[] = ["living_room", "empty_room", "bedroom", "exterior", "garden"];
 const CATEGORY_ORDER = ["interior", "exterior", "edit"] as const;
 const HEX = /^#[0-9a-fA-F]{6}$/;
+const LINKABLE_TOOLS = ["redesign", "furnish", "paint", "flooring", "exterior", "garden"] as const;
 
 function readInitial(): StudioPrefill {
   const prefill = peekStudioPrefill() ?? {};
-  const style = new URLSearchParams(window.location.search).get("style");
-  return { ...prefill, styleId: prefill.styleId ?? (style && /^[a-z_]{2,40}$/.test(style) ? style : undefined) };
+  const q = new URLSearchParams(window.location.search);
+  const style = q.get("style");
+  const tool = q.get("tool");
+  return {
+    ...prefill,
+    styleId: prefill.styleId ?? (style && /^[a-z_]{2,40}$/.test(style) ? style : undefined),
+    // Landing tiles link straight to a tool (?tool=furnish); anything else is ignored.
+    tool: prefill.tool ?? (LINKABLE_TOOLS.find((t) => t === tool) as StudioPrefill["tool"] | undefined),
+  };
 }
 
 function Section({ step, title, children }: { step: number; title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2.5 text-sm font-bold uppercase tracking-wide text-muted">
+      <h2 className="flex items-center gap-2.5 text-sm font-medium uppercase tracking-wide text-muted">
         <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-xs text-white">{step}</span>
         {title}
       </h2>
@@ -44,7 +52,7 @@ function ProgressOverlay({ elapsed }: { elapsed: number }) {
         <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15">
           <Sparkles className="h-7 w-7 animate-pulse" aria-hidden />
         </span>
-        <p className="text-base font-semibold">{msg}</p>
+        <p className="text-base font-medium">{msg}</p>
         <p className="text-xs text-white/80">{t.studio.elapsed(elapsed)}</p>
       </div>
     </div>
@@ -216,7 +224,7 @@ export function Studio() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t.studio.title}</h1>
+          <h1 className="text-4xl font-display font-light sm:text-5xl">{t.studio.title}</h1>
           <p className="mt-1.5 text-muted">{t.studio.subtitle}</p>
         </div>
         {result && (
@@ -238,7 +246,7 @@ export function Studio() {
           <Section step={1} title={t.studio.stepTool}>
             {toolsByCategory.map((g) => (
               <div key={g.cat}>
-                <p className="mb-2 text-xs font-semibold text-muted">{t.studio.categories[g.cat]}</p>
+                <p className="mb-2 text-xs font-medium text-muted">{t.studio.categories[g.cat]}</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3">
                   {g.tools.map((x) => (
                     <button
@@ -246,7 +254,7 @@ export function Studio() {
                       type="button"
                       onClick={() => selectTool(x.id)}
                       aria-pressed={x.id === tool.id}
-                      className={`relative flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center text-xs font-semibold transition ${
+                      className={`relative flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center text-xs font-medium transition ${
                         x.id === tool.id ? "border-primary bg-primary-soft text-primary" : "border-border hover:border-muted/50"
                       }`}
                     >
@@ -254,7 +262,7 @@ export function Studio() {
                       <span className="leading-tight">{x.name}</span>
                       {(x.isPro || x.isNew) && (
                         <span
-                          className={`absolute -right-1 -top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white ${
+                          className={`absolute -right-1 -top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-medium text-white ${
                             x.isPro ? "bg-accent" : "bg-primary"
                           }`}
                         >
@@ -307,7 +315,7 @@ export function Studio() {
                 ) : (
                   <ImageUp className="h-7 w-7 text-primary" aria-hidden />
                 )}
-                <span className="font-semibold">{uploading === "input" ? t.studio.uploading : t.studio.upload}</span>
+                <span className="font-medium">{uploading === "input" ? t.studio.uploading : t.studio.upload}</span>
                 <span className="text-xs text-muted">{t.studio.uploadHint}</span>
                 <input
                   type="file"
@@ -334,7 +342,7 @@ export function Studio() {
               }}
             />
             <div>
-              <p className="mb-2 text-xs font-semibold text-muted">{t.studio.samples}</p>
+              <p className="mb-2 text-xs font-medium text-muted">{t.studio.samples}</p>
               <div className="flex flex-wrap gap-2">
                 {SAMPLES.map((s) => (
                   <button key={s} type="button" disabled={uploading !== null} onClick={() => pickSample(s)} className={chip(false)}>
@@ -366,7 +374,7 @@ export function Studio() {
                             <span key={`${c}-${i}`} className="flex-1" style={{ background: HEX.test(c) ? c : "#ddd" }} />
                           ))}
                         </span>
-                        <span className="flex items-center gap-1 bg-surface-2 px-2 py-1.5 text-xs font-semibold">
+                        <span className="flex items-center gap-1 bg-surface-2 px-2 py-1.5 text-xs font-medium">
                           <span className="truncate">{s.name}</span>
                           {s.isPro && <Crown className="h-3 w-3 shrink-0 text-accent" aria-label="PRO" />}
                         </span>
@@ -535,7 +543,7 @@ export function Studio() {
                       type="button"
                       onClick={() => setVariants(n)}
                       aria-pressed={variants === n}
-                      className={`h-9 w-11 rounded-full text-sm font-bold transition ${variants === n ? "bg-surface text-text shadow-card" : "text-muted"}`}
+                      className={`h-9 w-11 rounded-full text-sm font-medium transition ${variants === n ? "bg-surface text-text shadow-card" : "text-muted"}`}
                     >
                       {n}
                     </button>
@@ -587,7 +595,7 @@ export function Studio() {
                 >
                   <span className="flex flex-col items-center gap-3 px-6 text-center">
                     <ImageUp className="h-10 w-10" aria-hidden />
-                    <span className="font-semibold">{t.studio.needPhoto}</span>
+                    <span className="font-medium">{t.studio.needPhoto}</span>
                   </span>
                 </button>
               )}

@@ -2,40 +2,83 @@
 
 /* Design tokens — docs/API.md §6 */
 :root {
-  --primary: #1f6f5c;
-  --primary-strong: #175545;
-  --primary-soft: #e3efe9;
-  --accent: #e07a4f;
-  --accent-soft: #fbe9df;
-  --bg: #f7f4ef;
+  --primary: #a9532e;
+  --primary-strong: #8e4424;
+  --primary-soft: #f8ece4;
+  --accent: #c9673e;
+  --accent-soft: #f6e3d6;
+  --bg: #f6f1ea;
   --surface: #ffffff;
-  --surface-2: #f1ede6;
-  --text: #141414;
-  --muted: #6b6a66;
-  --border: #e6e1d8;
+  --surface-2: #efe7dc;
+  --text: #1c1714;
+  --muted: #6e655e;
+  --border: #e7ddd1;
   --danger: #b4372f;
   --shadow: 0 1px 2px rgb(20 20 20 / 0.04), 0 8px 24px -12px rgb(20 20 20 / 0.12);
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary: #3fb28f;
-    --primary-strong: #62c7a6;
-    --primary-soft: #16302a;
-    --accent: #f09a72;
+/* Colour themes the user can pick (Kil is the default above). Text and filled buttons keep ≥ 4.5:1 contrast
+   against their backgrounds in every theme. The brand mark stays terracotta in all of them. */
+:root[data-palette="pirinc"] {
+  --primary: #8a6a2f;
+  --primary-strong: #725724;
+  --primary-soft: #f3ecdd;
+  --accent: #c8a46a;
+  --accent-soft: #f2e8d4;
+  --bg: #f7f4ee;
+  --surface: #ffffff;
+  --surface-2: #eee8db;
+  --text: #161513;
+  --muted: #6b655b;
+  --border: #e6dfd1;
+}
+
+:root[data-palette="murekkep"] {
+  --primary: #24406e;
+  --primary-strong: #1a3157;
+  --primary-soft: #e6edf7;
+  --accent: #e08a3c;
+  --accent-soft: #fbeadb;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #e8edf3;
+  --text: #141a26;
+  --muted: #5f6878;
+  --border: #dde3ec;
+}
+
+:root[data-palette="erik"] {
+  --primary: #7a3e63;
+  --primary-strong: #63304f;
+  --primary-soft: #f5e9ef;
+  --accent: #c27c8a;
+  --accent-soft: #f6e6ea;
+  --bg: #f8f3f4;
+  --surface: #ffffff;
+  --surface-2: #efe5e8;
+  --text: #22171d;
+  --muted: #6c5f66;
+  --border: #eadde2;
+}
+
+/* Dark palette: opt-in only (class "dark" on <html>); the site is light by default. */
+:root.dark {
+    --primary: #e07a52;
+    --primary-strong: #ec9572;
+    --primary-soft: #3a2419;
+    --accent: #e89a78;
     --accent-soft: #3a261d;
-    --bg: #0e1311;
-    --surface: #18201d;
-    --surface-2: #1f2925;
-    --text: #f2efea;
-    --muted: #a3a8a4;
-    --border: #2a332f;
+    --bg: #15110f;
+    --surface: #1f1916;
+    --surface-2: #2a221e;
+    --text: #f3ece2;
+    --muted: #ada39a;
+    --border: #342a25;
     --danger: #f07a70;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
-}
 
 @theme inline {
   --color-primary: var(--primary);
@@ -51,6 +94,7 @@
   --color-border: var(--border);
   --color-danger: var(--danger);
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
   --shadow-card: var(--shadow);
 }
 
@@ -62,6 +106,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  font-weight: 300;
 }
 
 ::selection {

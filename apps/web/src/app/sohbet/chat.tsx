@@ -118,7 +118,7 @@ export function Chat() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t.chat.title}</h1>
+        <h1 className="text-4xl font-display font-light sm:text-5xl">{t.chat.title}</h1>
         <p className="mt-1.5 text-muted">{t.chat.subtitle}</p>
       </div>
 
@@ -170,7 +170,7 @@ export function Chat() {
                           key={j}
                           type="button"
                           onClick={() => openSuggestion(s)}
-                          className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary-soft px-3.5 py-2 text-left text-sm font-semibold text-primary hover:border-primary"
+                          className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary-soft px-3.5 py-2 text-left text-sm font-medium text-primary hover:border-primary"
                           title={`${toolName(s.tool)} — ${t.chat.openInStudio}`}
                         >
                           <ToolIcon tool={s.tool} className="h-4 w-4 shrink-0" />
@@ -206,7 +206,7 @@ export function Chat() {
                 {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ImagePlus className="h-4 w-4" aria-hidden />}
                 {t.chat.attachUpload}
               </button>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted">
                 <Images className="h-3.5 w-3.5" aria-hidden /> {t.chat.attachRecent}
               </p>
               {recent === null ? (

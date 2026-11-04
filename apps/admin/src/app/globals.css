@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Tokens: docs/API.md §6, in shadcn/ui names (components/ui) plus the panel's own (surface, line, fg, …)
    that older pages still use. Chart roles: validated with the dataviz palette validator
    (series-1 + status-critical pass light on #ffffff and dark on #18201D). */
@@ -52,8 +54,88 @@
   --chart-ink-2: #52514e;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Colour themes the user can pick (Kil is the default above). Text and filled buttons keep ≥ 4.5:1 contrast
+   against their backgrounds in every theme. The brand mark stays terracotta in all of them. */
+:root[data-palette="pirinc"] {
+  --background: #f7f4ee;
+  --foreground: #161513;
+  --card-foreground: #161513;
+  --popover-foreground: #161513;
+  --primary: #8a6a2f;
+  --ring: #8a6a2f;
+  --secondary: #efe9dc;
+  --secondary-foreground: #161513;
+  --muted: #f1ece2;
+  --muted-foreground: #6b655b;
+  --accent: #ece5d6;
+  --accent-foreground: #161513;
+  --border: #e6dfd1;
+  --input: #cfc6b3;
+  --sidebar: #fbf9f4;
+  --sidebar-foreground: #161513;
+  --sidebar-primary: #8a6a2f;
+  --sidebar-accent: #f3ecdd;
+  --sidebar-accent-foreground: #725724;
+  --sidebar-border: #e6dfd1;
+  --sidebar-ring: #8a6a2f;
+  --brand-accent: #c8a46a;
+  --primary-soft: #f3ecdd;
+}
+
+:root[data-palette="murekkep"] {
+  --background: #f4f6f9;
+  --foreground: #141a26;
+  --card-foreground: #141a26;
+  --popover-foreground: #141a26;
+  --primary: #24406e;
+  --ring: #24406e;
+  --secondary: #e9eef5;
+  --secondary-foreground: #141a26;
+  --muted: #edf1f6;
+  --muted-foreground: #5f6878;
+  --accent: #e4eaf2;
+  --accent-foreground: #141a26;
+  --border: #dde3ec;
+  --input: #c3ccda;
+  --sidebar: #f9fafc;
+  --sidebar-foreground: #141a26;
+  --sidebar-primary: #24406e;
+  --sidebar-accent: #e6edf7;
+  --sidebar-accent-foreground: #24406e;
+  --sidebar-border: #dde3ec;
+  --sidebar-ring: #24406e;
+  --brand-accent: #e08a3c;
+  --primary-soft: #e6edf7;
+}
+
+:root[data-palette="erik"] {
+  --background: #f8f3f4;
+  --foreground: #22171d;
+  --card-foreground: #22171d;
+  --popover-foreground: #22171d;
+  --primary: #7a3e63;
+  --ring: #7a3e63;
+  --secondary: #f1e7ea;
+  --secondary-foreground: #22171d;
+  --muted: #f3eaed;
+  --muted-foreground: #6c5f66;
+  --accent: #eee2e6;
+  --accent-foreground: #22171d;
+  --border: #eadde2;
+  --input: #d6c4cb;
+  --sidebar: #fcf8f9;
+  --sidebar-foreground: #22171d;
+  --sidebar-primary: #7a3e63;
+  --sidebar-accent: #f5e9ef;
+  --sidebar-accent-foreground: #7a3e63;
+  --sidebar-border: #eadde2;
+  --sidebar-ring: #7a3e63;
+  --brand-accent: #c27c8a;
+  --primary-soft: #f5e9ef;
+}
+
+/* Dark palette: opt-in only (class "dark" on <html>); the panel is light by default (owner decision). */
+:root.dark {
     color-scheme: dark;
 
     --background: #15110f;
@@ -99,7 +181,6 @@
     --chart-muted: #898781;
     --chart-ink-2: #c3c2b7;
   }
-}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

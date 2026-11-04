@@ -53,12 +53,12 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () =
         <p>{text}</p>
         <div className="mt-2 flex flex-wrap gap-3">
           {needsPlan && (
-            <Link href="/fiyatlar" className="font-semibold text-primary underline-offset-4 hover:underline">
+            <Link href="/fiyatlar" className="font-medium text-primary underline-offset-4 hover:underline">
               {t.errors.seePlans} →
             </Link>
           )}
           {onRetry && (
-            <button type="button" onClick={onRetry} className="font-semibold text-primary underline-offset-4 hover:underline">
+            <button type="button" onClick={onRetry} className="font-medium text-primary underline-offset-4 hover:underline">
               {t.common.retry}
             </button>
           )}

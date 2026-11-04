@@ -197,7 +197,7 @@ def test_unchanged_output_is_422_no_change_with_usage():
     assert res.status_code == 422
     body = res.json()
     assert body["error"]["code"] == "no_change" and body["error"]["retryable"] is False
-    assert body["usage"]["images"] == 2 and body["usage"]["cost_usd"] == pytest.approx(2 * 0.039)
+    assert body["usage"]["images"] == 2 and body["usage"]["cost_usd"] == pytest.approx(2 * 0.067)
 
 
 def test_mock_generation_reports_zero_cost_usage():

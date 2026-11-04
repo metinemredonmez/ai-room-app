@@ -103,7 +103,7 @@ export type CatalogTool = {
   needs: ToolNeeds;
 };
 
-export type CatalogStyle = { id: string; name: string; description: string; palette: string[]; isPro: boolean };
+export type CatalogStyle = { id: string; name: string; description: string; palette: string[]; isPro: boolean; previewUrl?: string };
 export type Plan = { id: string; name: string; period: "week" | "month" | "year"; priceTRY: number; badge: string | null };
 
 export type Catalog = {

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Comma-separated fallback chain tried in order after the primary (e.g. "replicate").
     image_fallbacks: str = Field("", alias="IMAGE_FALLBACKS")
     gemini_api_key: str | None = Field(None, alias="GEMINI_API_KEY")
-    gemini_image_model: str = Field("gemini-2.5-flash-image", alias="GEMINI_IMAGE_MODEL")
+    gemini_image_model: str = Field("gemini-3.1-flash-image", alias="GEMINI_IMAGE_MODEL")
     replicate_api_token: str | None = Field(None, alias="REPLICATE_API_TOKEN")
     replicate_model: str = Field("black-forest-labs/flux-kontext-pro", alias="REPLICATE_MODEL")
 
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     anthropic_model: str = Field("claude-opus-5-5", alias="ANTHROPIC_MODEL")
 
     # Cost ledger inputs (USD). Image prices are per generated image; Claude prices per million tokens.
-    gemini_image_cost_usd: float = Field(0.039, alias="GEMINI_IMAGE_COST_USD", ge=0)
+    gemini_image_cost_usd: float = Field(0.067, alias="GEMINI_IMAGE_COST_USD", ge=0)
     replicate_image_cost_usd: float = Field(0.04, alias="REPLICATE_IMAGE_COST_USD", ge=0)
     anthropic_input_usd_per_mtok: float = Field(4.0, alias="ANTHROPIC_INPUT_USD_PER_MTOK", ge=0)
     anthropic_output_usd_per_mtok: float = Field(20.0, alias="ANTHROPIC_OUTPUT_USD_PER_MTOK", ge=0)

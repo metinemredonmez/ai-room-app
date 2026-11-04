@@ -110,7 +110,7 @@ export function DesignsList() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t.designs.title}</h1>
+        <h1 className="text-4xl font-display font-light sm:text-5xl">{t.designs.title}</h1>
         <div className="flex items-center gap-2">
           <div className="inline-grid grid-cols-2 rounded-full bg-surface-2 p-1">
             {(["all", "favorites"] as const).map((f) => (
@@ -119,7 +119,7 @@ export function DesignsList() {
                 type="button"
                 onClick={() => changeFilter(f)}
                 aria-pressed={filter === f}
-                className={`rounded-full px-4 py-1.5 text-sm font-semibold ${filter === f ? "bg-surface shadow-card" : "text-muted"}`}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium ${filter === f ? "bg-surface shadow-card" : "text-muted"}`}
               >
                 {f === "all" ? t.common.all : t.common.favorites}
               </button>
@@ -154,10 +154,10 @@ export function DesignsList() {
                 <Link href={`/tasarim/${d.id}`} className="relative block aspect-[4/3] overflow-hidden bg-surface-2">
                   <img src={cover.url} alt={d.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
                   {d.status === "FAILED" && (
-                    <span className="absolute left-3 top-3 rounded-full bg-danger px-2.5 py-1 text-xs font-bold text-white">{t.designs.failed}</span>
+                    <span className="absolute left-3 top-3 rounded-full bg-danger px-2.5 py-1 text-xs font-medium text-white">{t.designs.failed}</span>
                   )}
                   {d.results.length > 1 && (
-                    <span className="absolute bottom-3 left-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+                    <span className="absolute bottom-3 left-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
                       {d.results.length} {t.result.variantCount}
                     </span>
                   )}
@@ -165,7 +165,7 @@ export function DesignsList() {
                 <div className="flex items-center gap-2 p-4">
                   <ToolIcon tool={d.tool} className="h-4 w-4 shrink-0 text-primary" />
                   <div className="min-w-0 flex-1">
-                    <Link href={`/tasarim/${d.id}`} className="block truncate font-semibold hover:text-primary">
+                    <Link href={`/tasarim/${d.id}`} className="block truncate font-medium hover:text-primary">
                       {d.title}
                     </Link>
                     <p className="text-xs text-muted">{formatDate(d.createdAt, locale)}</p>
