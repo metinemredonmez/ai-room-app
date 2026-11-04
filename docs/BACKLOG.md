@@ -121,7 +121,10 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 
 ## İşletim
 - [ ] Mağazalar: Apple Developer, Google Play Console, RevenueCat ürünleri (`casalume_*`).
-- [ ] Sunucu dışı yedek (şifreli), uptime izleyici, Sentry (AB bölgesi).
+- [ ] Sunucu dışı yedek (şifreli), uptime izleyici.
+- [ ] Kendi hata alarmımız — Sentry yerine (sahibinin kararı, 4 Kasım): backend ve AI servisindeki 5xx / yakalanmamış hata
+  → `support@casalume.app` e-postası (aynı hata saatte en çok bir kez) + admin’de “Hatalar” sayfası; fal-app
+  `infra-watchdog` deseniyle disk, veritabanı, kota uyarıları. Mobil çökme raporu mağaza öncesi ayrıca düşünülecek.
 - [ ] hazal’a fail2ban (e-posta girişlerine kaba kuvvet denemeleri görülüyor).
 - [ ] Admin ilk girişi: Google Authenticator kurulumu ve `admin-credentials.txt`’nin silinmesi (sahibi yapıyor).
 - [ ] hazal’daki diğer siteler (bilgi): maeyja.com 503 veriyor (Casalume öncesinden); uzmanumre.com’da DKIM/DMARC yok.
