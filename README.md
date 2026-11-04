@@ -146,7 +146,7 @@ yazıldı ama bu makinede Docker olmadığı için çalıştırılarak denenmedi
 
 ```bash
 cd apps/ai-service && uv run pytest              # 45 test: iç token, prompt kaçışı, görsel doğrulama, yedek zincir, devre kesici, kalite, no_change, bölge kilidi, fal.ai, Sentry maskeleme
-cd apps/backend && npm test                      # 58 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar, Apple/Google token, hesap bağlama, alan şifreleme, zorunlu güncelleme, Sentry maskeleme, yasal metin sürümleri, KVKK başvuruları
+cd apps/backend && npm test                      # 60 test: TOTP, XFF/NET-03, MIME imzası, KEY-01, MAIL-01, bütçe kesici, webhook, push, admin rolleri, yedek kodlar ve yenileme sınırı, Apple/Google token, hesap bağlama, alan şifreleme, zorunlu güncelleme, Sentry maskeleme, yasal metin sürümleri, KVKK başvuruları
 node scripts/smoke.mjs                           # 120 uçtan uca kontrol (çalışan backend + AI servisi gerekir)
 ```
 

@@ -84,6 +84,7 @@ export const LIMITS = {
   loginAccount: { name: 'login-acct', max: 10, windowSec: 900 },
   adminLogin: { name: 'admin-login', max: 5, windowSec: 900 },
   adminEnroll: { name: 'admin-enroll', max: 10, windowSec: 3600 },
+  adminStepUp: { name: 'admin-stepup', max: 5, windowSec: 900 },
   register: { name: 'register-ip', max: 10, windowSec: 3600 },
   forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },
   forgotAccount: { name: 'forgot-acct', max: 3, windowSec: 3600 },

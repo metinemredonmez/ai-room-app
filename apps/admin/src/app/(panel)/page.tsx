@@ -20,6 +20,7 @@ import { useState } from "react";
 import { BarList, DailyDesignsChart, NewUsersChart } from "@/components/charts";
 import { ErrorState } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -59,7 +60,11 @@ export default function HomePage() {
 
   const t = stats.data?.totals;
   const tasks = buildTasks({ me: me.data, ai: ai.data, reports: reports.data, kvkk: kvkk.data, failed: failedBilling.data, unmatched: unmatchedBilling.data, jobs: jobs.data });
-  const tasksLoading = [me, ai, reports, kvkk, failedBilling, unmatchedBilling, jobs].some((q) => !q.data && !q.error);
+  const taskSources = [me, ai, reports, kvkk, failedBilling, unmatchedBilling, jobs];
+  const tasksLoading = taskSources.some((q) => !q.data && !q.error);
+  // A source that failed to load is unknown, not empty: never report "all clear" over it.
+  const tasksIncomplete = taskSources.some((q) => q.error && !q.data);
+  const retryTasks = () => taskSources.forEach((q) => q.error && q.reload());
   const styleName = (id: string) => styles.data?.find((s) => s.id === id)?.nameTr ?? id;
 
   return (
@@ -69,7 +74,9 @@ export default function HomePage() {
         <p className="mt-1 text-sm text-muted-foreground">
           {tasksLoading
             ? "Bugünün durumu yükleniyor…"
-            : tasks.length
+            : tasksIncomplete
+              ? "Bazı kontroller yüklenemedi; iş listesi eksik olabilir."
+              : tasks.length
               ? `Bugün ${tasks.length} iş seni bekliyor${tasks.some((x) => x.tone === "critical") ? "; bazıları acil" : ""}.`
               : "Bekleyen iş yok; her şey yolunda."}
         </p>
@@ -108,16 +115,28 @@ export default function HomePage() {
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : tasks.length === 0 ? (
+          ) : tasks.length === 0 && !tasksIncomplete ? (
             <div className="flex items-center gap-3 px-6 py-2 text-sm text-muted-foreground">
               <CircleCheck className="size-5 text-good" aria-hidden /> Bekleyen iş yok.
             </div>
           ) : (
-            <ul className="divide-y">
-              {tasks.map((task) => (
-                <TaskRow key={task.key} task={task} />
-              ))}
-            </ul>
+            <>
+              {tasksIncomplete && (
+                <div className="mx-6 mb-2 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn" role="status">
+                  <span className="flex items-center gap-2">
+                    <AlertTriangle className="size-4 shrink-0" aria-hidden /> Bazı kontroller yüklenemedi; liste eksik olabilir.
+                  </span>
+                  <Button size="sm" variant="outline" onClick={retryTasks}>
+                    Tekrar dene
+                  </Button>
+                </div>
+              )}
+              <ul className="divide-y">
+                {tasks.map((task) => (
+                  <TaskRow key={task.key} task={task} />
+                ))}
+              </ul>
+            </>
           )}
         </CardContent>
       </Card>

@@ -226,6 +226,20 @@ describe('admin recovery codes (AUT-04)', () => {
     expect(hashBackupCode('pepper-a', n)).not.toBe(hashBackupCode('pepper-b', n));
     expect(new Set(Array.from({ length: 200 }, newBackupCode)).size).toBe(200);
   });
+
+  it('regeneration needs a fresh code; a wrong one is a capped 403 that leaves the session alone (AUT-03)', async () => {
+    const hits: string[] = [];
+    const limiter = { hit: async (l: { name: string }, key: string) => void hits.push(`${l.name}:${key}`) };
+    const security = { claimTotp: async (_u: unknown, otp: string) => otp === '654321', regenerateBackupCodes: async () => ['NEW01-CODES'], notify: () => {} };
+    const audit = { record: async () => {} };
+    const users = { get: async () => ({ id: 'u1', totpSecret: 'S', totpLastStep: null }) };
+    const ctrl = new AdminSelfController({} as never, users as never, security as never, audit as never, {} as never, limiter as never);
+    const call = (otp: string) => ctrl.regenerate({ userId: 'u1' } as never, { otp }, { clientIp: '203.0.113.9' } as never);
+
+    await expect(call('123456')).rejects.toMatchObject({ status: 403, code: 'step_up_failed' });
+    await expect(call('654321')).resolves.toEqual({ backupCodes: ['NEW01-CODES'] });
+    expect(hits).toEqual(['admin-stepup:u1', 'admin-stepup:u1']);
+  });
 });
 
 describe('admin roles (AZ-01 / AZ-05)', () => {

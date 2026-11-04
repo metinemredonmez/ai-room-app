@@ -4546,6 +4546,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "rate_limited (Retry-After başlığı)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [

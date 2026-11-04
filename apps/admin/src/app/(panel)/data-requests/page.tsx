@@ -75,7 +75,6 @@ export default function DataRequestsPage() {
       : filter === "closed"
         ? other.items.filter((r) => r.status === "COMPLETED" || r.status === "REJECTED")
         : other.items;
-  const source = filter === "open" ? (received.nextCursor ? received : inProgress) : other;
   const loading = filter === "open" ? received.loading || inProgress.loading : other.loading;
   const error = filter === "open" ? received.error ?? inProgress.error : other.error;
   const reloadAll = () => {
@@ -155,7 +154,19 @@ export default function DataRequestsPage() {
           </Table>
         </Card>
       )}
-      {filter !== "open" && <LoadMore hasMore={Boolean(source.nextCursor)} loading={source.loadingMore} onClick={source.loadMore} />}
+      {filter === "open" ? (
+        // Both open states page independently; one click advances whichever still has more.
+        <LoadMore
+          hasMore={Boolean(received.nextCursor || inProgress.nextCursor)}
+          loading={received.loadingMore || inProgress.loadingMore}
+          onClick={() => {
+            if (received.nextCursor) void received.loadMore();
+            if (inProgress.nextCursor) void inProgress.loadMore();
+          }}
+        />
+      ) : (
+        <LoadMore hasMore={Boolean(other.nextCursor)} loading={other.loadingMore} onClick={other.loadMore} />
+      )}
 
       {openId && <DetailDialog id={openId} writable={canWrite(me.data)} onClose={() => setOpenId(null)} onChanged={reloadAll} />}
       {creating && <CreateDialog onClose={() => setCreating(false)} onDone={reloadAll} />}

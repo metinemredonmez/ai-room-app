@@ -188,7 +188,8 @@ function EditorDialog({ editor, overview, onClose, onSaved }: { editor: Editor; 
   // Start a new version from the published text, or an edit from the draft itself.
   const base = editor.mode === "new" ? overview.items.find((r) => r.kind === kind && r.locale === locale && r.status === "published") : null;
   const baseDoc = useApi<LegalDocument>(editor.mode === "new" && base ? `/legal/${base.id}` : null);
-  const source = editor.mode === "new" ? baseDoc.data : existing.data;
+  // useApi keeps the previous document while the next one loads; only the matching one may fill the form.
+  const source = editor.mode === "new" ? (base && baseDoc.data?.id === base.id ? baseDoc.data : null) : existing.data;
   const values = form ?? (source ? { title: source.title, body: source.body, requiresConsent: editor.mode === "new" ? true : source.requiresConsent } : null);
   const problem = !values
     ? null

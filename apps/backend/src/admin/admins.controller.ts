@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { AdminGuard, TokensService } from '../auth/tokens.service.js';
 import { AppError, notFound, parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
-import { PrismaService } from '../common/infra.js';
+import { LIMITS, PrismaService, RateLimiter } from '../common/infra.js';
 import { Doc } from '../common/openapi.js';
 import type { User } from '../generated/prisma/client.js';
 import { isUuid } from '../images/images.service.js';
@@ -30,6 +30,7 @@ export class AdminSelfController {
     private security: AdminSecurityService,
     private audit: AuditService,
     private tokens: TokensService,
+    private limiter: RateLimiter,
   ) {}
 
   @Get()
@@ -41,11 +42,14 @@ export class AdminSelfController {
 
   /** AUT-04: adding or replacing a factor needs a fresh TOTP code, not just a live session. */
   @Post('backup-codes')
-  @Doc('Yedek kodları yenile (güncel TOTP kodu ister; eski kodlar geçersiz olur)', { body: StepUp, status: 201, response: { type: 'object', properties: { backupCodes: { type: 'array', items: { type: 'string' } } } }, errors: [400, 401, 403] })
+  @Doc('Yedek kodları yenile (güncel TOTP kodu ister; eski kodlar geçersiz olur)', { body: StepUp, status: 201, response: { type: 'object', properties: { backupCodes: { type: 'array', items: { type: 'string' } } } }, errors: [400, 401, 403, 429] })
   async regenerate(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(StepUp, body);
+    // A live session may guess codes here, so attempts are capped per admin (AUT-03).
+    await this.limiter.hit(LIMITS.adminStepUp, auth.userId);
     const user = await this.users.get(auth.userId);
-    if (!(await this.security.claimTotp(user, input.otp))) throw new AppError(401, 'unauthorized', 'Kod hatalı ya da zaten kullanıldı');
+    // 403, not 401: a wrong code is a failed step-up, not a dead session — the panel must not sign the admin out.
+    if (!(await this.security.claimTotp(user, input.otp))) throw new AppError(403, 'step_up_failed', 'Kod hatalı ya da zaten kullanıldı');
     const backupCodes = await this.security.regenerateBackupCodes(user.id);
     await this.audit.record(user.id, 'admin.backup_codes_regenerated', 'user', user.id, {}, req.clientIp);
     this.security.notify(user, 'Yedek kodların yenilendi', ['AI Room yönetim hesabının yedek kodları yenilendi; eski kodlar artık geçersiz.']);
