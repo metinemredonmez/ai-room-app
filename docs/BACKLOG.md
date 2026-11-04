@@ -24,10 +24,13 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
   Firebase projesi `ai-room-35914`. Dosyalar sahibinin Mac’inde `~/Documents/casalume-keys/`: Android imza anahtarı
   `casalume-upload.jks` (alias `casalume`, parola Anahtar Zinciri’nde `casalume-android-keystore`), `google-services.json`,
   `GoogleService-Info.plist`, Firebase servis hesabı JSON’u. Hiçbiri repoya girmez.
-- [ ] İlk EAS Android derlemesinden **önce** (sen): expo.dev → Credentials → Android → `app.casalume` → keystore olarak
-  `casalume-upload.jks`’i yükle (yoksa Expo yeni anahtar üretir, kayıtlı SHA-1 tutmaz); FCM V1 servis hesabı JSON’unu yükle.
-  Bildirimler başlayınca: Expo’da “Enhanced push security” aç, erişim jetonunu sunucuya `EXPO_ACCESS_TOKEN` olarak gir.
-  `app.json`’a `extra.eas.projectId` ve `owner` eklenecek.
+- [ ] Android imzası (sahibinin kararı, 4 Kasım): fal-app’teki gibi normal EAS derlemesi; anahtarı Expo üretir. İlk Android
+  derlemesinden **sonra** expo.dev → Credentials → Android’deki SHA-1’i (1) Google Cloud → Clients → Android istemcisine
+  (eskisinin yerine) ve (2) Firebase → Casalume Android → SHA fingerprints’e ekle, `google-services.json`’ı yeniden indir.
+  Mac’te üretilen `casalume-upload.jks` kullanılmıyor.
+- [ ] Mobil başlayınca (sen): expo.dev → Credentials → Android → FCM V1 servis hesabı JSON’unu yükle; bildirimler başlayınca
+  Expo’da “Enhanced push security” aç, erişim jetonunu sunucuya `EXPO_ACCESS_TOKEN` olarak gir. `app.json`’a
+  `extra.eas.projectId` ve `"owner": "metinemredonmez"` eklenecek.
 - Gemini ile maske denendi (4 Kasım, `gemini-3.8-flash`, örnek salon): nesneyi ve kutusunu doğru buluyor ama piksel
   maskesi yok, çokgen maske kayık ya da tamamen yanlış (koltuğa dokununca duvarı seçti). Bölge kilidi için **kullanılamaz**;
   `gemini-2.5-flash` yeni hesaplara kapalı.
