@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "一键焕新",
+      "description": "按你喜欢的风格重新设计房间"
+    },
+    "furnish": {
+      "name": "空房布置",
+      "description": "为空房间进行虚拟软装"
+    },
+    "declutter": {
+      "name": "删除物品",
+      "description": "清除杂物或清空所有家具"
+    },
+    "replace": {
+      "name": "替换",
+      "description": "把一件物品换成别的"
+    },
+    "paint": {
+      "name": "墙面刷漆",
+      "description": "把墙面刷成你想要的颜色"
+    },
+    "flooring": {
+      "name": "更换地面",
+      "description": "试试木地板、大理石或瓷砖"
+    },
+    "exterior": {
+      "name": "建筑外观",
+      "description": "焕新你家的外立面"
+    },
+    "garden": {
+      "name": "花园与露台",
+      "description": "打造你的花园或露台"
+    },
+    "reference": {
+      "name": "参考风格",
+      "description": "套用你喜欢的照片风格"
+    },
+    "custom": {
+      "name": "自定义描述",
+      "description": "写下你的想法，交给 AI 实现"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "起居室"
+    },
+    "salon": {
+      "name": "会客厅"
+    },
+    "bedroom": {
+      "name": "卧室"
+    },
+    "kitchen": {
+      "name": "厨房"
+    },
+    "bathroom": {
+      "name": "浴室"
+    },
+    "dining_room": {
+      "name": "餐厅"
+    },
+    "kids_room": {
+      "name": "儿童房"
+    },
+    "home_office": {
+      "name": "书房"
+    },
+    "hallway": {
+      "name": "玄关"
+    },
+    "balcony": {
+      "name": "阳台"
+    },
+    "studio": {
+      "name": "开间公寓"
+    },
+    "office": {
+      "name": "办公室"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "橡木地板"
+    },
+    "herringbone": {
+      "name": "人字拼地板"
+    },
+    "marble": {
+      "name": "白色大理石"
+    },
+    "travertine": {
+      "name": "洞石"
+    },
+    "concrete": {
+      "name": "抛光水泥"
+    },
+    "terracotta": {
+      "name": "陶土砖"
+    },
+    "ceramic": {
+      "name": "哑光瓷砖"
+    },
+    "carpet": {
+      "name": "满铺地毯"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "米白"
+    },
+    "kum_beji": {
+      "name": "沙米色"
+    },
+    "adacayi": {
+      "name": "鼠尾草绿"
+    },
+    "zeytin": {
+      "name": "橄榄绿"
+    },
+    "ege_mavisi": {
+      "name": "爱琴海蓝"
+    },
+    "gece_mavisi": {
+      "name": "午夜蓝"
+    },
+    "terrakota": {
+      "name": "陶土色"
+    },
+    "gul_kurusu": {
+      "name": "干枯玫瑰"
+    },
+    "hardal": {
+      "name": "芥末黄"
+    },
+    "antrasit": {
+      "name": "炭灰"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "周订阅"
+    },
+    "pro_monthly": {
+      "name": "月订阅",
+      "badge": "热门"
+    },
+    "pro_yearly": {
+      "name": "年订阅",
+      "badge": "最划算"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "现代",
+      "description": "简洁线条、中性色调、温暖木质"
+    },
+    "modern_turkish": {
+      "name": "现代土耳其",
+      "description": "洞石、胡桃木、基里姆地毯与铜饰点缀"
+    },
+    "japandi": {
+      "name": "日式北欧",
+      "description": "低矮木质家具、大地色调、简约质朴"
+    },
+    "scandinavian": {
+      "name": "北欧",
+      "description": "浅色橡木、白墙、羊毛与亚麻"
+    },
+    "aegean": {
+      "name": "爱琴海",
+      "description": "石灰白墙、爱琴海蓝、橄榄木"
+    },
+    "minimalist": {
+      "name": "极简",
+      "description": "少而精，通透宁静"
+    },
+    "mediterranean": {
+      "name": "地中海",
+      "description": "拱门、石灰灰泥、陶土"
+    },
+    "industrial": {
+      "name": "工业风",
+      "description": "红砖、水泥、黑色金属、皮革"
+    },
+    "bohemian": {
+      "name": "波西米亚",
+      "description": "藤编、叠铺地毯、满屋绿植"
+    },
+    "rustic": {
+      "name": "乡村农舍",
+      "description": "木梁、天然石材、暖色灯光"
+    },
+    "coastal": {
+      "name": "海滨度假",
+      "description": "沙色与天蓝、藤编、条纹元素"
+    },
+    "classic_ottoman": {
+      "name": "奥斯曼古典",
+      "description": "雕花胡桃木、矮长沙发、伊兹尼克瓷砖、黄铜灯笼"
+    },
+    "cappadocia": {
+      "name": "卡帕多奇亚石屋",
+      "description": "石拱、壁龛、大地色调"
+    },
+    "mid_century": {
+      "name": "中世纪现代",
+      "description": "胡桃木、锥形椅腿、芥末黄与孔雀蓝"
+    },
+    "art_deco": {
+      "name": "奢华装饰艺术",
+      "description": "丝绒、黄铜、大理石、祖母绿与金色"
+    }
+  }
+}

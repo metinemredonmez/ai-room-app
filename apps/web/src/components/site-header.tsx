@@ -1,13 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Crown, Globe, LogOut, Menu, Sparkles, User as UserIcon, X } from "lucide-react";
+import { Crown, LogOut, Menu, Sparkles, User as UserIcon, X } from "lucide-react";
 import { formatDate } from "@/lib/format";
+import { splitLocale, fmt } from "@/lib/i18n";
 import { useApp } from "./app-provider";
 import { Logo } from "./logo";
 import { btn } from "./ui";
+import { LanguagePicker } from "./language-picker";
 import { PalettePicker } from "./palette-picker";
 
 function CreditsPill() {
@@ -17,7 +19,7 @@ function CreditsPill() {
     return (
       <span
         className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent"
-        title={user.planExpiresAt ? t.credits.proUntil(formatDate(user.planExpiresAt, locale)) : undefined}
+        title={user.planExpiresAt ? fmt(t.credits.proUntil, { date: formatDate(user.planExpiresAt, locale) }) : undefined}
       >
         <Crown className="h-3.5 w-3.5" aria-hidden /> {t.credits.pro}
       </span>
@@ -29,7 +31,7 @@ function CreditsPill() {
       className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:brightness-95"
     >
       <Sparkles className="h-3.5 w-3.5" aria-hidden />
-      {t.credits.pill(user.dailyFreeRemaining, user.credits)}
+      {fmt(t.credits.pill, { free: user.dailyFreeRemaining, credits: user.credits })}
     </Link>
   );
 }
@@ -46,7 +48,7 @@ export function HeaderFallback() {
 }
 
 export function SiteHeader() {
-  const { t, locale, setLocale, user, logout } = useApp();
+  const { t, user, logout, href } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -58,13 +60,14 @@ export function SiteHeader() {
     { href: "/fiyatlar", label: t.nav.pricing },
   ];
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const path = splitLocale(pathname).path;
+  const isActive = (to: string) => path === to || path.startsWith(`${to}/`);
   const signedIn = user && !user.isGuest;
 
   async function onLogout() {
     await logout();
     setOpen(false);
-    router.push("/");
+    router.push(href("/"));
   }
 
   return (
@@ -90,14 +93,7 @@ export function SiteHeader() {
             <CreditsPill />
           </div>
           <PalettePicker />
-          <button
-            type="button"
-            onClick={() => setLocale(locale === "tr" ? "en" : "tr")}
-            className={`${btn.base} ${btn.subtle} h-9 px-3 text-xs`}
-            aria-label={locale === "tr" ? "Switch to English" : "Türkçeye geç"}
-          >
-            <Globe className="h-4 w-4" aria-hidden /> {locale === "tr" ? "EN" : "TR"}
-          </button>
+          <LanguagePicker />
           {signedIn ? (
             <div className="hidden items-center gap-1 lg:flex">
               <span className="inline-flex max-w-40 items-center gap-1.5 truncate px-2 text-sm text-muted">

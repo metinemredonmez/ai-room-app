@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api, ApiError, useApi, usePaged } from "@/lib/api";
 import { fmtDateTime, fmtInt } from "@/lib/format";
-import type { AdminMe, Broadcast, BroadcastAudience, BroadcastChannel, BroadcastDetail, BroadcastKind, BroadcastStatus } from "@/lib/types";
+import { LOCALES, LOCALE_LABELS, type AdminMe, type Broadcast, type BroadcastAudience, type BroadcastChannel, type BroadcastDetail, type BroadcastKind, type BroadcastStatus, type Locale } from "@/lib/types";
 
 const KIND: Record<BroadcastKind, { label: string; hint: string; className: string }> = {
   SERVICE: {
@@ -464,7 +464,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
   const audience: BroadcastAudience = {
     ...(plan !== NONE ? { plan: plan as "FREE" | "PRO" } : {}),
     ...(platform !== NONE && !email ? { platform: platform as "ios" | "android" } : {}),
-    ...(locale !== NONE ? { locale: locale as "tr" | "en" } : {}),
+    ...(locale !== NONE ? { locale: locale as Locale } : {}),
     accounts: accounts as "all" | "registered" | "guests",
     ...(activity === "active" ? { activeDays: dayCount } : activity === "inactive" ? { inactiveDays: dayCount } : {}),
     ...(after ? { registeredAfter: after } : {}),
@@ -611,7 +611,7 @@ function Composer({ initial, onSaved }: { initial: Broadcast | null; onSaved: (b
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Choice id="a-plan" label="Plan" value={plan} onChange={setPlan} options={[[NONE, "Hepsi"], ["FREE", "Ücretsiz"], ["PRO", "PRO"]]} />
             {!email && <Choice id="a-platform" label="Platform" value={platform} onChange={setPlatform} options={[[NONE, "Hepsi"], ["ios", "iOS"], ["android", "Android"]]} />}
-            <Choice id="a-locale" label="Dil" value={locale} onChange={setLocale} options={[[NONE, "Hepsi"], ["tr", "Türkçe"], ["en", "İngilizce"]]} />
+            <Choice id="a-locale" label="Dil" value={locale} onChange={setLocale} options={[[NONE, "Hepsi"], ...LOCALES.map((l) => [l, LOCALE_LABELS[l]] as [string, string])]} />
             <Choice id="a-accounts" label="Hesap" value={accounts} onChange={setAccounts} options={[["all", "Hepsi"], ["registered", "Kayıtlı"], ["guests", "Misafir"]]} />
           </div>
           <div className="grid grid-cols-[1fr_6rem] gap-3">

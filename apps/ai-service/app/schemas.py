@@ -6,7 +6,8 @@ ToolId = Literal[
     "redesign", "furnish", "declutter", "replace", "paint",
     "flooring", "exterior", "garden", "reference", "custom",
 ]
-Locale = Literal["tr", "en"]
+# The web and app languages (API.md §7.17); the assistant answers in the user's language.
+Locale = Literal["tr", "en", "de", "es", "fr", "it", "ru", "nl", "ja", "ko", "zh"]
 UsageKind = Literal["generate", "analyze", "chat", "describe", "segment"]
 QualityIssue = Literal["too_dark", "too_bright", "blurry", "low_res", "low_contrast"]
 

@@ -1,6 +1,13 @@
 // Static catalog: tools, rooms, floors, colours and plans. Styles live in the database (admin-managed).
 
-export type Locale = 'tr' | 'en';
+/** Web and app languages (API.md §7.17). Content is written in Turkish and English; the other languages come from
+ * assets/i18n/catalog/<locale>.json (scripts/i18n_fill.py) and fall back to English. */
+export const LOCALES = ['tr', 'en', 'de', 'es', 'fr', 'it', 'ru', 'nl', 'ja', 'ko', 'zh'] as const;
+export type Locale = (typeof LOCALES)[number];
+export const isLocale = (v: unknown): v is Locale => typeof v === 'string' && (LOCALES as readonly string[]).includes(v);
+/** The language texts written in code or the admin are in: Turkish for Turkish, English for everyone else. */
+export type ContentLocale = 'tr' | 'en';
+export const contentLocale = (l: string | null | undefined): ContentLocale => (l === 'tr' ? 'tr' : 'en');
 type L = { tr: string; en: string };
 
 export const TOOL_IDS = [
@@ -154,4 +161,4 @@ export const STYLE_SEED: Array<{
   { id: 'art_deco', nameTr: 'Art Deco Lüks', nameEn: 'Art Deco Luxe', descriptionTr: 'Kadife, pirinç, mermer, zümrüt ve altın', descriptionEn: 'Velvet, brass, marble, emerald and gold', prompt: 'Art Deco luxury interior: velvet, brass, marble, geometric patterns, emerald and gold palette, statement chandelier', palette: ['#1F6F5C', '#C9A227', '#F0EBE3', '#1A1A1A'], isPro: true },
 ];
 
-export const pick = (l: L, locale: Locale) => l[locale];
+export const pick = (l: L, locale: Locale) => l[contentLocale(locale)];

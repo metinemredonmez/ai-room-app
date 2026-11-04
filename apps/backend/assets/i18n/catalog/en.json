@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "Instant Remodel",
+      "description": "Restyle your room in any style"
+    },
+    "furnish": {
+      "name": "Furnish Empty Room",
+      "description": "Virtually stage an empty room"
+    },
+    "declutter": {
+      "name": "Remove Objects",
+      "description": "Remove clutter or empty the room"
+    },
+    "replace": {
+      "name": "Replace",
+      "description": "Swap one item for another"
+    },
+    "paint": {
+      "name": "Wall Paint",
+      "description": "Repaint your walls"
+    },
+    "flooring": {
+      "name": "New Flooring",
+      "description": "Try parquet, marble or tiles"
+    },
+    "exterior": {
+      "name": "Exterior",
+      "description": "Refresh your home's facade"
+    },
+    "garden": {
+      "name": "Garden & Terrace",
+      "description": "Landscape your garden or terrace"
+    },
+    "reference": {
+      "name": "Reference Style",
+      "description": "Copy the style of a photo you love"
+    },
+    "custom": {
+      "name": "Custom Prompt",
+      "description": "Describe the change in your words"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "Living Room"
+    },
+    "salon": {
+      "name": "Formal Lounge"
+    },
+    "bedroom": {
+      "name": "Bedroom"
+    },
+    "kitchen": {
+      "name": "Kitchen"
+    },
+    "bathroom": {
+      "name": "Bathroom"
+    },
+    "dining_room": {
+      "name": "Dining Room"
+    },
+    "kids_room": {
+      "name": "Kids' Room"
+    },
+    "home_office": {
+      "name": "Home Office"
+    },
+    "hallway": {
+      "name": "Hallway"
+    },
+    "balcony": {
+      "name": "Balcony"
+    },
+    "studio": {
+      "name": "Studio Flat"
+    },
+    "office": {
+      "name": "Office"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "Oak Parquet"
+    },
+    "herringbone": {
+      "name": "Herringbone"
+    },
+    "marble": {
+      "name": "White Marble"
+    },
+    "travertine": {
+      "name": "Travertine"
+    },
+    "concrete": {
+      "name": "Polished Concrete"
+    },
+    "terracotta": {
+      "name": "Terracotta"
+    },
+    "ceramic": {
+      "name": "Matte Ceramic"
+    },
+    "carpet": {
+      "name": "Carpet"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "Off-White"
+    },
+    "kum_beji": {
+      "name": "Sand Beige"
+    },
+    "adacayi": {
+      "name": "Sage Green"
+    },
+    "zeytin": {
+      "name": "Olive"
+    },
+    "ege_mavisi": {
+      "name": "Aegean Blue"
+    },
+    "gece_mavisi": {
+      "name": "Midnight Blue"
+    },
+    "terrakota": {
+      "name": "Terracotta"
+    },
+    "gul_kurusu": {
+      "name": "Dusty Rose"
+    },
+    "hardal": {
+      "name": "Mustard"
+    },
+    "antrasit": {
+      "name": "Anthracite"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "Weekly"
+    },
+    "pro_monthly": {
+      "name": "Monthly",
+      "badge": "POPULAR"
+    },
+    "pro_yearly": {
+      "name": "Yearly",
+      "badge": "BEST VALUE"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "Modern",
+      "description": "Clean lines, neutral tones, warm wood"
+    },
+    "modern_turkish": {
+      "name": "Modern Turkish",
+      "description": "Travertine, walnut, kilim and copper"
+    },
+    "japandi": {
+      "name": "Japandi",
+      "description": "Low wood furniture, earthy calm"
+    },
+    "scandinavian": {
+      "name": "Scandinavian",
+      "description": "Light oak, white walls, wool and linen"
+    },
+    "aegean": {
+      "name": "Aegean",
+      "description": "Whitewash, Aegean blue, olive wood"
+    },
+    "minimalist": {
+      "name": "Minimalist",
+      "description": "Few pieces, airy and calm"
+    },
+    "mediterranean": {
+      "name": "Mediterranean",
+      "description": "Arches, lime plaster, terracotta"
+    },
+    "industrial": {
+      "name": "Industrial",
+      "description": "Brick, concrete, black steel, leather"
+    },
+    "bohemian": {
+      "name": "Bohemian",
+      "description": "Rattan, layered rugs, plants"
+    },
+    "rustic": {
+      "name": "Rustic Farmhouse",
+      "description": "Wood beams, stone, warm light"
+    },
+    "coastal": {
+      "name": "Coastal",
+      "description": "Sand and sky blue, rattan, stripes"
+    },
+    "classic_ottoman": {
+      "name": "Ottoman Classic",
+      "description": "Carved walnut, sedir, Iznik tiles"
+    },
+    "cappadocia": {
+      "name": "Cappadocia Cave House",
+      "description": "Stone arches, niches, earth tones"
+    },
+    "mid_century": {
+      "name": "Mid-Century",
+      "description": "Walnut, tapered legs, mustard and teal"
+    },
+    "art_deco": {
+      "name": "Art Deco Luxe",
+      "description": "Velvet, brass, marble, emerald and gold"
+    }
+  }
+}

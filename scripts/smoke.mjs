@@ -32,6 +32,13 @@ const cat = await call('GET', '/catalog?locale=tr');
 ok(cat.json?.tools?.length === 10 && cat.json.styles.length >= 10, 'catalog', `${cat.json?.tools?.length} tools, ${cat.json?.styles?.length} styles`);
 const preview = await fetch(cat.json.styles[0].previewUrl);
 ok(preview.status === 200 && preview.headers.get('content-type') === 'image/jpeg', 'style preview image', `status ${preview.status}`);
+// API.md §7.17: the eleven languages. German names come from the translation file, never Turkish.
+const catDe = await call('GET', '/catalog', { headers: { 'accept-language': 'pt-BR, de;q=0.8, en;q=0.5' } });
+const paintTr = cat.json.tools.find((t) => t.id === 'paint')?.name;
+const paintDe = catDe.json?.tools?.find((t) => t.id === 'paint')?.name;
+ok(catDe.status === 200 && catDe.json.tools.length === 10 && paintDe && paintDe !== paintTr, 'catalog in German (Accept-Language q-values)', paintDe);
+const catBad = await call('GET', '/designs?locale=pt', { token });
+ok(catBad.status === 400, 'unsupported locale rejected', `status ${catBad.status}`);
 
 const sample = await call('POST', '/uploads/sample', { token, body: { sample: 'living_room' } });
 ok(sample.status === 201, 'sample upload', sample.json?.image?.id);
@@ -260,6 +267,8 @@ const aiText = legalIndex.json?.items?.find((d) => d.kind === 'ai_processing');
 ok(legalIndex.status === 200 && legalIndex.json.items.length === 4 && aiText?.version === catalog2.json?.legal?.aiProcessingVersion, 'legal index matches the catalog versions');
 const privacyEn = await call('GET', '/legal/privacy?locale=en');
 ok(privacyEn.status === 200 && privacyEn.json?.locale === 'en' && privacyEn.json.format === 'markdown' && !privacyEn.json.body.includes('{{'), 'privacy notice served with the controller details filled in');
+const privacyJa = await call('GET', '/legal/privacy?locale=ja');
+ok(privacyJa.status === 200 && privacyJa.json?.locale === 'en', 'legal text for other languages falls back to English');
 const legalMissing = await call('GET', '/legal/cookies');
 const legalBadVersion = await call('GET', '/legal/privacy?version=latest');
 const legalOld = await call('GET', '/legal/privacy?version=1999-01-01');

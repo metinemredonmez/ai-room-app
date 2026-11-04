@@ -7,7 +7,8 @@ import { QueuesService } from '../jobs/queues.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { UsageService } from '../usage/usage.service.js';
 import { CatalogService } from '../catalog/catalog.service.js';
-import { FLOORS, ROOMS, TOOLS, TOOL_IDS, type Locale, type ToolId } from '../catalog/catalog.data.js';
+import { FLOORS, ROOMS, TOOLS, TOOL_IDS, isLocale, type Locale, type ToolId } from '../catalog/catalog.data.js';
+import { localize } from '../catalog/catalog.i18n.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -76,8 +77,8 @@ export class DesignsService {
   async titleOf(d: Pick<Design, 'styleId' | 'tool' | 'roomId'>, locale: Locale = 'tr') {
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
     const tool = TOOLS[d.tool as ToolId];
-    const room = d.roomId ? ROOMS[d.roomId]?.name[locale] : undefined;
-    const head = style ? this.catalog.styleName(style, locale) : (tool?.name[locale] ?? d.tool);
+    const room = d.roomId && ROOMS[d.roomId] ? localize(locale, `rooms.${d.roomId}.name`, ROOMS[d.roomId].name) : undefined;
+    const head = style ? this.catalog.styleName(style, locale) : tool ? localize(locale, `tools.${d.tool}.name`, tool.name) : d.tool;
     return room ? `${head} · ${room}` : head;
   }
 
@@ -111,7 +112,7 @@ export class DesignsService {
     if (settings.maintenance.enabled) throw new AppError(503, 'busy', settings.maintenance.messageTr);
     const user = await this.users.get(userId);
     const pro = this.users.isPro(user);
-    const locale: Locale = user.locale === 'en' ? 'en' : 'tr';
+    const locale: Locale = isLocale(user.locale) ? user.locale : 'tr';
     const tool = TOOLS[body.tool];
     if (tool.isPro && !pro) throw new AppError(402, 'pro_required', 'Bu araç PRO üyelere özel');
     if (settings.requireAiConsent && !(await this.consents.hasCurrent(userId, 'ai_processing'))) {

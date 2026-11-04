@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "description": "AI 室内、外立面与花园设计。土耳其及安纳托利亚风格、TL 预算估算，以及来自土耳其商店的购物清单。",
+    "titles": {
+      "verifyEmail": "验证邮箱",
+      "studio": "工作室",
+      "design": "设计",
+      "resetPassword": "新密码",
+      "pricing": "价格",
+      "login": "登录",
+      "designs": "我的设计",
+      "unsubscribe": "退订",
+      "chat": "AI 对话",
+      "forgotPassword": "忘记密码"
+    }
+  },
+  "brandTagline": "几秒钟，重新设计你的房间",
+  "nav": {
+    "studio": "工作室",
+    "designs": "我的设计",
+    "chat": "AI 对话",
+    "pricing": "价格",
+    "login": "登录",
+    "logout": "退出",
+    "tryFree": "免费试用",
+    "menu": "菜单",
+    "guest": "访客"
+  },
+  "credits": {
+    "pro": "PRO",
+    "pill": "{free} 次免费 · {credits} 积分",
+    "proUntil": "PRO · 有效期至 {date}"
+  },
+  "common": {
+    "loading": "加载中…",
+    "retry": "重试",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "close": "关闭",
+    "back": "返回",
+    "new": "新建",
+    "pro": "PRO",
+    "or": "或",
+    "all": "全部",
+    "favorites": "收藏",
+    "loadMore": "加载更多",
+    "open": "打开"
+  },
+  "unsubscribe": {
+    "title": "活动邮件",
+    "text": "如果你不想再收到 Casalume 的活动和优惠邮件，请点击下方按钮。与你账户相关的必要通知仍会照常发送。",
+    "button": "退订",
+    "done": "好的，你将不再收到活动邮件。如果改变主意，可以在应用的权限设置中重新开启。",
+    "invalid": "此链接无效或不完整。请尝试重新打开邮件中的链接。",
+    "home": "返回首页"
+  },
+  "errors": {
+    "insufficient_credits": "今日免费次数和积分已用完。",
+    "seePlans": "查看套餐",
+    "rate_limited": "请求过于频繁，请稍后再试。",
+    "rate_limited_seconds": "请求过于频繁，请 {s} 秒后再试。",
+    "ai_unavailable": "AI 服务暂时无响应，请几分钟后再试。",
+    "busy": "当前使用人数较多，请稍后再试。",
+    "payload_too_large": "照片过大（最大 10 MB）。",
+    "unsupported_media_type": "不支持此文件类型。请上传 JPEG、PNG、WEBP 或 HEIC。",
+    "unauthorized": "登录已过期，请重新登录。",
+    "forbidden": "你无权执行此操作。",
+    "not_found": "未找到相关内容。",
+    "network": "无法连接，请检查网络。",
+    "generic": "出了点问题，请重试。",
+    "selection_failed": "点击处未识别到物体，请点击物体中央。",
+    "selection_unavailable": "点击选择暂不可用，你可以输入物体名称来选择。",
+    "unsupportedFile": "不支持此文件类型。请上传 JPEG、PNG、WEBP 或 HEIC。",
+    "tooLarge": "照片过大（最大 10 MB）。"
+  },
+  "landing": {
+    "badge": "土耳其的 AI 室内设计师",
+    "heroTitle": "几秒钟，重新设计你的房间。",
+    "heroText": "上传一张照片，选择风格，Casalume 就能为房间重新布置家具、粉刷墙面、更换地板，还会为你喜欢的设计生成购物清单和 TL 预算。",
+    "ctaPrimary": "立即设计",
+    "ctaSecondary": "如何使用？",
+    "trust": [
+      "无需注册",
+      "每天 3 次免费设计",
+      "符合 KVKK"
+    ],
+    "before": "之前",
+    "after": "之后",
+    "featuresTitle": "室内设计师能做的一切，尽在掌中",
+    "featuresText": "我们研究了全球最优秀的案例，并补上了土耳其用户所缺少的功能。",
+    "features": [
+      {
+        "title": "即时重新设计",
+        "text": "15+ 种风格，从客厅到厨房，几秒钟改造任意空间。"
+      },
+      {
+        "title": "土耳其与安纳托利亚风格",
+        "text": "奥斯曼古典、现代土耳其、爱琴海、卡帕多奇亚……本土美学，国际品质。"
+      },
+      {
+        "title": "TL 预算估算",
+        "text": "以土耳其里拉区间估算设计中的家具和装修费用。"
+      },
+      {
+        "title": "在土耳其商店购物",
+        "text": "为每件单品提供 Trendyol、Hepsiburada 等商店的搜索链接。"
+      },
+      {
+        "title": "AI 设计对话",
+        "text": "展示照片、提问、获取灵感，一键在工作室中应用建议。"
+      },
+      {
+        "title": "室内、外立面与花园",
+        "text": "空房布置、物体移除、墙面粉刷、地板、外立面和景观工具。"
+      },
+      {
+        "title": "符合 KVKK 的隐私保护",
+        "text": "照片中的位置信息会被删除，图片通过限时链接加以保护。"
+      },
+      {
+        "title": "前后对比",
+        "text": "拖动滑块查看差异，切换不同方案，下载高清图片。"
+      }
+    ],
+    "howTitle": "三步打造新家",
+    "how": [
+      {
+        "title": "上传照片",
+        "text": "从手机中选择一张房间、外立面或花园的照片——也可以用示例照片试试。"
+      },
+      {
+        "title": "选择工具和风格",
+        "text": "重新设计、布置家具、刷墙、换地板……选好风格和房间类型。"
+      },
+      {
+        "title": "对比效果，付诸实践",
+        "text": "浏览多个方案，查看购物清单和预算，保存你的设计。"
+      }
+    ],
+    "galleryTitle": "真实照片，真实效果",
+    "galleryText": "左边是原始照片，右边是 Casalume 生成的设计。拖动中间的滑块即可对比。",
+    "gallery": [
+      {
+        "key": "salon",
+        "title": "客厅",
+        "meta": "一键焕新 · 现代土耳其风"
+      },
+      {
+        "key": "yatak",
+        "title": "卧室",
+        "meta": "一键焕新 · 北欧风"
+      },
+      {
+        "key": "cephe",
+        "title": "外立面",
+        "meta": "外立面 · 现代风"
+      },
+      {
+        "key": "bahce",
+        "title": "花园",
+        "meta": "花园与露台 · 地中海风"
+      }
+    ],
+    "aiNote": "效果图由 AI 生成，并已作相应标注。",
+    "toolsTitle": "由内到外，处处皆可",
+    "toolsText": "从空房间到花园露台：选好工具，剩下的交给 Casalume。",
+    "tools": [
+      {
+        "key": "hero",
+        "tool": "furnish",
+        "name": "布置空房间",
+        "text": "为空房间摆上家具、地毯和装饰。"
+      },
+      {
+        "key": "salon",
+        "tool": "redesign",
+        "name": "一键焕新",
+        "text": "几秒内将房间变成 15 种风格之一。"
+      },
+      {
+        "key": "cephe",
+        "tool": "exterior",
+        "name": "外立面",
+        "text": "为你家的外观换上新材质和新配色。"
+      },
+      {
+        "key": "bahce",
+        "tool": "garden",
+        "name": "花园与露台",
+        "text": "配上植物、铺装和休闲区，打造全新花园。"
+      }
+    ],
+    "moreTools": "还有：墙面刷漆、更换地板、物体移除、物体替换、参考风格以及自定义方案。",
+    "proBadge": "专业人士之选",
+    "proTitle": "同样适合建筑师和室内设计师",
+    "proText": "初次见面，几分钟内就能向客户展示多种风格方案；配合材料清单和 TL 预算，让沟通更具体。",
+    "proPoints": [
+      "同一张照片生成四个方案（PRO）",
+      "材料清单及 TL 预算估算",
+      "无水印高分辨率（PRO）",
+      "即将推出：项目文件夹和客户分享"
+    ],
+    "stylesTitle": "找到适合你的风格",
+    "stylesText": "点选一种风格，即可用它打开工作室。",
+    "pricingTitle": "灵活的方案",
+    "pricingText": "免费开始；需要更多功能时，可按周、按月或按年升级 PRO。",
+    "faqTitle": "常见问题",
+    "faq": [
+      {
+        "q": "我的照片安全吗？",
+        "a": "你上传的照片会被重新编码，并清除包括位置（GPS）在内的所有 EXIF 信息。图片只能通过有时效的签名链接访问；删除账号后，你的所有设计也会一并删除。"
+      },
+      {
+        "q": "不注册也能用吗？",
+        "a": "可以。你可以以访客身份立即开始；之后用邮箱创建账号，就不会丢失你的设计。"
+      },
+      {
+        "q": "预算估算有多准确？",
+        "a": "价格是 AI 根据土耳其市场估算的价格区间。建议购买前核实商店价格。"
+      },
+      {
+        "q": "房间的墙壁和窗户会改变吗？",
+        "a": "不会。Casalume 会保留房间结构、窗户和拍摄角度，只改变装饰、家具和表面材质。"
+      },
+      {
+        "q": "如何取消 PRO 订阅？",
+        "a": "在手机上可通过 App Store / Google Play 的订阅设置取消，在网页端可在账号页面随时取消。"
+      }
+    ],
+    "finalTitle": "梦想中的房间，只差一张照片。",
+    "finalCta": "免费设计"
+  },
+  "auth": {
+    "title": "欢迎来到 Casalume",
+    "subtitle": "登录后即可保存设计，并在任何设备上访问。",
+    "loginTab": "登录",
+    "registerTab": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "passwordHint": "至少 10 个字符",
+    "name": "你的名字（选填）",
+    "submitLogin": "登录",
+    "submitRegister": "创建账号",
+    "guest": "以访客身份试用",
+    "guestNote": "注册后，访客期间的设计将转入你的账号。",
+    "upgradeNote": "你当前是访客。注册后，现有设计将转入你的账号。",
+    "kvkk": "继续即表示你同意《使用条款》和《KVKK 隐私告知》。",
+    "invalid": "邮箱或密码错误。",
+    "tooShort": "密码至少需要 10 个字符。",
+    "forgotLink": "忘记密码"
+  },
+  "account": {
+    "forgotTitle": "忘记密码了？",
+    "forgotText": "输入你的邮箱地址；如果账号存在，我们会向你发送重置密码链接。",
+    "forgotSubmit": "发送链接",
+    "forgotSent": "如果该地址已注册账号，你将在几分钟内收到邮件。链接 30 分钟内有效。",
+    "resetTitle": "设置新密码",
+    "resetText": "修改密码后，你在所有设备上的登录都将退出。",
+    "newPassword": "新密码",
+    "confirmPassword": "确认新密码",
+    "mismatch": "两次输入的密码不一致。",
+    "resetSubmit": "修改密码",
+    "resetDone": "密码已修改，现在可以用新密码登录了。",
+    "verifyTitle": "邮箱验证",
+    "verifying": "正在验证你的邮箱…",
+    "verifyDone": "你的邮箱已验证成功，谢谢！",
+    "invalidLink": "此链接无效、已被使用或已过期。你可以申请新的链接。",
+    "requestNew": "申请新链接",
+    "toLogin": "返回登录",
+    "toStudio": "前往工作室",
+    "bannerText": "你还没有验证邮箱。请完成验证，以便日后找回账号。",
+    "bannerResend": "发送验证邮件",
+    "bannerSent": "验证邮件已发送。"
+  },
+  "studio": {
+    "title": "设计工作室",
+    "subtitle": "选择工具，上传照片，确定风格。",
+    "stepTool": "工具",
+    "stepPhoto": "照片",
+    "stepOptions": "设置",
+    "categories": {
+      "interior": "室内",
+      "exterior": "室外",
+      "edit": "编辑"
+    },
+    "upload": "上传照片",
+    "uploadHint": "拖放或选择文件 · JPEG、PNG、WEBP、HEIC · 最大 10 MB",
+    "uploading": "上传中…",
+    "samples": "用示例照片试试",
+    "sampleNames": {
+      "living_room": "客厅",
+      "empty_room": "空房间",
+      "bedroom": "卧室",
+      "exterior": "外立面",
+      "garden": "花园"
+    },
+    "change": "更换",
+    "style": "风格",
+    "room": "房间类型",
+    "floor": "地面",
+    "color": "墙面颜色",
+    "target": "改什么？",
+    "targetPlaceholderDeclutter": "例如：桌上的物品、电线（留空：整体杂物）",
+    "targetPlaceholderReplace": "例如：沙发",
+    "replacement": "换成什么？",
+    "replacementPlaceholder": "例如：绿色天鹅绒切斯特菲尔德沙发",
+    "instructions": "补充要求",
+    "instructionsPlaceholder": "例如：多些绿植、暖色灯光、木质细节",
+    "customPlaceholder": "想改什么？例如：加一个嵌入式书柜，窗帘换成亚麻的",
+    "removeAll": "完全清空房间",
+    "select": {
+      "hint": {
+        "replace": "点按要更换的物体，只有它会改变。",
+        "declutter": "点按要移除的物体。",
+        "paint": "点按要粉刷的墙面，只有这面墙会改变。"
+      },
+      "count": "已选 {n} 个 · 点按其他位置继续添加",
+      "undo": "撤销",
+      "clear": "清除",
+      "notFound": "点按位置未找到物体，请点按物体中央。",
+      "unavailable": "点选功能暂时关闭，你可以输入物体名称来选择。",
+      "max": "最多可选择 8 个物体。",
+      "orType": "你可以在照片中点按物体。如果只输入名称，同类物体都会被更改。",
+      "optional": "选填，例如：靠垫",
+      "imageLabel": "照片：点按以选择物体"
+    },
+    "reference": "参考图片",
+    "referenceHint": "上传一张你喜欢的房间照片，将按照它的风格进行设计。",
+    "variants": "方案数量",
+    "cost": "本次操作将消耗 {n} 次设计",
+    "remaining": "剩余：{free} 次免费 + {credits} 点数",
+    "generate": "开始设计",
+    "generating": "设计中…",
+    "progress": [
+      "正在分析房间结构…",
+      "正在保留光线与透视…",
+      "正在摆放家具…",
+      "正在渲染材质与色彩…",
+      "正在进行最后润色…"
+    ],
+    "elapsed": "{s} 秒",
+    "needPhoto": "请先上传照片或选择示例。",
+    "needTarget": "请在照片中点按物体，或描述要更改的内容。",
+    "needReplacement": "请描述要换成什么。",
+    "needInstructions": "请描述你想要的改动。",
+    "needReference": "请上传一张参考图片。",
+    "proHint": "PRO 功能——服务器会校验你的套餐。",
+    "newDesign": "新设计",
+    "prefilled": "聊天中的建议已导入工作室。确认后点按“开始设计”。"
+  },
+  "result": {
+    "before": "之前",
+    "after": "之后",
+    "variants": "方案",
+    "variantCount": "个方案",
+    "favorite": "加入收藏",
+    "unfavorite": "取消收藏",
+    "download": "下载",
+    "iterate": "基于此结果继续",
+    "askChat": "在聊天中提问",
+    "analyze": "生成购物清单和预算",
+    "analyzing": "分析中…",
+    "failed": "此设计生成失败。",
+    "sliderLabel": "前后对比滑块"
+  },
+  "analysis": {
+    "title": "购物清单和预算",
+    "items": "商品",
+    "renovation": "装修项目",
+    "totals": "预估总预算",
+    "furniture": "家具与装饰",
+    "renovationTotal": "装修",
+    "grand": "总计",
+    "qty": "数量",
+    "palette": "配色方案",
+    "search": "搜索"
+  },
+  "designs": {
+    "title": "我的设计",
+    "empty": "还没有设计。",
+    "emptyCta": "创建你的第一个设计",
+    "deleteConfirm": "要永久删除此设计吗？",
+    "failed": "失败"
+  },
+  "chat": {
+    "title": "AI 设计聊天",
+    "subtitle": "添加房间照片，获取设计灵感。建议仅在你点击后才会应用。",
+    "placeholder": "例如：怎样让这个客厅显得更宽敞？",
+    "send": "发送",
+    "attach": "添加图片",
+    "attachUpload": "上传新照片",
+    "attachRecent": "从最近的设计中选择",
+    "attached": "已添加",
+    "remove": "移除",
+    "thinking": "思考中…",
+    "openInStudio": "在工作室中打开",
+    "starters": [
+      "怎样让我的小客厅显得更宽敞？",
+      "朝北的卧室适合哪些颜色？",
+      "我是租房的，怎样在不做永久改动的情况下翻新厨房？"
+    ],
+    "disclaimer": "AI 可能会出错；请将建议作为灵感参考，重要决定请咨询专业人士。",
+    "empty": "你好！添加一张房间照片并提个问题，就可以开始了。",
+    "limit": "聊天最多保留 20 条消息；较早的消息不会被发送。"
+  },
+  "pricing": {
+    "title": "套餐与价格",
+    "subtitle": "免费套餐每天更新。升级 PRO，解除所有限制。",
+    "free": "免费",
+    "freePrice": "₺0",
+    "freeFeatures": [
+      "每天 3 个设计",
+      "所有基础工具",
+      "前后对比",
+      "AI 聊天"
+    ],
+    "proFeatures": [
+      "每天最多 100 个设计（合理使用）",
+      "所有 PRO 风格与工具",
+      "高分辨率，无水印",
+      "优先生成",
+      "购物清单与 TL 预算"
+    ],
+    "period": {
+      "week": "周",
+      "month": "月",
+      "year": "年"
+    },
+    "perPeriod": "/ {p}",
+    "choose": "选择",
+    "current": "当前套餐",
+    "demoTitle": "演示支付",
+    "demoText": "此 MVP 版本不收取真实费用。点击下方按钮即可为你的账户开通 7 天 PRO。正式上线后，将通过 App Store / Google Play 支付，网页端则通过 iyzico 支付。",
+    "demoButton": "演示：开通 7 天 PRO",
+    "demoDone": "PRO 已开通！",
+    "demoUnavailable": "当前环境已关闭演示升级。",
+    "loginFirst": "请先登录或以访客身份开始。"
+  },
+  "footer": {
+    "product": "产品",
+    "company": "公司",
+    "legal": "法律信息",
+    "about": "关于我们",
+    "contact": "联系我们",
+    "kvkk": "KVKK 隐私告知书",
+    "terms": "使用条款",
+    "privacy": "隐私政策",
+    "rights": "保留所有权利。",
+    "note": "价格和预算估算由人工智能生成，仅供参考。"
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "cta": "返回首页"
+  }
+}

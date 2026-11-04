@@ -55,7 +55,7 @@ export interface BroadcastMailInput {
 
 /** Admin text is plain text: escaped, paragraphs on blank lines, single newlines kept (WEB-01). */
 export function renderBroadcastMail(o: BroadcastMailInput): Mail {
-  const copy = COPY[o.locale === 'en' ? 'en' : 'tr'];
+  const copy = COPY[o.locale === 'tr' ? 'tr' : 'en'];
   const paragraphs = o.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   const bodyHtml =
     paragraphs.map((p) => `<p style="font-size:15px;line-height:1.6;margin:0 0 12px">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('') +

@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "Restyling istantaneo",
+      "description": "Riprogetta la tua stanza nello stile che preferisci"
+    },
+    "furnish": {
+      "name": "Arreda stanza vuota",
+      "description": "Arreda virtualmente un appartamento vuoto"
+    },
+    "declutter": {
+      "name": "Rimuovi oggetti",
+      "description": "Elimina il disordine o svuota la stanza"
+    },
+    "replace": {
+      "name": "Sostituisci",
+      "description": "Sostituisci un oggetto con un altro"
+    },
+    "paint": {
+      "name": "Pittura pareti",
+      "description": "Dipingi le pareti del colore che vuoi"
+    },
+    "flooring": {
+      "name": "Nuovo pavimento",
+      "description": "Prova parquet, marmo o piastrelle"
+    },
+    "exterior": {
+      "name": "Esterni",
+      "description": "Rinnova la facciata di casa tua"
+    },
+    "garden": {
+      "name": "Giardino & terrazza",
+      "description": "Progetta il tuo giardino o la tua terrazza"
+    },
+    "reference": {
+      "name": "Stile di riferimento",
+      "description": "Applica lo stile di una foto che ti piace"
+    },
+    "custom": {
+      "name": "La tua richiesta",
+      "description": "Scrivi cosa vuoi, ci pensa l'AI"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "Soggiorno"
+    },
+    "salon": {
+      "name": "Salotto (ospiti)"
+    },
+    "bedroom": {
+      "name": "Camera da letto"
+    },
+    "kitchen": {
+      "name": "Cucina"
+    },
+    "bathroom": {
+      "name": "Bagno"
+    },
+    "dining_room": {
+      "name": "Sala da pranzo"
+    },
+    "kids_room": {
+      "name": "Cameretta"
+    },
+    "home_office": {
+      "name": "Studio"
+    },
+    "hallway": {
+      "name": "Ingresso"
+    },
+    "balcony": {
+      "name": "Balcone"
+    },
+    "studio": {
+      "name": "Monolocale"
+    },
+    "office": {
+      "name": "Ufficio"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "Parquet di rovere"
+    },
+    "herringbone": {
+      "name": "Parquet a spina di pesce"
+    },
+    "marble": {
+      "name": "Marmo bianco"
+    },
+    "travertine": {
+      "name": "Travertino"
+    },
+    "concrete": {
+      "name": "Cemento lucidato"
+    },
+    "terracotta": {
+      "name": "Cotto"
+    },
+    "ceramic": {
+      "name": "Ceramica opaca"
+    },
+    "carpet": {
+      "name": "Moquette"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "Bianco sporco"
+    },
+    "kum_beji": {
+      "name": "Beige sabbia"
+    },
+    "adacayi": {
+      "name": "Verde salvia"
+    },
+    "zeytin": {
+      "name": "Oliva"
+    },
+    "ege_mavisi": {
+      "name": "Blu Egeo"
+    },
+    "gece_mavisi": {
+      "name": "Blu notte"
+    },
+    "terrakota": {
+      "name": "Terracotta"
+    },
+    "gul_kurusu": {
+      "name": "Rosa antico"
+    },
+    "hardal": {
+      "name": "Senape"
+    },
+    "antrasit": {
+      "name": "Antracite"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "Settimanale"
+    },
+    "pro_monthly": {
+      "name": "Mensile",
+      "badge": "POPOLARE"
+    },
+    "pro_yearly": {
+      "name": "Annuale",
+      "badge": "PIÙ CONVENIENTE"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "Moderno",
+      "description": "Linee pulite, toni neutri, legno caldo"
+    },
+    "modern_turkish": {
+      "name": "Turco moderno",
+      "description": "Travertino, noce, kilim e tocchi di rame"
+    },
+    "japandi": {
+      "name": "Japandi",
+      "description": "Mobili bassi in legno, toni terrosi, semplicità"
+    },
+    "scandinavian": {
+      "name": "Scandinavo",
+      "description": "Rovere chiaro, pareti bianche, lana e lino"
+    },
+    "aegean": {
+      "name": "Egeo",
+      "description": "Bianco calce, blu Egeo, legno d'ulivo"
+    },
+    "minimalist": {
+      "name": "Minimalista",
+      "description": "Poco ma essenziale, arioso e sereno"
+    },
+    "mediterranean": {
+      "name": "Mediterraneo",
+      "description": "Archi, intonaco a calce, terracotta"
+    },
+    "industrial": {
+      "name": "Industriale",
+      "description": "Mattoni, cemento, metallo nero, pelle"
+    },
+    "bohemian": {
+      "name": "Boho",
+      "description": "Rattan, tappeti sovrapposti, tante piante"
+    },
+    "rustic": {
+      "name": "Casale rustico",
+      "description": "Travi in legno, pietra naturale, luce calda"
+    },
+    "coastal": {
+      "name": "Casa al mare",
+      "description": "Sabbia e azzurro cielo, rattan, righe"
+    },
+    "classic_ottoman": {
+      "name": "Ottomano classico",
+      "description": "Noce intagliato, sedir, ceramiche di Iznik, lanterne in ottone"
+    },
+    "cappadocia": {
+      "name": "Casa in pietra della Cappadocia",
+      "description": "Archi in pietra, nicchie, toni terrosi"
+    },
+    "mid_century": {
+      "name": "Mid-Century",
+      "description": "Noce, gambe affusolate, senape e verde petrolio"
+    },
+    "art_deco": {
+      "name": "Art Déco di lusso",
+      "description": "Velluto, ottone, marmo, smeraldo e oro"
+    }
+  }
+}

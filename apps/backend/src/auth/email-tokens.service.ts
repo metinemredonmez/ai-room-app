@@ -62,7 +62,7 @@ export class EmailTokensService {
 
   async sendVerification(user: Pick<User, 'id' | 'email' | 'locale'>) {
     const token = await this.issue(user, 'VERIFY_EMAIL');
-    const en = user.locale === 'en';
+    const en = user.locale !== 'tr'; // mail copy exists in Turkish and English
     await this.mailer.send(
       renderActionMail({
         to: user.email!,
@@ -80,7 +80,7 @@ export class EmailTokensService {
 
   async sendPasswordReset(user: Pick<User, 'id' | 'email' | 'locale'>) {
     const token = await this.issue(user, 'RESET_PASSWORD');
-    const en = user.locale === 'en';
+    const en = user.locale !== 'tr'; // mail copy exists in Turkish and English
     await this.mailer.send(
       renderActionMail({
         to: user.email!,

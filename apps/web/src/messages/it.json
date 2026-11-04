@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "description": "Progettazione di interni, facciate e giardini con l'intelligenza artificiale. Stili turchi e anatolici, stima del budget in TL e lista della spesa dai negozi turchi.",
+    "titles": {
+      "verifyEmail": "Verifica e-mail",
+      "studio": "Studio",
+      "design": "Progetto",
+      "resetPassword": "Nuova password",
+      "pricing": "Prezzi",
+      "login": "Accedi",
+      "designs": "I miei progetti",
+      "unsubscribe": "Annulla iscrizione",
+      "chat": "Chat AI",
+      "forgotPassword": "Password dimenticata"
+    }
+  },
+  "brandTagline": "Riprogetta la tua stanza in pochi secondi",
+  "nav": {
+    "studio": "Studio",
+    "designs": "I miei progetti",
+    "chat": "Chat AI",
+    "pricing": "Prezzi",
+    "login": "Accedi",
+    "logout": "Esci",
+    "tryFree": "Prova gratis",
+    "menu": "Menu",
+    "guest": "Ospite"
+  },
+  "credits": {
+    "pro": "PRO",
+    "pill": "{free} gratis · {credits} crediti",
+    "proUntil": "PRO · fino al {date}"
+  },
+  "common": {
+    "loading": "Caricamento…",
+    "retry": "Riprova",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "delete": "Elimina",
+    "close": "Chiudi",
+    "back": "Indietro",
+    "new": "Nuovo",
+    "pro": "PRO",
+    "or": "oppure",
+    "all": "Tutti",
+    "favorites": "Preferiti",
+    "loadMore": "Mostra altro",
+    "open": "Apri"
+  },
+  "unsubscribe": {
+    "title": "E-mail promozionali",
+    "text": "Se non vuoi più ricevere le e-mail promozionali e le offerte di Casalume, premi il pulsante qui sotto. Continuerai a ricevere le comunicazioni obbligatorie sul tuo account.",
+    "button": "Annulla iscrizione",
+    "done": "Fatto, non riceverai più e-mail promozionali. Se cambi idea, puoi riattivarle dalle autorizzazioni dell'app.",
+    "invalid": "Questo link non è valido o è incompleto. Prova a riaprire il link nell'e-mail.",
+    "home": "Torna alla home"
+  },
+  "errors": {
+    "insufficient_credits": "Hai esaurito i progetti gratuiti di oggi e i tuoi crediti.",
+    "seePlans": "Vedi i piani",
+    "rate_limited": "Troppe richieste. Riprova tra poco.",
+    "rate_limited_seconds": "Troppe richieste. Riprova tra {s} s.",
+    "ai_unavailable": "Il servizio AI non risponde al momento. Riprova tra qualche minuto.",
+    "busy": "Al momento c'è molto traffico. Riprova tra poco.",
+    "payload_too_large": "La foto è troppo grande (max 10 MB).",
+    "unsupported_media_type": "Tipo di file non supportato. Carica un JPEG, PNG, WEBP o HEIC.",
+    "unauthorized": "La sessione è scaduta. Accedi di nuovo.",
+    "forbidden": "Non hai i permessi per questa operazione.",
+    "not_found": "Non abbiamo trovato ciò che cerchi.",
+    "network": "Impossibile connettersi. Controlla la tua connessione internet.",
+    "generic": "Qualcosa è andato storto. Riprova.",
+    "selection_failed": "Nessun oggetto trovato dove hai toccato; tocca il centro dell'oggetto.",
+    "selection_unavailable": "La selezione al tocco non è disponibile al momento; puoi selezionare l'oggetto scrivendone il nome.",
+    "unsupportedFile": "Tipo di file non supportato. Carica un JPEG, PNG, WEBP o HEIC.",
+    "tooLarge": "La foto è troppo grande (max 10 MB)."
+  },
+  "landing": {
+    "badge": "L'interior designer con AI nato in Turchia",
+    "heroTitle": "Riprogetta la tua stanza in pochi secondi.",
+    "heroText": "Carica una foto e scegli uno stile: Casalume riarreda la stanza, ridipinge le pareti e cambia il pavimento. E in più trasforma il progetto che ti piace in una lista della spesa con il budget in lire turche.",
+    "ctaPrimary": "Inizia a progettare",
+    "ctaSecondary": "Come funziona?",
+    "trust": [
+      "Nessuna registrazione",
+      "3 progetti gratis al giorno",
+      "Conforme al KVKK"
+    ],
+    "before": "Prima",
+    "after": "Dopo",
+    "featuresTitle": "Tutto ciò che fa un interior designer, in tasca",
+    "featuresText": "Abbiamo studiato i migliori esempi al mondo e aggiunto ciò che mancava a chi vive in Turchia.",
+    "features": [
+      {
+        "title": "Riprogettazione istantanea",
+        "text": "Trasforma ogni ambiente, dal soggiorno alla cucina, con oltre 15 stili in pochi secondi."
+      },
+      {
+        "title": "Stili turchi e anatolici",
+        "text": "Classico ottomano, turco moderno, Egeo, Cappadocia… Estetica locale, qualità globale."
+      },
+      {
+        "title": "Budget in TL",
+        "text": "Calcola i costi di arredi e lavori del progetto in fasce di prezzo in lire turche."
+      },
+      {
+        "title": "Acquisti nei negozi turchi",
+        "text": "Link di ricerca per ogni pezzo su Trendyol, Hepsiburada e altri negozi."
+      },
+      {
+        "title": "Chat di design AI",
+        "text": "Mostra la tua foto, chiedi, raccogli idee. Applica un suggerimento nello studio con un tocco."
+      },
+      {
+        "title": "Interni, facciate e giardini",
+        "text": "Strumenti per arredare stanze vuote, rimuovere oggetti, pitturare, cambiare pavimenti, facciate e paesaggio."
+      },
+      {
+        "title": "Privacy conforme al KVKK",
+        "text": "I dati di posizione vengono rimossi dalle tue foto e le immagini sono protette da link a scadenza."
+      },
+      {
+        "title": "Confronto prima / dopo",
+        "text": "Scorri per vedere la differenza, passa da una variante all'altra, scarica in alta risoluzione."
+      }
+    ],
+    "howTitle": "La tua nuova casa in tre passi",
+    "how": [
+      {
+        "title": "Carica la tua foto",
+        "text": "Scegli dal telefono una foto di una stanza, di una facciata o di un giardino — oppure prova con una foto di esempio."
+      },
+      {
+        "title": "Scegli strumento e stile",
+        "text": "Riprogetta, arreda, dipingi, cambia il pavimento… Imposta lo stile e il tipo di stanza."
+      },
+      {
+        "title": "Confronta e applica",
+        "text": "Esplora le varianti, guarda la lista della spesa e il budget, salva il tuo progetto."
+      }
+    ],
+    "galleryTitle": "Foto vere, risultati veri",
+    "galleryText": "A sinistra la foto originale, a destra il progetto creato da Casalume. Trascina la maniglia al centro.",
+    "gallery": [
+      {
+        "key": "salon",
+        "title": "Soggiorno",
+        "meta": "Rinnovo istantaneo · Turco moderno"
+      },
+      {
+        "key": "yatak",
+        "title": "Camera da letto",
+        "meta": "Rinnovo istantaneo · Scandinavo"
+      },
+      {
+        "key": "cephe",
+        "title": "Facciata",
+        "meta": "Facciata · Moderno"
+      },
+      {
+        "key": "bahce",
+        "title": "Giardino",
+        "meta": "Giardino e terrazza · Mediterraneo"
+      }
+    ],
+    "aiNote": "Le immagini dei risultati sono generate con l'intelligenza artificiale e contrassegnate come tali.",
+    "toolsTitle": "Dentro e fuori, ogni spazio",
+    "toolsText": "Da una stanza vuota alla terrazza in giardino: scegli lo strumento, al resto pensa Casalume.",
+    "tools": [
+      {
+        "key": "hero",
+        "tool": "furnish",
+        "name": "Arreda una stanza vuota",
+        "text": "Aggiungi mobili, tappeti e decorazioni a una stanza vuota."
+      },
+      {
+        "key": "salon",
+        "tool": "redesign",
+        "name": "Rinnovo istantaneo",
+        "text": "Trasforma la tua stanza in uno di 15 stili in pochi secondi."
+      },
+      {
+        "key": "cephe",
+        "tool": "exterior",
+        "name": "Facciata",
+        "text": "Nuovi materiali e colori per l'esterno della tua casa."
+      },
+      {
+        "key": "bahce",
+        "tool": "garden",
+        "name": "Giardino e terrazza",
+        "text": "Un nuovo giardino con piante, pavimentazione e zona relax."
+      }
+    ],
+    "moreTools": "E inoltre: pittura pareti, nuovo pavimento, rimozione e sostituzione oggetti, stile di riferimento e la tua ricetta personale.",
+    "proBadge": "Per i professionisti",
+    "proTitle": "Anche per architetti e interior designer",
+    "proText": "Mostra al tuo cliente diverse opzioni di stile in pochi minuti già al primo incontro e rendi la conversazione concreta con lista materiali e budget in TL.",
+    "proPoints": [
+      "Quattro varianti dalla stessa foto (PRO)",
+      "Lista materiali e stima del budget in TL",
+      "Alta risoluzione senza filigrana (PRO)",
+      "Presto: cartelle di progetto e condivisione con i clienti"
+    ],
+    "stylesTitle": "Trova lo stile giusto per te",
+    "stylesText": "Tocca uno stile e lo studio si aprirà con quello.",
+    "pricingTitle": "Piani flessibili",
+    "pricingText": "Inizia gratis; per avere di più passa a PRO settimanale, mensile o annuale.",
+    "faqTitle": "Domande frequenti",
+    "faq": [
+      {
+        "q": "Le mie foto sono al sicuro?",
+        "a": "Le foto che carichi vengono ricodificate e tutti i dati EXIF, compresa la posizione (GPS), vengono eliminati. Le immagini sono accessibili solo tramite link firmati a scadenza e, se elimini il tuo account, tutti i tuoi progetti vengono cancellati."
+      },
+      {
+        "q": "Posso usarla senza registrarmi?",
+        "a": "Sì. Puoi iniziare subito come ospite; per non perdere i tuoi progetti, ti basta creare un account con la tua e-mail in un secondo momento."
+      },
+      {
+        "q": "Quanto sono precise le stime del budget?",
+        "a": "I prezzi sono fasce indicative stimate dall'intelligenza artificiale per il mercato turco. Ti consigliamo di verificare i prezzi nei negozi prima di acquistare."
+      },
+      {
+        "q": "Le pareti e le finestre della mia stanza cambieranno?",
+        "a": "No. Casalume mantiene la geometria della stanza, le finestre e l'angolazione della foto, e cambia solo arredamento, mobili e superfici."
+      },
+      {
+        "q": "Come disdico l'abbonamento PRO?",
+        "a": "Puoi disdirlo quando vuoi: su mobile dalle impostazioni degli abbonamenti di App Store / Google Play, sul web dalla pagina del tuo account."
+      }
+    ],
+    "finalTitle": "La stanza dei tuoi sogni è a una foto di distanza.",
+    "finalCta": "Progetta gratis"
+  },
+  "auth": {
+    "title": "Benvenuto su Casalume",
+    "subtitle": "Accedi per salvare i tuoi progetti e ritrovarli su qualsiasi dispositivo.",
+    "loginTab": "Accedi",
+    "registerTab": "Registrati",
+    "email": "E-mail",
+    "password": "Password",
+    "passwordHint": "Almeno 10 caratteri",
+    "name": "Il tuo nome (facoltativo)",
+    "submitLogin": "Accedi",
+    "submitRegister": "Crea account",
+    "guest": "Prova come ospite",
+    "guestNote": "Quando ti registri, i progetti creati come ospite passano al tuo account.",
+    "upgradeNote": "Al momento sei un ospite. Se ti registri, i tuoi progetti attuali passano al tuo account.",
+    "kvkk": "Continuando accetti i Termini d'uso e l'Informativa sulla privacy KVKK.",
+    "invalid": "E-mail o password errate.",
+    "tooShort": "La password deve avere almeno 10 caratteri.",
+    "forgotLink": "Password dimenticata?"
+  },
+  "account": {
+    "forgotTitle": "Hai dimenticato la password?",
+    "forgotText": "Inserisci il tuo indirizzo e-mail: se hai un account, ti invieremo un link per reimpostare la password.",
+    "forgotSubmit": "Invia link",
+    "forgotSent": "Se esiste un account registrato con questo indirizzo, riceverai un'e-mail entro pochi minuti. Il link è valido per 30 minuti.",
+    "resetTitle": "Imposta una nuova password",
+    "resetText": "Cambiando la password verrai disconnesso da tutti i dispositivi.",
+    "newPassword": "Nuova password",
+    "confirmPassword": "Nuova password (di nuovo)",
+    "mismatch": "Le password non coincidono.",
+    "resetSubmit": "Cambia password",
+    "resetDone": "La tua password è stata cambiata. Ora puoi accedere con quella nuova.",
+    "verifyTitle": "Verifica e-mail",
+    "verifying": "Stiamo verificando il tuo indirizzo e-mail…",
+    "verifyDone": "Il tuo indirizzo e-mail è stato verificato. Grazie!",
+    "invalidLink": "Questo link non è valido, è già stato usato o è scaduto. Puoi richiederne uno nuovo.",
+    "requestNew": "Richiedi un nuovo link",
+    "toLogin": "Torna all'accesso",
+    "toStudio": "Vai allo studio",
+    "bannerText": "Non hai ancora verificato il tuo indirizzo e-mail. Verificalo per poter recuperare il tuo account.",
+    "bannerResend": "Invia e-mail di verifica",
+    "bannerSent": "E-mail di verifica inviata."
+  },
+  "studio": {
+    "title": "Studio di design",
+    "subtitle": "Scegli uno strumento, carica una foto, definisci il tuo stile.",
+    "stepTool": "Strumento",
+    "stepPhoto": "Foto",
+    "stepOptions": "Impostazioni",
+    "categories": {
+      "interior": "Interni",
+      "exterior": "Esterni",
+      "edit": "Modifica"
+    },
+    "upload": "Carica foto",
+    "uploadHint": "Trascina qui o sfoglia · JPEG, PNG, WEBP, HEIC · max 10 MB",
+    "uploading": "Caricamento…",
+    "samples": "Prova con una foto di esempio",
+    "sampleNames": {
+      "living_room": "Soggiorno",
+      "empty_room": "Stanza vuota",
+      "bedroom": "Camera da letto",
+      "exterior": "Facciata",
+      "garden": "Giardino"
+    },
+    "change": "Cambia",
+    "style": "Stile",
+    "room": "Tipo di stanza",
+    "floor": "Pavimento",
+    "color": "Colore delle pareti",
+    "target": "Cosa?",
+    "targetPlaceholderDeclutter": "es. oggetti sul tavolo, cavi (vuoto: disordine generale)",
+    "targetPlaceholderReplace": "es. divano",
+    "replacement": "Con cosa?",
+    "replacementPlaceholder": "es. divano chesterfield in velluto verde",
+    "instructions": "Richiesta extra",
+    "instructionsPlaceholder": "es. più piante, luce calda, dettagli in legno",
+    "customPlaceholder": "Cosa vuoi cambiare? es. aggiungi una libreria a muro, tende di lino",
+    "removeAll": "Svuota completamente la stanza",
+    "select": {
+      "hint": {
+        "replace": "Tocca l'oggetto che vuoi cambiare; cambierà solo quello.",
+        "declutter": "Tocca l'oggetto che vuoi eliminare.",
+        "paint": "Tocca la parete che vuoi dipingere; verrà dipinta solo quella."
+      },
+      "count": "{n} selezionati · tocca altrove per aggiungerne altri",
+      "undo": "Annulla",
+      "clear": "Cancella",
+      "notFound": "Nessun oggetto trovato dove hai toccato; tocca il centro dell'oggetto.",
+      "unavailable": "La selezione al tocco ora non è disponibile; puoi scrivere il nome dell'oggetto.",
+      "max": "Puoi selezionare al massimo 8 oggetti.",
+      "orType": "Puoi toccare l'oggetto nella foto. Se scrivi solo il nome, cambieranno tutti gli oggetti di quel tipo.",
+      "optional": "facoltativo, es. cuscino",
+      "imageLabel": "Foto: tocca per selezionare un oggetto"
+    },
+    "reference": "Immagine di riferimento",
+    "referenceHint": "Carica la foto di una stanza che ti piace; ne verrà applicato lo stile.",
+    "variants": "Numero di varianti",
+    "cost": "Questa operazione usa {n} design",
+    "remaining": "Rimasti: {free} gratuiti + {credits} crediti",
+    "generate": "Progetta",
+    "generating": "Progettazione in corso…",
+    "progress": [
+      "Analisi della geometria della stanza…",
+      "Preserviamo luce e prospettiva…",
+      "Disposizione dei mobili…",
+      "Elaborazione di texture e colori…",
+      "Ultimi ritocchi…"
+    ],
+    "elapsed": "{s} s",
+    "needPhoto": "Prima carica una foto o scegli un esempio.",
+    "needTarget": "Tocca l'oggetto nella foto o scrivi cosa deve cambiare.",
+    "needReplacement": "Scrivi cosa deve sostituirlo.",
+    "needInstructions": "Scrivi cosa vuoi cambiare.",
+    "needReference": "Carica un'immagine di riferimento.",
+    "proHint": "Funzione PRO — il server verifica il tuo piano.",
+    "newDesign": "Nuovo design",
+    "prefilled": "Il suggerimento della chat è stato caricato nello studio. Controllalo e premi “Progetta”."
+  },
+  "result": {
+    "before": "Prima",
+    "after": "Dopo",
+    "variants": "Varianti",
+    "variantCount": "varianti",
+    "favorite": "Aggiungi ai preferiti",
+    "unfavorite": "Rimuovi dai preferiti",
+    "download": "Scarica",
+    "iterate": "Continua da questo risultato",
+    "askChat": "Chiedi in chat",
+    "analyze": "Crea lista della spesa e budget",
+    "analyzing": "Analisi in corso…",
+    "failed": "Non è stato possibile generare questo design.",
+    "sliderLabel": "Cursore di confronto prima/dopo"
+  },
+  "analysis": {
+    "title": "Lista della spesa e budget",
+    "items": "Prodotti",
+    "renovation": "Voci di ristrutturazione",
+    "totals": "Budget totale stimato",
+    "furniture": "Arredi e decorazioni",
+    "renovationTotal": "Ristrutturazione",
+    "grand": "Totale complessivo",
+    "qty": "Qtà",
+    "palette": "Palette di colori",
+    "search": "Cerca"
+  },
+  "designs": {
+    "title": "I miei progetti",
+    "empty": "Non hai ancora nessun progetto.",
+    "emptyCta": "Crea il tuo primo progetto",
+    "deleteConfirm": "Eliminare definitivamente questo progetto?",
+    "failed": "Non riuscito"
+  },
+  "chat": {
+    "title": "Chat di design AI",
+    "subtitle": "Aggiungi una foto della tua stanza e chiedi idee. I suggerimenti vengono applicati solo quando li tocchi.",
+    "placeholder": "es. Come posso rendere questo soggiorno più arioso?",
+    "send": "Invia",
+    "attach": "Allega immagine",
+    "attachUpload": "Carica una nuova foto",
+    "attachRecent": "Scegli tra i progetti recenti",
+    "attached": "Allegata",
+    "remove": "Rimuovi",
+    "thinking": "Sto pensando…",
+    "openInStudio": "Apri nello studio",
+    "starters": [
+      "Come posso rendere più arioso il mio piccolo soggiorno?",
+      "Quali colori consigli per una camera da letto esposta a nord?",
+      "Sono in affitto: come posso rinnovare la cucina senza modifiche permanenti?"
+    ],
+    "disclaimer": "L'AI può sbagliare: usa i suggerimenti come ispirazione e per le decisioni importanti rivolgiti a un professionista.",
+    "empty": "Ciao! Inizia aggiungendo una foto della tua stanza e facendo una domanda.",
+    "limit": "La chat conserva al massimo 20 messaggi; quelli più vecchi non vengono inviati né riassunti."
+  },
+  "pricing": {
+    "title": "Piani e prezzi",
+    "subtitle": "Il piano gratuito si rinnova ogni giorno. Passa a PRO per eliminare i limiti.",
+    "free": "Gratis",
+    "freePrice": "₺0",
+    "freeFeatures": [
+      "3 progetti al giorno",
+      "Tutti gli strumenti di base",
+      "Confronto prima/dopo",
+      "Chat AI"
+    ],
+    "proFeatures": [
+      "Fino a 100 progetti al giorno (uso corretto)",
+      "Tutti gli stili e gli strumenti PRO",
+      "Alta risoluzione senza filigrana",
+      "Generazione prioritaria",
+      "Lista della spesa e budget in TL"
+    ],
+    "period": {
+      "week": "settimana",
+      "month": "mese",
+      "year": "anno"
+    },
+    "perPeriod": "/ {p}",
+    "choose": "Scegli",
+    "current": "Il tuo piano attuale",
+    "demoTitle": "Pagamento demo",
+    "demoText": "In questo MVP non viene effettuato alcun pagamento reale. Il pulsante qui sotto attiva 7 giorni di PRO sul tuo account. Nella versione definitiva i pagamenti avverranno tramite App Store / Google Play e, sul web, con iyzico.",
+    "demoButton": "Demo: attiva 7 giorni di PRO",
+    "demoDone": "PRO attivato!",
+    "demoUnavailable": "L'upgrade demo è disattivato in questo ambiente.",
+    "loginFirst": "Prima accedi o inizia come ospite."
+  },
+  "footer": {
+    "product": "Prodotto",
+    "company": "Azienda",
+    "legal": "Note legali",
+    "about": "Chi siamo",
+    "contact": "Contatti",
+    "kvkk": "Informativa KVKK",
+    "terms": "Condizioni d'uso",
+    "privacy": "Informativa sulla privacy",
+    "rights": "Tutti i diritti riservati.",
+    "note": "Le stime di prezzi e budget sono generate dall'intelligenza artificiale e hanno solo scopo informativo."
+  },
+  "notFound": {
+    "title": "Pagina non trovata",
+    "cta": "Torna alla home"
+  }
+}

@@ -11,6 +11,7 @@ import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
 import { LegalService } from '../kvkk/legal.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
+import { localize } from './catalog.i18n.js';
 
 // Curated style photos (assets/styles/<id>.jpg): the sample living room redesigned in that style with the
 // production image model. src/catalog and dist/catalog both resolve to apps/backend/assets. Bump the version
@@ -44,7 +45,7 @@ export class CatalogService {
   }
 
   styleName(s: Style, locale: Locale) {
-    return locale === 'en' ? s.nameEn : s.nameTr;
+    return localize(locale, `styles.${s.id}.name`, { tr: s.nameTr, en: s.nameEn });
   }
 
   previewUrl(id: string) {
@@ -56,20 +57,20 @@ export class CatalogService {
     return {
       tools: TOOL_IDS.map((id) => {
         const t = TOOLS[id];
-        return { id, name: t.name[locale], description: t.description[locale], icon: t.icon, category: t.category, isPro: t.isPro, isNew: t.isNew, needs: t.needs };
+        return { id, name: localize(locale, `tools.${id}.name`, t.name), description: localize(locale, `tools.${id}.description`, t.description), icon: t.icon, category: t.category, isPro: t.isPro, isNew: t.isNew, needs: t.needs };
       }),
       styles: styles.map((s) => ({
         id: s.id,
         name: this.styleName(s, locale),
-        description: locale === 'en' ? s.descriptionEn : s.descriptionTr,
+        description: localize(locale, `styles.${s.id}.description`, { tr: s.descriptionTr, en: s.descriptionEn }),
         palette: s.palette,
         isPro: s.isPro,
         previewUrl: this.previewUrl(s.id),
       })),
-      rooms: Object.entries(ROOMS).map(([id, r]) => ({ id, name: r.name[locale], icon: r.icon })),
-      floors: Object.entries(FLOORS).map(([id, f]) => ({ id, name: f.name[locale] })),
-      colors: COLORS.map((c) => ({ id: c.id, name: c.name[locale], hex: c.hex })),
-      plans: PLANS.map((p) => ({ id: p.id, name: p.name[locale], period: p.period, priceTRY: p.priceTRY, badge: p.badge?.[locale] ?? null, storeProductId: p.storeProductId })),
+      rooms: Object.entries(ROOMS).map(([id, r]) => ({ id, name: localize(locale, `rooms.${id}.name`, r.name), icon: r.icon })),
+      floors: Object.entries(FLOORS).map(([id, f]) => ({ id, name: localize(locale, `floors.${id}.name`, f.name) })),
+      colors: COLORS.map((c) => ({ id: c.id, name: localize(locale, `colors.${c.id}.name`, c.name), hex: c.hex })),
+      plans: PLANS.map((p) => ({ id: p.id, name: localize(locale, `plans.${p.id}.name`, p.name), period: p.period, priceTRY: p.priceTRY, badge: p.badge ? localize(locale, `plans.${p.id}.badge`, p.badge) : null, storeProductId: p.storeProductId })),
       creditPacks: this.cfg.CREDIT_PACKS.split(',').map((x) => x.trim().split(':')).filter(([id, n]) => id && Number(n) > 0).map(([productId, n]) => ({ productId, credits: Math.trunc(Number(n)) })),
       ...this.notices(locale),
       legal: {
@@ -81,7 +82,7 @@ export class CatalogService {
 
   private notices(locale: Locale) {
     const { announcement, maintenance } = this.settings.current;
-    const en = locale === 'en';
+    const en = locale !== 'tr'; // admin texts are Turkish and English; other languages read the English one
     return {
       announcement: announcement.enabled ? (en ? announcement.textEn || announcement.textTr : announcement.textTr) || null : null,
       maintenance: { enabled: maintenance.enabled, message: maintenance.enabled ? (en ? maintenance.messageEn : maintenance.messageTr) : '' },

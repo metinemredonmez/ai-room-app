@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "すぐにリデザイン",
+      "description": "お好みのスタイルでお部屋を一新します"
+    },
+    "furnish": {
+      "name": "空き部屋に家具を配置",
+      "description": "空室にバーチャルで家具を配置します"
+    },
+    "declutter": {
+      "name": "オブジェクト削除",
+      "description": "散らかった物やすべての家具を取り除きます"
+    },
+    "replace": {
+      "name": "置き換え",
+      "description": "アイテムを別のものに置き換えます"
+    },
+    "paint": {
+      "name": "壁の塗装",
+      "description": "壁をお好きな色に塗り替えます"
+    },
+    "flooring": {
+      "name": "新しい床材",
+      "description": "フローリング、大理石、タイルをお試しください"
+    },
+    "exterior": {
+      "name": "外観",
+      "description": "お家の外観を一新します"
+    },
+    "garden": {
+      "name": "庭&テラス",
+      "description": "庭やテラスをデザインします"
+    },
+    "reference": {
+      "name": "参考スタイル",
+      "description": "お気に入りの写真のスタイルを適用します"
+    },
+    "custom": {
+      "name": "自由に指示",
+      "description": "ご希望を入力すると、AIが反映します"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "リビング"
+    },
+    "salon": {
+      "name": "応接間"
+    },
+    "bedroom": {
+      "name": "寝室"
+    },
+    "kitchen": {
+      "name": "キッチン"
+    },
+    "bathroom": {
+      "name": "バスルーム"
+    },
+    "dining_room": {
+      "name": "ダイニング"
+    },
+    "kids_room": {
+      "name": "子ども部屋"
+    },
+    "home_office": {
+      "name": "書斎"
+    },
+    "hallway": {
+      "name": "玄関ホール"
+    },
+    "balcony": {
+      "name": "バルコニー"
+    },
+    "studio": {
+      "name": "ワンルーム"
+    },
+    "office": {
+      "name": "オフィス"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "オークフローリング"
+    },
+    "herringbone": {
+      "name": "ヘリンボーン"
+    },
+    "marble": {
+      "name": "白大理石"
+    },
+    "travertine": {
+      "name": "トラバーチン"
+    },
+    "concrete": {
+      "name": "磨きコンクリート"
+    },
+    "terracotta": {
+      "name": "テラコッタ"
+    },
+    "ceramic": {
+      "name": "マットタイル"
+    },
+    "carpet": {
+      "name": "カーペット"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "オフホワイト"
+    },
+    "kum_beji": {
+      "name": "サンドベージュ"
+    },
+    "adacayi": {
+      "name": "セージグリーン"
+    },
+    "zeytin": {
+      "name": "オリーブ"
+    },
+    "ege_mavisi": {
+      "name": "エーゲブルー"
+    },
+    "gece_mavisi": {
+      "name": "ミッドナイトブルー"
+    },
+    "terrakota": {
+      "name": "テラコッタ"
+    },
+    "gul_kurusu": {
+      "name": "ダスティローズ"
+    },
+    "hardal": {
+      "name": "マスタード"
+    },
+    "antrasit": {
+      "name": "アンスラサイト"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "週間プラン"
+    },
+    "pro_monthly": {
+      "name": "月間プラン",
+      "badge": "人気"
+    },
+    "pro_yearly": {
+      "name": "年間プラン",
+      "badge": "いちばんお得"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "モダン",
+      "description": "すっきりしたライン、ニュートラルカラー、温かみのある木"
+    },
+    "modern_turkish": {
+      "name": "モダントルコ",
+      "description": "トラバーチン、ウォルナット、キリム、銅のアクセント"
+    },
+    "japandi": {
+      "name": "ジャパンディ",
+      "description": "低めの木製家具、アースカラー、シンプルさ"
+    },
+    "scandinavian": {
+      "name": "北欧",
+      "description": "ライトオーク、白い壁、ウールとリネン"
+    },
+    "aegean": {
+      "name": "エーゲ海",
+      "description": "白い漆喰、エーゲブルー、オリーブ材"
+    },
+    "minimalist": {
+      "name": "ミニマリスト",
+      "description": "必要なものだけで、広々と穏やかに"
+    },
+    "mediterranean": {
+      "name": "地中海",
+      "description": "アーチ、石灰漆喰、テラコッタ"
+    },
+    "industrial": {
+      "name": "インダストリアル",
+      "description": "レンガ、コンクリート、黒い金属、レザー"
+    },
+    "bohemian": {
+      "name": "ボヘミアン",
+      "description": "ラタン、重ねたラグ、たくさんの植物"
+    },
+    "rustic": {
+      "name": "ラスティック・ファームハウス",
+      "description": "木の梁、自然石、温かな光"
+    },
+    "coastal": {
+      "name": "コースタル",
+      "description": "砂色と空色、ラタン、ストライプ"
+    },
+    "classic_ottoman": {
+      "name": "オスマン・クラシック",
+      "description": "彫刻入りウォルナット、セディル、イズニックタイル、真鍮ランタン"
+    },
+    "cappadocia": {
+      "name": "カッパドキアの石の家",
+      "description": "石のアーチ、ニッチ、アースカラー"
+    },
+    "mid_century": {
+      "name": "ミッドセンチュリー",
+      "description": "ウォルナット、テーパード脚、マスタードとティール"
+    },
+    "art_deco": {
+      "name": "アールデコ・ラグジュアリー",
+      "description": "ベルベット、真鍮、大理石、エメラルドとゴールド"
+    }
+  }
+}

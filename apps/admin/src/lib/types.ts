@@ -25,7 +25,7 @@ export type User = {
   planExpiresAt: string | null;
   credits: number;
   dailyFreeRemaining: number;
-  locale: "tr" | "en";
+  locale: Locale;
   createdAt: string;
 };
 
@@ -225,13 +225,21 @@ export type DataRequestDetail = DataRequest & {
 };
 
 // --- Toplu Gönderim (API.md §7.16) ---
+/** Web and app languages (API.md §7.17). */
+export const LOCALES = ["tr", "en", "de", "es", "fr", "it", "ru", "nl", "ja", "ko", "zh"] as const;
+export type Locale = (typeof LOCALES)[number];
+export const LOCALE_LABELS: Record<Locale, string> = {
+  tr: "Türkçe", en: "İngilizce", de: "Almanca", es: "İspanyolca", fr: "Fransızca", it: "İtalyanca",
+  ru: "Rusça", nl: "Felemenkçe", ja: "Japonca", ko: "Korece", zh: "Çince",
+};
+
 export type BroadcastKind = "SERVICE" | "MARKETING";
 export type BroadcastChannel = "PUSH" | "EMAIL";
 export type BroadcastStatus = "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED" | "FAILED";
 export type BroadcastAudience = {
   plan?: "FREE" | "PRO";
   platform?: "ios" | "android";
-  locale?: "tr" | "en";
+  locale?: Locale;
   accounts?: "all" | "registered" | "guests";
   inactiveDays?: number;
   activeDays?: number;

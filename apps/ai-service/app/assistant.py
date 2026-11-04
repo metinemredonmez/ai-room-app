@@ -109,7 +109,15 @@ ANALYZE_SCHEMA = {
     },
 }
 
-LANG = {"tr": "Turkish", "en": "English"}
+LANG = {
+    "tr": "Turkish", "en": "English", "de": "German", "es": "Spanish", "fr": "French", "it": "Italian",
+    "ru": "Russian", "nl": "Dutch", "ja": "Japanese", "ko": "Korean", "zh": "Simplified Chinese",
+}
+
+
+def demo_locale(locale: str) -> str:
+    """Keyless demo answers exist in Turkish and English; every other language gets the English one."""
+    return locale if locale in ("tr", "en") else "en"
 
 
 def palette_of(image: bytes, n: int = 5) -> list[str]:
@@ -311,9 +319,9 @@ def mock_chat(req: ChatRequest) -> ChatResponse:
     styles = {s.id for s in req.catalog.styles}
     for words, tool, style, room, reply in _KEYWORDS:
         if any(w in text for w in words):
-            sugg = Suggestion(label={"tr": "Bunu görselleştir", "en": "Visualise this"}[req.locale],
+            sugg = Suggestion(label={"tr": "Bunu görselleştir", "en": "Visualise this"}[demo_locale(req.locale)],
                               tool=tool, style_id=style if style in styles else None, room_id=room)
-            return ChatResponse(reply=f"[Demo] {reply[req.locale]}", suggestions=[sugg])
+            return ChatResponse(reply=f"[Demo] {reply[demo_locale(req.locale)]}", suggestions=[sugg])
     names = {s.id: s.name for s in req.catalog.styles}
     picks = [s for s in ("japandi", "modern_turkish", "scandinavian") if s in styles] or list(styles)[:3]
     reply = {
@@ -323,7 +331,7 @@ def mock_chat(req: ChatRequest) -> ChatResponse:
         "en": ("[Demo] Three directions for your room: calm Japandi, warm Modern Turkish or airy Scandinavian. "
                "Use light textiles and mirrors to boost daylight; float furniture off the walls and anchor it "
                "with a rug to make the space feel organised."),
-    }[req.locale]
+    }[demo_locale(req.locale)]
     suggestions = [Suggestion(label=names.get(sid, sid), tool="redesign", style_id=sid) for sid in picks]
     return ChatResponse(reply=reply, suggestions=suggestions)
 

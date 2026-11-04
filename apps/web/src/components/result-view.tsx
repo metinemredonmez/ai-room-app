@@ -15,7 +15,7 @@ import { ToolIcon } from "./icons";
 import { btn } from "./ui";
 
 export function ResultView({ design, onChange }: { design: Design; onChange?: (d: Design) => void }) {
-  const { t, locale, catalog } = useApp();
+  const { t, locale, catalog, href } = useApp();
   const router = useRouter();
   const [selected, setSelected] = useState(0);
   const [analyses, setAnalyses] = useState<Record<string, Analysis>>({});
@@ -61,13 +61,13 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
       roomId: design.roomId ?? undefined,
       image: result,
     });
-    router.push("/studio");
+    router.push(href("/studio"));
   }
 
   function askChat() {
     if (!result) return;
     setChatPrefill({ image: result });
-    router.push("/sohbet");
+    router.push(href("/sohbet"));
   }
 
   if (design.status === "FAILED" || !result) {

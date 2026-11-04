@@ -11,13 +11,15 @@ import { Doc } from '../common/openapi.js';
 import { isUuid } from '../images/images.service.js';
 import { UsersService } from '../users/users.service.js';
 import { DATA_REQUEST_CHANNELS, DATA_REQUEST_TYPES, DataRequestsService } from './data-requests.service.js';
+import { LOCALES, contentLocale } from '../catalog/catalog.data.js';
 import { LEGAL_KINDS, LEGAL_LOCALES, LEGAL_VERSION_RE } from './legal.js';
 import { LegalService } from './legal.service.js';
 
 const Kind = z.enum(LEGAL_KINDS);
 const Locale = z.enum(LEGAL_LOCALES);
 const Version = z.string().regex(LEGAL_VERSION_RE, 'YYYY-MM-DD ya da YYYY-MM-DD.n');
-const LegalQuery = z.object({ locale: Locale.default('tr'), version: Version.optional() }).strict();
+// Legal texts are written in Turkish and English only (a lawyer signs them off); other app languages read English.
+const LegalQuery = z.object({ locale: z.enum(LOCALES).default('tr').transform(contentLocale), version: Version.optional() }).strict();
 const Details = z.string().trim().min(10).max(2000);
 
 const CreateRequest = z.object({ type: z.enum(DATA_REQUEST_TYPES), details: Details }).strict();
@@ -57,13 +59,13 @@ export class LegalController {
   constructor(private legal: LegalService) {}
 
   @Get()
-  @Doc('Yasal metinler: tür başına güncel sürüm ve onay gerektiren son sürüm', { description: '`?locale=tr|en`' })
+  @Doc('Yasal metinler: tür başına güncel sürüm ve onay gerektiren son sürüm', { description: '`?locale=` 11 dilden biri; Türkçe dışındakiler İngilizce metni alır' })
   index(@Query('locale') locale?: string) {
-    return { items: this.legal.index(locale === 'en' ? 'en' : 'tr') };
+    return { items: this.legal.index(locale && locale !== 'tr' ? 'en' : 'tr') };
   }
 
   @Get(':kind')
-  @Doc('Yasal metin (Markdown). Eski bir sürüm `?version=` ile okunabilir; çevirisi yoksa Türkçe döner', { description: '`?locale=tr|en&version=YYYY-MM-DD`', errors: [400, 404] })
+  @Doc('Yasal metin (Markdown). Eski bir sürüm `?version=` ile okunabilir; çevirisi yoksa Türkçe döner', { description: '`?locale=` (Türkçe dışındakiler İngilizce metni alır) `&version=YYYY-MM-DD`', errors: [400, 404] })
   async document(@Param('kind') kind: string, @Query() query: unknown) {
     const k = Kind.safeParse(kind);
     if (!k.success) throw notFound();

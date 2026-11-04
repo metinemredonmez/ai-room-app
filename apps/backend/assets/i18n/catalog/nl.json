@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "Direct restylen",
+      "description": "Geef je kamer een nieuwe look in de stijl die jij kiest"
+    },
+    "furnish": {
+      "name": "Lege kamer inrichten",
+      "description": "Richt een lege woning virtueel in"
+    },
+    "declutter": {
+      "name": "Objecten wissen",
+      "description": "Haal rommel of alle spullen weg"
+    },
+    "replace": {
+      "name": "Vervangen",
+      "description": "Vervang een item door iets anders"
+    },
+    "paint": {
+      "name": "Muurverf",
+      "description": "Verf je muren in elke kleur die je wilt"
+    },
+    "flooring": {
+      "name": "Nieuwe vloer",
+      "description": "Probeer parket, marmer of tegels"
+    },
+    "exterior": {
+      "name": "Gevel",
+      "description": "Geef de gevel van je huis een update"
+    },
+    "garden": {
+      "name": "Tuin & terras",
+      "description": "Richt je tuin of terras opnieuw in"
+    },
+    "reference": {
+      "name": "Referentiestijl",
+      "description": "Pas de stijl toe van een foto die je mooi vindt"
+    },
+    "custom": {
+      "name": "Eigen omschrijving",
+      "description": "Schrijf wat je wilt, de AI doet de rest"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "Woonkamer"
+    },
+    "salon": {
+      "name": "Salon (voor gasten)"
+    },
+    "bedroom": {
+      "name": "Slaapkamer"
+    },
+    "kitchen": {
+      "name": "Keuken"
+    },
+    "bathroom": {
+      "name": "Badkamer"
+    },
+    "dining_room": {
+      "name": "Eetkamer"
+    },
+    "kids_room": {
+      "name": "Kinderkamer"
+    },
+    "home_office": {
+      "name": "Werkkamer"
+    },
+    "hallway": {
+      "name": "Hal"
+    },
+    "balcony": {
+      "name": "Balkon"
+    },
+    "studio": {
+      "name": "Studio"
+    },
+    "office": {
+      "name": "Kantoor"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "Eiken parket"
+    },
+    "herringbone": {
+      "name": "Visgraatparket"
+    },
+    "marble": {
+      "name": "Wit marmer"
+    },
+    "travertine": {
+      "name": "Travertin"
+    },
+    "concrete": {
+      "name": "Gepolijst beton"
+    },
+    "terracotta": {
+      "name": "Terracotta"
+    },
+    "ceramic": {
+      "name": "Matte keramiek"
+    },
+    "carpet": {
+      "name": "Vloerbedekking"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "Gebroken wit"
+    },
+    "kum_beji": {
+      "name": "Zandbeige"
+    },
+    "adacayi": {
+      "name": "Saliegroen"
+    },
+    "zeytin": {
+      "name": "Olijf"
+    },
+    "ege_mavisi": {
+      "name": "Egeïsch blauw"
+    },
+    "gece_mavisi": {
+      "name": "Nachtblauw"
+    },
+    "terrakota": {
+      "name": "Terracotta"
+    },
+    "gul_kurusu": {
+      "name": "Oudroze"
+    },
+    "hardal": {
+      "name": "Mosterd"
+    },
+    "antrasit": {
+      "name": "Antraciet"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "Wekelijks"
+    },
+    "pro_monthly": {
+      "name": "Maandelijks",
+      "badge": "POPULAIR"
+    },
+    "pro_yearly": {
+      "name": "Jaarlijks",
+      "badge": "VOORDELIGST"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "Modern",
+      "description": "Strakke lijnen, neutrale tinten, warm hout"
+    },
+    "modern_turkish": {
+      "name": "Modern Turks",
+      "description": "Travertin, notenhout, kelim en koperen accenten"
+    },
+    "japandi": {
+      "name": "Japandi",
+      "description": "Lage houten meubels, aardetinten, eenvoud"
+    },
+    "scandinavian": {
+      "name": "Scandinavisch",
+      "description": "Licht eiken, witte muren, wol en linnen"
+    },
+    "aegean": {
+      "name": "Egeïsch",
+      "description": "Kalkwit, Egeïsch blauw, olijfhout"
+    },
+    "minimalist": {
+      "name": "Minimalistisch",
+      "description": "Weinig maar doordacht, ruim en rustig"
+    },
+    "mediterranean": {
+      "name": "Mediterraan",
+      "description": "Bogen, kalkpleister, terracotta"
+    },
+    "industrial": {
+      "name": "Industrieel",
+      "description": "Baksteen, beton, zwart metaal, leer"
+    },
+    "bohemian": {
+      "name": "Boho",
+      "description": "Rotan, gelaagde kleden, veel planten"
+    },
+    "rustic": {
+      "name": "Rustieke boerderij",
+      "description": "Houten balken, natuursteen, warm licht"
+    },
+    "coastal": {
+      "name": "Kust / strandhuis",
+      "description": "Zand- en hemelsblauw, rotan, streepjes"
+    },
+    "classic_ottoman": {
+      "name": "Klassiek Ottomaans",
+      "description": "Gesneden notenhout, sedir-bank, İznik-tegels, koperen lantaarns"
+    },
+    "cappadocia": {
+      "name": "Cappadocisch grotwoning",
+      "description": "Stenen bogen, nissen, aardetinten"
+    },
+    "mid_century": {
+      "name": "Mid-century",
+      "description": "Notenhout, taps toelopende poten, mosterd en petrol"
+    },
+    "art_deco": {
+      "name": "Art-deco luxe",
+      "description": "Fluweel, messing, marmer, smaragd en goud"
+    }
+  }
+}

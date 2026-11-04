@@ -686,3 +686,48 @@ fal-app'teki toplu gönderim modülünün Casalume'a uyarlanmış hali; gönderi
 |---|---|---|---|
 | POST | `/unsubscribe` | `{ r, t }` | Herkese açık; web sayfası tıklamayla çağırır (bağlantı tarayıcıları açınca bir şey olmaz). 10 dakikada IP başına 30 |
 | POST | `/unsubscribe/one-click?r=&t=` | — | Herkese açık; e-posta sağlayıcısının tek tık düğmesi |
+
+### 7.17 Çok dilli sürüm (11 dil) — web + backend + AI servisi
+Diller (maeyja ile aynı): `tr` (varsayılan), `en`, `de`, `es`, `fr`, `it`, `ru`, `nl`, `ja`, `ko`, `zh`.
+
+**Web adresleri**
+- Türkçe öneksizdir (`/studio`); diğer diller önekli (`/en/studio`, `/de/fiyatlar`). Yol adları her dilde aynı kalır.
+- `src/proxy.ts`:
+  - `/tr/...` → 308 ile öneksiz adrese.
+  - Öneksiz istek: `air_locale` çerezi, yoksa `Accept-Language` (q değerleriyle) Türkçe dışı bir dil seçerse 307 ile o dile
+    yönlenir. Arama motoru botları ve GET dışı istekler yönlendirilmez.
+  - Kalan istek içeride `/tr/...` olarak işlenir.
+- Dil seçici (üst menü) adresi değiştirir ve çerezi yazar.
+- Bilinmeyen adres her dilde o dilin 404 sayfasını gösterir.
+- `sitemap.xml`: her sayfa her dilde, `hreflang` + `x-default` ile. `robots.txt`: özel sayfalar her dil önekiyle kapalı.
+
+**Metinler**
+- Web metinleri `apps/web/src/messages/<dil>.json` dosyalarındadır. Kaynak `tr.json`, `en.json` başvuru içindir.
+- Eksik anahtar sunucuda İngilizceyle doldurulur.
+- Yer tutucular `{n}` biçimindedir; `fmt()` doldurur.
+
+**Çeviri doldurma (`scripts/i18n_fill.py`)**
+- Yalnız eksik anahtarları çevirir; Claude Opus 5.5 kullanır, yapılandırılmış çıktıyla çalışır.
+- Yer tutucusu Türkçeyle tutmayan çeviriyi reddeder.
+- Çalıştırma:
+  ```
+  python scripts/i18n_fill.py --dir apps/web/src/messages --locales de,ja
+  ```
+  `ANTHROPIC_API_KEY` ortamdan okunur.
+- Yeni bir Türkçe metin eklenince betik yeniden çalıştırılır.
+
+**Backend**
+- `localeOf()` sırası: `?locale=` → `Accept-Language` (q değerleri) → kullanıcının kayıtlı dili → `tr`.
+- `locale` alanı (kullanıcı, tasarım listesi, sohbet, toplu gönderim kitlesi) 11 dili kabul eder.
+- Katalog adları (araç, oda, zemin, renk, plan, stil):
+  - Türkçe ve İngilizce koddan / admin'den gelir.
+  - Diğer diller `apps/backend/assets/i18n/catalog/<dil>.json` dosyasından okunur (kaynak `npm run i18n:catalog`, çeviri
+    `i18n_fill.py --dir apps/backend/assets/i18n/catalog`).
+  - Çevirisi olmayan ad (ör. admin'de yeni eklenen stil) İngilizce döner.
+- Yalnız Türkçe ve İngilizce yazılan metinler (e-posta, push, admin duyurusu, yasal metinler): Türkçe kullanıcıya Türkçe,
+  diğer herkese İngilizce. `GET /v1/legal?locale=de` İngilizce metni döner; yasal metnin başka dile çevirisi hukuk
+  onayı ister.
+
+**AI servisi**
+- Sohbet ve maliyet analizi 11 dilde yanıt verir (`locale`).
+- Görsel talimatları İngilizce kalır.

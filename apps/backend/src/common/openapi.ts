@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { z } from 'zod';
+import { LOCALES } from '../catalog/catalog.data.js';
 
 // Swagger/OpenAPI docs are generated from the same zod schemas that validate requests, so the docs
 // can't drift from what the API actually accepts. Response shapes mirror docs/API.md.
@@ -55,7 +56,7 @@ const ImageRef = z.object({ id: z.uuid(), url: z.url().describe('İmzalı, 24 sa
 const User = z.object({
   id: z.uuid(), email: z.string().nullable(), emailVerified: z.boolean(), name: z.string().nullable(),
   role: z.enum(['USER', 'SUPPORT', 'EDITOR', 'ADMIN', 'SUPER_ADMIN']), isGuest: z.boolean(), plan: z.enum(['FREE', 'PRO']), planExpiresAt: iso.nullable(),
-  credits: z.number(), dailyFreeRemaining: z.number(), locale: z.enum(['tr', 'en']), createdAt: iso,
+  credits: z.number(), dailyFreeRemaining: z.number(), locale: z.enum(LOCALES), createdAt: iso,
 });
 const Design = z.object({
   id: z.uuid(), title: z.string(), tool: z.string(), styleId: z.string().nullable(), roomId: z.string().nullable(),

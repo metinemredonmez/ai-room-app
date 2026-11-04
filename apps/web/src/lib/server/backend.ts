@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import type { AuthResponse } from "@/lib/types";
+import { isLocale, type Locale } from "@/lib/i18n";
 
 // BFF helpers (docs/API.md §1, SES-01 / WEB-03): the browser only ever holds httpOnly
 // cookies; access and refresh tokens never reach client JavaScript.
@@ -49,9 +50,10 @@ export function csrfRejected() {
   return jsonError(403, "forbidden", "Bu istek yalnızca uygulamanın kendi sayfalarından yapılabilir.");
 }
 
-export async function getLocale(): Promise<"tr" | "en"> {
+export async function getLocale(): Promise<Locale> {
   const store = await cookies();
-  return store.get(COOKIE.locale)?.value === "en" ? "en" : "tr";
+  const v = store.get(COOKIE.locale)?.value;
+  return isLocale(v) ? v : "tr";
 }
 
 export async function setAuthCookies(auth: Pick<AuthResponse, "accessToken" | "refreshToken" | "expiresIn">) {

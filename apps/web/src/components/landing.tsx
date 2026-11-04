@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import {
   ArrowRight,
   Calculator,
@@ -20,6 +20,7 @@ import type { Plan } from "@/lib/types";
 import { useApp } from "./app-provider";
 import { BeforeAfter } from "./before-after";
 import { btn, card } from "./ui";
+import { fmt } from "@/lib/i18n";
 
 const FEATURE_ICONS = [Sparkles, Palette, Calculator, ShoppingBag, MessageCircleMore, House, ShieldCheck, Layers];
 
@@ -49,7 +50,7 @@ export function PlanCards({ plans, footer }: { plans: Plan[]; footer?: (p: Plan)
           </h3>
           <p className="mt-3 text-4xl font-display font-light">
             {formatTRY(p.priceTRY, locale)}
-            <span className="ml-1 text-sm font-medium text-muted">{t.pricing.perPeriod(t.pricing.period[p.period])}</span>
+            <span className="ml-1 text-sm font-medium text-muted">{fmt(t.pricing.perPeriod, { p: t.pricing.period[p.period] })}</span>
           </p>
           <ul className="mt-5 flex-1 space-y-2.5 text-sm">
             {t.pricing.proFeatures.map((f) => (

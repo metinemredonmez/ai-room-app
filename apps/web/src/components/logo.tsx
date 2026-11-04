@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 
 /**
  * Casalume mark: an arched doorway with light spilling onto the floor and a spark above ("lume").

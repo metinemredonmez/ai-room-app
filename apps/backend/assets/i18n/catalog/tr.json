@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "Anında Yenile",
+      "description": "Odanı seçtiğin stilde baştan tasarla"
+    },
+    "furnish": {
+      "name": "Boş Odayı Döşe",
+      "description": "Boş daireyi sanal olarak döşe"
+    },
+    "declutter": {
+      "name": "Nesne Sil",
+      "description": "Dağınıklığı ya da tüm eşyaları kaldır"
+    },
+    "replace": {
+      "name": "Değiştir",
+      "description": "Bir eşyayı başka bir şeyle değiştir"
+    },
+    "paint": {
+      "name": "Duvar Boyası",
+      "description": "Duvarları istediğin renge boya"
+    },
+    "flooring": {
+      "name": "Yeni Zemin",
+      "description": "Parke, mermer, seramik dene"
+    },
+    "exterior": {
+      "name": "Dış Cephe",
+      "description": "Evinin cephesini yenile"
+    },
+    "garden": {
+      "name": "Bahçe & Teras",
+      "description": "Bahçeni ya da terasını düzenle"
+    },
+    "reference": {
+      "name": "Referans Stil",
+      "description": "Beğendiğin bir fotoğrafın stilini uygula"
+    },
+    "custom": {
+      "name": "Kendi Tarifin",
+      "description": "Ne istediğini yaz, yapay zekâ uygulasın"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "Oturma Odası"
+    },
+    "salon": {
+      "name": "Salon (Misafir)"
+    },
+    "bedroom": {
+      "name": "Yatak Odası"
+    },
+    "kitchen": {
+      "name": "Mutfak"
+    },
+    "bathroom": {
+      "name": "Banyo"
+    },
+    "dining_room": {
+      "name": "Yemek Odası"
+    },
+    "kids_room": {
+      "name": "Çocuk Odası"
+    },
+    "home_office": {
+      "name": "Çalışma Odası"
+    },
+    "hallway": {
+      "name": "Antre"
+    },
+    "balcony": {
+      "name": "Balkon"
+    },
+    "studio": {
+      "name": "Stüdyo Daire"
+    },
+    "office": {
+      "name": "Ofis"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "Meşe Parke"
+    },
+    "herringbone": {
+      "name": "Balıksırtı Parke"
+    },
+    "marble": {
+      "name": "Beyaz Mermer"
+    },
+    "travertine": {
+      "name": "Traverten"
+    },
+    "concrete": {
+      "name": "Cilalı Beton"
+    },
+    "terracotta": {
+      "name": "Terrakota"
+    },
+    "ceramic": {
+      "name": "Mat Seramik"
+    },
+    "carpet": {
+      "name": "Halıfleks"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "Kırık Beyaz"
+    },
+    "kum_beji": {
+      "name": "Kum Beji"
+    },
+    "adacayi": {
+      "name": "Adaçayı Yeşili"
+    },
+    "zeytin": {
+      "name": "Zeytin"
+    },
+    "ege_mavisi": {
+      "name": "Ege Mavisi"
+    },
+    "gece_mavisi": {
+      "name": "Gece Mavisi"
+    },
+    "terrakota": {
+      "name": "Terrakota"
+    },
+    "gul_kurusu": {
+      "name": "Gül Kurusu"
+    },
+    "hardal": {
+      "name": "Hardal"
+    },
+    "antrasit": {
+      "name": "Antrasit"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "Haftalık"
+    },
+    "pro_monthly": {
+      "name": "Aylık",
+      "badge": "POPÜLER"
+    },
+    "pro_yearly": {
+      "name": "Yıllık",
+      "badge": "EN AVANTAJLI"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "Modern",
+      "description": "Temiz çizgiler, nötr tonlar, sıcak ahşap"
+    },
+    "modern_turkish": {
+      "name": "Modern Türk",
+      "description": "Traverten, ceviz, kilim ve bakır dokunuşlar"
+    },
+    "japandi": {
+      "name": "Japandi",
+      "description": "Alçak ahşap mobilya, toprak tonları, sadelik"
+    },
+    "scandinavian": {
+      "name": "İskandinav",
+      "description": "Açık meşe, beyaz duvarlar, yün ve keten"
+    },
+    "aegean": {
+      "name": "Ege",
+      "description": "Badana beyazı, Ege mavisi, zeytin ahşabı"
+    },
+    "minimalist": {
+      "name": "Minimalist",
+      "description": "Az ama öz, ferah ve sakin"
+    },
+    "mediterranean": {
+      "name": "Akdeniz",
+      "description": "Kemerler, kireç sıva, terrakota"
+    },
+    "industrial": {
+      "name": "Endüstriyel",
+      "description": "Tuğla, beton, siyah metal, deri"
+    },
+    "bohemian": {
+      "name": "Bohem",
+      "description": "Rattan, katmanlı halılar, bol bitki"
+    },
+    "rustic": {
+      "name": "Rustik Köy Evi",
+      "description": "Ahşap kirişler, doğal taş, sıcak ışık"
+    },
+    "coastal": {
+      "name": "Yazlık / Sahil",
+      "description": "Kum ve gök mavisi, rattan, çizgili dokular"
+    },
+    "classic_ottoman": {
+      "name": "Osmanlı Klasik",
+      "description": "Oymalı ceviz, sedir, İznik çini, pirinç fener"
+    },
+    "cappadocia": {
+      "name": "Kapadokya Taş Ev",
+      "description": "Taş kemerler, nişler, toprak tonları"
+    },
+    "mid_century": {
+      "name": "Mid-Century",
+      "description": "Ceviz, konik ayaklar, hardal ve petrol"
+    },
+    "art_deco": {
+      "name": "Art Deco Lüks",
+      "description": "Kadife, pirinç, mermer, zümrüt ve altın"
+    }
+  }
+}

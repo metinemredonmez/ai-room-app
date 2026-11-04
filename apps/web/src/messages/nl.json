@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "description": "Interieur-, gevel- en tuinontwerp met AI. Turkse en Anatolische stijlen, budgetschatting in TL en een boodschappenlijst van Turkse winkels.",
+    "titles": {
+      "verifyEmail": "E-mail bevestigen",
+      "studio": "Studio",
+      "design": "Ontwerp",
+      "resetPassword": "Nieuw wachtwoord",
+      "pricing": "Prijzen",
+      "login": "Inloggen",
+      "designs": "Mijn ontwerpen",
+      "unsubscribe": "Afmelden",
+      "chat": "AI-chat",
+      "forgotPassword": "Wachtwoord vergeten"
+    }
+  },
+  "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
+  "nav": {
+    "studio": "Studio",
+    "designs": "Mijn ontwerpen",
+    "chat": "AI-chat",
+    "pricing": "Prijzen",
+    "login": "Inloggen",
+    "logout": "Uitloggen",
+    "tryFree": "Gratis proberen",
+    "menu": "Menu",
+    "guest": "Gast"
+  },
+  "credits": {
+    "pro": "PRO",
+    "pill": "{free} gratis · {credits} credits",
+    "proUntil": "PRO · tot {date}"
+  },
+  "common": {
+    "loading": "Laden…",
+    "retry": "Opnieuw proberen",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "close": "Sluiten",
+    "back": "Terug",
+    "new": "Nieuw",
+    "pro": "PRO",
+    "or": "of",
+    "all": "Alles",
+    "favorites": "Favorieten",
+    "loadMore": "Meer laden",
+    "open": "Openen"
+  },
+  "unsubscribe": {
+    "title": "Promotiemails",
+    "text": "Wil je geen acties en aanbiedingen van Casalume meer per e-mail ontvangen? Klik dan op de knop hieronder. Verplichte berichten over je account blijf je wel ontvangen.",
+    "button": "Afmelden",
+    "done": "Klaar, je ontvangt geen promotiemails meer. Bedenk je je, dan kun je ze weer aanzetten via de toestemmingen in de app.",
+    "invalid": "Deze link is ongeldig of onvolledig. Probeer de link in de e-mail opnieuw te openen.",
+    "home": "Terug naar home"
+  },
+  "errors": {
+    "insufficient_credits": "Je gratis ontwerpen van vandaag en je credits zijn op.",
+    "seePlans": "Bekijk abonnementen",
+    "rate_limited": "Te veel verzoeken. Probeer het zo opnieuw.",
+    "rate_limited_seconds": "Te veel verzoeken. Probeer het over {s} s opnieuw.",
+    "ai_unavailable": "De AI-service reageert even niet. Probeer het over een paar minuten opnieuw.",
+    "busy": "Het is nu erg druk. Probeer het zo opnieuw.",
+    "payload_too_large": "De foto is te groot (max. 10 MB).",
+    "unsupported_media_type": "Dit bestandstype wordt niet ondersteund. Upload JPEG, PNG, WEBP of HEIC.",
+    "unauthorized": "Je sessie is verlopen. Log opnieuw in.",
+    "forbidden": "Je hebt geen toestemming voor deze actie.",
+    "not_found": "We konden niet vinden wat je zoekt.",
+    "network": "Geen verbinding. Controleer je internet.",
+    "generic": "Er ging iets mis. Probeer het opnieuw.",
+    "selection_failed": "Op die plek is niets gevonden; tik op het midden van het object.",
+    "selection_unavailable": "Selecteren door te tikken is nu uit; typ de naam van het object om het te selecteren.",
+    "unsupportedFile": "Dit bestandstype wordt niet ondersteund. Upload JPEG, PNG, WEBP of HEIC.",
+    "tooLarge": "De foto is te groot (max. 10 MB)."
+  },
+  "landing": {
+    "badge": "De AI-interieurarchitect van Turkije",
+    "heroTitle": "Ontwerp je kamer in een paar seconden opnieuw.",
+    "heroText": "Upload een foto en kies een stijl: Casalume richt je kamer opnieuw in, schildert je muren en vervangt je vloer. En je krijgt er meteen een boodschappenlijst en een budget in TL bij.",
+    "ctaPrimary": "Begin met ontwerpen",
+    "ctaSecondary": "Hoe werkt het?",
+    "trust": [
+      "Geen registratie nodig",
+      "3 gratis ontwerpen per dag",
+      "KVKK-conform"
+    ],
+    "before": "Voor",
+    "after": "Na",
+    "featuresTitle": "Alles wat een interieurarchitect doet, op zak",
+    "featuresText": "We bekeken de beste voorbeelden wereldwijd en voegden toe wat mensen in Turkije misten.",
+    "features": [
+      {
+        "title": "Direct een nieuw ontwerp",
+        "text": "Transformeer elke ruimte, van woonkamer tot keuken, in seconden met 15+ stijlen."
+      },
+      {
+        "title": "Turkse en Anatolische stijlen",
+        "text": "Ottomaans klassiek, Modern Turks, Egeïsch, Cappadocië… lokale esthetiek, wereldwijde kwaliteit."
+      },
+      {
+        "title": "Budgetschatting in TL",
+        "text": "Bereken meubels en verbouwingsposten in je ontwerp als bandbreedtes in Turkse lira."
+      },
+      {
+        "title": "Shoppen bij Turkse winkels",
+        "text": "Zoeklinks voor elk item op Trendyol, Hepsiburada en andere winkels."
+      },
+      {
+        "title": "AI-ontwerpchat",
+        "text": "Laat je foto zien, stel vragen, doe ideeën op. Pas een suggestie met één tik toe in de studio."
+      },
+      {
+        "title": "Interieur, gevel en tuin",
+        "text": "Tools voor lege kamers inrichten, objecten verwijderen, verf, vloeren, gevels en tuinaanleg."
+      },
+      {
+        "title": "KVKK-conforme privacy",
+        "text": "Locatiegegevens worden uit je foto's verwijderd en afbeeldingen zijn beschermd met tijdelijke links."
+      },
+      {
+        "title": "Voor/na vergelijken",
+        "text": "Zie het verschil met de schuifregelaar, wissel tussen varianten en download in hoge resolutie."
+      }
+    ],
+    "howTitle": "In drie stappen je nieuwe huis",
+    "how": [
+      {
+        "title": "Upload je foto",
+        "text": "Kies een foto van een kamer, gevel of tuin op je telefoon — of probeer een voorbeeldfoto."
+      },
+      {
+        "title": "Kies je tool en stijl",
+        "text": "Opnieuw ontwerpen, inrichten, schilderen, vloer vervangen… Kies de stijl en het type ruimte."
+      },
+      {
+        "title": "Vergelijk en pas toe",
+        "text": "Bekijk de varianten, zie de boodschappenlijst en het budget, en bewaar je ontwerp."
+      }
+    ],
+    "galleryTitle": "Echte foto's, echte resultaten",
+    "galleryText": "Links de originele foto, rechts het ontwerp van Casalume. Sleep de schuifregelaar in het midden.",
+    "gallery": [
+      {
+        "key": "salon",
+        "title": "Woonkamer",
+        "meta": "Direct vernieuwen · Modern Turks"
+      },
+      {
+        "key": "yatak",
+        "title": "Slaapkamer",
+        "meta": "Direct vernieuwen · Scandinavisch"
+      },
+      {
+        "key": "cephe",
+        "title": "Gevel",
+        "meta": "Gevel · Modern"
+      },
+      {
+        "key": "bahce",
+        "title": "Tuin",
+        "meta": "Tuin & terras · Mediterraans"
+      }
+    ],
+    "aiNote": "Resultaatafbeeldingen zijn met AI gemaakt en worden ook zo gelabeld.",
+    "toolsTitle": "Binnen en buiten, elke ruimte",
+    "toolsText": "Van een lege kamer tot een tuinterras: kies je tool en laat Casalume de rest doen.",
+    "tools": [
+      {
+        "key": "hero",
+        "tool": "furnish",
+        "name": "Lege kamer inrichten",
+        "text": "Zet meubels, vloerkleden en decoratie in een lege kamer."
+      },
+      {
+        "key": "salon",
+        "tool": "redesign",
+        "name": "Direct vernieuwen",
+        "text": "Geef je kamer in enkele seconden een van 15 stijlen."
+      },
+      {
+        "key": "cephe",
+        "tool": "exterior",
+        "name": "Gevel",
+        "text": "Nieuwe materialen en kleuren voor de buitenkant van je huis."
+      },
+      {
+        "key": "bahce",
+        "tool": "garden",
+        "name": "Tuin & terras",
+        "text": "Een nieuwe tuin met planten, bestrating en zithoek."
+      }
+    ],
+    "moreTools": "Verder: muurverf, nieuwe vloer, objecten wissen, vervangen, referentiestijl en je eigen recept.",
+    "proBadge": "Voor professionals",
+    "proTitle": "Ook voor architecten en interieurontwerpers",
+    "proText": "Laat je klant al bij het eerste gesprek binnen enkele minuten een paar stijlopties zien en maak het gesprek concreet met een materiaallijst en een budget in TL.",
+    "proPoints": [
+      "Vier varianten van één foto (PRO)",
+      "Materiaallijst en budgetschatting in TL",
+      "Hoge resolutie zonder watermerk (PRO)",
+      "Binnenkort: projectmappen en delen met klanten"
+    ],
+    "stylesTitle": "Vind de stijl die bij je past",
+    "stylesText": "Tik op een stijl en de studio opent met die stijl.",
+    "pricingTitle": "Flexibele abonnementen",
+    "pricingText": "Begin gratis; stap over op PRO per week, maand of jaar als je meer wilt.",
+    "faqTitle": "Veelgestelde vragen",
+    "faq": [
+      {
+        "q": "Zijn mijn foto's veilig?",
+        "a": "Je geüploade foto's worden opnieuw gecodeerd en alle EXIF-gegevens, inclusief locatie (GPS), worden verwijderd. Afbeeldingen zijn alleen bereikbaar via tijdelijke, ondertekende links, en als je je account verwijdert, worden al je ontwerpen verwijderd."
+      },
+      {
+        "q": "Kan ik het gebruiken zonder account?",
+        "a": "Ja. Je kunt meteen als gast beginnen; maak later een account met je e-mailadres aan, zodat je je ontwerpen niet kwijtraakt."
+      },
+      {
+        "q": "Hoe nauwkeurig zijn de budgetschattingen?",
+        "a": "De prijzen zijn door AI geschatte bandbreedtes voor de Turkse markt. Controleer de winkelprijzen voordat je iets koopt."
+      },
+      {
+        "q": "Veranderen de muren en ramen van mijn kamer?",
+        "a": "Nee. Casalume behoudt de vorm van de kamer, de ramen en de camerahoek en verandert alleen de decoratie, meubels en oppervlakken."
+      },
+      {
+        "q": "Hoe zeg ik mijn PRO-abonnement op?",
+        "a": "Op je telefoon via de abonnementsinstellingen in de App Store / Google Play, op het web via je accountpagina – wanneer je maar wilt."
+      }
+    ],
+    "finalTitle": "Je droomkamer is maar één foto verwijderd.",
+    "finalCta": "Gratis ontwerpen"
+  },
+  "auth": {
+    "title": "Welkom bij Casalume",
+    "subtitle": "Log in om je ontwerpen te bewaren en ze op elk apparaat te bekijken.",
+    "loginTab": "Inloggen",
+    "registerTab": "Registreren",
+    "email": "E-mail",
+    "password": "Wachtwoord",
+    "passwordHint": "Minstens 10 tekens",
+    "name": "Je naam (optioneel)",
+    "submitLogin": "Inloggen",
+    "submitRegister": "Account aanmaken",
+    "guest": "Probeer als gast",
+    "guestNote": "Je gastontwerpen gaan mee naar je account zodra je je registreert.",
+    "upgradeNote": "Je bent nu gast. Als je je registreert, gaan je bestaande ontwerpen mee naar je account.",
+    "kvkk": "Door verder te gaan, ga je akkoord met de Gebruiksvoorwaarden en de KVKK-privacyverklaring.",
+    "invalid": "E-mail of wachtwoord onjuist.",
+    "tooShort": "Je wachtwoord moet minstens 10 tekens hebben.",
+    "forgotLink": "Wachtwoord vergeten?"
+  },
+  "account": {
+    "forgotTitle": "Wachtwoord vergeten?",
+    "forgotText": "Vul je e-mailadres in; als je een account hebt, sturen we je een link om je wachtwoord opnieuw in te stellen.",
+    "forgotSubmit": "Link versturen",
+    "forgotSent": "Als er een account bij dit adres hoort, krijg je binnen een paar minuten een e-mail. De link is 30 minuten geldig.",
+    "resetTitle": "Kies een nieuw wachtwoord",
+    "resetText": "Als je je wachtwoord wijzigt, word je op alle apparaten uitgelogd.",
+    "newPassword": "Nieuw wachtwoord",
+    "confirmPassword": "Nieuw wachtwoord (herhalen)",
+    "mismatch": "De wachtwoorden komen niet overeen.",
+    "resetSubmit": "Wachtwoord wijzigen",
+    "resetDone": "Je wachtwoord is gewijzigd. Je kunt nu inloggen met je nieuwe wachtwoord.",
+    "verifyTitle": "E-mailverificatie",
+    "verifying": "Je e-mailadres wordt geverifieerd…",
+    "verifyDone": "Je e-mailadres is geverifieerd. Bedankt!",
+    "invalidLink": "Deze link is ongeldig, al gebruikt of verlopen. Je kunt een nieuwe link aanvragen.",
+    "requestNew": "Nieuwe link aanvragen",
+    "toLogin": "Terug naar inloggen",
+    "toStudio": "Naar de studio",
+    "bannerText": "Je hebt je e-mailadres nog niet geverifieerd. Verifieer het, zodat je je account kunt herstellen.",
+    "bannerResend": "Verificatiemail versturen",
+    "bannerSent": "Verificatiemail verstuurd."
+  },
+  "studio": {
+    "title": "Ontwerpstudio",
+    "subtitle": "Kies een tool, upload je foto en bepaal je stijl.",
+    "stepTool": "Tool",
+    "stepPhoto": "Foto",
+    "stepOptions": "Instellingen",
+    "categories": {
+      "interior": "Interieur",
+      "exterior": "Exterieur",
+      "edit": "Bewerken"
+    },
+    "upload": "Foto uploaden",
+    "uploadHint": "Sleep hierheen of kies een bestand · JPEG, PNG, WEBP, HEIC · max. 10 MB",
+    "uploading": "Uploaden…",
+    "samples": "Probeer met een voorbeeldfoto",
+    "sampleNames": {
+      "living_room": "Woonkamer",
+      "empty_room": "Lege kamer",
+      "bedroom": "Slaapkamer",
+      "exterior": "Gevel",
+      "garden": "Tuin"
+    },
+    "change": "Wijzigen",
+    "style": "Stijl",
+    "room": "Type ruimte",
+    "floor": "Vloer",
+    "color": "Muurkleur",
+    "target": "Wat?",
+    "targetPlaceholderDeclutter": "bijv. spullen op tafel, kabels (leeg laten: algemene rommel)",
+    "targetPlaceholderReplace": "bijv. bank",
+    "replacement": "Waarmee?",
+    "replacementPlaceholder": "bijv. groene fluwelen chesterfieldbank",
+    "instructions": "Extra wens",
+    "instructionsPlaceholder": "bijv. meer planten, warm licht, houten details",
+    "customPlaceholder": "Wat moet er veranderen? bijv. voeg een inbouwboekenkast toe, maak de gordijnen van linnen",
+    "removeAll": "Kamer helemaal leegmaken",
+    "select": {
+      "hint": {
+        "replace": "Tik op het object dat je wilt veranderen; alleen dat verandert.",
+        "declutter": "Tik op het object dat je wilt verwijderen.",
+        "paint": "Tik op de muur die je wilt schilderen; alleen die muur verandert."
+      },
+      "count": "{n} geselecteerd · tik ergens anders om meer toe te voegen",
+      "undo": "Ongedaan maken",
+      "clear": "Wissen",
+      "notFound": "Op die plek is geen object gevonden; tik op het midden van het object.",
+      "unavailable": "Selecteren door te tikken is nu uitgeschakeld; typ in plaats daarvan de naam van het object.",
+      "max": "Je kunt maximaal 8 objecten selecteren.",
+      "orType": "Je kunt op het object in de foto tikken. Typ je alleen een naam, dan verandert alles van dat soort.",
+      "optional": "optioneel, bijv. kussen",
+      "imageLabel": "Foto: tik om een object te selecteren"
+    },
+    "reference": "Referentiebeeld",
+    "referenceHint": "Upload een foto van een kamer die je mooi vindt; die stijl wordt toegepast.",
+    "variants": "Aantal varianten",
+    "cost": "Dit kost {n} ontwerpen",
+    "remaining": "Over: {free} gratis + {credits} credits",
+    "generate": "Ontwerpen",
+    "generating": "Bezig met ontwerpen…",
+    "progress": [
+      "De vorm van de kamer wordt bekeken…",
+      "Licht en perspectief worden behouden…",
+      "Meubels worden geplaatst…",
+      "Texturen en kleuren worden verwerkt…",
+      "Laatste details…"
+    ],
+    "elapsed": "{s} s",
+    "needPhoto": "Upload eerst een foto of kies een voorbeeld.",
+    "needTarget": "Tik op het object in de foto of beschrijf wat er moet veranderen.",
+    "needReplacement": "Beschrijf waarmee het vervangen moet worden.",
+    "needInstructions": "Beschrijf wat je wilt veranderen.",
+    "needReference": "Upload een referentiebeeld.",
+    "proHint": "PRO-functie — de server controleert je abonnement.",
+    "newDesign": "Nieuw ontwerp",
+    "prefilled": "Het voorstel uit de chat is in de studio geladen. Controleer het en tik op “Ontwerpen”."
+  },
+  "result": {
+    "before": "Voor",
+    "after": "Na",
+    "variants": "Varianten",
+    "variantCount": "varianten",
+    "favorite": "Aan favorieten toevoegen",
+    "unfavorite": "Uit favorieten verwijderen",
+    "download": "Downloaden",
+    "iterate": "Verder met dit resultaat",
+    "askChat": "Vragen in de chat",
+    "analyze": "Boodschappenlijst en budget maken",
+    "analyzing": "Analyseren…",
+    "failed": "Dit ontwerp kon niet worden gemaakt.",
+    "sliderLabel": "Schuifregelaar voor/na-vergelijking"
+  },
+  "analysis": {
+    "title": "Boodschappenlijst en budget",
+    "items": "Producten",
+    "renovation": "Renovatieposten",
+    "totals": "Geschat totaalbudget",
+    "furniture": "Meubels en decoratie",
+    "renovationTotal": "Renovatie",
+    "grand": "Totaal",
+    "qty": "Aantal",
+    "palette": "Kleurenpalet",
+    "search": "Zoeken"
+  },
+  "designs": {
+    "title": "Mijn ontwerpen",
+    "empty": "Je hebt nog geen ontwerpen.",
+    "emptyCta": "Maak je eerste ontwerp",
+    "deleteConfirm": "Dit ontwerp definitief verwijderen?",
+    "failed": "Mislukt"
+  },
+  "chat": {
+    "title": "AI-ontwerpchat",
+    "subtitle": "Voeg een foto van je kamer toe en vraag om ideeën. Suggesties worden pas toegepast als je erop tikt.",
+    "placeholder": "bijv. Hoe laat ik deze woonkamer ruimer lijken?",
+    "send": "Versturen",
+    "attach": "Afbeelding toevoegen",
+    "attachUpload": "Nieuwe foto uploaden",
+    "attachRecent": "Kies uit je recente ontwerpen",
+    "attached": "Toegevoegd",
+    "remove": "Verwijderen",
+    "thinking": "Denkt na…",
+    "openInStudio": "Openen in studio",
+    "starters": [
+      "Hoe laat ik mijn kleine woonkamer ruimer lijken?",
+      "Welke kleuren raad je aan voor een slaapkamer op het noorden?",
+      "Ik huur — hoe geef ik de keuken een frisse look zonder blijvende aanpassingen?"
+    ],
+    "disclaimer": "AI kan fouten maken; gebruik suggesties als inspiratie en vraag een vakman om advies bij belangrijke beslissingen.",
+    "empty": "Hoi! Voeg een foto van je kamer toe en stel een vraag om te beginnen.",
+    "limit": "De chat bewaart maximaal 20 berichten; oudere berichten worden niet meegestuurd."
+  },
+  "pricing": {
+    "title": "Abonnementen en prijzen",
+    "subtitle": "Het gratis abonnement wordt elke dag vernieuwd. Met PRO vallen de limieten weg.",
+    "free": "Gratis",
+    "freePrice": "₺0",
+    "freeFeatures": [
+      "3 ontwerpen per dag",
+      "Alle basistools",
+      "Voor/na-vergelijking",
+      "AI-chat"
+    ],
+    "proFeatures": [
+      "Tot 100 ontwerpen per dag (fair use)",
+      "Alle PRO-stijlen en -tools",
+      "Hoge resolutie zonder watermerk",
+      "Voorrang bij genereren",
+      "Boodschappenlijst en budget in TL"
+    ],
+    "period": {
+      "week": "week",
+      "month": "maand",
+      "year": "jaar"
+    },
+    "perPeriod": "/ {p}",
+    "choose": "Kiezen",
+    "current": "Je huidige abonnement",
+    "demoTitle": "Demobetaling",
+    "demoText": "In deze MVP wordt er niet echt betaald. Met de knop hieronder krijgt je account 7 dagen PRO. In de live versie verlopen betalingen via de App Store / Google Play en op het web via iyzico.",
+    "demoButton": "Demo: 7 dagen PRO activeren",
+    "demoDone": "PRO geactiveerd!",
+    "demoUnavailable": "Demo-upgrade is uitgeschakeld in deze omgeving.",
+    "loginFirst": "Log eerst in of begin als gast."
+  },
+  "footer": {
+    "product": "Product",
+    "company": "Bedrijf",
+    "legal": "Juridisch",
+    "about": "Over ons",
+    "contact": "Contact",
+    "kvkk": "KVKK-privacyverklaring",
+    "terms": "Gebruiksvoorwaarden",
+    "privacy": "Privacybeleid",
+    "rights": "Alle rechten voorbehouden.",
+    "note": "Prijs- en budgetschattingen worden door AI gegenereerd en zijn alleen bedoeld ter informatie."
+  },
+  "notFound": {
+    "title": "Pagina niet gevonden",
+    "cta": "Terug naar home"
+  }
+}

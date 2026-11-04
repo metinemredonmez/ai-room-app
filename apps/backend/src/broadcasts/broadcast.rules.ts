@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LOCALES } from '../catalog/catalog.data.js';
 
 // Pure rules of the admin "Toplu Gönderim" (fal-app broadcast + kampanya-siniflandirma, reduced to what
 // Casalume needs). No I/O here, so every rule is unit-tested on its own.
@@ -8,7 +9,7 @@ export const AudienceSchema = z
   .object({
     plan: z.enum(['FREE', 'PRO']).optional(),
     platform: z.enum(['ios', 'android']).optional(),
-    locale: z.enum(['tr', 'en']).optional(),
+    locale: z.enum(LOCALES).optional(),
     accounts: z.enum(['all', 'registered', 'guests']).default('all'),
     /** Not seen for at least N days (win-back). */
     inactiveDays: z.number().int().min(1).max(365).optional(),

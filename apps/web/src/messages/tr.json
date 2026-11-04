@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "description": "Yapay zekâ ile iç mekân, dış cephe ve bahçe tasarımı. Türk ve Anadolu stilleri, TL bütçe tahmini ve Türk mağazalarından alışveriş listesi.",
+    "titles": {
+      "verifyEmail": "E-posta doğrulama",
+      "studio": "Stüdyo",
+      "design": "Tasarım",
+      "resetPassword": "Yeni şifre",
+      "pricing": "Fiyatlar",
+      "login": "Giriş",
+      "designs": "Tasarımlarım",
+      "unsubscribe": "Abonelikten çık",
+      "chat": "AI Sohbet",
+      "forgotPassword": "Şifremi unuttum"
+    }
+  },
+  "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
+  "nav": {
+    "studio": "Stüdyo",
+    "designs": "Tasarımlarım",
+    "chat": "AI Sohbet",
+    "pricing": "Fiyatlar",
+    "login": "Giriş yap",
+    "logout": "Çıkış",
+    "tryFree": "Ücretsiz dene",
+    "menu": "Menü",
+    "guest": "Misafir"
+  },
+  "credits": {
+    "pro": "PRO",
+    "pill": "{free} ücretsiz · {credits} kredi",
+    "proUntil": "PRO · {date} tarihine kadar"
+  },
+  "common": {
+    "loading": "Yükleniyor…",
+    "retry": "Tekrar dene",
+    "cancel": "Vazgeç",
+    "save": "Kaydet",
+    "delete": "Sil",
+    "close": "Kapat",
+    "back": "Geri",
+    "new": "Yeni",
+    "pro": "PRO",
+    "or": "veya",
+    "all": "Tümü",
+    "favorites": "Favoriler",
+    "loadMore": "Daha fazla",
+    "open": "Aç"
+  },
+  "unsubscribe": {
+    "title": "Kampanya e-postaları",
+    "text": "Casalume'un kampanya ve fırsat e-postalarını artık almak istemiyorsan aşağıdaki düğmeye bas. Hesabınla ilgili zorunlu bilgilendirmeler gelmeye devam eder.",
+    "button": "Abonelikten çık",
+    "done": "Tamam, artık kampanya e-postası almayacaksın. Fikrin değişirse uygulamadaki izinlerden yeniden açabilirsin.",
+    "invalid": "Bu bağlantı geçersiz ya da eksik. E-postadaki bağlantıyı yeniden açmayı dene.",
+    "home": "Ana sayfaya dön"
+  },
+  "errors": {
+    "insufficient_credits": "Bugünkü ücretsiz hakkın ve kredin bitti.",
+    "seePlans": "Planları gör",
+    "rate_limited": "Çok fazla istek gönderdin. Biraz sonra tekrar dene.",
+    "rate_limited_seconds": "Çok fazla istek gönderdin. {s} sn sonra tekrar dene.",
+    "ai_unavailable": "AI servisi şu an yanıt vermiyor. Birkaç dakika sonra tekrar dene.",
+    "busy": "Şu an çok yoğunuz. Lütfen biraz sonra tekrar dene.",
+    "payload_too_large": "Fotoğraf çok büyük (en fazla 10 MB).",
+    "unsupported_media_type": "Bu dosya türü desteklenmiyor. JPEG, PNG, WEBP veya HEIC yükle.",
+    "unauthorized": "Oturumun sona erdi. Lütfen tekrar giriş yap.",
+    "forbidden": "Bu işlem için yetkin yok.",
+    "not_found": "Aradığın kayıt bulunamadı.",
+    "network": "Bağlantı kurulamadı. İnternetini kontrol et.",
+    "generic": "Bir şeyler ters gitti. Lütfen tekrar dene.",
+    "selection_failed": "Dokunduğun yerde nesne bulunamadı; nesnenin ortasına dokun.",
+    "selection_unavailable": "Dokunarak seçim şu an kapalı; nesnenin adını yazarak seçebilirsin.",
+    "unsupportedFile": "Bu dosya türü desteklenmiyor. JPEG, PNG, WEBP veya HEIC yükle.",
+    "tooLarge": "Fotoğraf çok büyük (en fazla 10 MB)."
+  },
+  "landing": {
+    "badge": "Türkiye'nin yapay zekâ destekli iç mimarı",
+    "heroTitle": "Odanı saniyeler içinde yeniden tasarla.",
+    "heroText": "Bir fotoğraf yükle, stilini seç; Casalume odanı yeniden döşesin, duvarını boyasın, zeminini değiştirsin. Üstelik beğendiğin tasarımın alışveriş listesini ve TL bütçesini de çıkarsın.",
+    "ctaPrimary": "Hemen tasarla",
+    "ctaSecondary": "Nasıl çalışır?",
+    "trust": [
+      "Kayıt gerekmez",
+      "Günde 3 ücretsiz tasarım",
+      "KVKK uyumlu"
+    ],
+    "before": "Önce",
+    "after": "Sonra",
+    "featuresTitle": "Bir iç mimarın yapacağı her şey, cebinde",
+    "featuresText": "Dünyadaki en iyi örnekleri inceledik; Türkiye'de yaşayan biri için eksik olanları ekledik.",
+    "features": [
+      {
+        "title": "Anında yeniden tasarım",
+        "text": "15+ stil ile oturma odasından mutfağa her mekânı saniyeler içinde dönüştür."
+      },
+      {
+        "title": "Türk ve Anadolu stilleri",
+        "text": "Osmanlı klasik, Modern Türk, Ege, Kapadokya… Yerel estetik, global kalite."
+      },
+      {
+        "title": "TL bütçe tahmini",
+        "text": "Tasarımdaki mobilyaları ve tadilat kalemlerini Türk lirası aralıklarıyla hesapla."
+      },
+      {
+        "title": "Türk mağazalarından alışveriş",
+        "text": "Her parça için Trendyol, Hepsiburada ve diğer mağazalarda arama linkleri."
+      },
+      {
+        "title": "AI tasarım sohbeti",
+        "text": "Fotoğrafını göster, sor, fikir al. Öneriyi tek dokunuşla stüdyoda uygula."
+      },
+      {
+        "title": "İç mekân, dış cephe ve bahçe",
+        "text": "Boş oda döşeme, nesne silme, boya, zemin, cephe ve peyzaj araçları."
+      },
+      {
+        "title": "KVKK uyumlu gizlilik",
+        "text": "Fotoğraflarının konum bilgisi silinir, görseller süreli bağlantıyla korunur."
+      },
+      {
+        "title": "Önce / sonra karşılaştırma",
+        "text": "Kaydırıcıyla farkı gör, varyantlar arasında geç, yüksek çözünürlükte indir."
+      }
+    ],
+    "howTitle": "Üç adımda yeni evin",
+    "how": [
+      {
+        "title": "Fotoğrafını yükle",
+        "text": "Telefonundan bir oda, cephe ya da bahçe fotoğrafı seç — veya örnek fotoğrafla dene."
+      },
+      {
+        "title": "Aracını ve stilini seç",
+        "text": "Yeniden tasarla, döşe, boya, zemin değiştir… Stil ve oda tipini belirle."
+      },
+      {
+        "title": "Sonucu karşılaştır ve uygula",
+        "text": "Varyantları incele, alışveriş listesini ve bütçeyi gör, tasarımını kaydet."
+      }
+    ],
+    "galleryTitle": "Gerçek fotoğraflar, gerçek sonuçlar",
+    "galleryText": "Solda fotoğrafın kendisi, sağda Casalume'nin ürettiği tasarım. Ortadaki tutamacı sürükle.",
+    "gallery": [
+      {
+        "key": "salon",
+        "title": "Salon",
+        "meta": "Anında yenile · Modern Türk"
+      },
+      {
+        "key": "yatak",
+        "title": "Yatak odası",
+        "meta": "Anında yenile · İskandinav"
+      },
+      {
+        "key": "cephe",
+        "title": "Dış cephe",
+        "meta": "Dış cephe · Modern"
+      },
+      {
+        "key": "bahce",
+        "title": "Bahçe",
+        "meta": "Bahçe & teras · Akdeniz"
+      }
+    ],
+    "aiNote": "Sonuç görselleri yapay zekâ ile üretilmiştir ve öyle etiketlenir.",
+    "toolsTitle": "İçeriden dışarıya, her alan",
+    "toolsText": "Boş bir odadan bahçe terasına kadar; aracını seç, gerisini Casalume yapsın.",
+    "tools": [
+      {
+        "key": "hero",
+        "tool": "furnish",
+        "name": "Boş odayı döşe",
+        "text": "Boş odaya mobilya, halı ve dekor yerleştir."
+      },
+      {
+        "key": "salon",
+        "tool": "redesign",
+        "name": "Anında yenile",
+        "text": "Odanı 15 stilden birine saniyeler içinde dönüştür."
+      },
+      {
+        "key": "cephe",
+        "tool": "exterior",
+        "name": "Dış cephe",
+        "text": "Evinin dış görünüşü için yeni malzeme ve renkler."
+      },
+      {
+        "key": "bahce",
+        "tool": "garden",
+        "name": "Bahçe & teras",
+        "text": "Bitki, döşeme ve oturma alanıyla yeni bir bahçe."
+      }
+    ],
+    "moreTools": "Ayrıca: duvar boyası, yeni zemin, nesne silme, değiştirme, referans stil ve kendi tarifin.",
+    "proBadge": "Profesyoneller için",
+    "proTitle": "Mimarlar ve iç mimarlar için de",
+    "proText": "Müşterine ilk görüşmede birkaç stil seçeneğini dakikalar içinde göster; malzeme listesi ve TL bütçesiyle konuşmayı somutlaştır.",
+    "proPoints": [
+      "Aynı fotoğraftan dört varyant (PRO)",
+      "Malzeme listesi ve TL bütçe tahmini",
+      "Filigransız yüksek çözünürlük (PRO)",
+      "Yakında: proje klasörleri ve müşteriye paylaşım"
+    ],
+    "stylesTitle": "Sana uygun stili bul",
+    "stylesText": "Bir stile dokun, stüdyo o stille açılsın.",
+    "pricingTitle": "Esnek planlar",
+    "pricingText": "Ücretsiz başla; daha fazlası için haftalık, aylık veya yıllık PRO'ya geç.",
+    "faqTitle": "Sık sorulan sorular",
+    "faq": [
+      {
+        "q": "Fotoğraflarım güvende mi?",
+        "a": "Yüklediğin fotoğraflar yeniden kodlanır ve konum (GPS) dahil tüm EXIF bilgileri silinir. Görseller yalnızca süreli, imzalı bağlantılarla açılır ve hesabını sildiğinde tüm tasarımların silinir."
+      },
+      {
+        "q": "Kayıt olmadan kullanabilir miyim?",
+        "a": "Evet. Misafir olarak hemen başlayabilirsin; tasarımlarını kaybetmemek için daha sonra e-posta ile hesabını oluşturman yeterli."
+      },
+      {
+        "q": "Bütçe tahminleri ne kadar doğru?",
+        "a": "Fiyatlar, yapay zekânın Türkiye pazarına göre yaptığı tahmini aralıklardır. Satın almadan önce mağaza fiyatlarını kontrol etmeni öneririz."
+      },
+      {
+        "q": "Odamın duvarları ve pencereleri değişir mi?",
+        "a": "Hayır. Casalume oda geometrisini, pencereleri ve kamera açısını koruyarak yalnızca dekorasyonu, mobilyayı ve yüzeyleri değiştirir."
+      },
+      {
+        "q": "PRO aboneliği nasıl iptal ederim?",
+        "a": "Mobilde App Store / Google Play abonelik ayarlarından, web'de hesap sayfandan istediğin zaman iptal edebilirsin."
+      }
+    ],
+    "finalTitle": "Hayalindeki oda bir fotoğraf uzağında.",
+    "finalCta": "Ücretsiz tasarla"
+  },
+  "auth": {
+    "title": "Casalume'ye hoş geldin",
+    "subtitle": "Tasarımlarını kaydetmek ve her cihazdan erişmek için giriş yap.",
+    "loginTab": "Giriş yap",
+    "registerTab": "Kayıt ol",
+    "email": "E-posta",
+    "password": "Parola",
+    "passwordHint": "En az 10 karakter",
+    "name": "Adın (isteğe bağlı)",
+    "submitLogin": "Giriş yap",
+    "submitRegister": "Hesap oluştur",
+    "guest": "Misafir olarak dene",
+    "guestNote": "Misafir tasarımların, kayıt olduğunda hesabına taşınır.",
+    "upgradeNote": "Şu an misafirsin. Kayıt olursan mevcut tasarımların hesabına taşınır.",
+    "kvkk": "Devam ederek Kullanım Koşulları ve KVKK Aydınlatma Metni'ni kabul etmiş olursun.",
+    "invalid": "E-posta veya parola hatalı.",
+    "tooShort": "Parola en az 10 karakter olmalı.",
+    "forgotLink": "Şifremi unuttum"
+  },
+  "account": {
+    "forgotTitle": "Şifreni mi unuttun?",
+    "forgotText": "E-posta adresini yaz; hesabın varsa sana şifre sıfırlama bağlantısı gönderelim.",
+    "forgotSubmit": "Bağlantı gönder",
+    "forgotSent": "Bu adrese kayıtlı bir hesap varsa birkaç dakika içinde e-posta alacaksın. Bağlantı 30 dakika geçerlidir.",
+    "resetTitle": "Yeni şifre belirle",
+    "resetText": "Şifreni değiştirdiğinde tüm cihazlardaki oturumların kapatılır.",
+    "newPassword": "Yeni şifre",
+    "confirmPassword": "Yeni şifre (tekrar)",
+    "mismatch": "Şifreler aynı değil.",
+    "resetSubmit": "Şifreyi değiştir",
+    "resetDone": "Şifren değiştirildi. Yeni şifrenle giriş yapabilirsin.",
+    "verifyTitle": "E-posta doğrulama",
+    "verifying": "E-posta adresin doğrulanıyor…",
+    "verifyDone": "E-posta adresin doğrulandı. Teşekkürler!",
+    "invalidLink": "Bu bağlantı geçersiz, kullanılmış ya da süresi dolmuş. Yeni bir bağlantı isteyebilirsin.",
+    "requestNew": "Yeni bağlantı iste",
+    "toLogin": "Girişe dön",
+    "toStudio": "Stüdyoya git",
+    "bannerText": "E-posta adresini henüz doğrulamadın. Hesabını kurtarabilmek için doğrula.",
+    "bannerResend": "Doğrulama e-postasını gönder",
+    "bannerSent": "Doğrulama e-postası gönderildi."
+  },
+  "studio": {
+    "title": "Tasarım stüdyosu",
+    "subtitle": "Aracını seç, fotoğrafını yükle, stilini belirle.",
+    "stepTool": "Araç",
+    "stepPhoto": "Fotoğraf",
+    "stepOptions": "Ayarlar",
+    "categories": {
+      "interior": "İç mekân",
+      "exterior": "Dış mekân",
+      "edit": "Düzenleme"
+    },
+    "upload": "Fotoğraf yükle",
+    "uploadHint": "Sürükle bırak ya da seç · JPEG, PNG, WEBP, HEIC · en fazla 10 MB",
+    "uploading": "Yükleniyor…",
+    "samples": "Örnek fotoğrafla dene",
+    "sampleNames": {
+      "living_room": "Oturma odası",
+      "empty_room": "Boş oda",
+      "bedroom": "Yatak odası",
+      "exterior": "Dış cephe",
+      "garden": "Bahçe"
+    },
+    "change": "Değiştir",
+    "style": "Stil",
+    "room": "Oda tipi",
+    "floor": "Zemin",
+    "color": "Duvar rengi",
+    "target": "Neyi?",
+    "targetPlaceholderDeclutter": "ör. masadaki eşyalar, kablolar (boş bırak: genel dağınıklık)",
+    "targetPlaceholderReplace": "ör. koltuk",
+    "replacement": "Neyle?",
+    "replacementPlaceholder": "ör. yeşil kadife chester koltuk",
+    "instructions": "Ek istek",
+    "instructionsPlaceholder": "ör. daha fazla bitki, sıcak ışık, ahşap detaylar",
+    "customPlaceholder": "Ne değişsin? ör. duvara gömme kitaplık ekle, perdeleri keten yap",
+    "removeAll": "Odayı tamamen boşalt",
+    "select": {
+      "hint": {
+        "replace": "Değiştirmek istediğin nesneye dokun; yalnız o değişir.",
+        "declutter": "Silmek istediğin nesneye dokun.",
+        "paint": "Boyamak istediğin duvara dokun; yalnız o duvar boyanır."
+      },
+      "count": "{n} seçim · eklemek için başka bir yere dokun",
+      "undo": "Geri al",
+      "clear": "Temizle",
+      "notFound": "Dokunduğun yerde nesne bulunamadı; nesnenin ortasına dokun.",
+      "unavailable": "Dokunarak seçim şu an kapalı; nesnenin adını yazarak seçebilirsin.",
+      "max": "En çok 8 nesne seçebilirsin.",
+      "orType": "Fotoğrafta nesneye dokunabilirsin. Yalnız yazarsan o türün hepsi değişir.",
+      "optional": "isteğe bağlı, ör. yastık",
+      "imageLabel": "Fotoğraf: nesne seçmek için dokun"
+    },
+    "reference": "Referans görsel",
+    "referenceHint": "Beğendiğin bir odanın fotoğrafını yükle; stili ona göre uygulanır.",
+    "variants": "Varyant sayısı",
+    "cost": "Bu işlem {n} hak kullanır",
+    "remaining": "Kalan: {free} ücretsiz + {credits} kredi",
+    "generate": "Tasarla",
+    "generating": "Tasarlanıyor…",
+    "progress": [
+      "Odanın geometrisi inceleniyor…",
+      "Işık ve perspektif korunuyor…",
+      "Mobilyalar yerleştiriliyor…",
+      "Dokular ve renkler işleniyor…",
+      "Son rötuşlar yapılıyor…"
+    ],
+    "elapsed": "{s} sn",
+    "needPhoto": "Önce bir fotoğraf yükle veya örnek seç.",
+    "needTarget": "Fotoğrafta nesneye dokun ya da neyin değişeceğini yaz.",
+    "needReplacement": "Yerine ne geleceğini yaz.",
+    "needInstructions": "Ne değişmesini istediğini yaz.",
+    "needReference": "Bir referans görsel yükle.",
+    "proHint": "PRO özellik — sunucu planını kontrol eder.",
+    "newDesign": "Yeni tasarım",
+    "prefilled": "Sohbetteki öneri stüdyoya aktarıldı. Kontrol edip “Tasarla”ya bas."
+  },
+  "result": {
+    "before": "Önce",
+    "after": "Sonra",
+    "variants": "Varyantlar",
+    "variantCount": "varyant",
+    "favorite": "Favorilere ekle",
+    "unfavorite": "Favorilerden çıkar",
+    "download": "İndir",
+    "iterate": "Bu sonuçla devam et",
+    "askChat": "Sohbette sor",
+    "analyze": "Alışveriş listesi ve bütçe çıkar",
+    "analyzing": "Analiz ediliyor…",
+    "failed": "Bu tasarım üretilemedi.",
+    "sliderLabel": "Önce/sonra karşılaştırma kaydırıcısı"
+  },
+  "analysis": {
+    "title": "Alışveriş listesi ve bütçe",
+    "items": "Ürünler",
+    "renovation": "Tadilat kalemleri",
+    "totals": "Toplam tahmini bütçe",
+    "furniture": "Mobilya ve dekor",
+    "renovationTotal": "Tadilat",
+    "grand": "Genel toplam",
+    "qty": "Adet",
+    "palette": "Renk paleti",
+    "search": "Ara"
+  },
+  "designs": {
+    "title": "Tasarımlarım",
+    "empty": "Henüz tasarımın yok.",
+    "emptyCta": "İlk tasarımını yap",
+    "deleteConfirm": "Bu tasarım kalıcı olarak silinsin mi?",
+    "failed": "Başarısız"
+  },
+  "chat": {
+    "title": "AI tasarım sohbeti",
+    "subtitle": "Odanın fotoğrafını ekle, fikir iste. Öneriler yalnızca sen dokunduğunda uygulanır.",
+    "placeholder": "ör. Bu salonu daha ferah nasıl gösterebilirim?",
+    "send": "Gönder",
+    "attach": "Görsel ekle",
+    "attachUpload": "Yeni fotoğraf yükle",
+    "attachRecent": "Son tasarımlarından seç",
+    "attached": "Eklendi",
+    "remove": "Kaldır",
+    "thinking": "Düşünüyor…",
+    "openInStudio": "Stüdyoda aç",
+    "starters": [
+      "Küçük salonumu daha ferah nasıl gösterebilirim?",
+      "Kuzey cepheli yatak odası için hangi renkleri önerirsin?",
+      "Kiracıyım; kalıcı değişiklik yapmadan mutfağı nasıl yenilerim?"
+    ],
+    "disclaimer": "AI hata yapabilir; önerileri ilham olarak kullan, önemli kararları uzmanına danış.",
+    "empty": "Merhaba! Odanın fotoğrafını ekleyip bir soru sorarak başlayabilirsin.",
+    "limit": "Sohbet en fazla 20 mesaj tutar; eski mesajlar özetlenmeden gönderilmez."
+  },
+  "pricing": {
+    "title": "Planlar ve fiyatlar",
+    "subtitle": "Ücretsiz plan her gün yenilenir. PRO ile sınırları kaldır.",
+    "free": "Ücretsiz",
+    "freePrice": "₺0",
+    "freeFeatures": [
+      "Günde 3 tasarım",
+      "Tüm temel araçlar",
+      "Önce/sonra karşılaştırma",
+      "AI sohbet"
+    ],
+    "proFeatures": [
+      "Günde 100 tasarıma kadar (adil kullanım)",
+      "Tüm PRO stil ve araçlar",
+      "Filigransız yüksek çözünürlük",
+      "Öncelikli üretim",
+      "Alışveriş listesi ve TL bütçe"
+    ],
+    "period": {
+      "week": "hafta",
+      "month": "ay",
+      "year": "yıl"
+    },
+    "perPeriod": "/ {p}",
+    "choose": "Seç",
+    "current": "Mevcut planın",
+    "demoTitle": "Demo ödeme",
+    "demoText": "Bu MVP'de gerçek ödeme alınmaz. Aşağıdaki düğme hesabına 7 günlük PRO tanımlar. Canlıda ödeme App Store / Google Play ve web için iyzico ile yapılacak.",
+    "demoButton": "Demo: 7 gün PRO etkinleştir",
+    "demoDone": "PRO etkinleştirildi!",
+    "demoUnavailable": "Demo yükseltme bu ortamda kapalı.",
+    "loginFirst": "Önce giriş yap ya da misafir olarak başla."
+  },
+  "footer": {
+    "product": "Ürün",
+    "company": "Kurumsal",
+    "legal": "Yasal",
+    "about": "Hakkımızda",
+    "contact": "İletişim",
+    "kvkk": "KVKK Aydınlatma Metni",
+    "terms": "Kullanım Koşulları",
+    "privacy": "Gizlilik Politikası",
+    "rights": "Tüm hakları saklıdır.",
+    "note": "Fiyat ve bütçe tahminleri yapay zekâ tarafından üretilir ve bilgilendirme amaçlıdır."
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "cta": "Ana sayfaya dön"
+  }
+}

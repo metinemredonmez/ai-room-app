@@ -97,18 +97,29 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - [ ] Malzeme ve ürün listesi marka/ürün koduyla; ölçü ve kat planı (araştırılacak).
 
 ## Çok dilli sürüm
-Örnek: maeyja (11 dil): `/[locale]/…` yolları, dil başına SEO (hreflang, sitemap), içerik çevirisini AI ile doldurup
-insan onayıyla yayınlama (`translation-fill`). Casalume’a aynı desenle taşınacak.
-Bugün: web TR/EN (dil uygulama içinde seçiliyor, adreste değil), admin TR, kullanıcıda `locale` alanı ve TR/EN sürümlü
-yasal metin altyapısı var. Görsel talimatları İngilizce kalır (modelin en iyi anladığı dil); kullanıcı dili ayrı.
-- [ ] Dil sırası önerisi: TR, EN (var) → DE (Almanya’daki Türkiye kökenli kitle, büyük dekorasyon pazarı) → AR (Körfez,
-  iç mimarlık pazarı büyük; sağdan sola düzen gerekir) → RU → ES / FR / IT.
-- [ ] Web: dile göre ayrı adresler (`/en`, `/de`), hreflang ve sitemap — arama motorlarında her dil ayrı görünsün.
-- [ ] Backend: e-posta, push, stil/oda adları ve hata mesajları kullanıcının dilinde.
-- [ ] AI sohbet ve alışveriş listesi kullanıcının dilinde; para birimi (TL, EUR, USD) ve mağaza bağlantıları ülkeye göre.
-- [ ] Yasal metinler her dilde (KVKK + AB için GDPR); mağaza sayfaları ve ekran görüntüleri her dilde.
-- [ ] Admin: TR içerikten diğer dilleri AI ile doldurma (maeyja `translation-fill` deseni), insan onayıyla yayın.
-- [ ] Mobil dil seçimi (sen).
+maeyja’daki 11 dil (tr, en, de, es, fr, it, ru, nl, ja, ko, zh), API.md §7.17. Görsel talimatları İngilizce kalır (modelin en
+iyi anladığı dil); kullanıcı dili ayrı.
+- [x] Web: dile göre adresler (Türkçe öneksiz, `/en`, `/de` …), tarayıcı diline göre yönlendirme, dil seçici, hreflang’li
+  sitemap, her dilde 404 ve sayfa başlıkları. 338 metin 9 dile Claude ile çevrildi (`scripts/i18n_fill.py`).
+- [x] Backend: 11 dil kabul edilir; katalog adları (araç, oda, zemin, renk, plan, stil) dosyadan çevrilir, tasarım başlıkları
+  kullanıcının dilinde.
+- [x] AI sohbet ve maliyet analizi kullanıcının dilinde.
+- [x] Admin toplu gönderimde kitle dili 11 dil.
+- [ ] E-posta (doğrulama, şifre sıfırlama, toplu gönderim alt bilgisi) ve push metinleri yalnız TR/EN; diğer diller İngilizce
+  alıyor. Bu metinler de `i18n_fill` ile çevrilecek.
+- [ ] Hata mesajları (`error.message`) Türkçe; web kendi çevirisini gösteriyor, mobil için bakılacak.
+- [ ] Yasal metinler her dilde (KVKK + AB için GDPR) — avukat onayı gerekir; şimdilik Türkçe dışı herkese İngilizce.
+- [ ] Para birimi (TL, EUR, USD) ve mağaza bağlantıları ülkeye göre; alışveriş listesi şimdilik Türk mağazaları.
+- [ ] AR (sağdan sola düzen gerekir) — sonra.
+- [ ] Admin: yeni stil eklenince diğer dilleri AI ile doldurma düğmesi (maeyja `translation-fill`), insan onayıyla yayın.
+  Şimdilik yeni stil adı Türkçe dışı dillerde İngilizce görünür.
+- [ ] Mağaza sayfaları ve ekran görüntüleri her dilde; mobil dil seçimi (sen).
+
+## Pazarlama AI ajanları (sahibinin isteği, 4 Kasım)
+- [ ] Admin’de “Pazarlama” bölümü: SEO ajanı (sayfa başlık/açıklama önerisi, anahtar kelime, blog taslağı), mağaza metni
+  ajanı (App Store / Play açıklaması 11 dilde), sosyal medya gönderi ajanı, kampanya metni ajanı (toplu gönderime taslak).
+  Hepsi taslak üretir, yayın insan onayıyla. Kaynak: fal-app `seo` modülü, maeyja `ai-tools` / `ai-studio`.
+  Mobil sürümün pazarlaması için de kullanılacak. Kapsam sahibiyle konuşulacak.
 
 ## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
 Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)” = mobil tarafı sahibinde.

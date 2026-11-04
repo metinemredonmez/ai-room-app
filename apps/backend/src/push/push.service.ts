@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG, type Config } from '../config.js';
-import type { Locale } from '../catalog/catalog.data.js';
+import { contentLocale, isLocale, type Locale } from '../catalog/catalog.data.js';
 import type { Design } from '../generated/prisma/client.js';
 import { PrismaService } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -90,8 +90,9 @@ export class PushService {
       include: { user: { select: { locale: true, pushTokens: { select: { token: true } } } } },
     });
     if (!design || design.status === 'PENDING' || !design.user.pushTokens.length) return {};
-    const locale: Locale = design.user.locale === 'en' ? 'en' : 'tr';
-    const copy = COPY[locale][design.status === 'SUCCEEDED' ? 'ready' : 'failed'];
+    const locale: Locale = isLocale(design.user.locale) ? design.user.locale : 'tr';
+    // Push copy exists in Turkish and English; the design title itself is localised.
+    const copy = COPY[contentLocale(locale)][design.status === 'SUCCEEDED' ? 'ready' : 'failed'];
     const title = await titleOf(design, locale);
     const messages: PushMessage[] = design.user.pushTokens.map(({ token }) => ({
       to: token,

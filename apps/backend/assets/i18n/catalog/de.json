@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "Sofort-Makeover",
+      "description": "Gestalte deinen Raum im Stil deiner Wahl neu"
+    },
+    "furnish": {
+      "name": "Leeren Raum einrichten",
+      "description": "Richte eine leere Wohnung virtuell ein"
+    },
+    "declutter": {
+      "name": "Objekte entfernen",
+      "description": "Entferne Unordnung oder alle Möbel"
+    },
+    "replace": {
+      "name": "Ersetzen",
+      "description": "Tausche ein Möbelstück gegen etwas anderes"
+    },
+    "paint": {
+      "name": "Wandfarbe",
+      "description": "Streiche deine Wände in deiner Wunschfarbe"
+    },
+    "flooring": {
+      "name": "Neuer Boden",
+      "description": "Probier Parkett, Marmor oder Fliesen aus"
+    },
+    "exterior": {
+      "name": "Fassade",
+      "description": "Verpasse deinem Haus eine neue Fassade"
+    },
+    "garden": {
+      "name": "Garten & Terrasse",
+      "description": "Gestalte deinen Garten oder deine Terrasse"
+    },
+    "reference": {
+      "name": "Referenzstil",
+      "description": "Übernimm den Stil eines Fotos, das dir gefällt"
+    },
+    "custom": {
+      "name": "Dein eigener Wunsch",
+      "description": "Beschreib, was du willst – die KI setzt es um"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "Wohnzimmer"
+    },
+    "salon": {
+      "name": "Salon (für Gäste)"
+    },
+    "bedroom": {
+      "name": "Schlafzimmer"
+    },
+    "kitchen": {
+      "name": "Küche"
+    },
+    "bathroom": {
+      "name": "Badezimmer"
+    },
+    "dining_room": {
+      "name": "Esszimmer"
+    },
+    "kids_room": {
+      "name": "Kinderzimmer"
+    },
+    "home_office": {
+      "name": "Arbeitszimmer"
+    },
+    "hallway": {
+      "name": "Flur"
+    },
+    "balcony": {
+      "name": "Balkon"
+    },
+    "studio": {
+      "name": "Einzimmerwohnung"
+    },
+    "office": {
+      "name": "Büro"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "Eichenparkett"
+    },
+    "herringbone": {
+      "name": "Fischgrätparkett"
+    },
+    "marble": {
+      "name": "Weißer Marmor"
+    },
+    "travertine": {
+      "name": "Travertin"
+    },
+    "concrete": {
+      "name": "Polierter Beton"
+    },
+    "terracotta": {
+      "name": "Terrakotta"
+    },
+    "ceramic": {
+      "name": "Matte Keramik"
+    },
+    "carpet": {
+      "name": "Teppichboden"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "Gebrochenes Weiß"
+    },
+    "kum_beji": {
+      "name": "Sandbeige"
+    },
+    "adacayi": {
+      "name": "Salbeigrün"
+    },
+    "zeytin": {
+      "name": "Olivgrün"
+    },
+    "ege_mavisi": {
+      "name": "Ägäisblau"
+    },
+    "gece_mavisi": {
+      "name": "Nachtblau"
+    },
+    "terrakota": {
+      "name": "Terrakotta"
+    },
+    "gul_kurusu": {
+      "name": "Altrosa"
+    },
+    "hardal": {
+      "name": "Senfgelb"
+    },
+    "antrasit": {
+      "name": "Anthrazit"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "Wöchentlich"
+    },
+    "pro_monthly": {
+      "name": "Monatlich",
+      "badge": "BELIEBT"
+    },
+    "pro_yearly": {
+      "name": "Jährlich",
+      "badge": "BESTER PREIS"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "Modern",
+      "description": "Klare Linien, neutrale Töne, warmes Holz"
+    },
+    "modern_turkish": {
+      "name": "Modern Türkisch",
+      "description": "Travertin, Walnuss, Kelim und Kupferakzente"
+    },
+    "japandi": {
+      "name": "Japandi",
+      "description": "Niedrige Holzmöbel, Erdtöne, Schlichtheit"
+    },
+    "scandinavian": {
+      "name": "Skandinavisch",
+      "description": "Helle Eiche, weiße Wände, Wolle und Leinen"
+    },
+    "aegean": {
+      "name": "Ägäis",
+      "description": "Kalkweiß, Ägäisblau, Olivenholz"
+    },
+    "minimalist": {
+      "name": "Minimalistisch",
+      "description": "Weniger ist mehr – luftig und ruhig"
+    },
+    "mediterranean": {
+      "name": "Mediterran",
+      "description": "Bögen, Kalkputz, Terrakotta"
+    },
+    "industrial": {
+      "name": "Industrial",
+      "description": "Backstein, Beton, schwarzes Metall, Leder"
+    },
+    "bohemian": {
+      "name": "Boho",
+      "description": "Rattan, geschichtete Teppiche, viele Pflanzen"
+    },
+    "rustic": {
+      "name": "Rustikales Landhaus",
+      "description": "Holzbalken, Naturstein, warmes Licht"
+    },
+    "coastal": {
+      "name": "Küste / Ferienhaus",
+      "description": "Sand- und Himmelblau, Rattan, Streifen"
+    },
+    "classic_ottoman": {
+      "name": "Osmanisch Klassisch",
+      "description": "Geschnitzte Walnuss, Sedir-Sofa, İznik-Fliesen, Messinglaterne"
+    },
+    "cappadocia": {
+      "name": "Kappadokisches Steinhaus",
+      "description": "Steinbögen, Nischen, Erdtöne"
+    },
+    "mid_century": {
+      "name": "Mid-Century",
+      "description": "Walnuss, konische Beine, Senfgelb und Petrol"
+    },
+    "art_deco": {
+      "name": "Art-déco-Luxus",
+      "description": "Samt, Messing, Marmor, Smaragd und Gold"
+    }
+  }
+}

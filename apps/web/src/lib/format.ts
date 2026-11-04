@@ -1,7 +1,7 @@
-import type { Locale } from "./types";
+import { LOCALE_TAGS, type Locale } from "./i18n";
 
 export function formatTRY(value: number, locale: Locale = "tr") {
-  return new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
+  return new Intl.NumberFormat(LOCALE_TAGS[locale] ?? "tr-TR", {
     style: "currency",
     currency: "TRY",
     maximumFractionDigits: 0,
@@ -15,7 +15,7 @@ export function formatRange(min: number, max: number, locale: Locale = "tr") {
 
 export function formatDate(iso: string, locale: Locale = "tr") {
   try {
-    return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-GB", {
+    return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : (LOCALE_TAGS[locale] ?? "tr-TR"), {
       day: "numeric",
       month: "short",
       year: "numeric",

@@ -1,6 +1,8 @@
 // Mirrors docs/API.md §2–3 (backend public contract).
 
-export type Locale = "tr" | "en";
+import type { Locale } from "./i18n";
+
+export type { Locale };
 
 export type User = {
   id: string;

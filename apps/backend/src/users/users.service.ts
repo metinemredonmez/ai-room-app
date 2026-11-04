@@ -4,6 +4,7 @@ import { todayInIstanbul } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
 import type { User } from '../generated/prisma/client.js';
 import { SettingsService } from '../settings/settings.service.js';
+import { isLocale } from '../catalog/catalog.data.js';
 
 export interface Charge {
   day: string;
@@ -50,7 +51,7 @@ export class UsersService {
       planExpiresAt: this.isPro(u) ? (this.proUntil(u)?.toISOString() ?? null) : (u.planExpiresAt?.toISOString() ?? null),
       credits: u.credits,
       dailyFreeRemaining: this.freeRemaining(u),
-      locale: u.locale === 'en' ? 'en' : 'tr',
+      locale: isLocale(u.locale) ? u.locale : 'tr',
       createdAt: u.createdAt.toISOString(),
     };
   }

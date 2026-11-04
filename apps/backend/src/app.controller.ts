@@ -8,7 +8,8 @@ import { AiClient } from './ai/ai.client.js';
 import { UserGuard } from './auth/tokens.service.js';
 import { TokensService } from './auth/tokens.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
-import { ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog/catalog.data.js';
+import { LOCALES, ROOMS, TOOLS, TOOL_IDS, isLocale, type Locale } from './catalog/catalog.data.js';
+import { localize } from './catalog/catalog.i18n.js';
 import { AppError, parse } from './common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from './common/http.js';
 import { LIMITS, PrismaService, RateLimiter, RedisService } from './common/infra.js';
@@ -27,13 +28,23 @@ import { APP_PLATFORMS, SkipVersionGate } from './common/app-version.js';
 import { clientVersion, compareVersions } from './common/semver.js';
 import { SettingsService } from './settings/settings.service.js';
 
+/** ?locale= first, then the best supported Accept-Language entry (q-values respected), then the fallback. */
 export function localeOf(req: AppRequest, fallback?: string): Locale {
   const q = typeof req.query.locale === 'string' ? req.query.locale : '';
-  if (q === 'en' || q === 'tr') return q;
-  const header = (req.headers['accept-language'] ?? '').toString().toLowerCase();
-  if (header.startsWith('en')) return 'en';
-  if (header.startsWith('tr')) return 'tr';
-  return fallback === 'en' ? 'en' : 'tr';
+  if (isLocale(q)) return q;
+  const ranked = (req.headers['accept-language'] ?? '')
+    .toString()
+    .split(',')
+    .map((part) => {
+      const [tag, ...params] = part.trim().split(';');
+      const weight = Number(params.find((p) => p.trim().startsWith('q='))?.trim().slice(2) ?? '1');
+      return { base: tag.trim().toLowerCase().split('-')[0], weight: Number.isFinite(weight) ? weight : 0 };
+    })
+    .filter((x) => x.base && x.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
+    .map((x) => x.base)
+    .find(isLocale);
+  return ranked ?? (isLocale(fallback) ? fallback : 'tr');
 }
 
 const AppVersionQuery = z.object({ platform: z.enum(APP_PLATFORMS), version: z.string().max(20) }).strict();
@@ -42,7 +53,7 @@ const PageQuery = z.object({
   cursor: z.string().max(64).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   favorite: z.enum(['true', 'false']).optional(),
-  locale: z.enum(['tr', 'en']).optional(),
+  locale: z.enum(LOCALES).optional(),
 });
 
 @ApiTags('public')
@@ -90,7 +101,7 @@ export class PublicController {
   }
 
   @Get('catalog')
-  @Doc('Katalog: araçlar, stiller, odalar, zeminler, renkler, planlar, duyuru, bakım, yasal sürümler', { response: 'Catalog', description: '`?locale=tr|en` ya da Accept-Language' })
+  @Doc('Katalog: araçlar, stiller, odalar, zeminler, renkler, planlar, duyuru, bakım, yasal sürümler', { response: 'Catalog', description: '`?locale=` (11 dil) ya da Accept-Language' })
   async getCatalog(@Req() req: AppRequest) {
     return this.catalog.catalog(localeOf(req));
   }
@@ -133,10 +144,10 @@ export class PublicController {
       .filter((d) => d.results[0])
       .map((d) => {
         const s = d.styleId ? byId.get(d.styleId) : undefined;
-        const room = d.roomId ? ROOMS[d.roomId]?.name[locale] : undefined;
+        const room = d.roomId && ROOMS[d.roomId] ? localize(locale, `rooms.${d.roomId}.name`, ROOMS[d.roomId].name) : undefined;
         return {
           id: d.id,
-          title: [s ? this.catalog.styleName(s, locale) : TOOLS[d.tool as keyof typeof TOOLS]?.name[locale], room].filter(Boolean).join(' · '),
+          title: [s ? this.catalog.styleName(s, locale) : TOOLS[d.tool as keyof typeof TOOLS] ? localize(locale, `tools.${d.tool}.name`, TOOLS[d.tool as keyof typeof TOOLS].name) : d.tool, room].filter(Boolean).join(' · '),
           styleId: d.styleId, roomId: d.roomId,
           imageUrl: this.images.url(d.results[0].id),
           palette: s?.palette ?? [],
@@ -155,7 +166,7 @@ export class PublicController {
 
 const UploadSchema = z.object({ data: z.string().min(100).max(15_000_000), mimeType: z.enum(ALLOWED_MIME) }).strict();
 const SampleSchema = z.object({ sample: z.enum(SAMPLE_IDS) }).strict();
-const PatchMeSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), locale: z.enum(['tr', 'en']).optional() }).strict();
+const PatchMeSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), locale: z.enum(LOCALES).optional() }).strict();
 const PushTokenSchema = z.object({ token: z.string().max(200).regex(PUSH_TOKEN_RE), platform: z.enum(['ios', 'android']) }).strict();
 const PushTokenDeleteSchema = z.object({ token: z.string().max(200) }).strict();
 const FavoriteSchema = z.object({ favorite: z.boolean() }).strict();
@@ -172,7 +183,7 @@ const ChatSchema = z
       .array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().trim().min(1).max(2000), imageId: z.uuid().optional() }).strict())
       .min(1)
       .max(20),
-    locale: z.enum(['tr', 'en']).optional(),
+    locale: z.enum(LOCALES).optional(),
   })
   .strict();
 
@@ -460,7 +471,7 @@ export class UserController {
         locale,
         messages,
         catalog: {
-          tools: TOOL_IDS.map((id) => ({ id, name: TOOLS[id].name[locale] })),
+          tools: TOOL_IDS.map((id) => ({ id, name: localize(locale, `tools.${id}.name`, TOOLS[id].name) })),
           styles: cat.styles.map((s) => ({ id: s.id, name: s.name })),
           rooms: cat.rooms.map((r) => ({ id: r.id, name: r.name })),
         },

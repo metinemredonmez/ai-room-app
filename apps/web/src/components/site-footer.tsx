@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useApp } from "./app-provider";
 import { Logo } from "./logo";
 

@@ -102,3 +102,15 @@ def test_unsafe_settings_refuse_to_start(monkeypatch):
         Settings(INTERNAL_TOKEN="x" * 40, ENV="production", IMAGE_PROVIDER="mock")  # type: ignore[call-arg]
     with pytest.raises(ValueError):
         Settings(INTERNAL_TOKEN="x" * 40, IMAGE_PROVIDER="gemini")  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("locale", ["de", "ja", "zh"])
+def test_every_web_language_is_accepted(locale):
+    # API.md §7.17: the web speaks 11 languages; the keyless demo answers fall back to English.
+    from app.assistant import LANG
+    from app.schemas import Locale
+    assert set(LANG) == set(Locale.__args__)
+    res = client.post("/internal/v1/chat", headers=AUTH, json={"locale": locale, "messages": [{"role": "user", "text": "hello"}]})
+    assert res.status_code == 200 and res.json()["reply"].startswith("[Demo] Three directions")
+    res = client.post("/internal/v1/analyze", headers=AUTH, json={"image_b64": room_b64(), "locale": locale})
+    assert res.status_code == 200 and res.json()["summary"].startswith("[Demo] Estimated")

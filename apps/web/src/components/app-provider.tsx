@@ -1,28 +1,16 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { ApiError, api, authApi } from "@/lib/api";
-import { dictionaries, type Dict } from "@/lib/i18n";
-import type { Catalog, Locale, User } from "@/lib/types";
+import { LOCALE_COOKIE, localePath, splitLocale, type Dict, type Locale } from "@/lib/i18n";
+import type { Catalog, User } from "@/lib/types";
 
-// ---- locale: a plain (non-httpOnly) cookie so the BFF can forward Accept-Language ----
+// ---- locale: comes from the URL (server layout); the cookie remembers it and lets the BFF send Accept-Language ----
 
-const LOCALE_EVENT = "air-locale";
-
-function readLocale(): Locale {
-  return /(?:^|;\s*)air_locale=en(?:;|$)/.test(document.cookie) ? "en" : "tr";
-}
-
-function subscribeLocale(cb: () => void) {
-  window.addEventListener(LOCALE_EVENT, cb);
-  return () => window.removeEventListener(LOCALE_EVENT, cb);
-}
-
-function writeLocale(locale: Locale) {
+function rememberLocale(locale: Locale) {
   const secure = location.protocol === "https:" ? "; secure" : "";
-  document.cookie = `air_locale=${locale}; path=/; max-age=31536000; samesite=lax${secure}`;
-  document.documentElement.lang = locale;
-  window.dispatchEvent(new Event(LOCALE_EVENT));
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax${secure}`;
 }
 
 const noopSubscribe = () => () => {};
@@ -40,7 +28,10 @@ export function useIsClient() {
 
 type AppState = {
   locale: Locale;
+  /** Opens the current page in another language (and remembers the choice). */
   setLocale: (l: Locale) => void;
+  /** In-app path in the current language: href("/studio") → "/en/studio". */
+  href: (path: string) => string;
   t: Dict;
   user: User | null;
   userReady: boolean;
@@ -55,9 +46,23 @@ type AppState = {
 
 const AppContext = createContext<AppState | null>(null);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const locale = useSyncExternalStore(subscribeLocale, readLocale, () => "tr" as Locale);
-  const t = dictionaries[locale];
+export function AppProvider({ children, locale, messages }: { children: React.ReactNode; locale: Locale; messages: Dict }) {
+  const t = messages;
+  const router = useRouter();
+
+  useEffect(() => {
+    rememberLocale(locale);
+  }, [locale]);
+
+  const href = useCallback((path: string) => localePath(locale, path), [locale]);
+  const setLocale = useCallback(
+    (next: Locale) => {
+      rememberLocale(next);
+      // Read at click time: usePathname() here would make every page wait for the URL (no prerendering).
+      router.push(localePath(next, splitLocale(window.location.pathname).path) + window.location.search);
+    },
+    [router],
+  );
 
   const [user, setUser] = useState<User | null>(null);
   const [userReady, setUserReady] = useState(false);
@@ -130,7 +135,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AppState>(
     () => ({
       locale,
-      setLocale: writeLocale,
+      setLocale,
+      href,
       t,
       user,
       userReady,
@@ -142,7 +148,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       catalogError,
       reloadCatalog: () => setCatalogNonce((n) => n + 1),
     }),
-    [locale, t, user, userReady, refreshUser, ensureSession, logout, catalog, catalogError],
+    [locale, setLocale, href, t, user, userReady, refreshUser, ensureSession, logout, catalog, catalogError],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

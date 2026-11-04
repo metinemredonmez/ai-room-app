@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { TriangleAlert } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { useApp } from "./app-provider";
+import { fmt } from "@/lib/i18n";
 
 export function useErrorText() {
   const { t } = useApp();
@@ -13,7 +14,7 @@ export function useErrorText() {
       case "insufficient_credits":
         return t.errors.insufficient_credits;
       case "rate_limited":
-        return t.errors.rate_limited(err.retryAfter);
+        return err.retryAfter ? fmt(t.errors.rate_limited_seconds, { s: err.retryAfter }) : t.errors.rate_limited;
       case "ai_unavailable":
         return t.errors.ai_unavailable;
       case "busy":

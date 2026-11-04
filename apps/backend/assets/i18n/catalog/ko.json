@@ -1,0 +1,215 @@
+{
+  "tools": {
+    "redesign": {
+      "name": "즉시 리모델링",
+      "description": "원하는 스타일로 방을 새롭게 디자인해요"
+    },
+    "furnish": {
+      "name": "빈 방 꾸미기",
+      "description": "빈 집을 가상으로 꾸며 보세요"
+    },
+    "declutter": {
+      "name": "사물 지우기",
+      "description": "어수선한 물건이나 모든 가구를 치워요"
+    },
+    "replace": {
+      "name": "바꾸기",
+      "description": "물건 하나를 다른 것으로 바꿔요"
+    },
+    "paint": {
+      "name": "벽 페인트",
+      "description": "원하는 색으로 벽을 칠해요"
+    },
+    "flooring": {
+      "name": "새 바닥재",
+      "description": "원목, 대리석, 타일을 입혀 보세요"
+    },
+    "exterior": {
+      "name": "외관",
+      "description": "집의 외관을 새롭게 바꿔요"
+    },
+    "garden": {
+      "name": "정원 & 테라스",
+      "description": "정원이나 테라스를 꾸며 보세요"
+    },
+    "reference": {
+      "name": "참고 스타일",
+      "description": "마음에 드는 사진의 스타일을 적용해요"
+    },
+    "custom": {
+      "name": "나만의 요청",
+      "description": "원하는 걸 적으면 AI가 바꿔 드려요"
+    }
+  },
+  "rooms": {
+    "living_room": {
+      "name": "거실"
+    },
+    "salon": {
+      "name": "응접실"
+    },
+    "bedroom": {
+      "name": "침실"
+    },
+    "kitchen": {
+      "name": "주방"
+    },
+    "bathroom": {
+      "name": "욕실"
+    },
+    "dining_room": {
+      "name": "다이닝룸"
+    },
+    "kids_room": {
+      "name": "아이 방"
+    },
+    "home_office": {
+      "name": "서재"
+    },
+    "hallway": {
+      "name": "현관"
+    },
+    "balcony": {
+      "name": "발코니"
+    },
+    "studio": {
+      "name": "원룸"
+    },
+    "office": {
+      "name": "사무실"
+    }
+  },
+  "floors": {
+    "oak_parquet": {
+      "name": "오크 원목마루"
+    },
+    "herringbone": {
+      "name": "헤링본"
+    },
+    "marble": {
+      "name": "화이트 대리석"
+    },
+    "travertine": {
+      "name": "트래버틴"
+    },
+    "concrete": {
+      "name": "폴리싱 콘크리트"
+    },
+    "terracotta": {
+      "name": "테라코타"
+    },
+    "ceramic": {
+      "name": "무광 세라믹"
+    },
+    "carpet": {
+      "name": "카펫"
+    }
+  },
+  "colors": {
+    "kirik_beyaz": {
+      "name": "오프화이트"
+    },
+    "kum_beji": {
+      "name": "샌드 베이지"
+    },
+    "adacayi": {
+      "name": "세이지 그린"
+    },
+    "zeytin": {
+      "name": "올리브"
+    },
+    "ege_mavisi": {
+      "name": "에게해 블루"
+    },
+    "gece_mavisi": {
+      "name": "미드나잇 블루"
+    },
+    "terrakota": {
+      "name": "테라코타"
+    },
+    "gul_kurusu": {
+      "name": "더스티 로즈"
+    },
+    "hardal": {
+      "name": "머스터드"
+    },
+    "antrasit": {
+      "name": "앤트러사이트"
+    }
+  },
+  "plans": {
+    "pro_weekly": {
+      "name": "주간"
+    },
+    "pro_monthly": {
+      "name": "월간",
+      "badge": "인기"
+    },
+    "pro_yearly": {
+      "name": "연간",
+      "badge": "최고 혜택"
+    }
+  },
+  "styles": {
+    "modern": {
+      "name": "모던",
+      "description": "깔끔한 선, 뉴트럴 톤, 따뜻한 원목"
+    },
+    "modern_turkish": {
+      "name": "모던 튀르키예",
+      "description": "트래버틴, 월넛, 킬림과 구리 포인트"
+    },
+    "japandi": {
+      "name": "재팬디",
+      "description": "낮은 원목 가구, 흙빛 톤, 단순함"
+    },
+    "scandinavian": {
+      "name": "스칸디나비안",
+      "description": "밝은 오크, 하얀 벽, 울과 리넨"
+    },
+    "aegean": {
+      "name": "에게해",
+      "description": "석회 화이트, 에게해 블루, 올리브 우드"
+    },
+    "minimalist": {
+      "name": "미니멀",
+      "description": "적지만 알차게, 넓고 차분하게"
+    },
+    "mediterranean": {
+      "name": "지중해",
+      "description": "아치, 석회 미장, 테라코타"
+    },
+    "industrial": {
+      "name": "인더스트리얼",
+      "description": "벽돌, 콘크리트, 블랙 메탈, 가죽"
+    },
+    "bohemian": {
+      "name": "보헤미안",
+      "description": "라탄, 겹겹이 깐 러그, 풍성한 식물"
+    },
+    "rustic": {
+      "name": "러스틱 팜하우스",
+      "description": "나무 들보, 자연석, 따뜻한 조명"
+    },
+    "coastal": {
+      "name": "코스탈",
+      "description": "모래빛과 하늘색, 라탄, 스트라이프"
+    },
+    "classic_ottoman": {
+      "name": "오스만 클래식",
+      "description": "조각 월넛, 세디르 소파, 이즈니크 타일, 황동 등"
+    },
+    "cappadocia": {
+      "name": "카파도키아 동굴집",
+      "description": "돌 아치, 벽감, 흙빛 톤"
+    },
+    "mid_century": {
+      "name": "미드센추리",
+      "description": "월넛, 테이퍼드 다리, 머스터드와 틸"
+    },
+    "art_deco": {
+      "name": "아르데코 럭스",
+      "description": "벨벳, 황동, 대리석, 에메랄드와 골드"
+    }
+  }
+}
