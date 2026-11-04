@@ -341,3 +341,14 @@ def test_segment_preview_returns_the_mask():
     paid = TestClient(create_app(settings(), segmenter=FixedSegmenter(left_half_mask())))
     usage = paid.post("/internal/v1/segment", headers=AUTH, json={"image_b64": b64(room()), "points": TAP}).json()["usage"]
     assert (usage["provider"], usage["model"], usage["cost_usd"]) == ("falai", "fal-ai/sam-3/image", 0.005)
+
+
+def test_a_locked_segmenter_account_turns_tap_selection_off():
+    # fal.ai answers 403 "User is locked. Reason: TOP_UP" until the balance is topped up.
+    locked = TestClient(create_app(settings(), segmenter=FixedSegmenter(error=ProviderError("falai_http_403", False))))
+    for path, body in (("/internal/v1/segment", {"points": TAP}), ("/internal/v1/generate", {"tool": "replace", "points": TAP})):
+        res = locked.post(path, headers=AUTH, json={**body, "image_b64": b64(room())})
+        assert res.status_code == 503 and res.json()["error"]["code"] == "selection_unavailable"
+    down = TestClient(create_app(settings(), segmenter=FixedSegmenter(error=ProviderError("falai_http_503", True))))
+    res = down.post("/internal/v1/segment", headers=AUTH, json={"points": TAP, "image_b64": b64(room())})
+    assert res.status_code == 502 and res.json()["error"]["retryable"] is True  # an outage stays a retryable error

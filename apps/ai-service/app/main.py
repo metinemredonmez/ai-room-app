@@ -217,6 +217,10 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             raise SelectionError(503, "selection_unavailable", "Object selection is not available")
         seg = await segment(image, target, timeout, points)
         if isinstance(seg, ProviderError):
+            # A rejected key or a locked account (fal.ai "TOP_UP" is a 403) won't fix itself on retry: the client
+            # falls back to typing the object's name until the account works again.
+            if seg.code.endswith(("_http_401", "_http_402", "_http_403")):
+                raise SelectionError(503, "selection_unavailable", "Object selection is not available")
             raise seg
         if isinstance(seg, (TimeoutError, asyncio.TimeoutError)):
             raise ProviderError("segmentation_timeout", retryable=True)

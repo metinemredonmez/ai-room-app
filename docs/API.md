@@ -606,7 +606,8 @@ katalogda bu araçların `needs.points` alanı `true` döner.
 - Otomatik kilitten farkı: seçim kullanıcının açık isteğidir, **sessizce düşmez**. Maske üretimden **önce** çıkarılır.
   - Hiçbir şey bulunamazsa (kapsam %0,5'ten az ya da %95'ten fazla) hiçbir görsel üretilmez: 422 `selection_failed`.
     SAM 3 maliyeti `usage` (`kind: 'segment'`) içinde döner ve kaydedilir; tasarım başarısız olur ve hak iade edilir.
-  - Segmenter yoksa (`FAL_KEY` yok ya da `REGION_LOCK=off`): 503 `selection_unavailable`. İstemci yazarak seçime döner.
+  - Segmenter yoksa (`FAL_KEY` yok ya da `REGION_LOCK=off`) ya da fal.ai anahtarı/hesabı reddediyorsa (401/402/403; ör.
+    bakiye bitti, "TOP_UP"): 503 `selection_unavailable`. İstemci yazarak seçime döner; hesap düzelince kendiliğinden açılır.
   - fal.ai hatası ya da zaman aşımı: 502 `ai_unavailable` (zaman aşımı yeniden denenebilir).
 - Prompt'a seçimin yeri yazılır ("… 25–60 % from the left and 40–80 % from the top of the photo"). Çıktı yalnız maske içinde
   orijinalle birleştirilir; `region.target` değeri `target` ya da `selection` olur.
