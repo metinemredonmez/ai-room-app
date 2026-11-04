@@ -223,7 +223,7 @@ export default function UserDetailPage() {
                         {fmtInt(l.delta)}
                       </td>
                       <td className={td}>
-                        {l.reason}
+                        {ledgerLabel(l.reason)}
                         {l.refId && <span className="ml-1 font-mono text-[11px] text-muted-foreground">({l.refId})</span>}
                       </td>
                     </tr>
@@ -248,4 +248,17 @@ export default function UserDetailPage() {
       )}
     </>
   );
+}
+
+/** Ledger reasons in plain Turkish (the raw code stays in the API and the audit log). */
+function ledgerLabel(reason: string): string {
+  if (reason.startsWith("purchase:")) return `Kredi paketi (${reason.slice(9)})`;
+  if (reason.startsWith("admin: ")) return `Yönetici: ${reason.slice(7)}`;
+  const known: Record<string, string> = {
+    welcome: "Hoş geldin hediyesi",
+    generation: "Tasarım",
+    refund: "İade (tasarım tamamlanamadı)",
+    daily_free: "Günlük ücretsiz hak",
+  };
+  return known[reason] ?? reason;
 }

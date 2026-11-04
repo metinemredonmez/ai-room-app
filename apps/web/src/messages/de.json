@@ -272,6 +272,7 @@
     "verifyTitle": "E-Mail-Bestätigung",
     "verifying": "Deine E-Mail-Adresse wird bestätigt…",
     "verifyDone": "Deine E-Mail-Adresse ist bestätigt. Danke!",
+    "welcomeGift": "Willkommensgeschenk: Deinem Konto wurden {n} Credits gutgeschrieben. Jeder Credit ist ein Design.",
     "invalidLink": "Dieser Link ist ungültig, wurde bereits verwendet oder ist abgelaufen. Du kannst einen neuen Link anfordern.",
     "requestNew": "Neuen Link anfordern",
     "toLogin": "Zurück zur Anmeldung",

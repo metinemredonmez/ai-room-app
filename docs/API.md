@@ -981,3 +981,41 @@ Fiyat hiçbir yerde tutulmaz. Fiyatı mağaza belirler; uygulama RevenueCat tekl
 Mobil (sonra): ödeme ekranı `GET /v1/billing/catalog?locale=<dil>` ile metinleri, öne çıkanı ve paketlerin hak
 sayısını alır. RevenueCat teklifleriyle `productIds` üzerinden eşleştirir; fiyatı RevenueCat'in `priceString`
 değerinden gösterir. Katalogda olmayan teklif gösterilmez. Yanıt alınamazsa yalnız RevenueCat teklifleri gösterilir.
+
+### 7.22 Hoş geldin kredisi — backend + admin + web (mobil sonra)
+Kayıtlı ve kimliğini kanıtlamış yeni hesap bir kez hediye kredi alır. Miktar **Ayarlar → Kota ve varyantlar →
+Hoş geldin kredisi** alanından ayarlanır (`welcomeCredits`, 0–50; 0 kapalı, varsayılan 0). Misafir hesap almaz;
+onun günlük ücretsiz hakkı var.
+
+**Ne zaman verilir**
+- E-posta adresinin ilk doğrulanmasında. Şifre sıfırlama bağlantısı da adresi kanıtlar; adres o sırada ilk kez
+  doğrulanıyorsa kredi orada verilir.
+- Apple ya da Google ile yeni hesap açılınca ya da misafir hesap bu yolla kayıtlı hesaba dönünce.
+- Var olan hesaba sonradan Apple/Google bağlamak kredi vermez.
+
+**Bir kez kuralı (BUS-01)**
+- Her kimlik `DEVICE_PEPPER` ile anahtarlanmış özet (HMAC) olarak `WelcomeGrant` tablosunda tutulur. Kimlik,
+  normalize edilmiş e-posta ya da `apple:<sub>` / `google:<sub>` biçimindedir.
+- Normalize kuralı: büyük-küçük harf ve Unicode biçimi eşitlenir, `+etiket` atılır, Gmail'de noktalar da atılır.
+- Satır hesaba bağlı değildir: hesap silinince kalır, aynı kimlik yeniden açılan hesapta krediyi bir daha alamaz.
+- Bir hesap krediyi bir kez alır (defterde `welcome` satırı). Aynı anda gelen iki hesaptan yalnız özeti ilk yazan
+  alır.
+- Özetler 3 yıl sonra saklama işinde silinir (`retention` → `welcomeGrants`). Adresin kendisi saklanmaz.
+  Gizlilik metnine "kötüye kullanımı önlemek için kimliğin geri döndürülemez özeti 3 yıl tutulur" cümlesi
+  eklenmeli (sahibinin işi).
+- Hata kayıt akışını bozmaz; kredi verilemezse 0 döner ve loga yazılır.
+
+**Yanıtlar**
+- `POST /auth/email/verify` → `{ ok, welcomeCredits }`: verilen miktar, verilmediyse 0. Web doğrulama sayfası
+  mesajı 11 dilde gösterir.
+- `POST /auth/oauth/{provider}` yanıtına `welcomeCredits` eklendi.
+- `GET /catalog` → `welcomeCredits`: şu anki ayar. Uygulama ve web "kayıt ol, N kredi kazan" diyebilir.
+
+Aynı değişiklikle `GET /catalog` içindeki `creditPacks` artık `CREDIT_PACKS` ortam değişkeninden değil, plan
+kataloğundaki satıştaki paketlerden gelir (§7.21). Her mağaza ürün kimliği ayrı satırdır.
+
+Admin: kullanıcı ayrıntısındaki kredi hareketleri okunur etiketle görünür (Hoş geldin hediyesi, Tasarım, İade,
+Kredi paketi, Yönetici).
+
+Mobil (sonra): Apple/Google girişi yanıtındaki `welcomeCredits > 0` ise kısa bir kutlama gösterilir. Kayıt
+ekranında `catalog.welcomeCredits` varsa teklif yazılır.

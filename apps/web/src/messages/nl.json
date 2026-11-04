@@ -272,6 +272,7 @@
     "verifyTitle": "E-mailverificatie",
     "verifying": "Je e-mailadres wordt geverifieerd…",
     "verifyDone": "Je e-mailadres is geverifieerd. Bedankt!",
+    "welcomeGift": "Welkomstcadeau: er zijn {n} credits aan je account toegevoegd. Elke credit is één ontwerp.",
     "invalidLink": "Deze link is ongeldig, al gebruikt of verlopen. Je kunt een nieuwe link aanvragen.",
     "requestNew": "Nieuwe link aanvragen",
     "toLogin": "Terug naar inloggen",

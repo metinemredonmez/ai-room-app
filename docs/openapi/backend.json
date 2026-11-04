@@ -960,6 +960,7 @@
     },
     "/v1/auth/email/verify": {
       "post": {
+        "description": "Yanıt `{ ok, welcomeCredits }`: ilk doğrulamada hoş geldin kredisi verildiyse miktarı (API.md §7.22), yoksa 0.",
         "operationId": "AuthController_verifyEmail",
         "parameters": [],
         "requestBody": {
@@ -984,14 +985,7 @@
         },
         "responses": {
           "201": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Ok"
-                }
-              }
-            }
+            "description": "OK"
           },
           "400": {
             "description": "validation_failed / bad_request / invalid_token",
@@ -4151,6 +4145,11 @@
                       },
                       "requireAiConsent": {
                         "type": "boolean"
+                      },
+                      "welcomeCredits": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
                       },
                       "appVersions": {
                         "type": "object",

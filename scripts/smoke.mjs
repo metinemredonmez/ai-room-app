@@ -694,6 +694,30 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
     ok(catAudit.some((x) => x.action === 'billing.catalog_update' && x.meta?.reason === 'smoke cleanup'), 'catalog changes are audited with the reason (LOG-01)');
   }
 }
+// API.md §7.22: welcome credits — once per verified identity, not again after deleting and signing up again.
+if (adminToken) {
+  const A = { token: adminToken };
+  const before = (await call('GET', '/admin/settings', A)).json?.values?.welcomeCredits ?? 0;
+  const setWelcome = (n, reason) => call('PATCH', '/admin/settings', { ...A, body: { values: { welcomeCredits: n }, reason } });
+  const on = await setWelcome(2, 'smoke welcome credits');
+  const catWelcome = (await call('GET', '/catalog?locale=tr')).json?.welcomeCredits;
+  const signUp = async (email) => {
+    const r = await call('POST', '/auth/register', { body: { email, password: 'welcome-password-123' } });
+    const mail = await lastMailTo(email, 'doğrula');
+    const v = await call('POST', '/auth/email/verify', { body: { token: tokenFrom(mail) } });
+    const me = (await call('GET', '/me', { token: r.json?.accessToken })).json;
+    return { token: r.json?.accessToken, gift: v.json?.welcomeCredits, credits: me?.credits };
+  };
+  const wEmail = `welcome-${Date.now()}@example.com`;
+  const first = await signUp(wEmail);
+  ok(on.status === 200 && catWelcome === 2 && first.gift === 2 && first.credits === 2, 'welcome credits on the first verified sign-up (and announced in the catalog)', `gift ${first.gift}, credits ${first.credits}`);
+  const gone = await call('DELETE', '/me', { token: first.token });
+  const again = await signUp(wEmail);
+  const alias = await signUp(wEmail.replace('@', '+again@'));
+  ok(gone.status === 204 && again.gift === 0 && again.credits === 0 && alias.gift === 0, 'deleting and signing up again (or a +alias) gets no second welcome (BUS-01)', `${again.gift}/${alias.gift}`);
+  const off = await setWelcome(before, 'smoke welcome credits restore');
+  ok(off.status === 200, 'welcome credits setting restored', String(before));
+}
 // #6 admin roles + MFA recovery (AZ-05, AUT-01, AUT-04). Admin login is limited to 5 / 15 min per IP,
 // so this block uses at most two more login calls.
 if (adminToken) {

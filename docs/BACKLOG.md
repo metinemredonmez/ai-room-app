@@ -197,7 +197,8 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 
 ### Masaüstü kataloglarından eksikler (4 Kasım; YediOda kataloğu, MAEYJA ve Palemi kurulum belgeleri)
 Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/apps-features/` klasörüne gelecek.
-- [ ] Hoş geldin kredisi; silinip yeniden açılan hesap yeniden almaz (Palemi 5.7) · kolay
+- [x] Hoş geldin kredisi (API.md §7.22): Ayarlar'dan miktar; e-posta / Apple / Google kimliği başına bir kez, hesap silinse de (HMAC özeti 3 yıl); web doğrulama sayfasında 11 dilde mesaj (Palemi 5.7)
+  - [ ] Gizlilik metnine kimlik özeti cümlesi (sahibi); mobil kutlama ve kayıt teklifi (sen)
 - [ ] Kredi hareketlerim: web hesap sayfasında kullanıcının kendi defteri (YediOda #57) · kolay
 - [ ] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) · orta
 - [ ] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) · kolay

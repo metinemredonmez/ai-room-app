@@ -56,7 +56,7 @@ export const authApi = {
   logout: () => request<void>("/api/auth/logout", "POST", {}),
   forgotPassword: (email: string) => api.post<{ ok: true }>("/auth/password/forgot", { email }),
   resetPassword: (token: string, password: string) => api.post<void>("/auth/password/reset", { token, password }),
-  verifyEmail: (token: string) => api.post<{ ok: true }>("/auth/email/verify", { token }),
+  verifyEmail: (token: string) => api.post<{ ok: true; welcomeCredits?: number }>("/auth/email/verify", { token }),
   resendVerification: () => api.post<{ ok: true; alreadyVerified: boolean }>("/auth/email/resend"),
 };
 

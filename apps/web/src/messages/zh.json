@@ -272,6 +272,7 @@
     "verifyTitle": "邮箱验证",
     "verifying": "正在验证你的邮箱…",
     "verifyDone": "你的邮箱已验证成功，谢谢！",
+    "welcomeGift": "欢迎礼物：已向你的账户添加 {n} 积分，每 1 积分可生成 1 次设计。",
     "invalidLink": "此链接无效、已被使用或已过期。你可以申请新的链接。",
     "requestNew": "申请新链接",
     "toLogin": "返回登录",

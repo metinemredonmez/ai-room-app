@@ -34,6 +34,8 @@ export const SettingsSchema = z
     maintenance: z.object({ enabled: z.boolean(), messageTr: text(300), messageEn: text(300) }).strict(),
     announcement: z.object({ enabled: z.boolean(), textTr: text(300), textEn: text(300) }).strict(),
     requireAiConsent: z.boolean(),
+    /** Credits a newly registered, verified account gets once (API.md §7.22); 0 = off. */
+    welcomeCredits: z.number().int().min(0).max(50),
     appVersions: z.object({ ios: appVersion('apps.apple.com'), android: appVersion('play.google.com') }).strict(),
     // Toplu Gönderim: marketing pushes per user per 7 days, and the Istanbul quiet window for marketing.
     broadcast: z
@@ -73,6 +75,7 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
       },
       announcement: { enabled: false, textTr: '', textEn: '' },
       requireAiConsent: false,
+      welcomeCredits: 0,
       appVersions: {
         ios: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
         android: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },

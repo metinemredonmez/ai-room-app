@@ -123,6 +123,8 @@ export type Settings = {
   maintenance: { enabled: boolean; messageTr: string; messageEn: string };
   announcement: { enabled: boolean; textTr: string; textEn: string };
   requireAiConsent: boolean;
+  /** API.md §7.22: credits a new registered, verified account gets once; 0 = off. */
+  welcomeCredits: number;
   appVersions: Record<AppPlatform, AppVersion>;
 };
 export type AppPlatform = "ios" | "android";

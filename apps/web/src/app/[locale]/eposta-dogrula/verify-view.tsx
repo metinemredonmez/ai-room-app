@@ -7,10 +7,12 @@ import { authApi, takeFragmentToken } from "@/lib/api";
 import { useApp } from "@/components/app-provider";
 import { LogoMark } from "@/components/logo";
 import { btn, card } from "@/components/ui";
+import { fmt } from "@/lib/i18n";
 
 export function VerifyView() {
   const { t, user, refreshUser } = useApp();
   const [state, setState] = useState<"working" | "done" | "invalid">("working");
+  const [gift, setGift] = useState(0);
   const started = useRef(false);
 
   useEffect(() => {
@@ -24,7 +26,8 @@ export function VerifyView() {
     }
     authApi
       .verifyEmail(token)
-      .then(() => {
+      .then((r) => {
+        setGift(r.welcomeCredits ?? 0); // API.md §7.22: the first verification may bring welcome credits
         setState("done");
         void refreshUser();
       })
@@ -45,7 +48,10 @@ export function VerifyView() {
           <>
             <div className="mt-5 flex gap-3 rounded-2xl bg-primary-soft p-4 text-sm text-primary" role="status">
               <CircleCheck className="h-5 w-5 shrink-0" aria-hidden />
-              <p>{t.account.verifyDone}</p>
+              <p>
+                {t.account.verifyDone}
+                {gift > 0 && <span className="mt-1 block font-medium">{fmt(t.account.welcomeGift, { n: gift })}</span>}
+              </p>
             </div>
             <Link href="/studio" className={`${btn.base} ${btn.primary} ${btn.md} mt-6 w-full`}>
               {t.account.toStudio}

@@ -272,6 +272,7 @@
     "verifyTitle": "Verificación de correo",
     "verifying": "Verificando tu correo electrónico…",
     "verifyDone": "Tu correo electrónico está verificado. ¡Gracias!",
+    "welcomeGift": "Regalo de bienvenida: hemos añadido {n} créditos a tu cuenta. Cada crédito es un diseño.",
     "invalidLink": "Este enlace no es válido, ya se usó o ha caducado. Puedes solicitar uno nuevo.",
     "requestNew": "Solicitar nuevo enlace",
     "toLogin": "Volver al inicio de sesión",

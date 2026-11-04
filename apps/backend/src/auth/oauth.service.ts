@@ -7,6 +7,7 @@ import { log } from '../common/log.js';
 import { QueuesService } from '../jobs/queues.service.js';
 import { MailerService, renderActionMail } from '../mail/mailer.service.js';
 import { UsersService } from '../users/users.service.js';
+import { WelcomeService, oauthKey, welcomeEmailKey } from '../users/welcome.service.js';
 import { AppleService } from './apple.service.js';
 import { randomToken, sha256 } from './crypto.js';
 import { IdTokenVerifier, type IdClaims, type OAuthProvider } from './oidc.js';
@@ -45,6 +46,7 @@ export class OAuthService {
     private queues: QueuesService,
     private mailer: MailerService,
     @Inject(CONFIG) private cfg: Config,
+    private welcome: WelcomeService,
   ) {
     const list = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
     this.verifier = new IdTokenVerifier({ google: list(cfg.GOOGLE_CLIENT_IDS), apple: list(cfg.APPLE_CLIENT_IDS) });
@@ -140,8 +142,20 @@ export class OAuthService {
       this.notifyLinked(userId, provider);
     }
     log.info('oauth_sign_in', { provider, userId, result: decision.kind, upgradedGuest: decision.kind === 'attach' && decision.upgradeGuest });
+    // API.md §7.22: a new registered account (new, or a guest that just registered) gets the welcome credits once
+    // per Apple/Google account and verified address.
+    let welcomeCredits = 0;
+    if (decision.kind === 'create' || (decision.kind === 'attach' && decision.upgradeGuest)) {
+      const keys = [oauthKey(provider, claims.sub), ...(claims.email && claims.emailVerified ? [welcomeEmailKey(claims.email)] : [])];
+      welcomeCredits = await this.welcome.grant(userId, keys);
+    }
     const user = await this.users.get(userId);
-    return { ...(await this.tokens.issueUser(user)), user: this.users.toDto(user), result: decision.kind === 'create' ? 'created' : decision.kind === 'login' ? 'signed_in' : 'linked' };
+    return {
+      ...(await this.tokens.issueUser(user)),
+      user: this.users.toDto(user),
+      result: decision.kind === 'create' ? 'created' : decision.kind === 'login' ? 'signed_in' : 'linked',
+      welcomeCredits,
+    };
   }
 
   async identities(userId: string) {

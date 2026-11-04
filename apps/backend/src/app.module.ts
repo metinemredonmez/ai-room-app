@@ -16,6 +16,7 @@ import { AdminGuard, TokensService, UserGuard } from './auth/tokens.service.js';
 import { BillingController } from './billing/billing.controller.js';
 import { AdminPlansController, AdminSubscriptionsController } from './billing/billing-admin.controller.js';
 import { PlansService } from './billing/plans.service.js';
+import { WelcomeService } from './users/welcome.service.js';
 import { BillingService } from './billing/billing.service.js';
 import { AdminBroadcastsController, BroadcastsController, UnsubscribeController } from './broadcasts/broadcasts.controller.js';
 import { BroadcastsService } from './broadcasts/broadcasts.service.js';
@@ -60,6 +61,7 @@ import { UsersService } from './users/users.service.js';
     DataRequestsService,
     BillingService,
     PlansService,
+    WelcomeService,
     AnalyticsService,
     BroadcastsService,
     MarketingService,

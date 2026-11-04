@@ -272,6 +272,7 @@
     "verifyTitle": "Email verification",
     "verifying": "Verifying your email…",
     "verifyDone": "Your email address is verified. Thank you!",
+    "welcomeGift": "Welcome gift: {n} credits have been added to your account. Each credit is one design.",
     "invalidLink": "This link is invalid, already used or expired. You can request a new one.",
     "requestNew": "Request a new link",
     "toLogin": "Back to sign in",

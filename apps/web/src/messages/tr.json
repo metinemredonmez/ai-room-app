@@ -272,6 +272,7 @@
     "verifyTitle": "E-posta doğrulama",
     "verifying": "E-posta adresin doğrulanıyor…",
     "verifyDone": "E-posta adresin doğrulandı. Teşekkürler!",
+    "welcomeGift": "Hoş geldin hediyesi: hesabına {n} kredi eklendi. Her kredi bir tasarım demek.",
     "invalidLink": "Bu bağlantı geçersiz, kullanılmış ya da süresi dolmuş. Yeni bir bağlantı isteyebilirsin.",
     "requestNew": "Yeni bağlantı iste",
     "toLogin": "Girişe dön",

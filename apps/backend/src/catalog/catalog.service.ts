@@ -10,6 +10,7 @@ import type { Style } from '../generated/prisma/client.js';
 import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
 import { LegalService } from '../kvkk/legal.service.js';
 import { SettingsService } from '../settings/settings.service.js';
+import { PlansService } from '../billing/plans.service.js';
 import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
 import { localize } from './catalog.i18n.js';
 
@@ -23,7 +24,7 @@ const STYLE_PHOTOS_VERSION = 'nb2-1';
 export class CatalogService {
   private cache: { at: number; styles: Style[] } | null = null;
 
-  constructor(private prisma: PrismaService, private settings: SettingsService, private legal: LegalService, @Inject(CONFIG) private cfg: Config) {}
+  constructor(private prisma: PrismaService, private settings: SettingsService, private legal: LegalService, @Inject(CONFIG) private cfg: Config, private plans: PlansService) {}
 
   async styles(includeInactive = false): Promise<Style[]> {
     if (includeInactive) return this.prisma.style.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
@@ -71,7 +72,12 @@ export class CatalogService {
       floors: Object.entries(FLOORS).map(([id, f]) => ({ id, name: localize(locale, `floors.${id}.name`, f.name) })),
       colors: COLORS.map((c) => ({ id: c.id, name: localize(locale, `colors.${c.id}.name`, c.name), hex: c.hex })),
       plans: PLANS.map((p) => ({ id: p.id, name: localize(locale, `plans.${p.id}.name`, p.name), period: p.period, priceTRY: p.priceTRY, badge: p.badge ? localize(locale, `plans.${p.id}.badge`, p.badge) : null, storeProductId: p.storeProductId })),
-      creditPacks: this.cfg.CREDIT_PACKS.split(',').map((x) => x.trim().split(':')).filter(([id, n]) => id && Number(n) > 0).map(([productId, n]) => ({ productId, credits: Math.trunc(Number(n)) })),
+      // Packs on sale from the plans catalog (API.md §7.21), one row per store product id.
+      creditPacks: (await this.plans.forPaywall('en')).packs.flatMap((p) =>
+        [...new Set([p.productIds.ios, p.productIds.android])].filter((id): id is string => !!id).map((productId) => ({ productId, credits: p.credits })),
+      ),
+      /** Credits a new registered, verified account gets once; 0 = off (API.md §7.22). */
+      welcomeCredits: this.settings.current.welcomeCredits,
       ...this.notices(locale),
       legal: {
         termsVersion: this.legal.versionOf('terms').version, privacyVersion: this.legal.versionOf('privacy').version,

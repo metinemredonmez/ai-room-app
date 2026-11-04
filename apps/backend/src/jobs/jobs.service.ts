@@ -17,6 +17,7 @@ import { DataRequestsService } from '../kvkk/data-requests.service.js';
 import { BroadcastsService } from '../broadcasts/broadcasts.service.js';
 import { MarketingService } from '../marketing/marketing.service.js';
 import { SupportService } from '../support/support.service.js';
+import { WelcomeService } from '../users/welcome.service.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -42,6 +43,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private marketing: MarketingService,
     private support: SupportService,
     @Inject(CONFIG) private cfg: Config,
+    private welcome: WelcomeService,
   ) {}
 
   async onModuleInit() {
@@ -216,9 +218,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const dataRequests = await this.dataRequests.purgeClosed();
     const broadcastDeliveries = (await this.broadcasts.purgeOldDeliveries()).count;
     const supportTickets = await this.support.purgeClosed();
+    const welcomeGrants = await this.welcome.purgeOld(now);
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants,
     };
   }
 

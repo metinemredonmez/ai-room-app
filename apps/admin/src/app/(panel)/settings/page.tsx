@@ -107,6 +107,9 @@ function SettingsForm({ initial, defaults, onSaved }: { initial: Settings; defau
             {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
           </Select>
         </Field>
+        <Field label="Hoş geldin kredisi" hint={`Kayıt olup e-postasını (ya da Apple/Google hesabını) doğrulayan yeni hesaba bir kez verilir; aynı kimlik hesabı silip yeniden açsa da tekrar almaz. 0 = kapalı. ${hint("welcomeCredits")}`} htmlFor="welcome">
+          <Input id="welcome" type="number" min={0} max={50} value={draft.welcomeCredits} onChange={(e) => set("welcomeCredits", num(e.target.value))} />
+        </Field>
       </Section>
 
       <Section title="AI bütçesi" description="Günlük AI harcaması bütçeyi aşınca yalnız ücretsiz kullanıcılar etkilenir; PRO kullanıcılar devam eder.">

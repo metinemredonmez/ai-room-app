@@ -633,3 +633,13 @@ model SupportMessage {
 
   @@index([ticketId, createdAt])
 }
+
+/// Welcome credits (API.md §7.22): keyed hashes (HMAC) of the identities that already received them, an e-mail
+/// address or an Apple/Google account. Deliberately not linked to the account: they outlive deletion, so the same
+/// identity cannot collect the gift twice by deleting and signing up again. Purged after three years.
+model WelcomeGrant {
+  hash      String   @id
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

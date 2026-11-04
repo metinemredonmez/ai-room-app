@@ -14,6 +14,7 @@ import { UsersService } from '../users/users.service.js';
 import { hashPassword, newTotpSecret, otpauthUri, sha256, verifyPassword, verifyTotp } from './crypto.js';
 import { EmailTokensService } from './email-tokens.service.js';
 import { OAuthService } from './oauth.service.js';
+import { WelcomeService, welcomeEmailKey } from '../users/welcome.service.js';
 import { AUD_APP, TokensService, UserGuard } from './tokens.service.js';
 
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
@@ -61,6 +62,7 @@ export class AuthController {
     private emailTokens: EmailTokensService,
     private oauth: OAuthService,
     @Inject(CONFIG) private cfg: Config,
+    private welcome: WelcomeService,
   ) {}
 
   private async respond(userId: string, familyId?: string) {
@@ -206,6 +208,8 @@ export class AuthController {
       where: { id: user.id },
       data: { passwordHash: await hashPassword(input.password), emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
     });
+    // A reset link proves the address too; an account verified this way gets the welcome credits like any other.
+    if (!user.emailVerifiedAt && user.email) await this.welcome.grant(user.id, [welcomeEmailKey(user.email)]);
     await this.tokens.revokeAll(user.id);
     await this.prisma.emailToken.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
     if (user.email) await this.limiter.reset(LIMITS.loginAccount, sha256(user.email));
@@ -214,14 +218,19 @@ export class AuthController {
   }
 
   @Post('email/verify')
-  @Doc('E-posta doğrula', { body: VerifySchema, status: 201, response: 'Ok', errors: [400, 429] })
+  @Doc('E-posta doğrula', { body: VerifySchema, status: 201, description: 'Yanıt `{ ok, welcomeCredits }`: ilk doğrulamada hoş geldin kredisi verildiyse miktarı (API.md §7.22), yoksa 0.', errors: [400, 429] })
   async verifyEmail(@Body() body: unknown, @Req() req: AppRequest) {
     const { token } = parse(VerifySchema, body);
     await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
     const user = await this.emailTokens.consume(token, 'VERIFY_EMAIL');
-    if (!user.emailVerifiedAt) await this.prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
+    let welcomeCredits = 0;
+    if (!user.emailVerifiedAt) {
+      await this.prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
+      // API.md §7.22: the first verified address of a registered account earns the welcome credits once.
+      if (user.email) welcomeCredits = await this.welcome.grant(user.id, [welcomeEmailKey(user.email)]);
+    }
     log.info('email_verified', { userId: user.id });
-    return { ok: true };
+    return { ok: true, welcomeCredits };
   }
 
   @Post('email/resend')
