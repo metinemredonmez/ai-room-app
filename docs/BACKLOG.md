@@ -73,8 +73,11 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - [ ] Mobil: Google ve Apple ile giriş (backend hazır).
   - Apple ile giriş canlıda **dört değeri birlikte** ister: `APPLE_CLIENT_IDS=app.casalume` + `APPLE_TEAM_ID`, `APPLE_KEY_ID`,
     `APPLE_PRIVATE_KEY` (Sign in with Apple anahtarı .p8; hesap silinince Apple oturumu iptal edilir, App Store 5.1.1(v)) ve
-    `FIELD_ENC_KEY`. Yalnız `APPLE_CLIENT_IDS` girilince backend açılmıyor (4 Kasım’da API bu yüzden düştü, satır kaldırıldı).
-    Apple Developer üyeliği açılınca hepsi birlikte girilecek.
+    `FIELD_ENC_KEY`. Yalnız `APPLE_CLIENT_IDS` girilince backend açılmıyor (4 Kasım’da API bu yüzden kısa süre düştü).
+  - [x] 4 Kasım: hepsi sunucuda (Team `6DV7YZY2XY`, App ID `app.casalume` + Sign In with Apple + Push, anahtar
+    `H7N2ARLFCD`; .p8 sahibinin Mac’inde `~/Documents/casalume-keys/`). API sorunsuz açıldı.
+  - [ ] İsteğe bağlı: Apple’ın gizli e-posta yönlendirmesi (Services → Sign in with Apple for Email Communication) için
+    `casalume.app` ve `no-reply@casalume.app` kaydı — e-postasını gizleyen Apple kullanıcılarına posta gidebilsin.
 - [ ] Bildirimler (push): Expo projesi, APNs anahtarı (Apple), FCM (Google); “Tasarımın hazır” ve kampanya izni ayrı.
 - [ ] Tam veri sorumlusu adresi (KVKK m.10) — şu an yalnız “Maltepe, İstanbul”.
 
