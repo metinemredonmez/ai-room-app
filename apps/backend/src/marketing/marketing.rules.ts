@@ -123,3 +123,80 @@ export function playListings(listings: Partial<Record<Locale, AsoListing>>) {
 export function violationsOf(output: Record<string, unknown>): AsoField[] {
   return ASO_FIELDS.filter((k) => typeof output[k] !== 'string' || (output[k] as string).length > ASO_LIMITS[k]);
 }
+
+// --------------------------------------------------------------------------------------------- social posts
+
+export const PLATFORMS = ['instagram', 'tiktok', 'pinterest'] as const;
+export type Platform = (typeof PLATFORMS)[number];
+/** Same numbers as the AI service; hashtags are capped at 5 (Instagram's limit since 2025). */
+export const SOCIAL_LIMITS: Record<Platform, { title: number; caption: number; alt_text: number }> = {
+  instagram: { title: 100, caption: 2200, alt_text: 250 },
+  tiktok: { title: 100, caption: 2200, alt_text: 250 },
+  pinterest: { title: 100, caption: 500, alt_text: 250 },
+};
+export const HASHTAGS_MAX = 5;
+const HASHTAG = /^[\p{L}\p{N}_]{1,40}$/u;
+
+export const socialPostSchema = (platform: Platform) =>
+  z
+    .object({
+      title: field(SOCIAL_LIMITS[platform].title),
+      caption: field(SOCIAL_LIMITS[platform].caption),
+      hashtags: z.array(z.string().regex(HASHTAG, 'Etiket: harf, rakam ya da _; # ve boşluk yok')).max(HASHTAGS_MAX),
+      alt_text: field(SOCIAL_LIMITS[platform].alt_text),
+    })
+    .strict();
+export type SocialPost = z.infer<ReturnType<typeof socialPostSchema>>;
+
+const uniq = <T,>(a: T[]) => [...new Set(a)];
+/** One draft per style × platform × language; at most 30 per run (≈1 $). */
+export const SOCIAL_RUN_MAX = 30;
+export const SocialRunSchema = z
+  .object({
+    styleIds: z.array(z.string().regex(/^[a-z_]{2,40}$/)).min(1).max(5).transform(uniq),
+    platforms: z.array(z.enum(PLATFORMS)).min(1).max(PLATFORMS.length).transform(uniq),
+    locales: z.array(z.enum(LOCALES)).min(1).max(LOCALES.length).transform(uniq),
+    brief: z.string().trim().max(1000).optional(),
+  })
+  .strict()
+  .refine((r) => r.styleIds.length * r.platforms.length * r.locales.length <= SOCIAL_RUN_MAX, {
+    message: `Bir seferde en çok ${SOCIAL_RUN_MAX} gönderi (stil × platform × dil)`,
+  });
+export type SocialRun = z.infer<typeof SocialRunSchema>;
+
+export function socialViolations(platform: Platform, post: Record<string, unknown>): string[] {
+  const lim = SOCIAL_LIMITS[platform];
+  const out = (['title', 'caption', 'alt_text'] as const).filter((k) => typeof post[k] !== 'string' || (post[k] as string).length > lim[k]);
+  const tags = post.hashtags;
+  return Array.isArray(tags) && tags.length <= HASHTAGS_MAX ? out : [...out, 'hashtags'];
+}
+
+// ------------------------------------------------------------------------------------------------ campaigns
+
+export const CAMPAIGN_LIMITS = { PUSH: { title: 50, body: 300 }, EMAIL: { title: 80, body: 2000 } } as const;
+export type Channel = keyof typeof CAMPAIGN_LIMITS;
+
+export const CampaignRunSchema = z
+  .object({
+    locales: z.array(z.enum(LOCALES)).min(1).max(LOCALES.length).transform(uniq),
+    channel: z.enum(['PUSH', 'EMAIL']),
+    kind: z.enum(['SERVICE', 'MARKETING']),
+    goal: z.string().trim().min(5).max(1000),
+  })
+  .strict();
+export type CampaignRun = z.infer<typeof CampaignRunSchema>;
+
+export const campaignSchema = (channel: Channel, links: readonly string[]) =>
+  z
+    .object({
+      title: z.string().trim().min(3).max(CAMPAIGN_LIMITS[channel].title),
+      body: z.string().trim().min(5).max(CAMPAIGN_LIMITS[channel].body),
+      link: z.string().refine((l) => links.includes(l), 'Yalnız uygulama içi bağlantı').nullable(),
+    })
+    .strict();
+export type CampaignText = z.infer<ReturnType<typeof campaignSchema>>;
+
+export function campaignViolations(channel: Channel, msg: Record<string, unknown>): string[] {
+  const lim = CAMPAIGN_LIMITS[channel];
+  return (['title', 'body'] as const).filter((k) => typeof msg[k] !== 'string' || (msg[k] as string).length > lim[k]);
+}

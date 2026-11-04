@@ -417,7 +417,7 @@ if (adminToken) {
 
   // API.md §7.18 Pazarlama: store listing drafts are written in the background from the catalog's fact sheet,
   // held to the store limits, approved by an ADMIN and exported as files. Nothing is published (AI-02).
-  const facts = await call('GET', '/admin/marketing/facts', A);
+  const facts = await call('GET', '/admin/marketing/facts?locale=en', A);
   ok(facts.status === 200 && facts.json?.facts?.includes('Instant Remodel') && !/₺|\d+[.,]\d{2}/.test(facts.json.facts), 'marketing fact sheet comes from the catalog, without prices');
   const badRun = await call('POST', '/admin/marketing/aso', { ...A, body: { locales: ['pt'] } });
   ok(badRun.status === 400, 'store listing: unknown language refused', `status ${badRun.status}`);
@@ -425,7 +425,7 @@ if (adminToken) {
   const asoId = asoRun.json?.items?.[0]?.id;
   let aso = null;
   for (let i = 0; i < 40; i++) {
-    aso = (await call('GET', '/admin/marketing/aso', A)).json?.items?.find((d) => d.id === asoId);
+    aso = (await call('GET', '/admin/marketing/drafts?kind=aso', A)).json?.items?.find((d) => d.id === asoId);
     if (aso && aso.status !== 'PENDING') break;
     await new Promise((r) => setTimeout(r, 500));
   }
@@ -438,8 +438,47 @@ if (adminToken) {
   ok(asoEdit.status === 200 && asoApprove.json?.status === 'APPROVED' && asoExport.json?.appStore?.apple?.info?.['nl-NL']?.promoText === 'Smoke tanıtım' && asoExport.json?.googlePlay?.['nl-NL']?.title,
     'approved listing exported as EAS store.config.json + Play text', asoApprove.json?.status);
   await call('POST', `/admin/marketing/drafts/${asoId}/archive`, A);
+  const waitDraft = async (kind, id) => {
+    for (let i = 0; i < 40; i++) {
+      const d = (await call('GET', `/admin/marketing/drafts?kind=${kind}`, A)).json?.items?.find((x) => x.id === id);
+      if (d && d.status !== 'PENDING') return d;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    return null;
+  };
+  // Social post: our own sample room before/after (never a user's photo) + caption per language.
+  const postStyles = await call('GET', '/admin/marketing/social/styles', A);
+  const ghost = await call('POST', '/admin/marketing/social', { ...A, body: { styleIds: ['no_such_style'], platforms: ['instagram'], locales: ['tr'] } });
+  const socialRun = await call('POST', '/admin/marketing/social', { ...A, body: { styleIds: ['japandi'], platforms: ['pinterest'], locales: ['de'] } });
+  const socialDraft = await waitDraft('social', socialRun.json?.items?.[0]?.id);
+  const pin = await call('GET', `/admin/marketing/drafts/${socialDraft?.id}/image?format=pin`, A);
+  ok(postStyles.json?.items?.length >= 10 && ghost.status === 400 && socialDraft?.status === 'READY' && pin.json?.dataUrl?.startsWith('data:image/jpeg;base64,') && pin.json.width === 1000,
+    'social post: before/after image + caption from our own photos', `${socialDraft?.status} / ${pin.status}`);
+  const badTag = await call('PATCH', `/admin/marketing/drafts/${socialDraft?.id}`, { ...A, body: { output: { ...socialDraft?.output, hashtags: ['#bad tag'] } } });
+  ok(badTag.status === 400, 'social post: hashtags checked on edit', `status ${badTag.status}`);
+  await call('POST', `/admin/marketing/drafts/${socialDraft?.id}/archive`, A);
+
+  // Campaign text → approved → a Toplu Gönderim DRAFT for that language only (sent from its own screen).
+  const campRun = await call('POST', '/admin/marketing/campaign', { ...A, body: { locales: ['tr'], channel: 'PUSH', kind: 'SERVICE', goal: 'Yeni stilleri duyur' } });
+  const camp = await waitDraft('campaign', campRun.json?.items?.[0]?.id);
+  const campApprove = await call('POST', `/admin/marketing/drafts/${camp?.id}/approve`, A);
+  const toB = await call('POST', `/admin/marketing/drafts/${camp?.id}/broadcast`, A);
+  const toB2 = await call('POST', `/admin/marketing/drafts/${camp?.id}/broadcast`, A);
+  const campB = await call('GET', `/admin/broadcasts/${toB.json?.broadcastId}`, A);
+  ok(camp?.status === 'READY' && campApprove.status === 200 && toB.status === 201 && toB2.status === 409 && campB.json?.status === 'DRAFT' && campB.json?.audience?.locale === 'tr',
+    'campaign text becomes one broadcast draft for its language', `${toB.status} / ${campB.json?.status}`);
+  await call('DELETE', `/admin/broadcasts/${toB.json?.broadcastId}`, A);
+  await call('POST', `/admin/marketing/drafts/${camp?.id}/archive`, A);
+
+  // Weekly report: numbers + (demo) reading, mailed to the SUPER_ADMIN addresses.
+  const repRun = await call('POST', '/admin/marketing/report', { ...A, body: { send: true } });
+  const rep = await waitDraft('report', repRun.json?.items?.[0]?.id);
+  const repMail = await lastMailTo(creds.email, 'Casalume haftalık rapor');
+  ok(repRun.status === 202 && rep?.status === 'READY' && rep.output?.metrics?.thisWeek?.designs?.created >= 1 && repMail?.text?.includes('Yeni kayıtlı kullanıcı'),
+    'weekly report built and mailed to the owner', rep?.status);
+  await call('POST', `/admin/marketing/drafts/${rep?.id}/archive`, A);
   const asoAudit = new Set(((await call('GET', '/admin/audit?limit=50', A)).json?.items ?? []).map((a) => a.action));
-  ok(['marketing.aso_run', 'marketing.edit', 'marketing.approve', 'marketing.archive'].every((x) => asoAudit.has(x)), 'marketing actions are audited (LOG-01)');
+  ok(['marketing.aso_run', 'marketing.edit', 'marketing.approve', 'marketing.archive', 'marketing.social_run', 'marketing.campaign_run', 'marketing.to_broadcast', 'marketing.report_run'].every((x) => asoAudit.has(x)), 'marketing actions are audited (LOG-01)');
 
   const texts = await call('GET', '/admin/legal', A);
   ok(texts.status === 200 && texts.json?.items?.filter((r) => r.status === 'published').length >= 8, 'admin lists the legal text versions');
@@ -575,7 +614,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

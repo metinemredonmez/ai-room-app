@@ -276,14 +276,14 @@ export type AsoField =
   | "app_name" | "app_subtitle" | "app_keywords" | "app_promo" | "app_description" | "app_whats_new"
   | "play_title" | "play_short" | "play_description";
 export type AsoListing = Record<AsoField, string>;
-export type MarketingDraft = {
+export type MarketingDraft<O = AsoListing> = {
   id: string;
-  kind: "aso";
+  kind: "aso" | "social" | "campaign" | "report";
   locale: Locale;
   status: MarketingDraftStatus;
-  input: { brief?: string | null; whatsNew?: string | null };
-  output: AsoListing | null;
-  violations: AsoField[];
+  input: Record<string, unknown> & { brief?: string | null; whatsNew?: string | null };
+  output: O | null;
+  violations: string[];
   error: string | null;
   costUsd: number;
   createdById: string | null;
@@ -291,4 +291,26 @@ export type MarketingDraft = {
   approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type Platform = "instagram" | "tiktok" | "pinterest";
+export type SocialPost = { title: string; caption: string; hashtags: string[]; alt_text: string };
+export type CampaignText = { title: string; body: string; link: string | null; signals?: string[]; broadcastId?: string };
+export type WeekNumbers = {
+  users: { registered: number; guests: number; active: number };
+  designs: { created: number; succeeded: number; failed: number; failRate: number };
+  store: { subscriptionsStarted: number; renewals: number; cancellations: number; creditPacks: number };
+  ai: { calls: number; costUsd: number; costPerDesignUsd: number | null };
+  ops: { jobErrors: number; broadcastsSent: number };
+};
+export type WeeklyReport = {
+  metrics: {
+    period: { from: string; to: string };
+    thisWeek: WeekNumbers;
+    lastWeek: WeekNumbers;
+    topTools: Array<{ tool: string; designs: number }>;
+    topStyles: Array<{ style: string; designs: number }>;
+    now: { registeredUsers: number; activeSubscriptions: number; openContentReports: number; openKvkkRequests: number };
+  };
+  text: { summary: string; highlights: string[]; actions: string[] } | null;
 };

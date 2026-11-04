@@ -16,6 +16,9 @@ import {
   ScrollText,
   SlidersHorizontal,
   Store,
+  Share2,
+  Send,
+  ChartNoAxesColumn,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -81,7 +84,12 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Pazarlama",
-    items: [{ href: "/marketing/aso", label: "Mağaza metni", icon: Store }],
+    items: [
+      { href: "/marketing/aso", label: "Mağaza metni", icon: Store },
+      { href: "/marketing/social", label: "Sosyal medya", icon: Share2 },
+      { href: "/marketing/campaign", label: "Kampanya metni", icon: Send },
+      { href: "/marketing/report", label: "Haftalık rapor", icon: ChartNoAxesColumn },
+    ],
   },
   {
     label: "KVKK",

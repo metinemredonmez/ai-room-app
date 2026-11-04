@@ -85,3 +85,58 @@ def test_a_field_still_too_long_is_reported_not_cut():
     out = asyncio.run(aso(fake, AsoRequest(locale="ja", facts=FACTS)))
     assert out.violations == ["play_title"] and len(out.listing.play_title) == 33
     assert "Japanese" in fake.calls[0]["messages"][0]["content"] and "です/ます" in fake.calls[0]["system"]
+
+
+def post(**over):
+    data = {"title": "Japandi living room", "caption": "Same room, redesigned with AI.",
+            "hashtags": ["#interior design", "japandi", "Japandi", "#casalume", "decor", "home", "calm"],
+            "alt_text": "A living room before and after."}
+    data.update(over)
+    return json.dumps(data)
+
+
+def test_social_demo_and_bounds():
+    body = {"locale": "tr", "platform": "instagram", "style_name": "Japandi", "facts": FACTS}
+    res = client.post("/internal/v1/marketing/social", headers=AUTH, json=body)
+    assert res.status_code == 200, res.text
+    assert res.json()["post"]["caption"].startswith("[Demo]") and res.json()["usage"]["kind"] == "marketing"
+    assert client.post("/internal/v1/marketing/social", headers=AUTH, json={**body, "platform": "facebook"}).status_code == 400
+
+
+def test_social_hashtags_are_cleaned_and_capped():
+    from app.marketing import social
+    from app.schemas import SocialRequest
+
+    fake = FakeAssistant([post()])
+    out = asyncio.run(social(fake, SocialRequest(locale="de", platform="instagram", style_name="Japandi", facts=FACTS, brief="Ruhig")))
+    assert out.post.hashtags == ["interiordesign", "japandi", "casalume", "decor", "home"]
+    assert out.violations == []
+    assert "German" in fake.calls[0]["system"] and "informal 'du'" in fake.calls[0]["system"]
+    assert "<OWNER NOTES>\nRuhig" in fake.calls[0]["messages"][0]["content"]
+
+
+def test_pinterest_caption_limit_is_reported():
+    from app.marketing import social
+    from app.schemas import SocialRequest
+
+    fake = FakeAssistant([post(caption="x" * 501)])
+    out = asyncio.run(social(fake, SocialRequest(locale="en", platform="pinterest", style_name="Aegean", facts=FACTS)))
+    assert out.violations == ["caption"] and len(out.post.caption) == 501
+
+
+def test_campaign_link_must_be_offered_and_limits_reported():
+    from app.marketing import campaign
+    from app.schemas import CampaignRequest
+
+    fake = FakeAssistant([json.dumps({"title": "Yeni stiller", "body": "x" * 301, "link": "https://evil.example"})])
+    out = asyncio.run(campaign(fake, CampaignRequest(locale="tr", channel="PUSH", kind="SERVICE", goal="Yeni stilleri duyur", facts=FACTS, links=["/studio"])))
+    assert out.message.link is None and out.violations == ["body"]
+    assert "NOT a commercial message" in fake.calls[0]["system"] and "<GOAL>\nYeni stilleri duyur" in fake.calls[0]["messages"][0]["content"]
+
+
+def test_campaign_and_report_demo():
+    body = {"locale": "en", "channel": "EMAIL", "kind": "MARKETING", "goal": "Invite to try PRO", "facts": FACTS, "links": ["/studio"]}
+    res = client.post("/internal/v1/marketing/campaign", headers=AUTH, json=body)
+    assert res.status_code == 200 and res.json()["message"]["link"] == "/studio"
+    rep = client.post("/internal/v1/marketing/report", headers=AUTH, json={"metrics": json.dumps({"users": {"new": 3}})})
+    assert rep.status_code == 200 and rep.json()["report"]["summary"].startswith("[Demo]")

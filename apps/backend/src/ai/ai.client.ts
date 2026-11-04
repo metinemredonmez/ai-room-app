@@ -76,6 +76,23 @@ export interface AsoOutput {
   usage?: AiUsageReport;
 }
 
+export interface SocialOutput {
+  post: { title: string; caption: string; hashtags: string[]; alt_text: string };
+  violations: string[];
+  usage?: AiUsageReport;
+}
+
+export interface CampaignOutput {
+  message: { title: string; body: string; link: string | null };
+  violations: string[];
+  usage?: AiUsageReport;
+}
+
+export interface ReportOutput {
+  report: { summary: string; highlights: string[]; actions: string[] };
+  usage?: AiUsageReport;
+}
+
 export interface ChatOutput {
   reply: string;
   suggestions: Array<{ label: string; tool: string; style_id?: string | null; room_id?: string | null; instructions?: string | null }>;
@@ -142,6 +159,18 @@ export class AiClient {
   /** Store listing draft for one language (API.md §7.18); up to two Claude calls, hence the long timeout. */
   marketingAso(input: { locale: string; facts: string; brief?: string; whats_new?: string }) {
     return this.call<AsoOutput>('POST', '/internal/v1/marketing/aso', input, 300_000);
+  }
+
+  marketingSocial(input: { locale: string; platform: string; style_name: string; style_description: string; facts: string; brief?: string }) {
+    return this.call<SocialOutput>('POST', '/internal/v1/marketing/social', input, 120_000);
+  }
+
+  marketingCampaign(input: { locale: string; channel: string; kind: string; goal: string; facts: string; links: string[] }) {
+    return this.call<CampaignOutput>('POST', '/internal/v1/marketing/campaign', input, 120_000);
+  }
+
+  marketingReport(input: { metrics: string }) {
+    return this.call<ReportOutput>('POST', '/internal/v1/marketing/report', input, 120_000);
   }
 
   /** Advisory capture-quality check; failures are swallowed (never blocks an upload). */

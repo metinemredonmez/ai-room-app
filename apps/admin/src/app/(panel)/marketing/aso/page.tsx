@@ -58,7 +58,7 @@ function download(name: string, data: unknown) {
 }
 
 export default function AsoPage() {
-  const list = useApi<{ items: MarketingDraft[] }>("/marketing/aso");
+  const list = useApi<{ items: MarketingDraft[] }>("/marketing/drafts", { kind: "aso" });
   const me = useApi<AdminMe>("/me");
   const { toast } = useFeedback();
   const [runOpen, setRunOpen] = useState(false);

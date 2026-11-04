@@ -227,6 +227,73 @@ class AsoResponse(BaseModel):
     usage: Usage
 
 
+Platform = Literal["instagram", "tiktok", "pinterest"]
+
+
+class SocialRequest(Strict):
+    """Caption for a before/after post of one style (API.md §7.18)."""
+
+    locale: Locale
+    platform: Platform
+    style_name: str = Field(..., min_length=2, max_length=80)
+    style_description: str = Field("", max_length=300)
+    facts: str = Field(..., min_length=50, max_length=8000)
+    brief: str | None = Field(None, max_length=1000)
+
+
+class SocialPost(BaseModel):
+    title: str = Field(description="Pinterest pin title; the opening hook elsewhere")
+    caption: str
+    hashtags: list[str]
+    alt_text: str
+
+
+class SocialResponse(BaseModel):
+    post: SocialPost
+    violations: list[str]
+    usage: Usage
+
+
+class CampaignRequest(Strict):
+    """Text of a Toplu Gönderim message (push or e-mail) for one language (API.md §7.18)."""
+
+    locale: Locale
+    channel: Literal["PUSH", "EMAIL"]
+    kind: Literal["SERVICE", "MARKETING"]
+    goal: str = Field(..., min_length=5, max_length=1000)
+    facts: str = Field(..., min_length=50, max_length=8000)
+    links: list[str] = Field(default_factory=list, max_length=30, description="In-app paths the message may open")
+
+
+class CampaignText(BaseModel):
+    title: str
+    body: str
+    link: str | None = None
+
+
+class CampaignResponse(BaseModel):
+    message: CampaignText
+    violations: list[str]
+    usage: Usage
+
+
+class ReportRequest(Strict):
+    """Owner's weekly report: the backend's numbers, Claude's short reading of them (Turkish)."""
+
+    metrics: str = Field(..., min_length=20, max_length=12000, description="JSON of this week's and last week's numbers")
+
+
+class ReportText(BaseModel):
+    summary: str
+    highlights: list[str]
+    actions: list[str]
+
+
+class ReportResponse(BaseModel):
+    report: ReportText
+    usage: Usage
+
+
 class ProviderState(BaseModel):
     name: str
     state: Literal["closed", "open", "half_open"]

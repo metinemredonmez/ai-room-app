@@ -71,6 +71,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       { name: 'retention' },
     );
     await this.queues.maintenance.upsertJobScheduler(
+      'weekly-report',
+      { pattern: '0 9 * * 1', tz: 'Europe/Istanbul' },
+      { name: 'weekly-report' },
+    );
+    await this.queues.maintenance.upsertJobScheduler(
       'kvkk-deadlines',
       { pattern: '0 9 * * *', tz: 'Europe/Istanbul' },
       { name: 'kvkk-deadlines' },
@@ -137,6 +142,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         job.name === 'retention' ? await this.retention()
         : job.name === 'kvkk-deadlines' ? await this.dataRequests.deadlineDigest()
         : job.name === 'broadcasts-due' ? await this.broadcasts.due()
+        : job.name === 'weekly-report' ? await this.marketing.runReport(true, null).then((r) => ({ draftId: r.items[0]?.id }))
         : { failedStale: await this.designs.reconcile(), marketingStale: await this.marketing.reconcile() };
       await this.prisma.jobRun.update({
         where: { id: run.id },

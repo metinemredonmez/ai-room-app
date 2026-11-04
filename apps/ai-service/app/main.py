@@ -14,6 +14,9 @@ from .assistant import Assistant, AssistantUnavailable, CallUsage
 from .config import Settings, get_settings
 from .images import NO_CHANGE_BELOW, ImageInputError, decode_image, decode_raw, is_unchanged, to_b64
 from .marketing import aso as write_aso
+from .marketing import campaign as write_campaign
+from .marketing import report as write_report
+from .marketing import social as write_social
 from .monitoring import init_monitoring
 from .prompts import build_prompt, clean
 from .providers import ImageProvider, ProviderError, create_providers
@@ -24,8 +27,9 @@ from .region import (
 )
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
-    AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, ChatRequest, ChatResponse, ErrorResponse, GenerateRequest, GenerateResponse,
-    HealthResponse, QualityRequest, QualityResponse, RegionInfo, SegmentRequest, SegmentResponse, Usage,
+    AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
+    ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, QualityRequest, QualityResponse, RegionInfo,
+    ReportRequest, ReportResponse, SegmentRequest, SegmentResponse, SocialRequest, SocialResponse, Usage,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -381,6 +385,27 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
               summary="App Store + Google Play listing draft for one language")
     async def marketing_aso(req: AsoRequest) -> AsoResponse:
         return await write_aso(assistant, req)
+
+    @app.post("/internal/v1/marketing/social", tags=["marketing"], response_model=SocialResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "Assistant unavailable"}},
+              summary="Caption, hashtags and alt text for a before/after post of one style")
+    async def marketing_social(req: SocialRequest) -> SocialResponse:
+        return await write_social(assistant, req)
+
+    @app.post("/internal/v1/marketing/campaign", tags=["marketing"], response_model=CampaignResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "Assistant unavailable"}},
+              summary="Push / e-mail text for a Toplu Gönderim draft")
+    async def marketing_campaign(req: CampaignRequest) -> CampaignResponse:
+        return await write_campaign(assistant, req)
+
+    @app.post("/internal/v1/marketing/report", tags=["marketing"], response_model=ReportResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "Assistant unavailable"}},
+              summary="Turkish reading of the owner's weekly numbers")
+    async def marketing_report(req: ReportRequest) -> ReportResponse:
+        return await write_report(assistant, req)
 
     return app
 

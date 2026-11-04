@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { AiError } from './ai/ai.client.js';
 import { STYLES_FOR_TEST } from './marketing.spec.fixtures.js';
-import { ASO_LIMITS, AsoListingSchema, AsoRunSchema, buildFacts, playListings, storeConfig, violationsOf, type AsoListing } from './marketing/marketing.rules.js';
+import { ASO_LIMITS, AsoListingSchema, AsoRunSchema, SocialRunSchema, buildFacts, playListings, socialPostSchema, storeConfig, violationsOf, type AsoListing } from './marketing/marketing.rules.js';
+import { renderWeeklyReport } from './marketing/weekly-report.js';
 import { MarketingService } from './marketing/marketing.service.js';
 
 // API.md §7.18: Pazarlama — store listing drafts. AI-02 (drafts only), RES-01 (budget, one run per language),
@@ -52,23 +53,40 @@ function fakePrisma() {
   return { prisma, rows };
 }
 
-function service(opts: { budget?: 'normal' | 'exceeded'; ai?: () => Promise<unknown> } = {}) {
+function service(opts: { budget?: 'normal' | 'exceeded'; ai?: () => Promise<unknown>; commercial?: boolean } = {}) {
   const { prisma, rows } = fakePrisma();
   const queued: string[] = [];
   const recorded: unknown[] = [];
   const asked: unknown[] = [];
   const queues = { marketing: { add: async (_: string, data: { draftId: string }) => void queued.push(data.draftId) } };
+  const created: unknown[] = [];
   const ai = {
+    marketingSocial: async (input: unknown) => {
+      asked.push(input);
+      return { post: { title: 'Japandi', caption: 'Same room, AI redesign.', hashtags: ['japandi', 'casalume'], alt_text: 'Before and after.' }, violations: [], usage: { kind: 'marketing', cost_usd: 0.02 } };
+    },
+    marketingCampaign: async (input: unknown) => {
+      asked.push(input);
+      return { message: { title: 'Yeni stiller', body: 'Kapadokya stilini dene.', link: '/studio' }, violations: [], usage: { kind: 'marketing', cost_usd: 0.01 } };
+    },
     marketingAso: async (input: unknown) => {
       asked.push(input);
       return opts.ai ? opts.ai() : { listing: listing(), violations: [], usage: { provider: 'anthropic', model: 'claude-opus-5-5', kind: 'marketing', cost_usd: 0.07 } };
     },
   };
   const usage = { budget: async () => ({ state: opts.budget ?? 'normal' }), record: async (u: unknown) => void recorded.push(u) };
-  const catalog = { styles: async () => STYLES_FOR_TEST };
+  const catalog = {
+    styles: async () => STYLES_FOR_TEST,
+    style: async (id: string) => ({ ...STYLES_FOR_TEST.find((x) => x.id === id)!, descriptionTr: 'Sakin', descriptionEn: 'Calm' }),
+    previewUrl: (id: string) => `https://api.example/v1/styles/${id}/preview.jpg`,
+  };
   const settings = { current: { freeDailyGenerations: 3, maxVariantsFree: 2 } };
-  const svc = new MarketingService(prisma as never, queues as never, ai as never, usage as never, catalog as never, settings as never);
-  return { svc, rows, queued, recorded, asked };
+  const broadcasts = {
+    precheck: (c: { kind: string }) => (opts.commercial ? { signals: ['indirim'], blocked: c.kind === 'SERVICE' } : { signals: [], blocked: false }),
+    create: async (input: unknown) => { created.push(input); return { id: 'b1' }; },
+  };
+  const svc = new MarketingService(prisma as never, queues as never, ai as never, usage as never, catalog as never, settings as never, broadcasts as never, {} as never, {} as never);
+  return { svc, rows, queued, recorded, asked, created };
 }
 
 describe('store listing rules', () => {
@@ -170,5 +188,84 @@ describe('marketing drafts', () => {
     expect(rows[1]).toMatchObject({ status: 'READY', approvedAt: null });
     const exp = await svc.exportAso();
     expect(exp.locales).toEqual([]);
+  });
+});
+
+describe('social posts', () => {
+  it('caps a run at 30 posts and holds captions to the platform', () => {
+    expect(SocialRunSchema.safeParse({ styleIds: ['japandi', 'modern'], platforms: ['instagram', 'pinterest'], locales: ['tr', 'de'] }).success).toBe(true);
+    expect(SocialRunSchema.safeParse({ styleIds: ['a_a', 'b_b', 'c_c', 'd_d', 'e_e'], platforms: ['instagram', 'tiktok', 'pinterest'], locales: ['tr', 'de', 'ja'] }).success).toBe(false);
+    expect(SocialRunSchema.safeParse({ styleIds: ['../x'], platforms: ['instagram'], locales: ['tr'] }).success).toBe(false);
+    const post = { title: 'T', caption: 'x'.repeat(501), hashtags: ['japandi'], alt_text: 'A' };
+    expect(socialPostSchema('pinterest').safeParse(post).success).toBe(false);
+    expect(socialPostSchema('instagram').safeParse(post).success).toBe(true);
+    expect(socialPostSchema('instagram').safeParse({ ...post, hashtags: ['#japandi'] }).success).toBe(false);
+    expect(socialPostSchema('instagram').safeParse({ ...post, hashtags: ['a', 'b', 'c', 'd', 'e', 'f'] }).success).toBe(false);
+  });
+
+  it('writes one draft per style × platform × language, only for styles with a photo', async () => {
+    const { svc, rows, asked } = service();
+    await expect(svc.runSocial({ styleIds: ['ghost'], platforms: ['instagram'], locales: ['tr'] }, 'admin')).rejects.toMatchObject({ status: 400 });
+    const out = await svc.runSocial({ styleIds: ['modern'], platforms: ['instagram', 'pinterest'], locales: ['tr', 'de'] }, 'admin');
+    expect(out.items).toHaveLength(4);
+    await svc.process(rows[0].id, false);
+    expect(rows[0]).toMatchObject({ kind: 'social', status: 'READY', violations: [] });
+    expect(asked[0]).toMatchObject({ locale: 'tr', platform: 'instagram', style_name: 'Modern' });
+  });
+});
+
+describe('campaign texts', () => {
+  it('flags commercial wording in a service message and blocks approval', async () => {
+    const { svc, rows } = service({ commercial: true });
+    await svc.runCampaign({ locales: ['tr'], channel: 'PUSH', kind: 'SERVICE', goal: 'Yeni stilleri duyur' }, 'admin');
+    await svc.process(rows[0].id, false);
+    expect(rows[0].violations).toEqual(['looks_commercial']);
+    await expect(svc.approve(rows[0].id, 'admin')).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('only offers the pricing link to marketing messages and turns an approved text into one broadcast draft', async () => {
+    const { svc, rows, asked, created } = service();
+    await svc.runCampaign({ locales: ['de'], channel: 'EMAIL', kind: 'SERVICE', goal: 'Neue Stile ankündigen' }, 'admin');
+    await svc.process(rows[0].id, false);
+    expect((asked[0] as { links: string[] }).links).not.toContain('/fiyatlar');
+    await expect(svc.toBroadcast(rows[0].id, 'admin')).rejects.toMatchObject({ status: 409 });
+    await svc.approve(rows[0].id, 'admin');
+    expect(await svc.toBroadcast(rows[0].id, 'admin')).toEqual({ broadcastId: 'b1' });
+    expect(created[0]).toMatchObject({ kind: 'SERVICE', channel: 'EMAIL', audience: { accounts: 'all', locale: 'de' }, link: '/studio' });
+    await expect(svc.toBroadcast(rows[0].id, 'admin')).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('edits keep links inside the app', async () => {
+    const { svc, rows } = service();
+    await svc.runCampaign({ locales: ['tr'], channel: 'PUSH', kind: 'MARKETING', goal: 'PRO dene' }, 'admin');
+    await svc.process(rows[0].id, false);
+    await expect(svc.update(rows[0].id, { title: 'Yeni', body: 'Dene bakalım', link: 'https://evil.example' })).rejects.toMatchObject({ status: 400 });
+    await expect(svc.update(rows[0].id, { title: 'Yeni', body: 'x'.repeat(301), link: null })).rejects.toMatchObject({ status: 400 });
+    await svc.update(rows[0].id, { title: 'Yeni', body: 'Dene bakalım', link: '/fiyatlar' });
+    expect(rows[0].status).toBe('READY');
+  });
+});
+
+describe('weekly report mail', () => {
+  const week = (n: number) => ({
+    users: { registered: n, guests: 2 * n, active: 3 * n },
+    designs: { created: 10 * n, succeeded: 9 * n, failed: n, failRate: 0.1 },
+    store: { subscriptionsStarted: n, renewals: 0, cancellations: 0, creditPacks: 0 },
+    ai: { calls: 20 * n, costUsd: 1.5 * n, costPerDesignUsd: 0.167 },
+    ops: { jobErrors: 0, broadcastsSent: 0 },
+  });
+  const metrics = {
+    period: { from: '2026-10-28T06:00:00.000Z', to: '2026-11-04T06:00:00.000Z' },
+    thisWeek: week(2), lastWeek: week(1), topTools: [], topStyles: [],
+    now: { registeredUsers: 40, activeSubscriptions: 3, openContentReports: 0, openKvkkRequests: 1 },
+  };
+
+  it('always carries the numbers, escapes the AI text and needs no personal data', () => {
+    const mail = renderWeeklyReport({ to: 'owner@example.com', metrics, text: { summary: '<b>İyi</b> hafta', highlights: ['Kayıt 2 kat'], actions: [] }, adminUrl: 'https://admin.example/marketing/report' });
+    expect(mail.subject).toContain('Casalume haftalık rapor');
+    expect(mail.html).toContain('&lt;b&gt;İyi&lt;/b&gt;');
+    expect(mail.text).toContain('Yeni kayıtlı kullanıcı: 2 (+100%)');
+    const bare = renderWeeklyReport({ to: 'owner@example.com', metrics, text: null, adminUrl: 'https://admin.example' });
+    expect(bare.text).toContain('AI maliyeti: $3.00 (+100%)');
   });
 });
