@@ -191,7 +191,8 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Masaüstündeki diğer uygulamalarla (yoga, fal-app, palemi, maeyja) özellik karşılaştırması — yukarıda.
 - [x] `Casalume-API-ve-Hesaplar.pdf` (Masaüstü): yedek yol haritası, servis başına kayıt adımları, teknolojiler, bildirimler.
 - [x] Dünyadaki benzer uygulamaların özellik karşılaştırması — “Ana fark” bölümünde.
-- [ ] Codex için bağımsız test ve denetim komutu — sahibi istedi: her şey bittikten sonra, en sonda yazılacak.
+- [x] Codex için bağımsız test ve denetim komutu: `docs/CODEX-DENETIM.md` (salt okunur; rapor `docs/rapor/codex-denetim-<tarih>.md`).
+- [ ] Codex raporundaki bulguları gözden geçir ve düzelt.
 
 ## İşletim
 - [ ] Mağazalar: Apple Developer, Google Play Console, RevenueCat ürünleri (`casalume_*`).
