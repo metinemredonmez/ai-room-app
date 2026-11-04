@@ -50,12 +50,7 @@ bash $S ai ANTHROPIC_API_KEY
 uv bir kez kurulur (root): `curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh`.
 
 ```bash
-sudo -iu casalume bash -lc '
-set -e; cd /var/www/casalume/app
-(cd apps/backend && npm ci && npx prisma generate && npm run build)
-(cd apps/ai-service && uv sync --frozen --no-dev)
-(cd apps/admin && npm ci && npm run build)
-(cd apps/web && npm ci && npm run build)'
+sudo -iu casalume bash /var/www/casalume/app/deploy/hazal/build.sh     # ayrıntı: /var/www/casalume/build.log
 ```
 
 ## 4. Veritabanı şeması ve ilk yönetici (casalume)
@@ -122,13 +117,10 @@ Geri yükleme (yalnız gerektiğinde): servisleri durdur (`pm2 stop casalume-api
 ## 8. Güncelleme
 
 ```bash
-sudo -iu casalume bash -lc '
-set -e; cd /var/www/casalume/app && git pull --ff-only
-(cd apps/backend && npm ci && npx prisma generate && npm run build && npm run db:migrate)
-(cd apps/ai-service && uv sync --frozen --no-dev)
-(cd apps/admin && npm ci && npm run build)
-(cd apps/web && npm ci && npm run build)
-pm2 reload /var/www/casalume/app/deploy/hazal/ecosystem.config.cjs'
+sudo -iu casalume git -C /var/www/casalume/app pull --ff-only
+sudo -iu casalume bash /var/www/casalume/app/deploy/hazal/build.sh
+sudo -iu casalume bash -c 'cd /var/www/casalume/app/apps/backend && npm run db:migrate'
+sudo -iu casalume pm2 reload /var/www/casalume/app/deploy/hazal/ecosystem.config.cjs
 ```
 
 Migrasyondan önce `backup.sh` elle çalıştırılır.
