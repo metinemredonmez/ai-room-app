@@ -135,11 +135,21 @@ Geri yükleme (yalnız gerektiğinde): servisleri durdur (`pm2 stop casalume-api
 ## 8. Güncelleme
 
 ```bash
-sudo -iu casalume git -C /var/www/casalume/app pull --ff-only
-sudo -iu casalume bash /var/www/casalume/app/deploy/hazal/build.sh
-sudo -iu casalume bash -c 'cd /var/www/casalume/app/apps/backend && npm run db:migrate'
-sudo -iu casalume pm2 reload /var/www/casalume/app/deploy/hazal/ecosystem.config.cjs
+sudo -iu casalume bash /var/www/casalume/app/deploy/hazal/deploy.sh          # yalnız değişen uygulamalar
+sudo -iu casalume bash /var/www/casalume/app/deploy/hazal/deploy.sh --all    # hepsi
 ```
+
+`deploy.sh` önce `git pull --ff-only` yapar. Ardından son yayından beri değişen uygulamaları sırayla günceller:
+
+- **API:** derleme ve migrasyon, sonra `casalume-api` yeniden başlatılır.
+- **AI servisi:** gerekirse `uv sync`, sonra yeniden başlatma.
+- **Admin ve web:** her biri iki klasörden boşta olanına (`.next-a` / `.next-b`) derlenir. `.next` canlı olanı gösteren bir bağlantıdır. Derleme başarılı olunca bağlantı çevrilir ve yalnız o uygulama yeniden başlatılır.
+
+Derleme sürerken site eski sürümle tam çalışır; kesinti yalnız yeniden başlatma süresi kadardır. Bir önceki sürümün statik dosyaları yeni sürüme kopyalanır, böylece tarayıcıda açık kalan sayfalar betiklerini yükleyebilir.
+
+Bir adım hata verirse betik durur, sonraki uygulamaya geçmez ve log son satırlarını gösterir. Ayrıntılı çıktı `/var/www/casalume/deploy.log` dosyasındadır, son yayın commit'leri `/var/www/casalume/.deployed/` altında tutulur.
+
+`build.sh` yalnız ilk kurulum içindir. `next build` çalışan sunucunun klasörünü boşaltır; 6 Kasım 2026'da yerinde derleme sırasında sayfalar ve betikleri dakikalarca 404/500 verdi.
 
 Migrasyondan önce `backup.sh` elle çalıştırılır.
 

@@ -14,6 +14,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The deploy builds into a separate folder and swaps it in, so the running site never serves a half-written
+  // build (deploy/hazal/build.sh). `next start` uses the default .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

@@ -2,6 +2,9 @@
 node_modules/
 dist/
 .next/
+# deploy/hazal/deploy.sh builds into .next-a / .next-b and points the .next symlink at the live one
+.next
+.next-*
 .expo/
 .venv/
 __pycache__/
