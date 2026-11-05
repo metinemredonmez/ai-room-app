@@ -10,6 +10,7 @@
 # that one app reloaded, so the site is down only for the restart itself. The previous build's static files are copied
 # into the new one, so a page already open in a browser can still load its scripts.
 set -Eeuo pipefail
+{ # bash reads the whole block before running it: the git pull below may replace this very file
 
 ROOT=/var/www/casalume
 APP=$ROOT/app
@@ -103,3 +104,5 @@ if changed web apps/web; then release_next web casalume-web 3301 /; fi
 
 step bitti
 pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const p of JSON.parse(s))if(p.name.startsWith("casalume"))console.log(`   ${p.name} ${p.pm2_env.status} ↻${p.pm2_env.restart_time} ${Math.round((Date.now()-p.pm2_env.pm_uptime)/1000)} sn`)})'
+exit 0
+}
