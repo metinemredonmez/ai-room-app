@@ -142,6 +142,7 @@ model User {
   referralsMade       Referral[]          @relation("inviter")
   referredBy          Referral?           @relation("invitee")
   giftsReceived       GiftRecipient[]
+  partnerAttribution  PartnerAttribution?
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
@@ -319,6 +320,41 @@ model Setting {
   value     Json
   updatedBy String?  @db.Uuid
   updatedAt DateTime @updatedAt
+}
+
+// Influencer / partner links (API.md §7.33): casalume.app/p/<slug>. Measurement only (a reward for the audience is a
+// promo code, §7.29). Visits are counted per Istanbul day; a new account is attributed to at most one partner.
+model Partner {
+  id            String               @id @default(uuid()) @db.Uuid
+  slug          String               @unique @db.VarChar(40)
+  name          String               @db.VarChar(80)
+  note          String?              @db.VarChar(300)
+  // For the report only (estimated payout = net revenue × percent); payment itself is outside the system.
+  commissionPct Int                  @default(0)
+  active        Boolean              @default(true)
+  createdById   String?              @db.Uuid
+  createdAt     DateTime             @default(now())
+  visits        PartnerVisitDay[]
+  attributions  PartnerAttribution[]
+}
+
+model PartnerVisitDay {
+  partnerId String  @db.Uuid
+  day       String  @db.VarChar(10)
+  count     Int     @default(0)
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@id([partnerId, day])
+}
+
+model PartnerAttribution {
+  userId    String   @id @db.Uuid
+  partnerId String   @db.Uuid
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId, createdAt])
 }
 
 // Group gifts (API.md §7.32): one row per send. Each recipient is a GiftRecipient row (primary key campaign+user),

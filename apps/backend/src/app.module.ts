@@ -46,6 +46,8 @@ import { AdminGiftController } from './gifts/gift.controller.js';
 import { GiftService } from './gifts/gift.service.js';
 import { AdminGiftCampaignController } from './gifts/campaign.controller.js';
 import { GiftCampaignService } from './gifts/campaign.service.js';
+import { AdminPartnersController, AttributionController, PartnersPublicController } from './partners/partners.controller.js';
+import { PartnersService } from './partners/partners.service.js';
 import { PromptTemplatesService } from './prompts/prompts.service.js';
 import { VersionGate } from './common/app-version.js';
 import { ErrorFilter } from './common/errors.js';
@@ -66,7 +68,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -111,6 +113,7 @@ import { UsersService } from './users/users.service.js';
     ReferralService,
     GiftService,
     GiftCampaignService,
+    PartnersService,
     ImagesService,
     AiClient,
     DesignsService,

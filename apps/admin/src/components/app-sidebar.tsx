@@ -14,6 +14,7 @@ import {
   Ticket,
   UserPlus,
   Gift,
+  Handshake,
   FileText,
   ListChecks,
   Megaphone,
@@ -118,6 +119,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/promo", label: "Promosyon kodları", icon: Ticket },
       { href: "/referrals", label: "Davet programı", icon: UserPlus },
       { href: "/gifts", label: "Toplu hediye", icon: Gift },
+      { href: "/partners", label: "Ortaklar", icon: Handshake },
     ],
   },
   {

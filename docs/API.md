@@ -1594,3 +1594,33 @@ Smoke testi önizlemeyi her yerde dener; gerçek kişilere kredi verdiği için 
 
 Sonra: otomatik kurallar (giriş serisi, doğum günü, belirli gün girmeyene kendiliğinden hediye) ve e-posta kanalı.
 Bunlar toplu gönderim (§7.16) kurallarıyla birlikte yapılacak: pazarlama izni, sessiz saat.
+
+### 7.33 Ortak (influencer) bağlantıları — backend + admin + web (mobil sonra)
+Influencer, mimar ya da mağaza için kısa bağlantı: `casalume.app/p/<ad>` (**Admin → Büyüme → Ortaklar**; YediOda #66).
+Yalnız **ölçer**. Kitleye ödül verilecekse ortakla birlikte bir promosyon kodu tanımlanır (§7.29).
+
+**Akış**
+1. Ziyaretçi `/p/<ad>` adresini açar. Web ziyareti sayar (`POST /partners/:slug/visit`), ortağı bu cihazda 30 gün
+   hatırlar (ilk dokunan kazanır) ve ana sayfaya yönlendirir. Sayfa arama motorlarına kapalıdır.
+2. Bu cihazda bir hesap açılınca (misafir dahil) web bir kez `POST /me/attribution { via }` gönderir.
+   - Sunucu yalnız şu durumda yazar: hesap 24 saatten yeni, rolü USER, ortak aktif.
+   - Hesap başına tek ortak olur; ilk yazılan kalır.
+   - Uymayan durumlar sessizce `attributed: false` alır.
+3. Rapor bu kişilerin ne yaptığını sayar:
+   - kayıt (misafir değil), doğrulanan, ilk başarılı tasarım;
+   - ödeyen ve net gelir: RevenueCat USD, canlı ortam, iadeler düşülür; analizdeki gelirle aynı olay türleri;
+   - tahmini komisyon: net gelir × oran. Ödeme sistem dışındadır.
+
+**Uçlar**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| POST | `/partners/:slug/visit` | herkese açık | `{ counted }`. Bilinmeyen ya da durdurulmuş bağlantıda false. IP ve bağlantı başına saatte 20 (RES-01) |
+| POST | `/me/attribution` | oturum | `{ via }` → `{ attributed }` (bir kez) |
+| GET | `/admin/partners` | SUPPORT | Her ortak için: `link`, `visits`, `visits30`, `signups`, `verified`, `designers`, `payers`, `revenueUsd`, `commissionUsd` |
+| POST | `/admin/partners` | ADMIN | `{ name, slug, commissionPct 0–50, note?, reason }` → 201 `{ id, slug, link }`. Bağlantı adı 3–40 küçük harf/rakam/tire; kullanılıyorsa 409 `slug_taken` |
+| PATCH | `/admin/partners/:id` | ADMIN | `{ name?, commissionPct?, note?, active?, reason }` |
+
+Denetim kaydında `partner.create` ve `partner.update` görünür.
+
+Saklama: `Partner`, `PartnerVisitDay` (ortak ve İstanbul günü başına bir sayaç satırı) ve `PartnerAttribution`
+(hesap başına bir satır; hesap silinince silinir). Ziyaretçiye ait kişisel veri tutulmaz.

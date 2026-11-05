@@ -572,3 +572,23 @@ export type GiftCampaign = {
   finishedAt: string | null;
   createdBy: string | null;
 };
+
+// Ortak / influencer bağlantıları (API.md §7.33).
+export type PartnerRow = {
+  id: string;
+  slug: string;
+  name: string;
+  note: string | null;
+  commissionPct: number;
+  active: boolean;
+  createdAt: string;
+  link: string;
+  visits: number;
+  visits30: number;
+  signups: number;
+  verified: number;
+  designers: number;
+  payers: number;
+  revenueUsd: number;
+  commissionUsd: number;
+};

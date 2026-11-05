@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ApiError, api, authApi } from "@/lib/api";
 import { LOCALE_COOKIE, localePath, splitLocale, type Dict, type Locale } from "@/lib/i18n";
 import type { Catalog, FeatureKey, MyOrg, User } from "@/lib/types";
+import { forgetVia, storedVia } from "@/lib/attribution";
 
 // ---- locale: comes from the URL (server layout); the cookie remembers it and lets the BFF send Accept-Language ----
 
@@ -170,6 +171,18 @@ export function AppProvider({ children, locale, messages }: { children: React.Re
       alive = false;
     };
   }, []);
+
+  // API.md §7.33: an account made after a partner link (/p/<slug>) is attributed to that partner, once.
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    const via = storedVia();
+    if (!via) return;
+    api
+      .post("/me/attribution", { via })
+      .then(() => forgetVia())
+      .catch(() => undefined);
+  }, [userId]);
 
   useEffect(() => {
     let alive = true;
