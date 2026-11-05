@@ -1204,6 +1204,33 @@ Denetim kaydı: `org.project_create`, `org.project_update`, `org.project_delete`
 Sonraki adım:
 - **5. adım:** logolu sunum, alan adıyla katılım, kartla ödeme, SSO.
 
+### 7.24 Kredi hareketlerim — backend + web (mobil sonra)
+Kullanıcı kendi kredi defterini görür: neye harcadığını, ne iade edildiğini, ne kazandığını. Kaynak YediOda #57
+("Jeton hareketlerim").
+
+`GET /me/credits?limit=20&cursor=<id>` → `{ items: [{ id, delta, kind, designId, productId, createdAt }], nextCursor }`
+- En yenisi üstte gelir. `limit` 1–50 arasıdır, varsayılan 20. Sayfalama `cursor` ile yapılır. Oturum gerekir;
+  yalnız kendi satırları döner.
+- `kind` değerleri:
+  - `daily_free`: günlük ücretsiz hakla tasarım (kredi düşmez);
+  - `generation`: krediyle tasarım;
+  - `refund`: başarısız tasarımın iadesi;
+  - `welcome`: hoş geldin hediyesi;
+  - `purchase`: kredi paketi;
+  - `adjustment`: destek ekibinin düzeltmesi;
+  - `other`: diğer.
+- `designId` yalnız tasarım hareketlerinde gelir. Web "Tasarıma git" bağlantısı gösterir.
+- `productId` yalnız satın almada gelir (mağaza ürün kimliği).
+- Gizlilik (AZ-03): yönetici düzeltmesinin serbest metin gerekçesi, personelin kimliği ve mağaza işlem kimliği
+  hiçbir zaman dönmez. Bunlar yalnız admin'deki kullanıcı ayrıntısında görünür.
+- Firma çalışma alanındaki tasarımlar firmanın havuzundan düşer; bu listede değil, firmanın defterinde görünür
+  (§7.23).
+
+Web: **Hesabım → Kredi hareketlerim** bölümü 11 dildedir. "Daha fazla göster" düğmesi vardır; ücretsiz hak
+kullanımı "ücretsiz" diye ayrıca işaretlenir, böylece kredi düşmüş gibi görünmez.
+
+Mobil (sonra): Profil → Kredi hareketlerim ekranı aynı ucu kullanır.
+
 ### 7.25 Ürün kataloğu panelden: araçlar, odalar, zeminler, renkler — backend + admin (web ve mobil hazır)
 Uygulamanın sunduğu araçlar, oda tipleri, zeminler ve duvar renkleri artık kodda değil, panelde yönetilir
 (**Admin → İçerik → Ürün kataloğu**). Kod bir aracın ne yaptığını söyler (istediği girdiler ve istemi); panel şunları

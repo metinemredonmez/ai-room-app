@@ -226,7 +226,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/apps-features/` klasörüne gelecek.
 - [x] Hoş geldin kredisi (API.md §7.22): Ayarlar'dan miktar; e-posta / Apple / Google kimliği başına bir kez, hesap silinse de (HMAC özeti 3 yıl); web doğrulama sayfasında 11 dilde mesaj (Palemi 5.7)
   - [ ] Gizlilik metnine kimlik özeti cümlesi (sahibi); mobil kutlama ve kayıt teklifi (sen)
-- [ ] Kredi hareketlerim: web hesap sayfasında kullanıcının kendi defteri (YediOda #57) · kolay
+- [x] Kredi hareketlerim (API.md §7.24): web Hesabım'da 11 dilde, sayfalı; yönetici gerekçesi gizli (YediOda #57). Mobil (sen): Profil → Kredi hareketlerim
 - [ ] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) · orta
 - [ ] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) · kolay
 - [ ] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) · kolay

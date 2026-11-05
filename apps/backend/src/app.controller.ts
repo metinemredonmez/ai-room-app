@@ -28,6 +28,7 @@ import { APP_PLATFORMS, SkipVersionGate } from './common/app-version.js';
 import { clientVersion, compareVersions } from './common/semver.js';
 import { SettingsService } from './settings/settings.service.js';
 import { OrgsService } from './orgs/orgs.service.js';
+import { publicLedgerEntry } from './users/ledger.js';
 
 /** ?locale= first, then the best supported Accept-Language entry (q-values respected), then the fallback. */
 export function localeOf(req: AppRequest, fallback?: string): Locale {
@@ -175,6 +176,7 @@ const SampleSchema = z.object({ sample: z.enum(SAMPLE_IDS) }).strict();
 const PatchMeSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), locale: z.enum(LOCALES).optional() }).strict();
 const PushTokenSchema = z.object({ token: z.string().max(200).regex(PUSH_TOKEN_RE), platform: z.enum(['ios', 'android']) }).strict();
 const PushTokenDeleteSchema = z.object({ token: z.string().max(200) }).strict();
+const LedgerQuery = z.object({ cursor: z.uuid().optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
 const FavoriteSchema = z
   .object({ favorite: z.boolean().optional(), /** API.md §7.23 step 4: move into a firm project, or out (null). */ projectId: z.uuid().nullable().optional() })
   .strict()
@@ -379,6 +381,24 @@ export class UserController {
   async postConsent(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(ConsentSchema, body);
     return this.consents.record(auth.userId, input.kind, input.version, input.granted, req.clientIp);
+  }
+
+  /** API.md §7.24: my credit movements, newest first (staff adjustments without their internal reason). */
+  @Get('me/credits')
+  @Doc('Kredi hareketlerim', {
+    description: '`kind`: daily_free | generation | refund | welcome | purchase | adjustment | other. Yönetici düzeltmesinin gerekçesi gösterilmez.',
+    errors: [400, 401],
+  })
+  async myCredits(@Auth() auth: AuthContext, @Query() query: unknown) {
+    const q = parse(LedgerQuery, query);
+    const rows = await this.prisma.creditLedger.findMany({
+      where: { userId: auth.userId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: q.limit + 1,
+      ...cursorArgs(q.cursor),
+    });
+    const page = rows.slice(0, q.limit);
+    return { items: page.map(publicLedgerEntry), nextCursor: rows.length > q.limit ? page.at(-1)!.id : null };
   }
 
   /** KVKK m.11 — everything stored about the account, as JSON (images via signed URLs). */

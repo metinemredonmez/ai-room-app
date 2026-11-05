@@ -18,6 +18,8 @@ type Consents = { current: Record<ConsentKind, { current: string; granted: boole
 type RequestType = "access" | "rectification" | "erasure" | "objection" | "other";
 type DataRequest = { id: string; reference: string; type: string; status: "RECEIVED" | "IN_PROGRESS" | "COMPLETED" | "REJECTED"; response: string | null; dueAt: string; receivedAt: string };
 const REQUEST_TYPES: RequestType[] = ["access", "rectification", "erasure", "objection", "other"];
+type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "adjustment" | "other";
+type LedgerEntry = { id: string; delta: number; kind: LedgerKind; designId: string | null; productId: string | null; createdAt: string };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -102,6 +104,7 @@ export function AccountView() {
         </dl>
       </Section>
 
+      <LedgerSection onError={setError} />
       <ConsentsSection onError={setError} onSaved={() => setNotice(p.consentSaved)} />
       <DataSection onError={setError} />
       <RequestsSection onError={setError} onSent={(ref) => setNotice(fmt(p.kvkkSent, { ref }))} />
@@ -114,6 +117,83 @@ export function AccountView() {
         }}
       />
     </div>
+  );
+}
+
+/** API.md §7.24: the user's own credit movements, newest first, paged. */
+function LedgerSection({ onError }: { onError: (e: unknown) => void }) {
+  const { t, locale } = useApp();
+  const p = t.profile;
+  const [items, setItems] = useState<LedgerEntry[] | null>(null);
+  const [next, setNext] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fetchPage = useCallback((cursor: string | null) => api.get<{ items: LedgerEntry[]; nextCursor: string | null }>(`/me/credits?limit=20${cursor ? `&cursor=${cursor}` : ""}`), []);
+  useEffect(() => {
+    fetchPage(null)
+      .then((r) => {
+        setItems(r.items);
+        setNext(r.nextCursor);
+      })
+      .catch(onError);
+  }, [fetchPage, onError]);
+  async function more() {
+    if (!next) return;
+    setBusy(true);
+    try {
+      const r = await fetchPage(next);
+      setItems((prev) => [...(prev ?? []), ...r.items]);
+      setNext(r.nextCursor);
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const time = (iso: string) => new Date(iso).toLocaleString(LOCALE_TAGS[locale], { dateStyle: "medium", timeStyle: "short" });
+
+  return (
+    <Section title={p.ledgerTitle}>
+      <p className="text-sm text-muted">{p.ledgerBody}</p>
+      {items === null ? (
+        <LoaderCircle className="mt-5 h-5 w-5 animate-spin text-muted" aria-hidden />
+      ) : items.length === 0 ? (
+        <p className="mt-5 text-sm text-muted">{p.ledgerEmpty}</p>
+      ) : (
+        <ul className="mt-5 divide-y divide-border">
+          {items.map((x) => {
+            const free = x.kind === "daily_free";
+            return (
+              <li key={x.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium">{p.ledgerKinds[x.kind] ?? p.ledgerKinds.other}</p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {time(x.createdAt)}
+                    {x.designId && (
+                      <>
+                        {" · "}
+                        <Link href={`/tasarim/${x.designId}`} className="text-primary hover:underline">
+                          {p.ledgerDesign}
+                        </Link>
+                      </>
+                    )}
+                  </p>
+                </div>
+                <span className={`shrink-0 tabular-nums font-medium ${x.delta > 0 ? "text-primary" : "text-muted"}`}>
+                  {x.delta > 0 ? `+${x.delta}` : `−${Math.abs(x.delta)}`}
+                  {free && <span className="ml-1 text-xs font-normal">{p.ledgerFree}</span>}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {next && (
+        <button type="button" onClick={() => void more()} disabled={busy} className={`${btn.base} ${btn.ghost} ${btn.sm} mt-4`}>
+          {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
+          {p.ledgerMore}
+        </button>
+      )}
+    </Section>
   );
 }
 
