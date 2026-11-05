@@ -481,3 +481,17 @@ export type ProductState = {
   updatedAt: string | null;
   updatedBy: string | null;
 };
+
+// İstem şablonları (API.md §7.26).
+export type PromptVersion = { id: string; text: string; note: string; createdAt: string; createdBy: string | null };
+export type PromptTemplate = {
+  key: string;
+  tool: string;
+  default: string;
+  placeholders: string[];
+  required: string[];
+  activeVersionId: string | null;
+  text: string;
+  versions: PromptVersion[];
+};
+export type PromptsState = { templates: PromptTemplate[]; placeholders: Record<string, string> };

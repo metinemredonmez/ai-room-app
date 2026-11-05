@@ -74,6 +74,7 @@ function designs(opts: { consent?: boolean; budget?: 'normal' | 'exceeded'; pro?
     prisma as never, images as never, users as never, {} as never, ai as never, settings as never, usage as never, {} as never,
     consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never, {} as never,
     new ProductCatalogService({} as never),
+    { forTool: () => ({ versions: {} }) } as never,
   );
   return { svc, calls, rows };
 }

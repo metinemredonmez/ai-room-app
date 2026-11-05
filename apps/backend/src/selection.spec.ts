@@ -31,6 +31,7 @@ function service(opts: { owned?: boolean; consent?: boolean; requireConsent?: bo
     {} as never, images as never, {} as never, {} as never, ai as never, settings as never, usageSvc as never,
     {} as never, consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never, {} as never,
     new ProductCatalogService({} as never),
+    { forTool: () => ({ versions: {} }) } as never,
   );
   return { designs, calls };
 }

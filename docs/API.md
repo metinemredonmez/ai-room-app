@@ -1279,3 +1279,67 @@ Denetim kaydı: `product.catalog_update`. Gerekçe ve değişiklik listesi tutul
 
 Sonraki adımlar ("her şey panelden"): araç başı istem şablonları (sürümlü, geri alınabilir), AI sağlayıcı ve
 model seçimi, özellik bayrakları (`GET /features`), araç başı kredi bedeli.
+
+### 7.26 İstem şablonları panelden — AI servisi + backend + admin
+Görsel modeline giden istem, araç başına admin'den yönetilir (**Admin → Yapay zekâ → İstem şablonları**; YediOda #30,
+fal-app prompt-resolver). Yeni sürüm yayınlanır, örnek değerlerle önizlenir; gerekirse eski bir sürüme ya da koddaki
+varsayılana tek adımda dönülür. Hiçbir şey yayınlanmadıysa davranış değişmez.
+
+**Şablonlar ve alanlar (AI servisi tanımlar)**
+- 12 anahtar var:
+  - `keep`: ortak "odayı koru" cümlesi; diğer şablonlarda `{keep}` yazan yere girer;
+  - araç başına: `redesign`, `furnish`, `declutter`, `declutter_all` ("hepsini sil"), `replace`, `paint`,
+    `flooring`, `exterior`, `garden`, `reference`, `custom`.
+- Alanlar: `{room}`, `{style}`, `{keep}`, `{extra}`, `{what}`, `{thing}`, `{replacement}`, `{walls}`, `{color}`,
+  `{floor}`, `{reference}`, `{request}`.
+- Her anahtar yalnız kendi alanlarını kullanabilir; zorunlu olanlar şablonda bulunmalıdır. Örneğin `replace` için
+  `{thing}` ve `{replacement}`; ek açıklama alan araçlarda `{extra}`. Böylece kullanıcının seçimi ya da isteği sessizce
+  düşmez.
+- Varsayılan şablonlar eski istemlerin aynısını üretir. `tests/test_prompts.py`, 320 girdi kombinasyonunda eski
+  kodla (`tests/fixtures/prompts_v1.py`) harfi harfine karşılaştırır.
+
+**Güvenlik (INP-01, AZ-01, BUS-02, LOG-01)**
+- Değerleri kod üretir. Kullanıcı metni önceki gibi temizlenir (tırnak, `<>`, `{}`, kontrol karakteri atılır) ve
+  tırnak içinde verilir. Şablon yalnız yerini belirler.
+- Yerleştirme tek geçişlidir: değerin içindeki `{...}` yeniden taranmaz.
+- Kurallar:
+  - uzunluk 10–1500 karakter (`keep` için en çok 600);
+  - süslü parantez yalnız `{alan}` biçiminde kullanılabilir;
+  - bilinmeyen alan reddedilir;
+  - kontrol karakterine izin verilmez.
+- Yayın, AI servisinin doğrulamasından geçmeden olmaz. Servise ulaşılamazsa yayın yapılmaz (fail-closed).
+- Kayıtlı bir şablon sonradan geçersiz kalırsa (ör. bir alanın adı değişirse) üretim durmaz; o anahtar için varsayılan
+  kullanılır.
+- Yalnız ADMIN ve üstü görür ve değiştirir; destek ekibi istemleri ne görür ne değiştirir.
+- Yayın ve geri dönüş not ister, `prompt.publish` / `prompt.activate` olarak denetlenir.
+- Eşzamanlı değişiklik 409 `version_conflict` alır.
+
+**Saklama**
+- `PromptVersion` tablosu yalnız ekleme yapar (anahtar, metin, not, yazan, zaman).
+- Hangi sürümün yayında olduğu `Setting` tablosunda `ai.prompts` satırında tutulur (anahtar → sürüm kimliği).
+- Bellekte tutulur, 15 saniyede bir yenilenir; değişiklikte hemen geçer.
+- Her üretimde yalnız o aracın şablonları ve `keep` gönderilir (`prompt_templates`).
+- Kullanılan sürümler tasarımın `params.promptVersions` alanına yazılır; sonuç kalitesini sürüme göre ölçmek için.
+
+**AI servisi (iç)**
+- `GET /internal/v1/prompts` → `{ templates: [{ key, tool, default, placeholders, required }], placeholders }`
+- `POST /internal/v1/prompts/preview` `{ key, template, keep? }` → `{ prompt | null, errors }`. Görsel üretmez,
+  ücret yok. Hata kodları: `length`, `control_chars`, `stray_brace`, `unknown_placeholder:<ad>`,
+  `missing_placeholder:<ad>`, `unknown_key`.
+- `POST /internal/v1/generate` isteğine `prompt_templates` eklendi (en çok 16 anahtar, her biri en çok 1500
+  karakter).
+
+**Admin uçları (rol ADMIN)**
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| GET | `/admin/prompts` | `{ templates: [{ key, tool, default, placeholders, required, activeVersionId, text, versions[≤20] }], placeholders }`; AI servisi kapalıysa 502 |
+| POST | `/admin/prompts/preview` | `{ key, text }` → `{ prompt, errors }` |
+| POST | `/admin/prompts/:key/publish` | `{ text, note, expected }` → liste. Hatalar: geçersizse 400 `invalid_template` (Türkçe neden); aynı metin yayındaysa 400 `no_change`; bilinmeyen anahtar 404; `expected` uymazsa 409 |
+| POST | `/admin/prompts/:key/activate` | `{ versionId \| null, reason, expected }` → liste. `null` varsayılana döner; başka anahtarın sürümü 404; metin yeniden doğrulanır |
+
+**Admin ekranı**
+- Solda 12 şablon listelenir; panelden değişenler noktayla işaretlidir.
+- Düzenleyicide alan düğmeleri var: tıklayınca imleç yerine eklenir, zorunlular `*` ile işaretli.
+- Canlı önizleme örnek değerlerle gösterilir. Hata Türkçe olarak yazılır.
+- "Varsayılanı yükle", not ile "Yayınla" ve sürüm geçmişi var. Geçmişte "Düzenleyiciye yükle", "Bu sürüme dön" ve
+  "Varsayılana dön" bulunur.

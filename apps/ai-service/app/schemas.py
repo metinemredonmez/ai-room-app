@@ -68,6 +68,40 @@ class GenerateRequest(Strict):
     remove_all: bool = False
     reference_image_b64: str | None = Field(None, max_length=17_000_000)
     points: list[Point] | None = Points
+    prompt_templates: dict[str, str] | None = Field(
+        None, max_length=16,
+        description="Active panel templates, key → text (API.md §7.26); a missing or unusable one uses the default",
+    )
+
+    @model_validator(mode="after")
+    def _template_sizes(self):
+        if self.prompt_templates and any(len(k) > 40 or len(v) > 1500 for k, v in self.prompt_templates.items()):
+            raise ValueError("prompt template too long")
+        return self
+
+
+class PromptPreviewRequest(Strict):
+    key: str = Field(max_length=40)
+    template: str = Field(max_length=1500)
+    keep: str | None = Field(None, max_length=600, description="The active shared sentence, if the panel changed it")
+
+
+class PromptPreviewResponse(BaseModel):
+    prompt: str | None
+    errors: list[str]
+
+
+class PromptTemplateInfo(BaseModel):
+    key: str
+    tool: str = Field(description="Tool the template belongs to; empty for the shared `keep` sentence")
+    default: str
+    placeholders: list[str]
+    required: list[str]
+
+
+class PromptCatalogResponse(BaseModel):
+    templates: list[PromptTemplateInfo]
+    placeholders: dict[str, str] = Field(description="Placeholder → what it holds")
 
 
 class SegmentRequest(Strict):

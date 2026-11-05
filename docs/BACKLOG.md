@@ -9,7 +9,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
 1. Ürün ve AI
    - [x] Ürün kataloğu (API.md §7.25): 10 araç (aç/kapa, PRO, Yeni rozeti, ad, açıklama, sıra), oda tipleri, zeminler,
      duvar renkleri (ekle, kapat, çıkar, istem, simge). Admin → İçerik → Ürün kataloğu.
-   - [ ] Araç başı istem şablonları: sürümlü, panelden düzenleme ve geri alma (YediOda #30, fal-app prompt-resolver).
+   - [x] İstem şablonları (API.md §7.26): 12 şablon, alan kuralları, canlı önizleme, sürüm geçmişi, eski sürüme / varsayılana dönüş. Admin → Yapay zekâ → İstem şablonları.
    - [ ] AI sağlayıcı ve model seçimi panelden: yedek zinciri sırası, model adı (YediOda #27).
    - [ ] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi).
    - [ ] Araç başı kredi bedeli (ör. dış cephe 2 hak).

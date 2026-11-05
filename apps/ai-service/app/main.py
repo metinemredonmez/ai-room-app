@@ -20,7 +20,7 @@ from .marketing import report as write_report
 from .marketing import seo as write_seo
 from .marketing import social as write_social
 from .monitoring import init_monitoring
-from .prompts import build_prompt, clean
+from .prompts import PLACEHOLDERS, TEMPLATES, build_prompt, clean, preview as preview_prompt
 from .providers import ImageProvider, ProviderError, create_providers
 from .quality import assess
 from .region import (
@@ -30,7 +30,8 @@ from .region import (
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, BlogRequest, BlogResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
-    ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, QualityRequest, QualityResponse, RegionInfo,
+    ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, PromptCatalogResponse, PromptPreviewRequest,
+    PromptPreviewResponse, PromptTemplateInfo, QualityRequest, QualityResponse, RegionInfo,
     ReportRequest, ReportResponse, SegmentRequest, SegmentResponse, SeoRequest, SeoResponse, SocialRequest, SocialResponse,
     Usage,
 )
@@ -273,7 +274,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
                 reference_style, describe = await asyncio.wait_for(assistant.describe_reference(ref), timeout=remaining())
             except (TimeoutError, asyncio.TimeoutError) as exc:
                 raise ProviderError("time_budget_exceeded", retryable=True) from exc
-        prompt = build_prompt(req, reference_style, describe_area(selected.mask) if selected else "")
+        prompt = build_prompt(req, reference_style, describe_area(selected.mask) if selected else "", req.prompt_templates)
         tint = req.color_hex if req.tool == "paint" else None
 
         # Otherwise the mask is computed while the variants render, so the lock adds no latency of its own.
@@ -340,6 +341,23 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             raise NoChangeError(usage)
         return GenerateResponse(images_b64=images, prompt=prompt, provider=usage.provider,
                                 reference_style=reference_style, region=region, usage=usage)
+
+    @app.get("/internal/v1/prompts", tags=["prompts"], response_model=PromptCatalogResponse,
+             dependencies=[Depends(require_internal)], responses={401: ERRORS[401]},
+             summary="Image prompt templates: defaults and placeholders (API.md §7.26)")
+    async def prompt_catalog() -> PromptCatalogResponse:
+        return PromptCatalogResponse(
+            templates=[PromptTemplateInfo(key=k, tool=t, default=d, placeholders=list(a), required=list(r))
+                       for k, (t, d, a, r) in TEMPLATES.items()],
+            placeholders={name: what for name, (what, _) in PLACEHOLDERS.items()},
+        )
+
+    @app.post("/internal/v1/prompts/preview", tags=["prompts"], response_model=PromptPreviewResponse,
+              dependencies=[Depends(require_internal)], responses={401: ERRORS[401]},
+              summary="Validate a template and render it with sample values; no image, no cost")
+    async def prompt_preview(req: PromptPreviewRequest) -> PromptPreviewResponse:
+        text, errors = preview_prompt(req.key, req.template, req.keep)
+        return PromptPreviewResponse(prompt=text, errors=errors)
 
     @app.post("/internal/v1/segment", tags=["generation"], response_model=SegmentResponse,
               dependencies=[Depends(require_internal)],

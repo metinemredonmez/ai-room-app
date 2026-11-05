@@ -34,6 +34,14 @@ export interface GenerateInput {
   reference_image_b64?: string;
   /** Tap selection, 0..1 from the top-left; one object per point (API.md §7.15). */
   points?: Array<{ x: number; y: number }>;
+  /** The panel's active prompt templates, key → text (API.md §7.26); absent keys use the service's defaults. */
+  prompt_templates?: Record<string, string>;
+}
+
+/** Image prompt templates as the AI service defines them (API.md §7.26). */
+export interface PromptCatalog {
+  templates: Array<{ key: string; tool: string; default: string; placeholders: string[]; required: string[] }>;
+  placeholders: Record<string, string>;
 }
 
 export interface SegmentOutput {
@@ -153,6 +161,15 @@ export class AiClient {
 
   generate(input: GenerateInput, requestId?: string) {
     return this.call<GenerateOutput>('POST', '/internal/v1/generate', input, 180_000, requestId);
+  }
+
+  promptCatalog() {
+    return this.call<PromptCatalog>('GET', '/internal/v1/prompts', undefined, 10_000);
+  }
+
+  /** Validates a template and renders it with sample values; no image, no cost. */
+  previewPrompt(input: { key: string; template: string; keep?: string }) {
+    return this.call<{ prompt: string | null; errors: string[] }>('POST', '/internal/v1/prompts/preview', input, 10_000);
   }
 
   /** Selection preview: the mask the region lock will use for these taps (or this object name). */

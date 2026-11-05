@@ -9,6 +9,7 @@ import { UsageService } from '../usage/usage.service.js';
 import { CatalogService } from '../catalog/catalog.service.js';
 import { TOOL_IDS, isLocale, type Locale } from '../catalog/catalog.data.js';
 import { ProductCatalogService } from '../catalog/product.service.js';
+import { PromptTemplatesService } from '../prompts/prompts.service.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -79,6 +80,7 @@ export class DesignsService {
     private orgs: OrgsService,
     private projects: ProjectsService,
     private product: ProductCatalogService,
+    private prompts: PromptTemplatesService,
   ) {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
@@ -265,6 +267,8 @@ export class DesignsService {
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
     const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
     const points = PointsSchema.safeParse((d.params as { points?: unknown } | null)?.points);
+    // The panel's live prompt templates (API.md §7.26); which versions were used is kept with the design.
+    const prompts = this.prompts.forTool(d.tool);
     try {
       const out = await this.ai.generate(
         {
@@ -284,6 +288,7 @@ export class DesignsService {
             ? (await this.images.read(str(params.referenceImageId)!)).toString('base64')
             : undefined,
           points: points.success ? points.data : undefined,
+          prompt_templates: prompts.templates,
         },
         opts.requestId,
       );
@@ -299,7 +304,9 @@ export class DesignsService {
       for (const buf of buffers) await this.images.save(buf, { ownerId: d.userId, kind: 'RESULT', designId });
       await this.settleSuccess(d, buffers.length, {
         status: 'SUCCEEDED', prompt: out.prompt, provider: out.provider, finishedAt: new Date(),
-        ...(out.region ? { params: { ...(d.params as Prisma.JsonObject), region: out.region } } : {}),
+        ...(out.region || prompts.templates
+          ? { params: { ...(d.params as Prisma.JsonObject), ...(out.region ? { region: out.region } : {}), ...(prompts.templates ? { promptVersions: prompts.versions } : {}) } }
+          : {}),
       });
       log.info('design_succeeded', {
         designId, userId: d.userId, tool: d.tool, provider: out.provider, variants: buffers.length, regionLock: out.region?.applied ?? null,

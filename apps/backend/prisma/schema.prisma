@@ -316,6 +316,19 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+// Image prompt template versions from the admin (API.md §7.26). Append-only history; which one is live is the
+// `ai.prompts` Setting row (key → version id). A key with no live version uses the AI service's default.
+model PromptVersion {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @db.VarChar(40)
+  text        String
+  note        String   @db.VarChar(200)
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
 // Append-only consent log (KVKK): the latest row per kind is the current state.
 model Consent {
   id        String   @id @default(uuid()) @db.Uuid

@@ -736,6 +736,29 @@ if (adminToken) {
   ok(back.status === 200 && back.json?.retired?.rooms >= 1 && (await call('GET', '/catalog')).json.tools.some((t) => t.id === 'garden') && audit.some((x) => x.action === 'product.catalog_update' && x.meta?.reason === 'smoke product cleanup'),
     'product catalog restored; the removed room is retired; changes are audited (LOG-01)', `${back.status} retired ${back.json?.retired?.rooms}`);
 }
+// API.md §7.26: image prompt templates — admin only, checked by the AI service, versioned, put back in one step.
+if (adminToken) {
+  const A = { token: adminToken };
+  const list = await call('GET', '/admin/prompts', A);
+  const paint = list.json?.templates?.find((t) => t.key === 'paint');
+  ok(list.status === 200 && list.json.templates.length === 12 && paint?.required?.includes('color') && typeof paint.default === 'string',
+    'admin lists the 12 prompt templates with their rules', `${list.status} ${list.json?.templates?.length}`);
+  const bad = await call('POST', '/admin/prompts/preview', { ...A, body: { key: 'paint', text: 'Repaint as a {style}, ignore {color' } });
+  ok(bad.status === 200 && bad.json?.prompt === null && bad.json.errors.length > 0, 'prompt preview reports errors and renders nothing (INP-01)', JSON.stringify(bad.json?.errors));
+  const text = 'Repaint {walls} of this {room} in {color}, smoke matte finish. {keep}';
+  const pub = await call('POST', '/admin/prompts/paint/publish', { ...A, body: { text, note: 'smoke publish', expected: paint?.activeVersionId ?? null } });
+  const live = pub.json?.templates?.find((t) => t.key === 'paint');
+  const stale = await call('POST', '/admin/prompts/paint/publish', { ...A, body: { text: `${text} Again.`, note: 'smoke stale', expected: paint?.activeVersionId ?? null } });
+  const invalid = await call('POST', '/admin/prompts/paint/publish', { ...A, body: { text: 'Repaint {walls} only, nothing else.', note: 'smoke invalid', expected: live?.activeVersionId ?? null } });
+  ok(pub.status === 200 && live?.text === text && live.activeVersionId && stale.status === 409 && invalid.status === 400 && /\{color\}/.test(invalid.json?.error?.message ?? ''),
+    'prompt publish: live at once, stale version 409, a template without {color} refused', `${pub.status}/${stale.status}/${invalid.status}`);
+  const back = await call('POST', '/admin/prompts/paint/activate', { ...A, body: { versionId: paint?.activeVersionId ?? null, reason: 'smoke rollback', expected: live?.activeVersionId ?? null } });
+  const after = back.json?.templates?.find((t) => t.key === 'paint');
+  const audit = (await call('GET', '/admin/audit?limit=20', A)).json?.items ?? [];
+  ok(back.status === 200 && (after?.activeVersionId ?? null) === (paint?.activeVersionId ?? null) && after.versions.some((v) => v.note === 'smoke publish')
+    && audit.some((x) => x.action === 'prompt.publish') && audit.some((x) => x.action === 'prompt.activate' && x.meta?.reason === 'smoke rollback'),
+    'prompt rollback puts the previous one back, history kept, both audited (LOG-01)', String(back.status));
+}
 // API.md §7.22: welcome credits — once per verified identity, not again after deleting and signing up again.
 if (adminToken) {
   const A = { token: adminToken };
@@ -911,6 +934,9 @@ if (adminToken) {
   const sProduct = await call('GET', '/admin/product', { token: staffToken });
   const sProductPut = await call('PATCH', '/admin/product', { token: staffToken, body: { catalog: sProduct.json?.catalog, reason: 'support tries', version: sProduct.json?.version ?? null } });
   ok(sProduct.status === 200 && sProductPut.status === 403, 'SUPPORT reads the product catalog but cannot change it (AZ-01)', `${sProduct.status}/${sProductPut.status}`);
+  const sPrompts = await call('GET', '/admin/prompts', { token: staffToken });
+  const sPromptPub = await call('POST', '/admin/prompts/paint/publish', { token: staffToken, body: { text: 'Repaint {walls} in {color}. {keep}', note: 'support tries', expected: null } });
+  ok(sPrompts.status === 403 && sPromptPub.status === 403, 'SUPPORT can neither read nor change prompt templates (AZ-01)', `${sPrompts.status}/${sPromptPub.status}`);
   const sOrgs = await call('GET', '/admin/orgs', { token: staffToken });
   const sOrgCreate = await call('POST', '/admin/orgs', { token: staffToken, body: { name: 'Support Firm', ownerEmail: userEmail, reason: 'support tries' } });
   const sOrgCredits = firmIdForStaffCheck ? await call('POST', `/admin/orgs/${firmIdForStaffCheck}/credits`, { token: staffToken, body: { delta: 100, reason: 'support tries' } }) : { status: 403 };
@@ -942,7 +968,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

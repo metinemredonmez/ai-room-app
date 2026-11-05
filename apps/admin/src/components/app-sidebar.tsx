@@ -8,6 +8,7 @@ import {
   Flag,
   House,
   LayoutGrid,
+  WandSparkles,
   FileText,
   ListChecks,
   Megaphone,
@@ -89,6 +90,10 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/reports", label: "İçerik bildirimleri", icon: Flag, badge: "openReports" },
       { href: "/styles", label: "Stiller", icon: Palette },
     ],
+  },
+  {
+    label: "Yapay zekâ",
+    items: [{ href: "/prompts", label: "İstem şablonları", icon: WandSparkles }],
   },
   {
     label: "Kullanıcılar",
