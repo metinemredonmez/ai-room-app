@@ -18,11 +18,22 @@ LOG=$ROOT/deploy.log
 STATE=$ROOT/.deployed
 [ "$(id -un)" = casalume ] || { echo "casalume kullanıcısıyla çalıştır: sudo -iu casalume bash $0" >&2; exit 1; }
 
+# The work runs in its own session, so a dropped ssh connection or Ctrl-C cannot stop it halfway (a write to a closed
+# terminal would kill it). This part only takes the lock, shows the output and returns the exit code.
+if [ "${CASALUME_DEPLOY_CHILD:-}" != 1 ]; then
+  exec 9>"$ROOT/.deploy.lock"
+  flock -n 9 || { echo "Başka bir yayın sürüyor." >&2; exit 1; }
+  OUT=$ROOT/deploy.out
+  : > "$OUT"
+  CASALUME_DEPLOY_CHILD=1 setsid -w bash "$0" "$@" >"$OUT" 2>&1 </dev/null & # inherits fd 9: the lock lasts as long as the work
+  child=$!
+  echo "(Bağlantı koparsa yayın sürer; çıktı: $OUT)"
+  tail -n +1 -f --pid="$child" "$OUT" || true
+  if wait "$child"; then exit 0; else exit $?; fi
+fi
+
 ALL=0
 [ "${1:-}" = "--all" ] && ALL=1
-
-exec 9>"$ROOT/.deploy.lock"
-flock -n 9 || { echo "Başka bir yayın sürüyor." >&2; exit 1; }
 
 : > "$LOG"
 trap 'echo "HATA — son satırlar ($LOG):" >&2; tail -n 30 "$LOG" >&2' ERR
