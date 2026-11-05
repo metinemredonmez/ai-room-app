@@ -31,6 +31,8 @@ import { SupportService } from './support/support.service.js';
 import { BlogService } from './blog/blog.service.js';
 import { MarketingService } from './marketing/marketing.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
+import { AdminProductController } from './catalog/product-admin.controller.js';
+import { ProductCatalogService } from './catalog/product.service.js';
 import { VersionGate } from './common/app-version.js';
 import { ErrorFilter } from './common/errors.js';
 import { PrismaService, RateLimiter, RedisService } from './common/infra.js';
@@ -50,7 +52,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -87,6 +89,7 @@ import { UsersService } from './users/users.service.js';
     AuditService,
     AdminSecurityService,
     CatalogService,
+    ProductCatalogService,
     ImagesService,
     AiClient,
     DesignsService,

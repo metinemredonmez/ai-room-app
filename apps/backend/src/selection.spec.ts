@@ -1,4 +1,5 @@
 import { AiError } from './ai/ai.client.js';
+import { ProductCatalogService } from './catalog/product.service.js';
 import { TOOLS, TOOL_IDS } from './catalog/catalog.data.js';
 import { AppError } from './common/errors.js';
 import { CreateDesignSchema, DesignsService, PointsSchema, SelectionSchema } from './designs/designs.service.js';
@@ -29,6 +30,7 @@ function service(opts: { owned?: boolean; consent?: boolean; requireConsent?: bo
   const designs = new DesignsService(
     {} as never, images as never, {} as never, {} as never, ai as never, settings as never, usageSvc as never,
     {} as never, consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never, {} as never,
+    new ProductCatalogService({} as never),
   );
   return { designs, calls };
 }

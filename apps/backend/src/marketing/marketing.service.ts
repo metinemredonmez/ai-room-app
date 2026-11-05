@@ -58,7 +58,7 @@ export class MarketingService {
   async facts(locale: Locale = 'en') {
     const styles = await this.catalog.styles();
     const s = this.settings.current;
-    return buildFacts({ locale, styles, freeDaily: s.freeDailyGenerations, maxVariantsFree: s.maxVariantsFree });
+    return buildFacts({ locale, styles, freeDaily: s.freeDailyGenerations, maxVariantsFree: s.maxVariantsFree, product: this.catalog.productCatalog });
   }
 
   // ------------------------------------------------------------------------------------------------ runs

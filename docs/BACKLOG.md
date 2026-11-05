@@ -3,6 +3,23 @@
 Hedef kitle: **herkes** — ev sahibi, kiracı, dekorasyon meraklısı **ve** mimar / iç mimar. Varsayılan deneyim basit
 kalır; profesyonel ihtiyaçlar (proje, müşteri, sunum) PRO ve “Profesyonel” katmanında toplanır.
 
+## Her şey panelden (sahibinin ana hedefi, 5 Kasım)
+Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenler, web ve mobil `/v1/catalog` (ve ileride
+`/v1/features`) üzerinden okur; bu yüzden mobilde kod değişikliği gerekmez. Sıra sahibiyle kararlaştırıldı.
+1. Ürün ve AI
+   - [x] Ürün kataloğu (API.md §7.25): 10 araç (aç/kapa, PRO, Yeni rozeti, ad, açıklama, sıra), oda tipleri, zeminler,
+     duvar renkleri (ekle, kapat, çıkar, istem, simge). Admin → İçerik → Ürün kataloğu.
+   - [ ] Araç başı istem şablonları: sürümlü, panelden düzenleme ve geri alma (YediOda #30, fal-app prompt-resolver).
+   - [ ] AI sağlayıcı ve model seçimi panelden: yedek zinciri sırası, model adı (YediOda #27).
+   - [ ] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi).
+   - [ ] Araç başı kredi bedeli (ör. dış cephe 2 hak).
+2. Büyüme: promosyon/hediye kodu, davet et-kazan, panelden hediye kredi + bildirim, sadakat, influencer bağlantısı,
+   planlı fiyat değişikliği.
+3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,
+   App Review hesabı.
+4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.
+5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
+
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
 Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamını değiştirmek kolay ve çoğu uygulamada var,
 üstelik kemer, pencere gibi mimariyi de değiştirebiliyor. Casalume’un farkı: kullanıcı odadaki **bir şeye odaklanır**

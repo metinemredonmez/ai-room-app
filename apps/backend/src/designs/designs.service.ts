@@ -7,8 +7,8 @@ import { QueuesService } from '../jobs/queues.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { UsageService } from '../usage/usage.service.js';
 import { CatalogService } from '../catalog/catalog.service.js';
-import { FLOORS, ROOMS, TOOLS, TOOL_IDS, isLocale, type Locale, type ToolId } from '../catalog/catalog.data.js';
-import { localize } from '../catalog/catalog.i18n.js';
+import { TOOL_IDS, isLocale, type Locale } from '../catalog/catalog.data.js';
+import { ProductCatalogService } from '../catalog/product.service.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -32,8 +32,9 @@ export const CreateDesignSchema = z
     inputImageId: z.uuid(),
     variants: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(2),
     styleId: z.string().regex(/^[a-z_]{2,40}$/).optional(),
-    roomId: z.string().refine((v) => v in ROOMS).optional(),
-    floorId: z.string().refine((v) => v in FLOORS).optional(),
+    /** Offered rooms and floors come from the admin's product catalog (API.md §7.25), checked when creating. */
+    roomId: z.string().regex(/^[a-z][a-z0-9_]{1,39}$/).optional(),
+    floorId: z.string().regex(/^[a-z][a-z0-9_]{1,39}$/).optional(),
     colorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
     colorName: text(40).optional(),
     target: text(120).optional(),
@@ -77,6 +78,7 @@ export class DesignsService {
     @Inject(CONFIG) cfg: Config,
     private orgs: OrgsService,
     private projects: ProjectsService,
+    private product: ProductCatalogService,
   ) {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
@@ -84,9 +86,8 @@ export class DesignsService {
   /** "Japandi · Oturma odası" — style (or tool) name plus room, in the given locale. */
   async titleOf(d: Pick<Design, 'styleId' | 'tool' | 'roomId'>, locale: Locale = 'tr') {
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
-    const tool = TOOLS[d.tool as ToolId];
-    const room = d.roomId && ROOMS[d.roomId] ? localize(locale, `rooms.${d.roomId}.name`, ROOMS[d.roomId].name) : undefined;
-    const head = style ? this.catalog.styleName(style, locale) : tool ? localize(locale, `tools.${d.tool}.name`, tool.name) : d.tool;
+    const room = this.product.roomName(d.roomId, locale);
+    const head = style ? this.catalog.styleName(style, locale) : this.product.toolName(d.tool, locale);
     return room ? `${head} · ${room}` : head;
   }
 
@@ -150,7 +151,8 @@ export class DesignsService {
     const project = org && body.projectId ? await this.projects.usable(org.id, body.projectId) : null;
     const pro = this.users.isPro(user) || org !== null;
     const locale: Locale = isLocale(user.locale) ? user.locale : 'tr';
-    const tool = TOOLS[body.tool];
+    const tool = this.product.offeredTool(body.tool);
+    this.product.assertOffered(body.roomId, body.floorId);
     if (tool.isPro && !pro) throw new AppError(402, 'pro_required', 'Bu araç PRO üyelere özel');
     await this.assertAiConsent(userId);
 
@@ -270,8 +272,8 @@ export class DesignsService {
           image_b64: (await this.images.read(d.inputImageId)).toString('base64'),
           variants: Number(params.variants ?? 1),
           style_prompt: style?.prompt,
-          room: d.roomId ? ROOMS[d.roomId]?.prompt : undefined,
-          floor: str(params.floorId) ? FLOORS[str(params.floorId)!]?.prompt : undefined,
+          room: this.product.roomPrompt(d.roomId),
+          floor: this.product.floorPrompt(str(params.floorId)),
           color_hex: str(params.colorHex),
           color_name: str(params.colorName),
           target: str(params.target),
@@ -480,7 +482,7 @@ export class DesignsService {
       {
         image_b64: (await this.images.read(target.id)).toString('base64'),
         locale,
-        room: d.roomId ? ROOMS[d.roomId]?.prompt : undefined,
+        room: this.product.roomPrompt(d.roomId),
         style_name: style ? this.catalog.styleName(style, locale) : undefined,
       },
       requestId,

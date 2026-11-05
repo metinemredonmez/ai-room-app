@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { ProductCatalogService } from './catalog/product.service.js';
 import { afterEach, vi } from 'vitest';
 import { UserController } from './app.controller.js';
 import { BlogService } from './blog/blog.service.js';
@@ -72,6 +73,7 @@ function designs(opts: { consent?: boolean; budget?: 'normal' | 'exceeded'; pro?
   const svc = new DesignsService(
     prisma as never, images as never, users as never, {} as never, ai as never, settings as never, usage as never, {} as never,
     consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never, {} as never,
+    new ProductCatalogService({} as never),
   );
   return { svc, calls, rows };
 }
@@ -94,7 +96,7 @@ describe('1. AI-processing consent on every path that sends a photo', () => {
     const images = { owned: async () => ({ id: 'img' }), read: async () => (read++, Buffer.from('jpeg')) };
     const limiter = { hit: async () => undefined };
     const ai = { chat: async () => ({ reply: 'ok', suggestions: [] }) };
-    const catalog = { catalog: async () => ({ styles: [], rooms: [] }) };
+    const catalog = { catalog: async () => ({ tools: [], styles: [], rooms: [] }) };
     const usage = { record: async () => undefined };
     const ctrl = new UserController(
       {} as never, {} as never, images as never, ds as never, catalog as never, ai as never, {} as never, limiter as never,

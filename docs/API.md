@@ -1203,3 +1203,52 @@ Denetim kaydı: `org.project_create`, `org.project_update`, `org.project_delete`
 
 Sonraki adım:
 - **5. adım:** logolu sunum, alan adıyla katılım, kartla ödeme, SSO.
+
+### 7.25 Ürün kataloğu panelden: araçlar, odalar, zeminler, renkler — backend + admin (web ve mobil hazır)
+Uygulamanın sunduğu araçlar, oda tipleri, zeminler ve duvar renkleri artık kodda değil, panelde yönetilir
+(**Admin → İçerik → Ürün kataloğu**). Kod bir aracın ne yaptığını söyler (istediği girdiler ve istemi); panel şunları
+söyler: araç sunuluyor mu, PRO'ya mı özel, "Yeni" rozeti var mı, adı ne, sırası ne. Panel ayrıca uygulamanın
+sunduğu odaları, zeminleri ve renkleri, istem metinleriyle birlikte belirler. Kimse kaydetmediyse kodun kataloğu
+geçerlidir; davranış değişmez.
+
+Ayarın deposu: `Setting` tablosunda `product.catalog` satırı. Her API ve iş süreci bellekte tutar, 15 saniyede bir
+yeniler; kayıtta hemen geçer.
+
+**Uygulama tarafı (web ve mobilde kod değişikliği gerekmez)**
+- `GET /catalog` → `tools`, `rooms`, `floors`, `colors` yalnız açık olanları, paneldeki sırayla döner. Alanlar
+  aynıdır: `id`, `name`, `description`, `icon`, `category`, `isPro`, `isNew`, `needs`.
+- Kapatılmış araçla gelen istek (eski uygulama hâlâ gösteriyorsa): `POST /designs` → 400 `tool_unavailable`
+  "Bu araç şu an kullanılamıyor". Kapalı ya da kaldırılmış oda veya zemin → 400 `validation_failed`.
+- `roomId` / `floorId` artık biçimle (`^[a-z][a-z0-9_]{1,39}$`) doğrulanır; sunulup sunulmadığı oluşturma anında
+  katalogdan bakılır.
+- Diller: Türkçe ve İngilizce ad panelden gelir. Diğer 9 dil, İngilizce ad kodunkiyle aynıyken çeviri dosyasını
+  kullanır. Ad değiştirildiyse ya da kayıt panelde eklendiyse İngilizce ad gösterilir (eski çeviri yanlış kalmasın).
+- Asistan sohbeti ve pazarlama AI'ı (mağaza metni, sosyal medya, kampanya) yalnız sunulan araç ve odaları anar.
+
+**Geçmiş bozulmaz**
+- Listeden çıkarılan oda ve zemin `retired` listesine geçer. Eski tasarımların başlığında adıyla görünür; kuyruktaki
+  iş istemini almaya devam eder. Aynı kimlik geri eklenirse listeden çıkar.
+- Kapatılan (silinmeyen) oda yeni tasarımda seçilemez, eski tasarımlarda adıyla görünür.
+
+**Doğrulama (INP-01)**
+- İstem metni İngilizce harf, rakam, boşluk ve `, ' ( ) / & . -` içerebilir. Oda için en çok 60, zemin için en çok
+  80 karakterdir. Tırnak, köşeli ve süslü parantez, `<>` kabul edilmez: metin görsel modeline sabit İngilizce
+  şablonun içinde gider.
+- Oda simgesi sabit listeden seçilir (`roomIcons`, mobilin Ionicons adları).
+- Kimlikler benzersizdir. Renk `#RRGGBB` biçimindedir ve büyük harfe çevrilir.
+- Araç listesi kodun 10 aracının her birini bir kez içerir: araç eklenemez, yalnız açılıp kapatılır. En az bir
+  araç açık olmalıdır. Oda isteyen bir araç açıkken en az bir oda, Yeni Zemin açıkken en az bir zemin açık olmalıdır.
+- Bozuk bir satır uygulamayı durdurmaz: kodun kataloğu kullanılır, hata loglanır. Kodda sonradan eklenen bir araç,
+  kayıtlı kataloğun sonuna kodun tanımıyla eklenir.
+
+**Admin uçları**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/admin/product` | SUPPORT | `{ catalog: { tools, rooms, floors, colors }, defaults, usage: { rooms, floors }, retired, toolInfo, roomIcons, saved, version, updatedAt, updatedBy }`. `usage`: kimlik başına tasarım sayısı; `toolInfo`: aracın kategorisi ve istediği girdiler (kodda) |
+| PATCH | `/admin/product` | ADMIN | `{ catalog, reason, version }` → aynı yanıt. `version` okunan değerdir (hiç kaydedilmediyse null); arada değiştiyse 409 `version_conflict` (BUS-02) |
+
+Denetim kaydı: `product.catalog_update`. Gerekçe ve değişiklik listesi tutulur, örneğin
+`tools.garden.enabled: true → false`, `rooms+ loft`, `rooms- office`, `colors: sıra değişti`.
+
+Sonraki adımlar ("her şey panelden"): araç başı istem şablonları (sürümlü, geri alınabilir), AI sağlayıcı ve
+model seçimi, özellik bayrakları (`GET /features`), araç başı kredi bedeli.

@@ -8,8 +8,8 @@ import { AiClient } from './ai/ai.client.js';
 import { UserGuard } from './auth/tokens.service.js';
 import { TokensService } from './auth/tokens.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
-import { LOCALES, ROOMS, TOOLS, TOOL_IDS, isLocale, type Locale } from './catalog/catalog.data.js';
-import { localize } from './catalog/catalog.i18n.js';
+import { LOCALES, isLocale, type Locale } from './catalog/catalog.data.js';
+import { ProductCatalogService } from './catalog/product.service.js';
 import { AppError, parse } from './common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from './common/http.js';
 import { LIMITS, PrismaService, RateLimiter, RedisService } from './common/infra.js';
@@ -71,6 +71,7 @@ export class PublicController {
     private redis: RedisService,
     private ai: AiClient,
     private settings: SettingsService,
+    private product: ProductCatalogService,
   ) {}
 
   @Get('health')
@@ -149,10 +150,10 @@ export class PublicController {
       .filter((d) => d.results[0])
       .map((d) => {
         const s = d.styleId ? byId.get(d.styleId) : undefined;
-        const room = d.roomId && ROOMS[d.roomId] ? localize(locale, `rooms.${d.roomId}.name`, ROOMS[d.roomId].name) : undefined;
+        const room = this.product.roomName(d.roomId, locale);
         return {
           id: d.id,
-          title: [s ? this.catalog.styleName(s, locale) : TOOLS[d.tool as keyof typeof TOOLS] ? localize(locale, `tools.${d.tool}.name`, TOOLS[d.tool as keyof typeof TOOLS].name) : d.tool, room].filter(Boolean).join(' · '),
+          title: [s ? this.catalog.styleName(s, locale) : this.product.toolName(d.tool, locale), room].filter(Boolean).join(' · '),
           styleId: d.styleId, roomId: d.roomId,
           imageUrl: this.images.url(d.results[0].id),
           palette: s?.palette ?? [],
@@ -493,7 +494,7 @@ export class UserController {
         locale,
         messages,
         catalog: {
-          tools: TOOL_IDS.map((id) => ({ id, name: localize(locale, `tools.${id}.name`, TOOLS[id].name) })),
+          tools: cat.tools.map((t) => ({ id: t.id, name: t.name })),
           styles: cat.styles.map((s) => ({ id: s.id, name: s.name })),
           rooms: cat.rooms.map((r) => ({ id: r.id, name: r.name })),
         },

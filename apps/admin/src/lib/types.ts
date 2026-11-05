@@ -461,3 +461,23 @@ export type AdminOrgDetail = {
   invites: { id: string; email: string; role: OrgRole; monthlyCap: number | null; expiresAt: string; createdAt: string }[];
   projects: { id: string; name: string; clientName: string | null; status: "ACTIVE" | "ARCHIVED"; designs: number; updatedAt: string }[];
 };
+
+// Ürün kataloğu (API.md §7.25): araçlar, odalar, zeminler, renkler — panelden.
+export type ProductToolId = "redesign" | "furnish" | "declutter" | "replace" | "paint" | "flooring" | "exterior" | "garden" | "reference" | "custom";
+export type ProductTool = { id: ProductToolId; enabled: boolean; isPro: boolean; isNew: boolean; nameTr: string; nameEn: string; descriptionTr: string; descriptionEn: string };
+export type ProductRoom = { id: string; nameTr: string; nameEn: string; prompt: string; icon: string; enabled: boolean };
+export type ProductFloor = { id: string; nameTr: string; nameEn: string; prompt: string; enabled: boolean };
+export type ProductColor = { id: string; nameTr: string; nameEn: string; hex: string; enabled: boolean };
+export type ProductCatalog = { tools: ProductTool[]; rooms: ProductRoom[]; floors: ProductFloor[]; colors: ProductColor[] };
+export type ProductState = {
+  catalog: ProductCatalog;
+  defaults: ProductCatalog;
+  usage: { rooms: Record<string, number>; floors: Record<string, number> };
+  retired: { rooms: number; floors: number };
+  toolInfo: Record<ProductToolId, { category: "interior" | "exterior" | "edit"; needs: string[] }>;
+  roomIcons: string[];
+  saved: boolean;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};

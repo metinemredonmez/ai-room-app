@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { LOCALES, ROOMS, TOOLS, TOOL_IDS, type Locale } from '../catalog/catalog.data.js';
+import { LOCALES, type Locale } from '../catalog/catalog.data.js';
+import { defaultProduct, publicProduct, type StoredProduct } from '../catalog/product.rules.js';
 import { localize } from '../catalog/catalog.i18n.js';
 
 // Admin "Pazarlama" (API.md §7.18): store listing (ASO) drafts. Pure rules here; the service does the I/O.
@@ -54,15 +55,17 @@ export function buildFacts(o: {
   styles: Array<{ id: string; nameTr: string; nameEn: string; isPro: boolean }>;
   freeDaily: number;
   maxVariantsFree: number;
+  /** The admin's product catalog (API.md §7.25): only offered tools and rooms are advertised. */
+  product?: StoredProduct;
 }): string {
-  const tools = TOOL_IDS.map((id) => {
-    const name = localize(o.locale, `tools.${id}.name`, TOOLS[id].name);
-    return `- ${name}${TOOLS[id].isPro ? ' (PRO)' : ''}: ${TOOLS[id].description.en}`;
-  });
+  const product = o.product ?? defaultProduct();
+  const shown = publicProduct(product, o.locale);
+  const english = new Map(publicProduct(product, 'en').tools.map((t) => [t.id, t.description]));
+  const tools = shown.tools.map((t) => `- ${t.name}${t.isPro ? ' (PRO)' : ''}: ${english.get(t.id)}`);
   const styles = o.styles
     .map((s) => `${localize(o.locale, `styles.${s.id}.name`, { tr: s.nameTr, en: s.nameEn })}${s.isPro ? ' (PRO)' : ''}`)
     .join(', ');
-  const rooms = Object.entries(ROOMS).map(([id, r]) => localize(o.locale, `rooms.${id}.name`, r.name)).join(', ');
+  const rooms = shown.rooms.map((r) => r.name).join(', ');
   return [
     'Tool, style and room names below are written exactly as the app shows them in the target language: use them as they are.',
     '',

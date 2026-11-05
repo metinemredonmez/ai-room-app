@@ -7,6 +7,7 @@ import {
   CreditCard,
   Flag,
   House,
+  LayoutGrid,
   FileText,
   ListChecks,
   Megaphone,
@@ -83,6 +84,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "İçerik",
     items: [
+      { href: "/product", label: "Ürün kataloğu", icon: LayoutGrid },
       { href: "/designs", label: "Tasarımlar", icon: Sparkles },
       { href: "/reports", label: "İçerik bildirimleri", icon: Flag, badge: "openReports" },
       { href: "/styles", label: "Stiller", icon: Palette },

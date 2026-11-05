@@ -11,8 +11,9 @@ import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
 import { LegalService } from '../kvkk/legal.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { PlansService } from '../billing/plans.service.js';
-import { COLORS, FLOORS, PLANS, ROOMS, TOOLS, TOOL_IDS, type Locale } from './catalog.data.js';
+import { PLANS, type Locale } from './catalog.data.js';
 import { localize } from './catalog.i18n.js';
+import { ProductCatalogService } from './product.service.js';
 
 // Curated style photos (assets/styles/<id>.jpg): the sample living room redesigned in that style with the
 // production image model. src/catalog and dist/catalog both resolve to apps/backend/assets. Bump the version
@@ -24,7 +25,10 @@ const STYLE_PHOTOS_VERSION = 'nb2-1';
 export class CatalogService {
   private cache: { at: number; styles: Style[] } | null = null;
 
-  constructor(private prisma: PrismaService, private settings: SettingsService, private legal: LegalService, @Inject(CONFIG) private cfg: Config, private plans: PlansService) {}
+  constructor(
+    private prisma: PrismaService, private settings: SettingsService, private legal: LegalService, @Inject(CONFIG) private cfg: Config, private plans: PlansService,
+    private product: ProductCatalogService,
+  ) {}
 
   async styles(includeInactive = false): Promise<Style[]> {
     if (includeInactive) return this.prisma.style.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
@@ -53,13 +57,17 @@ export class CatalogService {
     return `${this.cfg.PUBLIC_BASE_URL}/v1/styles/${id}/preview.jpg`;
   }
 
+  /** The admin's tools, rooms, floors and colours (API.md §7.25), for texts that describe the product. */
+  get productCatalog() {
+    return this.product.current;
+  }
+
   async catalog(locale: Locale) {
     const styles = await this.styles();
+    // Tools, rooms, floors and colours as the admin set them (API.md §7.25): offered ones only, in the panel's order.
+    const product = this.product.forApp(locale);
     return {
-      tools: TOOL_IDS.map((id) => {
-        const t = TOOLS[id];
-        return { id, name: localize(locale, `tools.${id}.name`, t.name), description: localize(locale, `tools.${id}.description`, t.description), icon: t.icon, category: t.category, isPro: t.isPro, isNew: t.isNew, needs: t.needs };
-      }),
+      tools: product.tools,
       styles: styles.map((s) => ({
         id: s.id,
         name: this.styleName(s, locale),
@@ -68,9 +76,9 @@ export class CatalogService {
         isPro: s.isPro,
         previewUrl: this.previewUrl(s.id),
       })),
-      rooms: Object.entries(ROOMS).map(([id, r]) => ({ id, name: localize(locale, `rooms.${id}.name`, r.name), icon: r.icon })),
-      floors: Object.entries(FLOORS).map(([id, f]) => ({ id, name: localize(locale, `floors.${id}.name`, f.name) })),
-      colors: COLORS.map((c) => ({ id: c.id, name: localize(locale, `colors.${c.id}.name`, c.name), hex: c.hex })),
+      rooms: product.rooms,
+      floors: product.floors,
+      colors: product.colors,
       plans: PLANS.map((p) => ({ id: p.id, name: localize(locale, `plans.${p.id}.name`, p.name), period: p.period, priceTRY: p.priceTRY, badge: p.badge ? localize(locale, `plans.${p.id}.badge`, p.badge) : null, storeProductId: p.storeProductId })),
       // Packs on sale from the plans catalog (API.md §7.21), one row per store product id.
       creditPacks: (await this.plans.forPaywall('en')).packs.flatMap((p) =>
