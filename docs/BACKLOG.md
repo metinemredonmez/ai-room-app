@@ -12,7 +12,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] İstem şablonları (API.md §7.26): 12 şablon, alan kuralları, canlı önizleme, sürüm geçmişi, eski sürüme / varsayılana dönüş. Admin → Yapay zekâ → İstem şablonları.
    - [x] Model ve sağlayıcı (API.md §7.27): zincir sırası, sağlayıcı başına izinli model, maliyet ve devre durumu; sunucu varsayılanına dönüş. Yeni model yalnız `IMAGE_MODEL_ALLOWLIST` ile (lisans ve fiyat kontrolü sonrası).
    - [x] Özellik bayrakları (API.md §7.28): 7 bayrak (sohbet, maliyet analizi, dokunarak seçim, destek, misafir, kayıt, blog); sunucu reddeder, web gizler; `GET /v1/features` ve katalogda. Admin → Sistem → Özellikler.
-   - [ ] Araç başı kredi bedeli (ör. dış cephe 2 hak).
+   - [x] Araç başı hak bedeli (API.md §7.25.1): Ürün kataloğu → Araçlar; tasarım = seçenek × bedel, iade bedelle, bedel tasarıma yazılır.
 2. Büyüme: promosyon/hediye kodu, davet et-kazan, panelden hediye kredi + bildirim, sadakat, influencer bağlantısı,
    planlı fiyat değişikliği.
 3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,

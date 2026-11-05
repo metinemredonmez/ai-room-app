@@ -186,6 +186,11 @@ export class DesignsService {
       if (body[k] !== undefined) params[k] = body[k];
     }
     params.variants = variants;
+    // API.md §7.25.1: each image costs the tool's price; the price is kept with the design so a later change in the
+    // panel never changes what this design is settled or refunded at.
+    const unitCost = tool.credits;
+    params.unitCost = unitCost;
+    const units = variants * unitCost;
 
     const design = await this.prisma.design.create({
       data: {
@@ -197,8 +202,8 @@ export class DesignsService {
     // Personal designs spend the daily free slots then credits; firm designs spend the firm's pool (chargeDay null).
     let charge: Charge | null = null;
     try {
-      if (org) await this.orgs.charge(org.id, userId, variants, design.id);
-      else charge = await this.users.charge(userId, variants, design.id);
+      if (org) await this.orgs.charge(org.id, userId, units, design.id);
+      else charge = await this.users.charge(userId, units, design.id);
     } catch (e) {
       await this.prisma.design.delete({ where: { id: design.id } });
       throw e;
@@ -207,7 +212,7 @@ export class DesignsService {
       where: { id: design.id },
       data: charge
         ? { chargeState: 'HELD', chargeDay: charge.day, freeUsed: charge.fromFree, creditsUsed: charge.fromCredits }
-        : { chargeState: 'HELD', chargeDay: null, freeUsed: 0, creditsUsed: variants },
+        : { chargeState: 'HELD', chargeDay: null, freeUsed: 0, creditsUsed: units },
     });
 
     if (mode === 'async') {
@@ -337,7 +342,9 @@ export class DesignsService {
     produced: number,
     data: Prisma.DesignUpdateInput,
   ) {
-    const missing = Math.max(0, Number((d.params as { variants?: number } | null)?.variants ?? 1) - produced);
+    const p = (d.params ?? {}) as { variants?: number; unitCost?: number };
+    // Units, not images: a missing image gives back its price (designs from before prices existed cost 1).
+    const missing = Math.max(0, Number(p.variants ?? 1) - produced) * Math.max(1, Number(p.unitCost ?? 1));
     const refundCredits = Math.min(missing, d.creditsUsed);
     const refundFree = Math.min(missing - refundCredits, d.freeUsed);
     await this.prisma.$transaction(async (tx) => {

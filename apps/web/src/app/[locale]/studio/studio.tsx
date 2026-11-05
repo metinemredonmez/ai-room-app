@@ -678,7 +678,7 @@ export function Studio() {
               {busy ? t.studio.generating : t.studio.generate}
             </button>
             <p className="text-center text-xs text-muted">
-              {fmt(t.studio.cost, { n: variants })}
+              {fmt(t.studio.cost, { n: variants * (tool.credits ?? 1) })}
               {activeOrg ? (
                 activeOrg.remainingThisMonth !== null && <> · {fmt(t.team.pillRemaining, { org: activeOrg.name, n: activeOrg.remainingThisMonth })}</>
               ) : (

@@ -736,6 +736,26 @@ if (adminToken) {
   ok(back.status === 200 && back.json?.retired?.rooms >= 1 && (await call('GET', '/catalog')).json.tools.some((t) => t.id === 'garden') && audit.some((x) => x.action === 'product.catalog_update' && x.meta?.reason === 'smoke product cleanup'),
     'product catalog restored; the removed room is retired; changes are audited (LOG-01)', `${back.status} retired ${back.json?.retired?.rooms}`);
 }
+// API.md §7.25.1: a tool's price in credits per image — a design costs variants × price; put back as it was.
+if (adminToken) {
+  const A = { token: adminToken };
+  const p0 = (await call('GET', '/admin/product', A)).json;
+  const priced = structuredClone(p0.catalog);
+  priced.tools.find((t) => t.id === 'paint').credits = 2;
+  const set = await call('PATCH', '/admin/product', { ...A, body: { catalog: priced, reason: 'smoke price test', version: p0.version } });
+  const appTool = (await call('GET', '/catalog')).json.tools.find((t) => t.id === 'paint');
+  const fresh = await call('POST', '/auth/guest', { body: { deviceId: `smoke-price-${crypto.randomUUID()}` } });
+  const ft = fresh.json?.accessToken;
+  const balance = async () => { const m = (await call('GET', '/me', { token: ft })).json; return (m?.dailyFreeRemaining ?? 0) + (m?.credits ?? 0); };
+  await call('POST', `/admin/users/${fresh.json?.user?.id}/credits`, { ...A, body: { delta: 5, reason: 'smoke price credits' } });
+  const before = await balance();
+  const img = (await call('POST', '/uploads/sample', { token: ft, body: { sample: 'living_room' } })).json?.image?.id;
+  const d = await call('POST', '/designs', { token: ft, body: { tool: 'paint', inputImageId: img, colorHex: '#9CAF88', variants: 1 } });
+  const after = await balance();
+  const restore = await call('PATCH', '/admin/product', { ...A, body: { catalog: p0.catalog, reason: 'smoke price restore', version: set.json?.version ?? null } });
+  ok(set.status === 200 && appTool?.credits === 2 && d.status === 201 && before - after === 2 && restore.status === 200,
+    'a tool priced 2 credits charges 2 for one image, the app sees the price; restored', `${set.status} credits=${appTool?.credits} ${d.status} ${before}→${after} ${restore.status}`);
+}
 // API.md §7.26: image prompt templates — admin only, checked by the AI service, versioned, put back in one step.
 if (adminToken) {
   const A = { token: adminToken };

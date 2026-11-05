@@ -84,6 +84,9 @@ function problems(c: ProductCatalog): string[] {
   };
   if (!c.tools.some((t) => t.enabled)) out.push("En az bir araç açık olmalı.");
   c.tools.forEach((t) => {
+    if (!Number.isInteger(t.credits) || t.credits < 1 || t.credits > 10) out.push(`Araç “${t.nameTr || t.id}”: hak bedeli 1–10 arasında tam sayı olmalı.`);
+  });
+  c.tools.forEach((t) => {
     if (!t.nameTr || !t.nameEn || !t.descriptionTr || !t.descriptionEn) out.push(`Araç “${t.nameTr || t.id}”: ad ve açıklama iki dilde gerekli.`);
   });
   ids(c.rooms, "Oda");
@@ -261,7 +264,7 @@ function Editor({
         <Card title="Araçlar">
           <fieldset disabled={ro} className="flex flex-col gap-3">
             <p className="text-xs text-muted-foreground">
-              Aracın ne yaptığı kodda tanımlıdır; burada açılıp kapatılır, PRO&apos;ya özel yapılır, adı ve sırası değişir. Kapanan araç web ve uygulamadan kalkar. Diğer 9 dil, İngilizce ad
+              Aracın ne yaptığı kodda tanımlıdır; burada açılıp kapatılır, PRO&apos;ya özel yapılır, hak bedeli (görsel başına kaç hak düştüğü; tasarım = seçenek × bedel), adı ve sırası değişir. Kapanan araç web ve uygulamadan kalkar. Diğer 9 dil, İngilizce ad
               değişmedikçe çeviriyi kullanır; değişirse İngilizcesi görünür.
             </p>
             {draft.tools.map((t, i) => {
@@ -281,6 +284,19 @@ function Editor({
                         <Check checked={t.enabled} onChange={(v) => setTool(t.id, { enabled: v })}>Açık</Check>
                         <Check checked={t.isPro} onChange={(v) => setTool(t.id, { isPro: v })}>PRO</Check>
                         <Check checked={t.isNew} onChange={(v) => setTool(t.id, { isNew: v })}>Yeni rozeti</Check>
+                        <label className="flex items-center gap-2 whitespace-nowrap text-xs" title="Bir görsel kaç hak düşer; tasarım = seçenek sayısı × bedel">
+                          Hak bedeli
+                          <Input
+                            type="number"
+                            min={1}
+                            max={10}
+                            step={1}
+                            aria-label={`${t.nameTr}: görsel başına hak`}
+                            value={Number.isNaN(t.credits) ? "" : t.credits}
+                            onChange={(e) => setTool(t.id, { credits: e.target.value === "" ? NaN : Number(e.target.value) })}
+                            className="h-8 w-16 text-center"
+                          />
+                        </label>
                       </div>
                     </div>
                     <Field label="Ad (Türkçe)" htmlFor={`t-ntr-${t.id}`}>

@@ -29,8 +29,13 @@ const description = z.string().trim().min(1).max(120);
 const prompt = (max: number) =>
   z.string().trim().min(2).max(max).regex(/^[A-Za-z0-9 ,'()/&.-]+$/, 'prompt_charset');
 
+/** Credits one image of the tool costs (API.md §7.25.1): a design costs variants × credits; daily free uses count the same way. */
+export const MAX_TOOL_CREDITS = 10;
 const ToolSchema = z
-  .object({ id: z.enum(TOOL_IDS), enabled: z.boolean(), isPro: z.boolean(), isNew: z.boolean(), nameTr: name, nameEn: name, descriptionTr: description, descriptionEn: description })
+  .object({
+    id: z.enum(TOOL_IDS), enabled: z.boolean(), isPro: z.boolean(), isNew: z.boolean(), credits: z.number().int().min(1).max(MAX_TOOL_CREDITS),
+    nameTr: name, nameEn: name, descriptionTr: description, descriptionEn: description,
+  })
   .strict();
 const RoomSchema = z
   .object({ id, nameTr: name, nameEn: name, prompt: prompt(60), icon: z.enum(ROOM_ICONS), enabled: z.boolean() })
@@ -83,7 +88,7 @@ export function defaultProduct(): StoredProduct {
   return {
     tools: TOOL_IDS.map((tid) => {
       const t = TOOLS[tid];
-      return { id: tid, enabled: true, isPro: t.isPro, isNew: t.isNew, nameTr: t.name.tr, nameEn: t.name.en, descriptionTr: t.description.tr, descriptionEn: t.description.en };
+      return { id: tid, enabled: true, isPro: t.isPro, isNew: t.isNew, credits: 1, nameTr: t.name.tr, nameEn: t.name.en, descriptionTr: t.description.tr, descriptionEn: t.description.en };
     }),
     rooms: Object.entries(ROOMS).map(([rid, r]) => ({ id: rid, nameTr: r.name.tr, nameEn: r.name.en, prompt: r.prompt, icon: r.icon as RoomEntry['icon'], enabled: true })),
     floors: Object.entries(FLOORS).map(([fid, f]) => ({ id: fid, nameTr: f.name.tr, nameEn: f.name.en, prompt: f.prompt, enabled: true })),
@@ -100,7 +105,12 @@ const RetiredSchema = z.object({ id, nameTr: name, nameEn: name, prompt: z.strin
  */
 export function parseStoredProduct(value: unknown, defaults: StoredProduct): { catalog: StoredProduct; ok: boolean } {
   const v = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
-  const tools = Array.isArray(v.tools) ? v.tools.filter((t) => (TOOL_IDS as readonly string[]).includes((t as { id?: string })?.id ?? '')) : [];
+  // A catalog saved before tools had a price costs 1 credit per image, as it did then.
+  const tools = Array.isArray(v.tools)
+    ? v.tools
+        .filter((t) => (TOOL_IDS as readonly string[]).includes((t as { id?: string })?.id ?? ''))
+        .map((t) => (t && typeof t === 'object' && !('credits' in t) ? { ...t, credits: 1 } : t))
+    : [];
   const known = new Set(tools.map((t) => (t as { id: string }).id));
   const merged = { tools: [...tools, ...defaults.tools.filter((t) => !known.has(t.id))], rooms: v.rooms, floors: v.floors, colors: v.colors };
   const parsed = ProductInputSchema.safeParse(merged);
@@ -125,7 +135,7 @@ export function nextProduct(prev: StoredProduct, input: ProductInput): StoredPro
 /** Short, readable change list for the audit log (LOG-01): what was switched, renamed, added or removed. */
 export function productDiff(prev: StoredProduct, next: ProductInput): string[] {
   const out: string[] = [];
-  const toolFields = ['enabled', 'isPro', 'isNew', 'nameTr', 'nameEn', 'descriptionTr', 'descriptionEn'] as const;
+  const toolFields = ['enabled', 'isPro', 'isNew', 'credits', 'nameTr', 'nameEn', 'descriptionTr', 'descriptionEn'] as const;
   for (const t of next.tools) {
     const before = prev.tools.find((x) => x.id === t.id);
     for (const f of toolFields) if (before && before[f] !== t[f]) out.push(`tools.${t.id}.${f}: ${String(before[f])} → ${String(t[f])}`);
@@ -176,7 +186,7 @@ export function publicProduct(c: StoredProduct, locale: Locale) {
       .map((t) => {
         const code = TOOLS[t.id];
         const description = nameIn(locale, `tools.${t.id}.description`, { tr: t.descriptionTr, en: t.descriptionEn }, code.description.en);
-        return { id: t.id, name: toolName(t, locale), description, icon: code.icon, category: code.category, isPro: t.isPro, isNew: t.isNew, needs: code.needs };
+        return { id: t.id, name: toolName(t, locale), description, icon: code.icon, category: code.category, isPro: t.isPro, isNew: t.isNew, credits: t.credits, needs: code.needs };
       }),
     rooms: c.rooms.filter((r) => r.enabled).map((r) => ({ id: r.id, name: nameIn(locale, `rooms.${r.id}.name`, { tr: r.nameTr, en: r.nameEn }, CODE_ROOM_EN.get(r.id)), icon: r.icon })),
     floors: c.floors.filter((f) => f.enabled).map((f) => ({ id: f.id, name: nameIn(locale, `floors.${f.id}.name`, { tr: f.nameTr, en: f.nameEn }, CODE_FLOOR_EN.get(f.id)) })),

@@ -149,6 +149,26 @@ describe('product catalog from the admin', () => {
     expect(catalog.tools[0].enabled).toBe(false);
   });
 
+  it('a tool has a price in credits per image: 1 by default, 1–10, sent to the app; an older saved catalog costs 1', () => {
+    expect(defaultProduct().tools.every((t) => t.credits === 1)).toBe(true);
+    const c = defaultProduct();
+    c.tools.find((t) => t.id === 'exterior')!.credits = 2;
+    expect(publicProduct(c, 'tr').tools.find((t) => t.id === 'exterior')).toMatchObject({ credits: 2 });
+    expect(productDiff(defaultProduct(), input(c))).toEqual(['tools.exterior.credits: 1 → 2']);
+    const bad = (n: number) => {
+      const x = input();
+      x.tools[0].credits = n;
+      return ProductInputSchema.safeParse(x).success;
+    };
+    expect([bad(0), bad(11), bad(1.5), bad(10)]).toEqual([false, false, false, true]);
+    // Saved before prices existed: no `credits` on the tools.
+    const legacy = input();
+    const stored = { ...legacy, tools: legacy.tools.map(({ credits: _c, ...t }) => t), retired: { rooms: [], floors: [] } };
+    const parsed = parseStoredProduct(stored, defaultProduct());
+    expect(parsed.ok).toBe(true);
+    expect(parsed.catalog.tools.every((t) => t.credits === 1)).toBe(true);
+  });
+
   it('marketing texts advertise only the offered tools and rooms', () => {
     const c = defaultProduct();
     c.tools.find((t) => t.id === 'garden')!.enabled = false;

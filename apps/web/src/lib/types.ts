@@ -123,6 +123,8 @@ export type CatalogTool = {
   category: "interior" | "exterior" | "edit";
   isPro: boolean;
   isNew: boolean;
+  /** Credits per image (API.md §7.25.1); a design costs variants × credits. Missing = 1. */
+  credits?: number;
   needs: ToolNeeds;
 };
 

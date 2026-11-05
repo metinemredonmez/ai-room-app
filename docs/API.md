@@ -1280,6 +1280,19 @@ Denetim kaydı: `product.catalog_update`. Gerekçe ve değişiklik listesi tutul
 Sonraki adımlar ("her şey panelden"): araç başı istem şablonları (sürümlü, geri alınabilir), AI sağlayıcı ve
 model seçimi, özellik bayrakları (`GET /features`), araç başı kredi bedeli.
 
+#### 7.25.1 Araç başı hak bedeli
+Her aracın görsel başına bir hak bedeli vardır (Ürün kataloğu → Araçlar → "Hak bedeli"). Bedel 1–10 arasıdır,
+varsayılanı 1'dir; panelden değiştirilmedikçe davranış aynı kalır.
+
+- Bir tasarımın düştüğü hak `seçenek sayısı × bedel` olur. Örneğin dış cephe bedeli 2 ise 2 seçenek 4 hak düşer.
+  Günlük ücretsiz hak da aynı birimle sayılır: önce ücretsiz, sonra kredi. Firma çalışma alanında havuzdan düşer.
+- Bedel tasarım oluşturulurken `params.unitCost` alanına yazılır. Panelde sonradan değişse de o tasarımın tahsili
+  ve iadesi değişmez.
+- Gelmeyen seçenek kendi bedelini geri verir, önce krediye. Bedel alanından önce oluşturulmuş tasarımlar 1 sayılır.
+- `GET /catalog` → `tools[].credits`. Web stüdyosu "Bu işlem N hak kullanır" satırında `seçenek × bedel`
+  gösterir. Mobil aynı alanı okur (sonra).
+- Bedel alanı olmadan kaydedilmiş bir katalog her araç için 1 kabul edilir.
+
 ### 7.26 İstem şablonları panelden — AI servisi + backend + admin
 Görsel modeline giden istem, araç başına admin'den yönetilir (**Admin → Yapay zekâ → İstem şablonları**; YediOda #30,
 fal-app prompt-resolver). Yeni sürüm yayınlanır, örnek değerlerle önizlenir; gerekirse eski bir sürüme ya da koddaki

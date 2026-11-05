@@ -138,6 +138,16 @@ describe('2. refunds commit together with the charge-state change', () => {
     expect(rows.get(DESIGN_ID)).toMatchObject({ chargeState: 'CAPTURED', status: 'SUCCEEDED', creditsUsed: 0, freeUsed: 1 });
   });
 
+  it('a missing image of a priced tool gives back its price, not one unit (API.md §7.25.1)', async () => {
+    // 2 images × 3 credits = 6 units held (4 credits + 2 free); one image came back: 3 units return, credits first.
+    const priced = { ...failed, params: { variants: 2, unitCost: 3 }, creditsUsed: 4, freeUsed: 2 };
+    const { svc, calls, rows } = designs({ design: priced });
+    const settle = (svc as unknown as { settleSuccess: (d: unknown, n: number, data: unknown) => Promise<void> }).settleSuccess.bind(svc);
+    await settle(rows.get(DESIGN_ID), 1, { status: 'SUCCEEDED' });
+    expect(calls.refunds).toBe(1);
+    expect(rows.get(DESIGN_ID)).toMatchObject({ chargeState: 'CAPTURED', creditsUsed: 1, freeUsed: 2 });
+  });
+
   it('a failed refund inside a partial success rolls the capture back (nothing half-done)', async () => {
     const { svc, rows } = designs({ design: { ...failed, params: { variants: 2 } }, refundFails: 1 });
     const settle = (svc as unknown as { settleSuccess: (d: unknown, n: number, data: unknown) => Promise<void> }).settleSuccess.bind(svc);

@@ -464,7 +464,7 @@ export type AdminOrgDetail = {
 
 // Ürün kataloğu (API.md §7.25): araçlar, odalar, zeminler, renkler — panelden.
 export type ProductToolId = "redesign" | "furnish" | "declutter" | "replace" | "paint" | "flooring" | "exterior" | "garden" | "reference" | "custom";
-export type ProductTool = { id: ProductToolId; enabled: boolean; isPro: boolean; isNew: boolean; nameTr: string; nameEn: string; descriptionTr: string; descriptionEn: string };
+export type ProductTool = { id: ProductToolId; enabled: boolean; isPro: boolean; isNew: boolean; credits: number; nameTr: string; nameEn: string; descriptionTr: string; descriptionEn: string };
 export type ProductRoom = { id: string; nameTr: string; nameEn: string; prompt: string; icon: string; enabled: boolean };
 export type ProductFloor = { id: string; nameTr: string; nameEn: string; prompt: string; enabled: boolean };
 export type ProductColor = { id: string; nameTr: string; nameEn: string; hex: string; enabled: boolean };
