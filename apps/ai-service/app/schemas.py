@@ -68,6 +68,7 @@ class GenerateRequest(Strict):
     remove_all: bool = False
     reference_image_b64: str | None = Field(None, max_length=17_000_000)
     points: list[Point] | None = Points
+    engine: "EngineChoice | None" = Field(None, description="The panel's provider chain and models (API.md §7.27)")
     prompt_templates: dict[str, str] | None = Field(
         None, max_length=16,
         description="Active panel templates, key → text (API.md §7.26); a missing or unusable one uses the default",
@@ -78,6 +79,40 @@ class GenerateRequest(Strict):
         if self.prompt_templates and any(len(k) > 40 or len(v) > 1500 for k, v in self.prompt_templates.items()):
             raise ValueError("prompt template too long")
         return self
+
+
+class EngineChoice(Strict):
+    """Providers in order (first = primary) and, optionally, a model per provider; anything the server does not
+    allow makes the service use its own chain instead."""
+
+    chain: list[str] = Field(min_length=1, max_length=4)
+    models: dict[str, str] = Field(default_factory=dict, max_length=4)
+
+    @model_validator(mode="after")
+    def _sizes(self):
+        if any(len(x) > 20 for x in self.chain) or any(len(k) > 20 or len(v) > 120 for k, v in self.models.items()):
+            raise ValueError("engine value too long")
+        return self
+
+
+class EngineModel(BaseModel):
+    id: str
+    label: str
+    cost_usd: float
+
+
+class EngineProvider(BaseModel):
+    name: str
+    configured: bool = Field(description="Its key is set on the server")
+    usable: bool = Field(description="Configured and allowed here (the demo provider is not allowed in production)")
+    default_model: str
+    models: list[EngineModel]
+
+
+class EngineCatalogResponse(BaseModel):
+    providers: list[EngineProvider]
+    default_chain: list[str] = Field(description="The server's own chain (IMAGE_PROVIDER + IMAGE_FALLBACKS)")
+    breakers: list[dict] = Field(description="Circuit-breaker state per provider name")
 
 
 class PromptPreviewRequest(Strict):
@@ -400,3 +435,6 @@ class HealthResponse(BaseModel):
     chat_enabled: bool
     fallbacks: list[str]
     providers: list[ProviderState]
+
+
+GenerateRequest.model_rebuild()

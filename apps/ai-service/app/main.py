@@ -20,6 +20,7 @@ from .marketing import report as write_report
 from .marketing import seo as write_seo
 from .marketing import social as write_social
 from .monitoring import init_monitoring
+from .engines import EngineRegistry, catalog as engine_catalog
 from .prompts import PLACEHOLDERS, TEMPLATES, build_prompt, clean, preview as preview_prompt
 from .providers import ImageProvider, ProviderError, create_providers
 from .quality import assess
@@ -30,7 +31,7 @@ from .region import (
 from .resilience import ChainResult, ProviderChain
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, BlogRequest, BlogResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
-    ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, PromptCatalogResponse, PromptPreviewRequest,
+    EngineCatalogResponse, ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, PromptCatalogResponse, PromptPreviewRequest,
     PromptPreviewResponse, PromptTemplateInfo, QualityRequest, QualityResponse, RegionInfo,
     ReportRequest, ReportResponse, SegmentRequest, SegmentResponse, SeoRequest, SeoResponse, SocialRequest, SocialResponse,
     Usage,
@@ -101,6 +102,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         cooldown=settings.breaker_cooldown_s,
         provider_timeout=settings.provider_timeout_s,
     )
+    engines = EngineRegistry(settings, chain.providers)
     assistant = assistant or Assistant(settings)
     segmenter = segmenter or create_segmenter(settings.fal_key, settings.falai_seg_model, settings.falai_seg_cost_usd,
                                               settings.image_provider)
@@ -196,7 +198,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
                          extra_cost: float = 0.0) -> Usage:
         counts = Counter((r.provider, r.model) for r in results)
         (provider, model), _ = counts.most_common(1)[0] if counts else ((chain.primary.name, chain.primary.model), 0)
-        cost = extra_cost + sum(settings.image_cost_usd(r.provider) for r in results)
+        cost = extra_cost + sum(settings.model_cost_usd(r.provider, r.model) for r in results)
         input_tokens = output_tokens = 0
         if describe is not None and describe.model != "demo":
             input_tokens, output_tokens = describe.input_tokens, describe.output_tokens
@@ -281,9 +283,11 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         seg_task = (asyncio.create_task(segment(image, target, remaining()))
                     if target and segmenter and not selected else None)
 
+        chosen = engines.chain_for(req.engine.chain, req.engine.models) if req.engine else None
+
         async def one(variant: int) -> ChainResult:
             async with generation_slots:
-                return await chain.generate(image, prompt, variant, tint, deadline)
+                return await chain.generate(image, prompt, variant, tint, deadline, chosen)
 
         try:
             outcomes = await asyncio.wait_for(
@@ -341,6 +345,13 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             raise NoChangeError(usage)
         return GenerateResponse(images_b64=images, prompt=prompt, provider=usage.provider,
                                 reference_style=reference_style, region=region, usage=usage)
+
+    @app.get("/internal/v1/engines", tags=["generation"], response_model=EngineCatalogResponse,
+             dependencies=[Depends(require_internal)], responses={401: ERRORS[401]},
+             summary="Image providers and allowed models the panel may choose (API.md §7.27)")
+    async def engines_catalog() -> EngineCatalogResponse:
+        return EngineCatalogResponse(providers=engine_catalog(settings), default_chain=settings.provider_chain,  # type: ignore[arg-type]
+                                     breakers=chain.snapshot())
 
     @app.get("/internal/v1/prompts", tags=["prompts"], response_model=PromptCatalogResponse,
              dependencies=[Depends(require_internal)], responses={401: ERRORS[401]},

@@ -10,6 +10,7 @@ import { CatalogService } from '../catalog/catalog.service.js';
 import { TOOL_IDS, isLocale, type Locale } from '../catalog/catalog.data.js';
 import { ProductCatalogService } from '../catalog/product.service.js';
 import { PromptTemplatesService } from '../prompts/prompts.service.js';
+import { EngineService } from '../ai/engine.service.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -81,6 +82,7 @@ export class DesignsService {
     private projects: ProjectsService,
     private product: ProductCatalogService,
     private prompts: PromptTemplatesService,
+    private engine: EngineService,
   ) {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
@@ -289,6 +291,8 @@ export class DesignsService {
             : undefined,
           points: points.success ? points.data : undefined,
           prompt_templates: prompts.templates,
+          // The panel's provider chain and models (API.md §7.27); undefined = the AI service's own chain.
+          engine: this.engine.current,
         },
         opts.requestId,
       );

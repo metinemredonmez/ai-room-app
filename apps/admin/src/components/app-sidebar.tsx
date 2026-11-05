@@ -9,6 +9,7 @@ import {
   House,
   LayoutGrid,
   WandSparkles,
+  Cpu,
   FileText,
   ListChecks,
   Megaphone,
@@ -93,7 +94,10 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Yapay zekâ",
-    items: [{ href: "/prompts", label: "İstem şablonları", icon: WandSparkles }],
+    items: [
+      { href: "/prompts", label: "İstem şablonları", icon: WandSparkles },
+      { href: "/ai-engine", label: "Model ve sağlayıcı", icon: Cpu },
+    ],
   },
   {
     label: "Kullanıcılar",

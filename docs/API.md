@@ -1343,3 +1343,48 @@ varsayılana tek adımda dönülür. Hiçbir şey yayınlanmadıysa davranış d
 - Canlı önizleme örnek değerlerle gösterilir. Hata Türkçe olarak yazılır.
 - "Varsayılanı yükle", not ile "Yayınla" ve sürüm geçmişi var. Geçmişte "Düzenleyiciye yükle", "Bu sürüme dön" ve
   "Varsayılana dön" bulunur.
+
+### 7.27 Model ve sağlayıcı panelden — AI servisi + backend + admin
+Görsel üretiminde hangi sağlayıcının hangi sırayla ve hangi modelle deneneceği admin'den seçilir
+(**Admin → Yapay zekâ → Model ve sağlayıcı**; YediOda #27, palemi model manifesti). Birincil sağlayıcı hata verirse
+ya da devre kesicisi açıksa sıradaki denenir. Kimse kaydetmediyse sunucunun zinciri kullanılır
+(`IMAGE_PROVIDER` + `IMAGE_FALLBACKS`); davranış değişmez.
+
+**Neyin seçilebileceğine sunucu karar verir**
+- Sağlayıcı ancak anahtarı sunucuda tanımlıysa seçilebilir. Anahtarı `deploy/hazal/set-secret.sh` ile sahibi ekler.
+  Demo sağlayıcı (`mock`) üretimde seçilemez.
+- Model, sağlayıcının sunucuda ayarlı modeli ya da `IMAGE_MODEL_ALLOWLIST` içindeki bir kayıt olmalıdır.
+  - Kayıt biçimi: `sağlayıcı|model|görsel_başı_usd|etiket;…`.
+  - Bir model listeye yalnız lisansı ve fiyatı kontrol edildikten sonra eklenir.
+  - Panelden serbest model adı yazılamaz; bu, maliyet ve lisans güvencesidir.
+  - Biçimi bozuk kayıt servisi açılışta durdurur (KEY-02).
+- Maliyet defteri artık modele göre hesaplanır: listedeki kaydın fiyatı, yoksa sağlayıcının fiyatı.
+
+**Kayıt ve kullanım**
+- Seçim `Setting` tablosunda `ai.engine` satırında durur: `{ chain: string[1..4], models: {sağlayıcı: model} }`.
+  Bellekte tutulur, 15 saniyede bir yenilenir ve her üretimle `engine` olarak AI servisine gider.
+- Kayıt anında AI servisinin listesine göre doğrulanır. Servise ulaşılamazsa kayıt yapılmaz (fail-closed).
+- Sonradan uygulanamaz hâle gelen seçim üretimi durdurmaz; AI servisi o istekte kendi zincirini kullanır. Örnekler:
+  anahtar kaldırıldıysa ya da model listeden çıktıysa. Panel bunu `ignored` listesiyle kırmızı uyarı olarak gösterir.
+- Devre kesici sağlayıcı adına göre tektir; aynı sağlayıcının bütün modelleri ve bütün zincirler onu paylaşır.
+
+**AI servisi (iç)**
+- `GET /internal/v1/engines` → `{ providers: [{ name, configured, usable, default_model, models: [{ id, label,
+  cost_usd }] }], default_chain, breakers }`
+- `POST /internal/v1/generate` isteğine `engine: { chain, models }` eklendi. Uygulanamayan seçimde sunucu zinciri
+  kullanılır ve loga `engine_choice_ignored` yazılır.
+
+**Admin uçları (rol ADMIN; destek ekibi göremez, AZ-01)**
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| GET | `/admin/ai-engine` | `{ choice, ignored, catalog, version, updatedAt, updatedBy }`; AI servisi kapalıysa 502 |
+| PATCH | `/admin/ai-engine` | `{ engine \| null, reason, version }`. `null` sunucu varsayılanına döner. Uygunsuz seçim 400 `invalid_engine` (Türkçe neden); `version` uymazsa 409 |
+
+Denetim kaydı: `ai.engine_update` (gerekçe, önceki ve yeni seçim).
+
+**Admin ekranı**
+- Zincir sıralanır: birincil ve yedekler, yukarı/aşağı taşıma, çıkarma, "+ sağlayıcı" ile ekleme.
+- Her satırda izinli modellerden seçim yapılır; görsel başı yaklaşık maliyet ve devre durumu (Çalışıyor / Devre açık /
+  Deneniyor) görünür.
+- Seçilemeyen sağlayıcıların nedeni yazılır.
+- Birincil sağlayıcı değişirken onay istenir. "Sunucu varsayılanına dön" düğmesi vardır.

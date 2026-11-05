@@ -495,3 +495,15 @@ export type PromptTemplate = {
   versions: PromptVersion[];
 };
 export type PromptsState = { templates: PromptTemplate[]; placeholders: Record<string, string> };
+
+// Model ve sağlayıcı (API.md §7.27).
+export type EngineChoice = { chain: string[]; models: Record<string, string> };
+export type EngineProvider = { name: string; configured: boolean; usable: boolean; default_model: string; models: { id: string; label: string; cost_usd: number }[] };
+export type EngineState = {
+  choice: EngineChoice | null;
+  ignored: string[];
+  catalog: { providers: EngineProvider[]; default_chain: string[]; breakers: { name: string; state: "closed" | "open" | "half_open"; consecutive_failures: number }[] };
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};

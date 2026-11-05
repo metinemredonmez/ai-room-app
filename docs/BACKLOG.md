@@ -10,7 +10,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Ürün kataloğu (API.md §7.25): 10 araç (aç/kapa, PRO, Yeni rozeti, ad, açıklama, sıra), oda tipleri, zeminler,
      duvar renkleri (ekle, kapat, çıkar, istem, simge). Admin → İçerik → Ürün kataloğu.
    - [x] İstem şablonları (API.md §7.26): 12 şablon, alan kuralları, canlı önizleme, sürüm geçmişi, eski sürüme / varsayılana dönüş. Admin → Yapay zekâ → İstem şablonları.
-   - [ ] AI sağlayıcı ve model seçimi panelden: yedek zinciri sırası, model adı (YediOda #27).
+   - [x] Model ve sağlayıcı (API.md §7.27): zincir sırası, sağlayıcı başına izinli model, maliyet ve devre durumu; sunucu varsayılanına dönüş. Yeni model yalnız `IMAGE_MODEL_ALLOWLIST` ile (lisans ve fiyat kontrolü sonrası).
    - [ ] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi).
    - [ ] Araç başı kredi bedeli (ör. dış cephe 2 hak).
 2. Büyüme: promosyon/hediye kodu, davet et-kazan, panelden hediye kredi + bildirim, sadakat, influencer bağlantısı,

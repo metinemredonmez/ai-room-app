@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache
 from typing import Literal
 
@@ -9,6 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 WEAK_TOKENS = {"change-me", "changeme", "secret", "internal", "dev"}
 IMAGE_PROVIDERS = ("mock", "gemini", "replicate", "falai")
 ProviderName = Literal["mock", "gemini", "replicate", "falai"]
+MODEL_ID = re.compile(r"^[A-Za-z0-9._/:-]{1,120}$")
 
 
 class Settings(BaseSettings):
@@ -31,6 +33,10 @@ class Settings(BaseSettings):
     falai_seg_model: str = Field("fal-ai/sam-3/image", alias="FALAI_SEG_MODEL")
     falai_image_cost_usd: float = Field(0.012, alias="FALAI_IMAGE_COST_USD", ge=0)
     falai_seg_cost_usd: float = Field(0.005, alias="FALAI_SEG_COST_USD", ge=0)
+    # Extra image models the panel may choose (API.md §7.27), added only after their licence and price are checked:
+    # "provider|model|usd_per_image|label;…", e.g. "falai|fal-ai/some/edit|0.02|Some edit". The model each provider
+    # is configured with above is always allowed.
+    image_model_allowlist: str = Field("", alias="IMAGE_MODEL_ALLOWLIST")
     # Region lock for local edits (paint, flooring, replace, targeted declutter): auto | off.
     region_lock: Literal["auto", "off"] = Field("auto", alias="REGION_LOCK")
 
@@ -57,6 +63,28 @@ class Settings(BaseSettings):
     sentry_environment: str | None = Field(None, alias="SENTRY_ENVIRONMENT", max_length=40)
     sentry_release: str | None = Field(None, alias="SENTRY_RELEASE", max_length=80)
     sentry_traces_sample_rate: float = Field(0.0, alias="SENTRY_TRACES_SAMPLE_RATE", ge=0, le=1)
+
+    def default_model(self, provider: str) -> str:
+        return {"gemini": self.gemini_image_model, "replicate": self.replicate_model, "falai": self.falai_edit_model}.get(provider, "mock-tint")
+
+    @property
+    def extra_models(self) -> list[tuple[str, str, float, str]]:
+        """IMAGE_MODEL_ALLOWLIST as (provider, model, usd per image, label); check_safe rejects a malformed entry."""
+        out: list[tuple[str, str, float, str]] = []
+        for entry in filter(None, (e.strip() for e in self.image_model_allowlist.split(";"))):
+            parts = [p.strip() for p in entry.split("|")]
+            try:
+                provider, model, cost = parts[0], parts[1], float(parts[2])
+            except (IndexError, ValueError):
+                raise ValueError(f"IMAGE_MODEL_ALLOWLIST entry '{entry[:60]}' must be provider|model|usd|label") from None
+            out.append((provider, model, cost, (parts[3] if len(parts) > 3 and parts[3] else model)[:60]))
+        return out
+
+    def model_cost_usd(self, provider: str, model: str) -> float:
+        for p, m, cost, _ in self.extra_models:
+            if p == provider and m == model:
+                return cost
+        return self.image_cost_usd(provider)
 
     @property
     def fallback_list(self) -> list[str]:
@@ -92,6 +120,16 @@ class Settings(BaseSettings):
             problems.append("IMAGE_FALLBACKS must not repeat a provider")
         if self.env == "production" and "mock" in self.fallback_list:
             problems.append("mock is not allowed as a fallback in production")
+        try:
+            for provider, model, cost, _ in self.extra_models:
+                if provider not in IMAGE_PROVIDERS or provider == "mock":
+                    problems.append(f"IMAGE_MODEL_ALLOWLIST: unknown provider '{provider}'")
+                if not MODEL_ID.fullmatch(model):
+                    problems.append(f"IMAGE_MODEL_ALLOWLIST: invalid model id for '{provider}'")
+                if not 0 <= cost <= 5:
+                    problems.append(f"IMAGE_MODEL_ALLOWLIST: price out of range for '{model[:40]}'")
+        except ValueError as exc:
+            problems.append(str(exc))
         if problems:
             raise ValueError("Unsafe configuration: " + "; ".join(problems))
         return self

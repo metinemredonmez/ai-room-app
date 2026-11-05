@@ -258,13 +258,14 @@ class FalProvider:
         return res.content
 
 
-def create_provider(name: str, settings: Settings) -> ImageProvider:
+def create_provider(name: str, settings: Settings, model: str | None = None) -> ImageProvider:
+    """`model` overrides the configured one (API.md §7.27); callers pass only allow-listed models."""
     if name == "gemini":
-        return GeminiProvider(settings.gemini_api_key or "", settings.gemini_image_model)
+        return GeminiProvider(settings.gemini_api_key or "", model or settings.gemini_image_model)
     if name == "replicate":
-        return ReplicateProvider(settings.replicate_api_token or "", settings.replicate_model)
+        return ReplicateProvider(settings.replicate_api_token or "", model or settings.replicate_model)
     if name == "falai":
-        return FalProvider(settings.fal_key or "", settings.falai_edit_model)
+        return FalProvider(settings.fal_key or "", model or settings.falai_edit_model)
     return MockProvider()
 
 

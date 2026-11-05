@@ -79,7 +79,9 @@ class ProviderChain:
             raise ValueError("at least one provider is required")
         self.providers = providers
         self.provider_timeout = provider_timeout
-        self.breakers = {p.name: CircuitBreaker(threshold, cooldown, clock) for p in providers}
+        self._breaker = lambda: CircuitBreaker(threshold, cooldown, clock)
+        # One breaker per provider name, shared by every model of that provider and by panel-chosen chains.
+        self.breakers = {p.name: self._breaker() for p in providers}
 
     @property
     def primary(self) -> ImageProvider:
@@ -87,17 +89,19 @@ class ProviderChain:
 
     def snapshot(self) -> list[dict]:
         return [
-            {"name": p.name, "state": self.breakers[p.name].state, "consecutive_failures": self.breakers[p.name].consecutive_failures}
-            for p in self.providers
+            {"name": name, "state": b.state, "consecutive_failures": b.consecutive_failures}
+            for name, b in self.breakers.items()
         ]
 
-    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, deadline: float) -> ChainResult:
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, deadline: float,
+                       providers: list[ImageProvider] | None = None) -> ChainResult:
         """Primary first; on a retryable error or an open circuit, the next provider. A non-retryable
-        error stops the chain (another provider would reject the same request too)."""
+        error stops the chain (another provider would reject the same request too). `providers` is the panel's
+        chain for this request (API.md §7.27); None uses the server's."""
         loop = asyncio.get_running_loop()
         last: ProviderError | None = None
-        for index, provider in enumerate(self.providers):
-            breaker = self.breakers[provider.name]
+        for index, provider in enumerate(providers or self.providers):
+            breaker = self.breakers.setdefault(provider.name, self._breaker())
             if not breaker.allow():
                 last = ProviderError(f"{provider.name}_circuit_open", retryable=True)
                 continue

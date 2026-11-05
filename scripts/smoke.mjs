@@ -759,6 +759,27 @@ if (adminToken) {
     && audit.some((x) => x.action === 'prompt.publish') && audit.some((x) => x.action === 'prompt.activate' && x.meta?.reason === 'smoke rollback'),
     'prompt rollback puts the previous one back, history kept, both audited (LOG-01)', String(back.status));
 }
+// API.md §7.27: image provider chain and models — only usable providers and allowed models, put back as it was.
+if (adminToken) {
+  const A = { token: adminToken };
+  const e0 = await call('GET', '/admin/ai-engine', A);
+  const providers = e0.json?.catalog?.providers ?? [];
+  const usable = providers.filter((p) => p.usable);
+  const unusable = providers.find((p) => !p.usable);
+  ok(e0.status === 200 && providers.length >= 1 && usable.length >= 1 && Array.isArray(e0.json.catalog.default_chain), 'admin reads the image engine: providers, allowed models, default chain', `${e0.status} usable=${usable.map((p) => p.name).join(',')}`);
+  const put = (engine, version, reason = 'smoke engine test') => call('PATCH', '/admin/ai-engine', { ...A, body: { engine, reason, version } });
+  const pick = usable[0];
+  const set = await put({ chain: [pick.name], models: {} }, e0.json.version);
+  const stale = await put({ chain: [pick.name], models: {} }, e0.json.version);
+  const badModel = await put({ chain: [pick.name], models: { [pick.name]: 'made-up/model' } }, set.json?.version ?? null);
+  const badProvider = unusable ? await put({ chain: [unusable.name], models: {} }, set.json?.version ?? null) : { status: 400 };
+  ok(set.status === 200 && set.json?.choice?.chain?.[0] === pick.name && stale.status === 409 && badModel.status === 400 && badProvider.status === 400,
+    'engine: saved, stale version 409, a model not on the server list or a provider without a key refused', `${set.status}/${stale.status}/${badModel.status}/${badProvider.status}`);
+  const back = await put(e0.json.choice, set.json?.version ?? null, 'smoke engine restore');
+  const audit = (await call('GET', '/admin/audit?limit=20', A)).json?.items ?? [];
+  ok(back.status === 200 && JSON.stringify(back.json?.choice) === JSON.stringify(e0.json.choice) && audit.some((x) => x.action === 'ai.engine_update' && x.meta?.reason === 'smoke engine restore'),
+    'engine restored as it was; changes audited (LOG-01)', String(back.status));
+}
 // API.md §7.22: welcome credits — once per verified identity, not again after deleting and signing up again.
 if (adminToken) {
   const A = { token: adminToken };
@@ -937,6 +958,9 @@ if (adminToken) {
   const sPrompts = await call('GET', '/admin/prompts', { token: staffToken });
   const sPromptPub = await call('POST', '/admin/prompts/paint/publish', { token: staffToken, body: { text: 'Repaint {walls} in {color}. {keep}', note: 'support tries', expected: null } });
   ok(sPrompts.status === 403 && sPromptPub.status === 403, 'SUPPORT can neither read nor change prompt templates (AZ-01)', `${sPrompts.status}/${sPromptPub.status}`);
+  const sEngine = await call('GET', '/admin/ai-engine', { token: staffToken });
+  const sEnginePut = await call('PATCH', '/admin/ai-engine', { token: staffToken, body: { engine: null, reason: 'support tries', version: null } });
+  ok(sEngine.status === 403 && sEnginePut.status === 403, 'SUPPORT can neither read nor change the image engine (AZ-01)', `${sEngine.status}/${sEnginePut.status}`);
   const sOrgs = await call('GET', '/admin/orgs', { token: staffToken });
   const sOrgCreate = await call('POST', '/admin/orgs', { token: staffToken, body: { name: 'Support Firm', ownerEmail: userEmail, reason: 'support tries' } });
   const sOrgCredits = firmIdForStaffCheck ? await call('POST', `/admin/orgs/${firmIdForStaffCheck}/credits`, { token: staffToken, body: { delta: 100, reason: 'support tries' } }) : { status: 403 };
@@ -968,7 +992,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

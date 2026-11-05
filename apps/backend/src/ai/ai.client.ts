@@ -36,6 +36,17 @@ export interface GenerateInput {
   points?: Array<{ x: number; y: number }>;
   /** The panel's active prompt templates, key → text (API.md §7.26); absent keys use the service's defaults. */
   prompt_templates?: Record<string, string>;
+  /** The panel's provider chain and models (API.md §7.27); absent = the server's own chain. */
+  engine?: EngineChoice;
+}
+
+export type EngineChoice = { chain: string[]; models: Record<string, string> };
+
+/** Image providers and allowed models as the AI service reports them (API.md §7.27). */
+export interface EngineCatalog {
+  providers: Array<{ name: string; configured: boolean; usable: boolean; default_model: string; models: Array<{ id: string; label: string; cost_usd: number }> }>;
+  default_chain: string[];
+  breakers: Array<{ name: string; state: 'closed' | 'open' | 'half_open'; consecutive_failures: number }>;
 }
 
 /** Image prompt templates as the AI service defines them (API.md §7.26). */
@@ -161,6 +172,10 @@ export class AiClient {
 
   generate(input: GenerateInput, requestId?: string) {
     return this.call<GenerateOutput>('POST', '/internal/v1/generate', input, 180_000, requestId);
+  }
+
+  engineCatalog() {
+    return this.call<EngineCatalog>('GET', '/internal/v1/engines', undefined, 10_000);
   }
 
   promptCatalog() {
