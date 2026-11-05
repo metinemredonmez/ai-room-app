@@ -1542,3 +1542,20 @@ referral). Program **kapalı başlar**; admin açar.
 
 Gizlilik metnine eklenecek cümle (sahibinin işi): davetin kötüye kullanımını önlemek için e-posta kimliğinin geri
 döndürülemez özeti saklanır.
+
+### 7.31 Panelden hediye kredi — backend + admin + web (mobil bildirim alır)
+Admin kullanıcı ayrıntısında **"Hediye gönder"** ile kullanıcıya hediye kredi verir (YediOda #63 "manuel hediye").
+Kredi düzeltmesinden farkı şudur:
+- Düzeltme (`admin: …`) kullanıcıya yalnız "Destek ekibinden düzenleme" diye görünür ve bildirim gitmez.
+- Hediye görünür olsun diye vardır: kullanıcı bildirim alır, Kredi hareketlerim'de "Hediye" (`kind: gift`) yazar.
+
+`POST /admin/users/:id/gift { credits 1–500, message ≤140, email, reason }` → 201 `{ credits, pushed, emailed }`
+- Rol ADMIN; yönetici hesabına yalnız SUPER_ADMIN gönderir (AZ-05). Askıdaki hesaba gönderilemez: 409.
+- `message` kullanıcıya gösterilir: push metni ve e-postada. Boşsa varsayılan metin kullanılır ("Casalume ekibinden
+  sana hediye kredi…").
+- `reason` iç nottur; yalnız denetim kaydına (`user.gift`) yazılır.
+- Push, kullanıcının dilinde (TR/EN) bütün cihazlarına gider: `data: { type: 'gift', path: '/hesap' }`.
+- E-posta yalnız `email: true` ve doğrulanmış adres varsa gider.
+- Defter satırı `reason: 'gift'` olarak yazılır. `refId` personeldir ve kullanıcıya hiç dönmez.
+
+Admin kredi hareketleri tablosu yeni türleri okunur gösterir: Hediye, Promosyon kodu, Davet ödülü.

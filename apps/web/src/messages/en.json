@@ -535,6 +535,7 @@
       "purchase": "Credit pack",
       "promo": "Promo code",
       "referral": "Invite reward",
+      "gift": "Gift",
       "adjustment": "Adjustment by support",
       "other": "Other"
     },

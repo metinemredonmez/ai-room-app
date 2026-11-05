@@ -4,7 +4,7 @@ import { isUuid } from '../images/images.service.js';
 // show as "adjustment" only: their free-text reason and the staff member's id (stored in refId) never leave the
 // admin side.
 
-export const LEDGER_KINDS = ['daily_free', 'generation', 'refund', 'welcome', 'purchase', 'promo', 'referral', 'adjustment', 'other'] as const;
+export const LEDGER_KINDS = ['daily_free', 'generation', 'refund', 'welcome', 'purchase', 'promo', 'referral', 'gift', 'adjustment', 'other'] as const;
 export type LedgerKind = (typeof LEDGER_KINDS)[number];
 
 export function ledgerKind(reason: string): LedgerKind {
@@ -14,6 +14,8 @@ export function ledgerKind(reason: string): LedgerKind {
   if (reason === 'promo' || reason === 'promo_pro') return 'promo';
   // API.md §7.30: credits for joining by invitation, or for a friend's first design.
   if (reason === 'referral_invitee' || reason === 'referral_inviter') return 'referral';
+  // API.md §7.31: a gift from the team (the staff member's id stays in refId, never shown).
+  if (reason === 'gift') return 'gift';
   if (reason.startsWith('admin:')) return 'adjustment';
   return 'other';
 }

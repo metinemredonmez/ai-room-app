@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Ban, CircleCheck, Coins } from "lucide-react";
+import { ArrowLeft, Ban, CircleCheck, Coins, Gift } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -28,11 +28,38 @@ export default function UserDetailPage() {
   const [planDraft, setPlanDraft] = useState<{ plan: "FREE" | "PRO"; expires: string } | null>(null);
   const [delta, setDelta] = useState("");
   const [reason, setReason] = useState("");
+  const [gift, setGift] = useState({ credits: "5", message: "", email: false, reason: "" });
 
   const plan = planDraft ?? (user ? { plan: user.plan, expires: toDateInput(user.planExpiresAt) } : { plan: "FREE" as const, expires: "" });
 
   function mergeUser(updated: AdminUser) {
     detail.setData((prev) => (prev ? { ...prev, ...updated } : prev));
+  }
+
+  /** API.md §7.31: a gift the user sees (push, optional e-mail); the reason stays in the audit log. */
+  async function sendGift(e: FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    const n = Number(gift.credits);
+    if (!Number.isInteger(n) || n < 1 || n > 500) {
+      toast("error", "Hediye 1–500 kredi olmalı.");
+      return;
+    }
+    const ok = await confirm({
+      title: `${fmtInt(n)} kredi hediye edilsin mi?`,
+      description: `Kullanıcıya push bildirimi gider${gift.email ? " ve e-posta gönderilir" : ""}.${gift.message.trim() ? ` Mesaj: “${gift.message.trim()}”` : ""}`,
+      confirmLabel: "Gönder",
+    });
+    if (!ok) return;
+    await run("gift", async () => {
+      const out = await api<{ credits: number; pushed: number; emailed: boolean }>(`/users/${encodeURIComponent(user.id)}/gift`, {
+        method: "POST",
+        body: { credits: n, message: gift.message.trim(), email: gift.email, reason: gift.reason.trim() },
+      });
+      setGift({ credits: "5", message: "", email: false, reason: "" });
+      detail.reload();
+      toast("success", `Hediye gönderildi · ${out.pushed ? `${out.pushed} cihaza bildirim` : "bildirim yok (uygulama yok)"}${out.emailed ? " · e-posta gitti" : ""}.`);
+    });
   }
 
   async function run(key: string, fn: () => Promise<void>) {
@@ -198,6 +225,29 @@ export default function UserDetailPage() {
                   <Coins className="h-4 w-4" aria-hidden /> Krediyi uygula
                 </Button>
               </form>
+              <p className="mt-2 text-[11px] text-muted-foreground">Düzeltme kullanıcıya yalnız “Destek ekibinden düzenleme” diye görünür; bildirim gitmez.</p>
+
+              <form onSubmit={sendGift} className="mt-5 flex flex-col gap-3 border-t border-line pt-4">
+                <p className="flex items-center gap-2 text-sm font-medium text-fg">
+                  <Gift className="h-4 w-4" aria-hidden /> Hediye gönder
+                </p>
+                <Field label="Kredi" htmlFor="gift-credits" hint="1–500; kullanıcıya “Hediye” olarak görünür ve bildirim gider.">
+                  <Input id="gift-credits" type="number" min={1} max={500} value={gift.credits} onChange={(e) => setGift((g) => ({ ...g, credits: e.target.value }))} />
+                </Field>
+                <Field label="Kullanıcıya mesaj (isteğe bağlı)" htmlFor="gift-message" hint={`Bildirimde ve e-postada görünür · ${gift.message.length}/140`}>
+                  <Input id="gift-message" maxLength={140} value={gift.message} onChange={(e) => setGift((g) => ({ ...g, message: e.target.value }))} placeholder="Ör. Sabrın için teşekkürler!" />
+                </Field>
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" aria-label="E-posta da gönder" checked={gift.email} onChange={(e) => setGift((g) => ({ ...g, email: e.target.checked }))} className="h-4 w-4 accent-[var(--primary)]" />
+                  E-posta da gönder (yalnız doğrulanmış adrese)
+                </label>
+                <Field label="Gerekçe (iç not)" htmlFor="gift-reason" hint="Yalnız denetim kaydına yazılır; kullanıcı görmez.">
+                  <Input id="gift-reason" maxLength={200} value={gift.reason} onChange={(e) => setGift((g) => ({ ...g, reason: e.target.value }))} placeholder="Ör. uzun süre hata yaşadı" />
+                </Field>
+                <Button type="submit" variant="primary" loading={busy === "gift"} disabled={!gift.credits || gift.reason.trim().length < 3}>
+                  <Gift className="h-4 w-4" aria-hidden /> Hediyeyi gönder
+                </Button>
+              </form>
             </Card>
           </div>
 
@@ -256,6 +306,11 @@ function ledgerLabel(reason: string): string {
   if (reason.startsWith("admin: ")) return `Yönetici: ${reason.slice(7)}`;
   const known: Record<string, string> = {
     welcome: "Hoş geldin hediyesi",
+    gift: "Hediye (bildirimli)",
+    promo: "Promosyon kodu",
+    promo_pro: "Promosyon kodu (PRO günü)",
+    referral_invitee: "Davet ödülü (davetle katıldı)",
+    referral_inviter: "Davet ödülü (arkadaşı tasarım yaptı)",
     generation: "Tasarım",
     refund: "İade (tasarım tamamlanamadı)",
     daily_free: "Günlük ücretsiz hak",

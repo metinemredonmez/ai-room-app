@@ -19,7 +19,7 @@ type Consents = { current: Record<ConsentKind, { current: string; granted: boole
 type RequestType = "access" | "rectification" | "erasure" | "objection" | "other";
 type DataRequest = { id: string; reference: string; type: string; status: "RECEIVED" | "IN_PROGRESS" | "COMPLETED" | "REJECTED"; response: string | null; dueAt: string; receivedAt: string };
 const REQUEST_TYPES: RequestType[] = ["access", "rectification", "erasure", "objection", "other"];
-type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "promo" | "referral" | "adjustment" | "other";
+type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "promo" | "referral" | "gift" | "adjustment" | "other";
 type LedgerEntry = { id: string; delta: number; kind: LedgerKind; designId: string | null; productId: string | null; createdAt: string };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
