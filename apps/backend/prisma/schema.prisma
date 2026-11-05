@@ -138,6 +138,9 @@ model User {
   designs             Design[]
   ledger              CreditLedger[]
   promoRedemptions    PromoRedemption[]
+  referralCode        ReferralCode?
+  referralsMade       Referral[]          @relation("inviter")
+  referredBy          Referral?           @relation("invitee")
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
@@ -315,6 +318,40 @@ model Setting {
   value     Json
   updatedBy String?  @db.Uuid
   updatedAt DateTime @updatedAt
+}
+
+enum ReferralStatus {
+  PENDING
+  REWARDED
+  REJECTED
+}
+
+// Invite-a-friend (API.md §7.30). One personal code per verified account.
+model ReferralCode {
+  userId    String   @id @db.Uuid
+  code      String   @unique @db.VarChar(16)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// One per invited person (keyed e-mail identity, kept after account deletion): the invitee is rewarded on claiming,
+// the inviter when the invitee's first design succeeds (or never: rejected by staff or over the monthly cap).
+model Referral {
+  id                  String         @id @default(uuid()) @db.Uuid
+  inviterId           String?        @db.Uuid
+  inviteeId           String?        @unique @db.Uuid
+  inviteeIdentityHash String         @unique
+  status              ReferralStatus @default(PENDING)
+  inviteeCredits      Int
+  inviterCredits      Int
+  rejectReason        String?        @db.VarChar(200)
+  createdAt           DateTime       @default(now())
+  rewardedAt          DateTime?
+  inviter             User?          @relation("inviter", fields: [inviterId], references: [id], onDelete: SetNull)
+  invitee             User?          @relation("invitee", fields: [inviteeId], references: [id], onDelete: SetNull)
+
+  @@index([inviterId, status, rewardedAt])
+  @@index([createdAt])
 }
 
 enum PromoKind {

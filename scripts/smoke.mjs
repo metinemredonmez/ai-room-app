@@ -825,6 +825,8 @@ if (adminToken) {
     && audit.some((x) => x.action === 'features.update' && x.meta?.reason === 'smoke flags restore'),
     'flags: stale version 409, unknown flag 400, restored as they were, audited (LOG-01)', `${stale.status}/${unknown.status}/${back.status}`);
 }
+// Verified accounts made by the promo block, reused by the referral block: sign-ups are rate-limited per IP (10/h).
+const verifiedPool = [];
 // API.md §7.29: promo and gift codes — verified accounts only, once per person, a single-use code goes to one of two racers.
 if (adminToken) {
   const A = { token: adminToken };
@@ -832,6 +834,7 @@ if (adminToken) {
     const email = `smoke-promo-${crypto.randomUUID()}@example.com`;
     const r = await call('POST', '/auth/register', { body: { email, password: 'promo-password-123' } });
     await call('POST', '/auth/email/verify', { body: { token: tokenFrom(await lastMailTo(email, 'doğrula')) } });
+    verifiedPool.push(r.json?.accessToken);
     return r.json?.accessToken;
   };
   const credits = async (t) => (await call('GET', '/me', { token: t })).json?.credits ?? 0;
@@ -862,6 +865,40 @@ if (adminToken) {
   ok(sharedRow?.redeemed === 1 && list.items.filter((x) => x.campaign === 'smoke' && x.display.includes('…')).length >= 2 && stop.status === 200 && afterStop.status === 404 && who.json?.items?.length === 1
     && ['promo.create', 'promo.batch', 'promo.update'].every((k) => audit.some((x) => x.action === k)),
     'promo admin: gift codes only masked in the list, a stopped code no longer works, redemptions listed, all audited', `${stop.status}/${afterStop.status}`);
+}
+// API.md §7.30: invite a friend — the invitee is paid on claiming, the inviter after the invitee's first design; restored.
+if (adminToken) {
+  const A = { token: adminToken };
+  const verified = async () => {
+    if (verifiedPool.length) return verifiedPool.shift();
+    const email = `smoke-ref-${crypto.randomUUID()}@example.com`;
+    const r = await call('POST', '/auth/register', { body: { email, password: 'referral-password-123' } });
+    await call('POST', '/auth/email/verify', { body: { token: tokenFrom(await lastMailTo(email, 'doğrula')) } });
+    return r.json?.accessToken;
+  };
+  const credits = async (t) => (await call('GET', '/me', { token: t })).json?.credits ?? 0;
+  const r0 = (await call('GET', '/admin/referrals', A)).json;
+  const on = await call('PATCH', '/admin/referrals/settings', { ...A, body: { settings: { enabled: true, inviterCredits: 3, inviteeCredits: 2, monthlyCap: 10, claimDays: 14 }, reason: 'smoke referral', version: r0.version } });
+  const inviter = await verified();
+  const mine = (await call('GET', '/me/referral', { token: inviter })).json;
+  const friend = await verified();
+  const f0 = await credits(friend);
+  const claim = await call('POST', '/me/referral/claim', { token: friend, body: { code: mine?.code?.toLowerCase() } });
+  const again = await call('POST', '/me/referral/claim', { token: friend, body: { code: mine?.code } });
+  const own = await call('POST', '/me/referral/claim', { token: inviter, body: { code: mine?.code } });
+  ok(on.status === 200 && /^[A-Z2-9]{8}$/.test(mine?.code ?? '') && mine.link?.includes(`ref=${mine.code}`) && claim.status === 200 && (await credits(friend)) === f0 + 2 && again.status === 409 && own.status === 400,
+    'referral: code and link, friend gets 2 credits once, own code refused', `${on.status} ${claim.status}/${again.status}/${own.status}`);
+  const i0 = await credits(inviter);
+  const img = (await call('POST', '/uploads/sample', { token: friend, body: { sample: 'living_room' } })).json?.image?.id;
+  const first = await call('POST', '/designs', { token: friend, body: { tool: 'redesign', inputImageId: img, variants: 1 } });
+  const paid = await (async () => { for (let i = 0; i < 30; i++) { if ((await credits(inviter)) >= i0 + 3) return true; await new Promise((r) => setTimeout(r, 200)); } return false; })();
+  const view = (await call('GET', '/admin/referrals', A)).json;
+  ok(first.status === 201 && paid && view?.items?.some((x) => x.status === 'REWARDED' && x.inviterCredits === 3) && (await call('GET', '/me/referral', { token: inviter })).json?.stats?.rewarded === 1,
+    "referral: the friend's first design pays the inviter 3 credits, once", `${first.status} paid=${paid}`);
+  const back = await call('PATCH', '/admin/referrals/settings', { ...A, body: { settings: r0.settings, reason: 'smoke referral restore', version: view.version } });
+  const audit = (await call('GET', '/admin/audit?limit=20', A)).json?.items ?? [];
+  ok(back.status === 200 && back.json?.settings?.enabled === r0.settings.enabled && audit.some((x) => x.action === 'referral.settings' && x.meta?.reason === 'smoke referral restore'),
+    'referral settings restored as they were; audited (LOG-01)', String(back.status));
 }
 // API.md §7.22: welcome credits — once per verified identity, not again after deleting and signing up again.
 if (adminToken) {
@@ -1050,6 +1087,9 @@ if (adminToken) {
   const sPromo = await call('GET', '/admin/promo', { token: staffToken });
   const sPromoNew = await call('POST', '/admin/promo/batch', { token: staffToken, body: { campaign: 'support', kind: 'CREDITS', amount: 500, count: 1000, reason: 'support tries' } });
   ok(sPromo.status === 200 && sPromoNew.status === 403, 'SUPPORT sees promo codes but cannot make any (AZ-01)', `${sPromo.status}/${sPromoNew.status}`);
+  const sRef = await call('GET', '/admin/referrals', { token: staffToken });
+  const sRefPut = await call('PATCH', '/admin/referrals/settings', { token: staffToken, body: { settings: { enabled: true, inviterCredits: 50, inviteeCredits: 50, monthlyCap: 100, claimDays: 60 }, reason: 'support tries', version: null } });
+  ok(sRef.status === 200 && sRefPut.status === 403, 'SUPPORT sees the invite programme but cannot change it (AZ-01)', `${sRef.status}/${sRefPut.status}`);
   const sOrgs = await call('GET', '/admin/orgs', { token: staffToken });
   const sOrgCreate = await call('POST', '/admin/orgs', { token: staffToken, body: { name: 'Support Firm', ownerEmail: userEmail, reason: 'support tries' } });
   const sOrgCredits = firmIdForStaffCheck ? await call('POST', `/admin/orgs/${firmIdForStaffCheck}/credits`, { token: staffToken, body: { delta: 100, reason: 'support tries' } }) : { status: 403 };
@@ -1081,7 +1121,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

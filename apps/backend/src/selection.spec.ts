@@ -33,6 +33,7 @@ function service(opts: { owned?: boolean; consent?: boolean; requireConsent?: bo
     new ProductCatalogService({} as never),
     { forTool: () => ({ versions: {} }) } as never,
     { current: undefined } as never,
+    { onDesignSucceeded: async () => undefined } as never,
   );
   return { designs, calls };
 }

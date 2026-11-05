@@ -2,7 +2,8 @@
 
 import Link from "@/components/locale-link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { rememberReferral } from "@/lib/referral";
 import { Check, Eye, EyeOff, LoaderCircle, UserRound } from "lucide-react";
 import { ApiError, authApi } from "@/lib/api";
 import { useApp, useFeature } from "@/components/app-provider";
@@ -35,6 +36,11 @@ export function AuthForm() {
   const [busy, setBusy] = useState<"form" | "guest" | null>(null);
   const [error, setError] = useState<unknown>(null);
   const login = mode === "login";
+
+  // API.md §7.30: an invite link (/giris?ref=CODE) keeps the friend's code for after sign-up.
+  useEffect(() => {
+    rememberReferral(new URLSearchParams(window.location.search).get("ref"));
+  }, []);
 
   function switchMode(next: "login" | "register") {
     setMode(next);

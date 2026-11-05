@@ -8,6 +8,7 @@ import { ErrorNotice } from "@/components/error-notice";
 import { btn, card, input, label } from "@/components/ui";
 import { ApiError, api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { forgetReferral, storedReferral } from "@/lib/referral";
 import { LOCALE_TAGS, fmt } from "@/lib/i18n";
 
 // Hesabım: profile, consents (KVKK), data export, KVKK m.11 requests and account deletion — the web counterpart of
@@ -18,7 +19,7 @@ type Consents = { current: Record<ConsentKind, { current: string; granted: boole
 type RequestType = "access" | "rectification" | "erasure" | "objection" | "other";
 type DataRequest = { id: string; reference: string; type: string; status: "RECEIVED" | "IN_PROGRESS" | "COMPLETED" | "REJECTED"; response: string | null; dueAt: string; receivedAt: string };
 const REQUEST_TYPES: RequestType[] = ["access", "rectification", "erasure", "objection", "other"];
-type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "promo" | "adjustment" | "other";
+type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "promo" | "referral" | "adjustment" | "other";
 type LedgerEntry = { id: string; delta: number; kind: LedgerKind; designId: string | null; productId: string | null; createdAt: string };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -112,6 +113,13 @@ export function AccountView() {
           setLedgerKey((k) => k + 1);
         }}
       />
+      <ReferralSection
+        onError={setError}
+        onDone={(text) => {
+          setNotice(text);
+          setLedgerKey((k) => k + 1);
+        }}
+      />
       <LedgerSection key={ledgerKey} onError={setError} />
       <ConsentsSection onError={setError} onSaved={() => setNotice(p.consentSaved)} />
       <DataSection onError={setError} />
@@ -179,6 +187,116 @@ function PromoSection({ onError, onDone }: { onError: (e: unknown) => void; onDo
           {p.promoApply}
         </button>
       </form>
+    </Section>
+  );
+}
+
+type Referral = {
+  enabled: boolean;
+  code: string | null;
+  link: string | null;
+  inviterCredits: number;
+  inviteeCredits: number;
+  stats: { invited: number; rewarded: number; earned: number };
+  canClaim: boolean;
+  claimed: { status: string; credits: number } | null;
+};
+
+/** API.md §7.30: the user's invite link and stats, and the friend's code box for new accounts. */
+function ReferralSection({ onError, onDone }: { onError: (e: unknown) => void; onDone: (text: string) => void }) {
+  const { t, user, refreshUser } = useApp();
+  const p = t.profile;
+  const [r, setR] = useState<Referral | null>(null);
+  const [code, setCode] = useState(() => storedReferral() ?? "");
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const load = useCallback(() => api.get<Referral>("/me/referral").then(setR).catch(() => setR(null)), []);
+  useEffect(() => {
+    void load();
+  }, [load, user?.id]);
+
+  if (!r?.enabled || user?.isGuest) return null;
+
+  async function claim() {
+    setBusy(true);
+    try {
+      const out = await api.post<{ credits: number }>("/me/referral/claim", { code: code.trim() });
+      forgetReferral();
+      setCode("");
+      await refreshUser().catch(() => null);
+      await load();
+      onDone(fmt(p.referralClaimed, { n: out.credits }));
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function copy() {
+    if (!r?.link) return;
+    try {
+      await navigator.clipboard.writeText(r.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* the link stays visible to copy by hand */
+    }
+  }
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  return (
+    <Section title={p.referralTitle}>
+      <p className="text-sm text-muted">{fmt(p.referralBody, { invitee: r.inviteeCredits, inviter: r.inviterCredits })}</p>
+      {r.link && (
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <input readOnly aria-label={p.referralTitle} value={r.link} className={`${input} font-mono text-xs sm:flex-1`} onFocus={(e) => e.currentTarget.select()} />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void copy()} className={`${btn.base} ${btn.primary} ${btn.md}`}>
+              {copied ? p.referralCopied : p.referralCopy}
+            </button>
+            {canShare && (
+              <button
+                type="button"
+                onClick={() => void navigator.share({ text: p.referralShareText, url: r.link! }).catch(() => undefined)}
+                className={`${btn.base} ${btn.ghost} ${btn.md}`}
+              >
+                {p.referralShare}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      <p className="mt-3 text-xs text-muted">{fmt(p.referralStats, { invited: r.stats.invited, rewarded: r.stats.rewarded, earned: r.stats.earned })}</p>
+      {r.claimed && <p className="mt-2 text-xs text-primary">{p.referralJoined}</p>}
+      {r.canClaim && (
+        <form
+          className="mt-5 border-t border-border pt-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (code.trim()) void claim();
+          }}
+        >
+          <label htmlFor="referral-code" className={label}>
+            {p.referralClaimTitle}
+          </label>
+          <div className="mt-1 flex flex-col gap-3 sm:flex-row">
+            <input
+              id="referral-code"
+              className={`${input} font-mono uppercase sm:flex-1`}
+              value={code}
+              maxLength={20}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={p.referralClaimPlaceholder}
+              onChange={(e) => setCode(e.target.value)}
+            />
+            <button type="submit" disabled={busy || !code.trim()} className={`${btn.base} ${btn.ghost} ${btn.md}`}>
+              {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
+              {p.referralClaimApply}
+            </button>
+          </div>
+        </form>
+      )}
     </Section>
   );
 }

@@ -15,7 +15,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Araç başı hak bedeli (API.md §7.25.1): Ürün kataloğu → Araçlar; tasarım = seçenek × bedel, iade bedelle, bedel tasarıma yazılır.
 2. Büyüme
    - [x] Promosyon ve hediye kodları (API.md §7.29): kampanya kodu + tek kullanımlık hediye kodları (CSV), kredi ya da PRO günü; doğrulanmış hesap, kişi başı bir kez. Admin → Büyüme → Promosyon kodları; web Hesabım.
-   - [ ] Davet et-kazan, panelden hediye kredi + bildirim, sadakat, influencer bağlantısı, planlı fiyat değişikliği.
+   - [x] Davet et-kazan (API.md §7.30): davet edilen kodu girince, davet eden arkadaşının ilk tasarımında (aylık sınır); program kapalı başlar. Admin → Büyüme → Davet programı; web Hesabım.
+   - [ ] Panelden hediye kredi + bildirim, sadakat, influencer bağlantısı, planlı fiyat değişikliği.
 3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,
    App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.

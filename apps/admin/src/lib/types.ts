@@ -532,3 +532,26 @@ export type PromoCode = {
 export type PromoList = { items: PromoCode[]; nextCursor: string | null; campaigns: { campaign: string; codes: number; redeemed: number }[] };
 export type PromoBatch = { campaign: string; kind: PromoKind; amount: number; codes: string[] };
 export type PromoRedemptions = { code: PromoCode; items: { id: string; createdAt: string; user: { id: string; email: string | null; name: string | null } | null }[] };
+
+// Davet programı (API.md §7.30).
+export type ReferralSettings = { enabled: boolean; inviterCredits: number; inviteeCredits: number; monthlyCap: number; claimDays: number };
+export type ReferralItem = {
+  id: string;
+  status: "PENDING" | "REWARDED" | "REJECTED";
+  inviteeCredits: number;
+  inviterCredits: number;
+  rejectReason: string | null;
+  createdAt: string;
+  rewardedAt: string | null;
+  inviter: { id: string; email: string | null } | null;
+  invitee: { id: string; email: string | null } | null;
+};
+export type ReferralState = {
+  settings: ReferralSettings;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  stats: { claims30: number; rewarded30: number; credits30: number; pending: number };
+  top: { userId: string | null; email: string | null; rewarded: number }[];
+  items: ReferralItem[];
+};

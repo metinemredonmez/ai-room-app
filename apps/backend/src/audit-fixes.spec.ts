@@ -76,6 +76,7 @@ function designs(opts: { consent?: boolean; budget?: 'normal' | 'exceeded'; pro?
     new ProductCatalogService({} as never),
     { forTool: () => ({ versions: {} }) } as never,
     { current: undefined } as never,
+    { onDesignSucceeded: async () => undefined } as never,
   );
   return { svc, calls, rows };
 }

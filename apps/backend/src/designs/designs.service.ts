@@ -11,6 +11,7 @@ import { TOOL_IDS, isLocale, type Locale } from '../catalog/catalog.data.js';
 import { ProductCatalogService } from '../catalog/product.service.js';
 import { PromptTemplatesService } from '../prompts/prompts.service.js';
 import { EngineService } from '../ai/engine.service.js';
+import { ReferralService } from '../referral/referral.service.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -83,6 +84,7 @@ export class DesignsService {
     private product: ProductCatalogService,
     private prompts: PromptTemplatesService,
     private engine: EngineService,
+    private referral: ReferralService,
   ) {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
@@ -320,6 +322,8 @@ export class DesignsService {
       log.info('design_succeeded', {
         designId, userId: d.userId, tool: d.tool, provider: out.provider, variants: buffers.length, regionLock: out.region?.applied ?? null,
       });
+      // API.md §7.30: an invited user's first successful design pays the inviter (once; never fails the design).
+      void this.referral.onDesignSucceeded(d.userId).catch((err: Error) => log.warn('referral_reward_failed', { designId, error: err.name }));
     } catch (e) {
       if (e instanceof AiError && e.usage) await this.usage.record(e.usage, { userId: d.userId, designId });
       const retryable = e instanceof AiError ? e.retryable : false;

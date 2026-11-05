@@ -12,6 +12,7 @@ import {
   Cpu,
   ToggleRight,
   Ticket,
+  UserPlus,
   FileText,
   ListChecks,
   Megaphone,
@@ -112,7 +113,10 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Büyüme",
-    items: [{ href: "/promo", label: "Promosyon kodları", icon: Ticket }],
+    items: [
+      { href: "/promo", label: "Promosyon kodları", icon: Ticket },
+      { href: "/referrals", label: "Davet programı", icon: UserPlus },
+    ],
   },
   {
     label: "Pazarlama",

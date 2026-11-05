@@ -1493,3 +1493,52 @@ tarihine kadar açık" yazar. Misafire ve doğrulanmamış hesaba neden kullanam
 
 Gizlilik metnine eklenecek cümle (sahibinin işi, hoş geldin kredisiyle aynı): kötüye kullanımı önlemek için e-posta
 kimliğinin geri döndürülemez özeti, kod durdukça saklanır.
+
+### 7.30 Davet et-kazan — backend + admin + web (mobil sonra)
+Kullanıcı arkadaşını kendi bağlantısıyla davet eder (**Admin → Büyüme → Davet programı**; YediOda #65, fal-app
+referral). Program **kapalı başlar**; admin açar.
+
+**Ödül kuralı (BUS-01: sahte kayıt kazandırmaz)**
+- Davet edilen, kodu girince `inviteeCredits` alır. Koşullar:
+  - hesap kayıtlı ve e-postası doğrulanmış olmalı;
+  - kayıttan sonraki `claimDays` gün içinde girilmeli;
+  - kişi başı bir kez.
+- Davet eden, arkadaşının **ilk başarılı tasarımında** `inviterCredits` alır, bir kez.
+  - Aylık sınır (`monthlyCap`, İstanbul ayı) dolmuşsa davet `REJECTED` olur: "Aylık davet ödülü sınırı doldu".
+  - Uygulamada push bildirimi gider ("Davet ödülü").
+- Bir e-posta kimliği yalnız bir kez davet edilmiş sayılır (anahtarlı özet; Gmail noktaları ve `+etiket` aynı kişi).
+  Kayıt hesap silinince de kalır.
+- Kendi kodu, kendi posta kutusunun başka bir hesabı da dahil, kullanılamaz: 400 `own_code`. Veritabanında
+  `inviterId <> inviteeId` kısıtı da var.
+- Ödül, `PENDING → REWARDED` koşullu güncellemesiyle verilir. İki tasarım aynı anda bitse de tek ödül çıkar
+  (BUS-02).
+- Şüpheli bekleyen davet admin'den reddedilir; davet eden ödül almaz, davet edilenin kredisi kalır.
+
+**Kullanıcı uçları**
+- `GET /me/referral` → `{ enabled, code, link, inviterCredits, inviteeCredits, stats: { invited, rewarded, earned },
+  canClaim, claimed }`.
+  - Kod, doğrulanmış hesaba ilk istekte üretilir: 8 karakter, karışabilen harfler yok.
+  - Bağlantı: `<WEB_APP_URL>/giris?ref=KOD`.
+- `POST /me/referral/claim { code }` → `{ credits }`. Hatalar:
+  - 403 `verification_required`;
+  - 409 `claim_closed` ya da `already_claimed`;
+  - 400 `own_code`;
+  - 404 `invalid_code` (program kapalıysa da 404).
+  - Hız sınırı promosyon koduyla ortaktır: hesap başına saatte 10, IP başına saatte 30.
+- Defter: `referral_invitee` ve `referral_inviter` → Kredi hareketlerim'de `kind: referral` ("Davet ödülü").
+
+**Admin uçları** (okuma SUPPORT, değiştirme ADMIN; denetim: `referral.settings`, `referral.reject`)
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| GET | `/admin/referrals?status=` | Ayarlar, son 30 gün (katılan, ödüllenen, dağıtılan kredi), bekleyen sayısı, en çok davet edenler, son 100 davet |
+| PATCH | `/admin/referrals/settings` | `{ settings: { enabled, inviterCredits 1–50, inviteeCredits 0–50, monthlyCap 1–100, claimDays 1–60 }, reason, version }`; çakışma 409 |
+| POST | `/admin/referrals/:id/reject` | `{ reason }`; yalnız bekleyen (`PENDING`), değilse 409 `not_pending` |
+
+**Web**
+- `/giris?ref=KOD` kodu bu cihazda 14 gün saklar. Kayıt ve e-posta doğrulaması başka sekmede yapılsa da kod kalır.
+- Hesabım → "Arkadaşını davet et" (11 dil): bağlantı ve "Bağlantıyı kopyala", destekleyen tarayıcıda "Paylaş",
+  sayılar.
+- Yeni hesapta "Davet kodun var mı?" kutusu saklanan kodla dolu gelir.
+
+Gizlilik metnine eklenecek cümle (sahibinin işi): davetin kötüye kullanımını önlemek için e-posta kimliğinin geri
+döndürülemez özeti saklanır.

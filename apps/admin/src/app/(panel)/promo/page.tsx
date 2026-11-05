@@ -215,7 +215,7 @@ function CommonFields({ v, set }: { v: Draft; set: (p: Partial<Draft>) => void }
         </Field>
       </div>
       <label className="flex items-center gap-2 text-xs">
-        <input type="checkbox" checked={v.newUsersOnly} onChange={(e) => set({ newUsersOnly: e.target.checked })} className="h-4 w-4 accent-[var(--primary)]" />
+        <input type="checkbox" aria-label="Yalnız yeni üyeler" checked={v.newUsersOnly} onChange={(e) => set({ newUsersOnly: e.target.checked })} className="h-4 w-4 accent-[var(--primary)]" />
         Yalnız yeni üyeler (kod oluşturulduktan sonra açılan hesaplar)
       </label>
       <Field label="Gerekçe" htmlFor={`${v.kindId}-reason`} hint="Denetim kaydına yazılır (en az 3 karakter).">
