@@ -507,3 +507,7 @@ export type EngineState = {
   updatedAt: string | null;
   updatedBy: string | null;
 };
+
+// Özellik bayrakları (API.md §7.28).
+export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
+export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };

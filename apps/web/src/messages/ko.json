@@ -54,7 +54,8 @@
     "all": "전체",
     "favorites": "즐겨찾기",
     "loadMore": "더 보기",
-    "open": "열기"
+    "open": "열기",
+    "featureOff": "이 기능은 현재 꺼져 있습니다."
   },
   "unsubscribe": {
     "title": "프로모션 이메일",

@@ -54,7 +54,8 @@
     "all": "すべて",
     "favorites": "お気に入り",
     "loadMore": "もっと見る",
-    "open": "開く"
+    "open": "開く",
+    "featureOff": "この機能は現在オフになっています。"
   },
   "unsubscribe": {
     "title": "キャンペーンメール",

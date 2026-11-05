@@ -54,7 +54,8 @@
     "all": "全部",
     "favorites": "收藏",
     "loadMore": "加载更多",
-    "open": "打开"
+    "open": "打开",
+    "featureOff": "此功能目前已关闭。"
   },
   "unsubscribe": {
     "title": "活动邮件",

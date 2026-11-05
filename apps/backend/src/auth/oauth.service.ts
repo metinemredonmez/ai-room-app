@@ -5,6 +5,7 @@ import { AppError, unauthorized } from '../common/errors.js';
 import { PrismaService, RedisService } from '../common/infra.js';
 import { log } from '../common/log.js';
 import { QueuesService } from '../jobs/queues.service.js';
+import { FeaturesService } from '../features/features.service.js';
 import { MailerService, renderActionMail } from '../mail/mailer.service.js';
 import { UsersService } from '../users/users.service.js';
 import { WelcomeService, oauthKey, welcomeEmailKey } from '../users/welcome.service.js';
@@ -47,6 +48,7 @@ export class OAuthService {
     private mailer: MailerService,
     @Inject(CONFIG) private cfg: Config,
     private welcome: WelcomeService,
+    private features: FeaturesService,
   ) {
     const list = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
     this.verifier = new IdTokenVerifier({ google: list(cfg.GOOGLE_CLIENT_IDS), apple: list(cfg.APPLE_CLIENT_IDS) });
@@ -86,6 +88,8 @@ export class OAuthService {
       providerEmailVerified: claims.emailVerified,
     });
     if (decision.kind === 'reject') throw new AppError(decision.status, decision.code, decision.message);
+    // API.md §7.28: with sign-up switched off, Apple/Google only sign existing accounts in (no new account, no guest upgrade).
+    if (decision.kind === 'create' || (decision.kind === 'attach' && decision.upgradeGuest)) this.features.assert('signup');
 
     const target = decision.kind === 'create' ? null : await this.users.get(decision.userId);
     if (target && target.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');

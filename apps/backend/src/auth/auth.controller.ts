@@ -1,6 +1,7 @@
 import { Body, Controller, Headers, HttpCode, Inject, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Doc } from '../common/openapi.js';
+import { FeaturesService } from '../features/features.service.js';
 import { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';
 import { AppError, parse } from '../common/errors.js';
@@ -63,6 +64,7 @@ export class AuthController {
     private oauth: OAuthService,
     @Inject(CONFIG) private cfg: Config,
     private welcome: WelcomeService,
+    private features: FeaturesService,
   ) {}
 
   private async respond(userId: string, familyId?: string) {
@@ -82,6 +84,8 @@ export class AuthController {
       if (existing.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
       return this.respond(existing.id);
     }
+    // API.md §7.28: no new guests while switched off; a device that already has a guest account still signs in.
+    this.features.assert('guest_mode');
     const user = await this.prisma.user.create({ data: { deviceHash, isGuest: true } });
     return this.respond(user.id);
   }
@@ -90,6 +94,7 @@ export class AuthController {
   @Doc('Kayıt ol (geçerli misafir Bearer varsa misafir hesabı yükseltilir)', { body: RegisterSchema, status: 201, response: 'AuthResponse', errors: [400, 409, 429] })
   async register(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(RegisterSchema, body);
+    this.features.assert('signup');
     await this.limiter.hit(LIMITS.register, req.clientIp);
     if (await this.prisma.user.findUnique({ where: { email: input.email } })) {
       throw new AppError(409, 'conflict', 'Bu e-posta ile kayıtlı bir hesap var');

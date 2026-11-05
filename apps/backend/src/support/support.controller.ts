@@ -8,6 +8,7 @@ import { parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { LIMITS, RateLimiter } from '../common/infra.js';
 import { Doc } from '../common/openapi.js';
+import { FeaturesService } from '../features/features.service.js';
 import { CreateTicketSchema, MessageSchema, SupportService } from './support.service.js';
 
 const Id = z.uuid();
@@ -23,7 +24,7 @@ const ListQuery = z.object({
 @Controller('v1/me/support')
 @UseGuards(UserGuard)
 export class SupportController {
-  constructor(private support: SupportService, private limiter: RateLimiter) {}
+  constructor(private support: SupportService, private limiter: RateLimiter, private features: FeaturesService) {}
 
   @Get()
   @Doc('Destek taleplerim', { description: 'Son mesaja göre yeniden eskiye, en çok 50. `userUnread`: okunmamış ekip yanıtı.', errors: [401] })
@@ -35,6 +36,8 @@ export class SupportController {
   @Doc('Destek talebi aç', { body: CreateTicketSchema, status: 201, description: 'Hata ekranından açılırken `requestId` gönderilir. Aynı anda en çok 5 açık talep; saatte 5.', errors: [400, 401, 404, 409, 429] })
   async create(@Auth() auth: AuthContext, @Body() body: unknown) {
     const input = parse(CreateTicketSchema, body);
+    // API.md §7.28: new tickets can be switched off; existing ones stay readable and answerable.
+    this.features.assert('support_tickets');
     await this.limiter.hit(LIMITS.supportCreate, auth.userId);
     return this.support.create(auth.userId, input);
   }

@@ -36,6 +36,8 @@ import { ProductCatalogService } from './catalog/product.service.js';
 import { AdminPromptsController } from './prompts/prompts-admin.controller.js';
 import { AdminEngineController } from './ai/engine-admin.controller.js';
 import { EngineService } from './ai/engine.service.js';
+import { AdminFeaturesController, FeaturesController } from './features/features.controller.js';
+import { FeaturesService } from './features/features.service.js';
 import { PromptTemplatesService } from './prompts/prompts.service.js';
 import { VersionGate } from './common/app-version.js';
 import { ErrorFilter } from './common/errors.js';
@@ -56,7 +58,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -96,6 +98,7 @@ import { UsersService } from './users/users.service.js';
     ProductCatalogService,
     PromptTemplatesService,
     EngineService,
+    FeaturesService,
     ImagesService,
     AiClient,
     DesignsService,

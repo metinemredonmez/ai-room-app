@@ -1388,3 +1388,42 @@ Denetim kaydı: `ai.engine_update` (gerekçe, önceki ve yeni seçim).
   Deneniyor) görünür.
 - Seçilemeyen sağlayıcıların nedeni yazılır.
 - Birincil sağlayıcı değişirken onay istenir. "Sunucu varsayılanına dön" düğmesi vardır.
+
+### 7.28 Özellik bayrakları — backend + admin + web (mobil okur)
+Bir özellik kod değişikliği olmadan admin'den kapatılıp açılır (**Admin → Sistem → Özellikler**; Palemi feature
+flags). Liste kodda sabittir: her bayrak kodun gerçekten kapatabildiği bir özelliği kapatır. Hepsi açık başlar;
+biri kapatılmadıkça hiçbir şey değişmez.
+
+| Bayrak | Kapalıyken |
+|---|---|
+| `assistant_chat` | `POST /chat` → 403. Web'de AI Sohbet bağlantısı gizlenir, sayfa "kapalı" der |
+| `cost_analysis` | Yeni `POST /designs/:id/analysis` → 403. Önceden yapılmış analiz yine döner |
+| `tap_selection` | `POST /uploads/:id/selection` ve `points` içeren `POST /designs` → 403. Stüdyoda dokunarak seçim gizlenir; nesne adı yazılarak seçilir |
+| `support_tickets` | Yeni `POST /me/support` → 403. Açık talepler okunur ve yanıtlanır. Web'de yeni talep formunun yerinde "kapalı" yazar |
+| `guest_mode` | Yeni misafir hesabı açılmaz (`POST /auth/guest` → 403); mevcut misafir cihazı girer. Girişte "Misafir olarak dene" gizlenir |
+| `signup` | `POST /auth/register` ve Apple/Google ile yeni hesap ya da misafirin kayda dönmesi → 403; var olan hesaplar girer. Girişte "Kayıt ol" gizlenir |
+| `blog` | `GET /blog` ve `GET /blog/:slug` → 404; site haritası yazı listelemez. Web'de blog bağlantısı gizlenir |
+
+Reddetme biçimi: 403 `feature_disabled` "<özellik> şu an kapalı.", `details.feature` ile. Eski bir uygulama özelliği
+hâlâ gösterse bile sunucu reddeder.
+
+**Okuma**
+- `GET /features` → `{ features: { anahtar: boolean } }`. Herkese açıktır, 30 saniye önbelleklenir.
+- Aynı nesne `GET /catalog` içinde `features` olarak da gelir.
+- İstemci kuralı: okunamayan ya da eksik bayrak **kapalı** sayılır. Web, katalog yüklenirken mevcut görünümü korur,
+  katalog okunamazsa kapalı sayar.
+
+**Saklama**
+- `Setting` tablosunda `features` satırında durur. Bellekte tutulur, 15 saniyede bir yenilenir; kayıtta hemen geçer.
+- Sonradan eklenen bir bayrak varsayılan değeriyle (açık) gelir.
+- Bozuk satır varsayılanlara döner ve loglanır.
+
+**Admin uçları**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/admin/features` | SUPPORT | `{ features: [{ key, label, description, where, enabled }], version, updatedAt, updatedBy }` |
+| PATCH | `/admin/features` | ADMIN | `{ features: { …7 bayrağın hepsi }, reason, version }`. Bilinmeyen ya da eksik bayrak 400; `version` uymazsa 409 (BUS-02) |
+
+Denetim kaydı: `features.update`, gerekçe ve `assistant_chat: açık → kapalı` gibi değişiklik listesiyle.
+
+Mobil (sonra): açılışta katalogdaki `features` okunur; kapalı özelliklerin girişi gizlenir.

@@ -54,7 +54,8 @@
     "all": "Tümü",
     "favorites": "Favoriler",
     "loadMore": "Daha fazla",
-    "open": "Aç"
+    "open": "Aç",
+    "featureOff": "Bu özellik şu an kapalı."
   },
   "unsubscribe": {
     "title": "Kampanya e-postaları",

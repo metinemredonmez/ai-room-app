@@ -54,7 +54,8 @@
     "all": "Alles",
     "favorites": "Favorieten",
     "loadMore": "Meer laden",
-    "open": "Openen"
+    "open": "Openen",
+    "featureOff": "Deze functie is op dit moment uitgeschakeld."
   },
   "unsubscribe": {
     "title": "Promotiemails",

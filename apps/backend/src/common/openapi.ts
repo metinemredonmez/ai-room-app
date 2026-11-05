@@ -110,7 +110,9 @@ export const COMPONENTS: Record<string, SchemaObject> = Object.fromEntries(
       announcement: z.string().nullable(),
       maintenance: z.object({ enabled: z.boolean(), message: z.string() }),
       legal: z.object({ termsVersion: z.string(), privacyVersion: z.string(), aiProcessingVersion: z.string(), marketingVersion: z.string() }),
+      features: z.record(z.string(), z.boolean()).describe('Özellik bayrakları (API.md §7.28); okunamayan bayrak kapalı sayılır'),
     }),
+    Features: z.object({ features: z.record(z.string(), z.boolean()).describe('assistant_chat, cost_analysis, tap_selection, support_tickets, guest_mode, signup, blog') }),
     ChatReply: z.object({
       reply: z.string(),
       suggestions: z.array(z.object({ label: z.string(), tool: z.string(), styleId: z.string().optional(), roomId: z.string().optional(), instructions: z.string().optional() })),

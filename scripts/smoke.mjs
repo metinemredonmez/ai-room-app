@@ -780,6 +780,31 @@ if (adminToken) {
   ok(back.status === 200 && JSON.stringify(back.json?.choice) === JSON.stringify(e0.json.choice) && audit.some((x) => x.action === 'ai.engine_update' && x.meta?.reason === 'smoke engine restore'),
     'engine restored as it was; changes audited (LOG-01)', String(back.status));
 }
+// API.md §7.28: feature flags — public read, switched-off features refused on the server, put back as they were.
+if (adminToken) {
+  const A = { token: adminToken };
+  const pub = await call('GET', '/features');
+  const keys = ['assistant_chat', 'cost_analysis', 'tap_selection', 'support_tickets', 'guest_mode', 'signup', 'blog'];
+  const catFlags = (await call('GET', '/catalog?locale=tr')).json?.features;
+  ok(pub.status === 200 && keys.every((k) => typeof pub.json?.features?.[k] === 'boolean') && keys.every((k) => typeof catFlags?.[k] === 'boolean'),
+    'feature flags are public (GET /features and in the catalog)', JSON.stringify(pub.json?.features));
+  const f0 = (await call('GET', '/admin/features', A)).json;
+  const flags0 = Object.fromEntries(f0.features.map((f) => [f.key, f.enabled]));
+  const putFlags = (features, version, reason = 'smoke flags test') => call('PATCH', '/admin/features', { ...A, body: { features, reason, version } });
+  const offAll = await putFlags({ ...flags0, assistant_chat: false, blog: false, guest_mode: false }, f0.version);
+  const chatOff = await call('POST', '/chat', { token, body: { messages: [{ role: 'user', text: 'Salonuma ne yakışır?' }] } });
+  const blogOff = await call('GET', '/blog?locale=tr');
+  const guestOff = await call('POST', '/auth/guest', { body: { deviceId: `smoke-flag-${crypto.randomUUID()}` } });
+  ok(offAll.status === 200 && chatOff.status === 403 && chatOff.json?.error?.code === 'feature_disabled' && blogOff.status === 404 && guestOff.status === 403,
+    'switched-off features are refused: chat 403, blog 404, new guest 403', `${offAll.status} ${chatOff.status}/${blogOff.status}/${guestOff.status}`);
+  const stale = await putFlags(flags0, f0.version);
+  const unknown = await putFlags({ ...flags0, admin_mode: true }, offAll.json?.version ?? null);
+  const back = await putFlags(flags0, offAll.json?.version ?? null, 'smoke flags restore');
+  const audit = (await call('GET', '/admin/audit?limit=20', A)).json?.items ?? [];
+  ok(stale.status === 409 && unknown.status === 400 && back.status === 200 && back.json.features.every((f) => f.enabled === flags0[f.key])
+    && audit.some((x) => x.action === 'features.update' && x.meta?.reason === 'smoke flags restore'),
+    'flags: stale version 409, unknown flag 400, restored as they were, audited (LOG-01)', `${stale.status}/${unknown.status}/${back.status}`);
+}
 // API.md §7.22: welcome credits — once per verified identity, not again after deleting and signing up again.
 if (adminToken) {
   const A = { token: adminToken };
@@ -961,6 +986,9 @@ if (adminToken) {
   const sEngine = await call('GET', '/admin/ai-engine', { token: staffToken });
   const sEnginePut = await call('PATCH', '/admin/ai-engine', { token: staffToken, body: { engine: null, reason: 'support tries', version: null } });
   ok(sEngine.status === 403 && sEnginePut.status === 403, 'SUPPORT can neither read nor change the image engine (AZ-01)', `${sEngine.status}/${sEnginePut.status}`);
+  const sFlags = await call('GET', '/admin/features', { token: staffToken });
+  const sFlagsPut = await call('PATCH', '/admin/features', { token: staffToken, body: { features: {}, reason: 'support tries', version: null } });
+  ok(sFlags.status === 200 && sFlagsPut.status === 403, 'SUPPORT reads feature flags but cannot switch them (AZ-01)', `${sFlags.status}/${sFlagsPut.status}`);
   const sOrgs = await call('GET', '/admin/orgs', { token: staffToken });
   const sOrgCreate = await call('POST', '/admin/orgs', { token: staffToken, body: { name: 'Support Firm', ownerEmail: userEmail, reason: 'support tries' } });
   const sOrgCredits = firmIdForStaffCheck ? await call('POST', `/admin/orgs/${firmIdForStaffCheck}/credits`, { token: staffToken, body: { delta: 100, reason: 'support tries' } }) : { status: 403 };
@@ -992,7 +1020,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

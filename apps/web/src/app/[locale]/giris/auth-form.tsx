@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, Eye, EyeOff, LoaderCircle, UserRound } from "lucide-react";
 import { ApiError, authApi } from "@/lib/api";
-import { useApp } from "@/components/app-provider";
+import { useApp, useFeature } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { LogoMark } from "@/components/logo";
 import { btn, input, label } from "@/components/ui";
@@ -24,6 +24,7 @@ function hasPendingInvite() {
 
 export function AuthForm() {
   const { t, user, setUser, refreshUser, href } = useApp();
+  const feature = useFeature();
   const L = t.landing;
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -150,14 +151,17 @@ export function AuthForm() {
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-muted">
-          {login ? t.auth.noAccount : t.auth.haveAccount}{" "}
-          <button type="button" onClick={() => switchMode(login ? "register" : "login")} className="font-medium text-primary hover:underline">
-            {login ? t.auth.registerTab : t.auth.loginTab}
-          </button>
-        </p>
+        {/* API.md §7.28: no "sign up" switch while sign-up is off. */}
+        {(feature("signup") || !login) && (
+          <p className="mt-5 text-center text-sm text-muted">
+            {login ? t.auth.noAccount : t.auth.haveAccount}{" "}
+            <button type="button" onClick={() => switchMode(login ? "register" : "login")} className="font-medium text-primary hover:underline">
+              {login ? t.auth.registerTab : t.auth.loginTab}
+            </button>
+          </p>
+        )}
 
-        {!user && (
+        {!user && feature("guest_mode") && (
           <>
             <div className="my-6 flex items-center gap-3 text-xs text-muted">
               <span className="h-px flex-1 bg-border" /> {t.common.or} <span className="h-px flex-1 bg-border" />

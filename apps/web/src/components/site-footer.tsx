@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "@/components/locale-link";
-import { useApp } from "./app-provider";
+import { useApp, useFeature } from "./app-provider";
 import { Logo } from "./logo";
 
 export function SiteFooter() {
   const { t } = useApp();
+  const feature = useFeature();
   const cols = [
     {
       title: t.footer.product,
       links: [
         { href: "/studio", label: t.nav.studio },
-        { href: "/sohbet", label: t.nav.chat },
+        ...(feature("assistant_chat") ? [{ href: "/sohbet", label: t.nav.chat }] : []),
         { href: "/fiyatlar", label: t.nav.pricing },
-        { href: "/blog", label: t.nav.blog },
+        ...(feature("blog") ? [{ href: "/blog", label: t.nav.blog }] : []),
       ],
     },
     {

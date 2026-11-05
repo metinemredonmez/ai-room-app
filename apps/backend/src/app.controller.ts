@@ -10,6 +10,7 @@ import { TokensService } from './auth/tokens.service.js';
 import { CatalogService } from './catalog/catalog.service.js';
 import { LOCALES, isLocale, type Locale } from './catalog/catalog.data.js';
 import { ProductCatalogService } from './catalog/product.service.js';
+import { FeaturesService } from './features/features.service.js';
 import { AppError, parse } from './common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from './common/http.js';
 import { LIMITS, PrismaService, RateLimiter, RedisService } from './common/infra.js';
@@ -219,6 +220,7 @@ export class UserController {
     private oauth: OAuthService,
     @Inject(CONFIG) private cfg: Config,
     private orgs: OrgsService,
+    private features: FeaturesService,
   ) {}
 
   @Get('me')
@@ -308,6 +310,7 @@ export class UserController {
   @Doc('Dokunarak seçim önizlemesi (maske)', { body: SelectionSchema, response: 'Selection', description: 'Değiştir / Nesne Sil / Duvar Boyası için. `points` (0..1, her nokta bir nesne, en çok 8) ya da `target` (nesne adı; o türün hepsi). Aynı noktalar `POST /designs` içinde `points` olarak gönderilir. Her çağrı ücretli bir SAM 3 isteğidir: 10 dakikada 60. `FAL_KEY` yoksa 503 `selection_unavailable`; nesne bulunamazsa 422 `selection_failed`.', errors: [400, 401, 403, 404, 422, 429, 502, 503] })
   async selection(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(SelectionSchema, body);
+    this.features.assert('tap_selection');
     await this.limiter.hit(LIMITS.selection, auth.userId);
     return this.designs.selection(auth.userId, id, input, req.id);
   }
@@ -327,6 +330,7 @@ export class UserController {
     @Headers('idempotency-key') idemKey?: string,
   ) {
     const input = parse(CreateDesignSchema, body);
+    if (input.points) this.features.assert('tap_selection');
     const mode = /\brespond-async\b/i.test(prefer ?? '') ? 'async' : 'sync';
     let idem: string | null = null;
     if (idemKey !== undefined) {
@@ -482,7 +486,7 @@ export class UserController {
   async analysis(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
     const { imageId } = parse(AnalysisSchema, body ?? {});
     await this.limiter.hit(LIMITS.analysis, auth.userId);
-    return this.designs.analysis(auth.userId, id, imageId, localeOf(req), req.id);
+    return this.designs.analysis(auth.userId, id, imageId, localeOf(req), req.id, () => this.features.assert('cost_analysis'));
   }
 
   /** AI-01: the assistant only advises; suggestions come back as data the user must tap to run. */
@@ -490,6 +494,7 @@ export class UserController {
   @Doc('AI tasarım sohbeti (öneriler yalnız veri; istemci kullanıcı onayı olmadan üretim başlatmaz, AI-01)', { body: ChatSchema, status: 201, response: 'ChatReply', errors: [400, 401, 404, 429, 502] })
   async chat(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(ChatSchema, body);
+    this.features.assert('assistant_chat');
     await this.limiter.hit(LIMITS.chatUser, auth.userId);
     await this.limiter.hit(LIMITS.chatIp, req.clientIp);
     const locale = input.locale ?? localeOf(req);

@@ -3,7 +3,7 @@
 import { ArrowLeft, LifeBuoy, LoaderCircle, Send } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { useApp } from "@/components/app-provider";
+import { useApp, useFeature } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { btn, card, input, label } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -22,6 +22,7 @@ const RID = /^[A-Za-z0-9-]{8,64}$/;
 
 export function SupportView() {
   const { t, user, userReady, ensureSession } = useApp();
+  const feature = useFeature();
   const s = t.support;
   const params = useSearchParams();
   const rid = params.get("rid") && RID.test(params.get("rid")!) ? params.get("rid")! : null;
@@ -65,15 +66,20 @@ export function SupportView() {
         />
       ) : (
         <>
-          <NewTicket
-            rid={rid}
-            onError={setError}
-            onCreated={async (ticket) => {
-              setNotice(fmt(s.sent, { ref: ticket.reference }));
-              setOpenId(ticket.id);
-            }}
-            ensureSession={ensureSession}
-          />
+          {feature("support_tickets") ? (
+            <NewTicket
+              rid={rid}
+              onError={setError}
+              onCreated={async (ticket) => {
+                setNotice(fmt(s.sent, { ref: ticket.reference }));
+                setOpenId(ticket.id);
+              }}
+              ensureSession={ensureSession}
+            />
+          ) : (
+            // API.md §7.28: new tickets switched off; existing ones stay readable below.
+            <p className={`${card} p-6 text-sm text-muted sm:p-8`}>{t.common.featureOff}</p>
+          )}
           <section className={`${card} p-6 sm:p-8`}>
             <h2 className="text-lg font-medium">{s.myTickets}</h2>
             {user && !tickets ? (

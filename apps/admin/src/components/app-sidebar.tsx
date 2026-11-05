@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   WandSparkles,
   Cpu,
+  ToggleRight,
   FileText,
   ListChecks,
   Megaphone,
@@ -139,6 +140,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     label: "Sistem",
     items: [
       { href: "/settings", label: "Ayarlar", icon: SlidersHorizontal },
+      { href: "/features", label: "Özellikler", icon: ToggleRight },
       { href: "/jobs", label: "Zamanlı işler", icon: ListChecks },
       { href: "/audit", label: "Denetim kaydı", icon: ScrollText },
       { href: "/system", label: "Sistem durumu", icon: Activity },

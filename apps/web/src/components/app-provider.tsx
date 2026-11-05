@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import { useRouter } from "next/navigation";
 import { ApiError, api, authApi } from "@/lib/api";
 import { LOCALE_COOKIE, localePath, splitLocale, type Dict, type Locale } from "@/lib/i18n";
-import type { Catalog, MyOrg, User } from "@/lib/types";
+import type { Catalog, FeatureKey, MyOrg, User } from "@/lib/types";
 
 // ---- locale: comes from the URL (server layout); the cookie remembers it and lets the BFF send Accept-Language ----
 
@@ -218,4 +218,17 @@ export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used inside <AppProvider>");
   return ctx;
+}
+
+const noSubscribe = () => () => {};
+
+/**
+ * Feature flags (API.md §7.28). While a component hydrates it renders what the server rendered (everything on), so a
+ * catalog that arrived first can never cause a hydration mismatch; afterwards a flag the catalog does not confirm is
+ * off, and an unreadable catalog means off.
+ */
+export function useFeature(): (key: FeatureKey) => boolean {
+  const { catalog, catalogError } = useApp();
+  const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
+  return (key) => (!hydrated ? true : catalog ? catalog.features?.[key] === true : !catalogError);
 }

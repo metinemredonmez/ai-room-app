@@ -54,7 +54,8 @@
     "all": "All",
     "favorites": "Favorites",
     "loadMore": "Load more",
-    "open": "Open"
+    "open": "Open",
+    "featureOff": "This feature is currently turned off."
   },
   "unsubscribe": {
     "title": "Campaign e-mails",

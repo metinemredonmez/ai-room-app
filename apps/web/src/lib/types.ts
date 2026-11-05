@@ -136,7 +136,11 @@ export type Catalog = {
   floors: { id: string; name: string }[];
   colors: { id: string; name: string; hex: string }[];
   plans: Plan[];
+  /** Feature flags (API.md §7.28); a flag that is missing counts as off. */
+  features?: Partial<Record<FeatureKey, boolean>>;
 };
+
+export type FeatureKey = "assistant_chat" | "cost_analysis" | "tap_selection" | "support_tickets" | "guest_mode" | "signup" | "blog";
 
 export type CreateDesign = {
   tool: ToolId;

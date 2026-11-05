@@ -10,6 +10,7 @@ import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js'
 import { Doc } from '../common/openapi.js';
 import { SLUG_RE } from '../marketing/marketing.rules.js';
 import { BlogService } from './blog.service.js';
+import { FeaturesService } from '../features/features.service.js';
 
 const localeOrTr = (l: unknown) => (isLocale(l) ? l : 'tr');
 
@@ -17,17 +18,24 @@ const localeOrTr = (l: unknown) => (isLocale(l) ? l : 'tr');
 @ApiTags('public')
 @Controller('v1')
 export class BlogController {
-  constructor(private blog: BlogService) {}
+  constructor(private blog: BlogService, private features: FeaturesService) {}
+
+  /** API.md §7.28: with the blog switched off, its pages answer 404 and the sitemap lists none. */
+  private assertOn() {
+    if (!this.features.enabled('blog')) throw new AppError(404, 'not_found', 'Blog şu an kapalı');
+  }
 
   @Get('blog')
   @Doc('Yayındaki blog yazıları', { description: '`?locale=` (11 dil), yeniden eskiye, en çok 100.' })
   list(@Query('locale') locale?: string) {
+    this.assertOn();
     return this.blog.listPublic(localeOrTr(locale));
   }
 
   @Get('blog/sitemap')
   @Doc('Site haritası için bütün yayındaki yazılar (dil, adres, çeviri grubu)')
   sitemap() {
+    if (!this.features.enabled('blog')) return { items: [] };
     return this.blog.sitemap();
   }
 
@@ -35,6 +43,7 @@ export class BlogController {
   @Doc('Blog yazısı', { description: '`?locale=`; gövde Markdown alt kümesi; `translations` hreflang için.', errors: [404] })
   get(@Param('slug') slug: string, @Query('locale') locale?: string) {
     if (!SLUG_RE.test(slug) || slug.length > 80) throw new AppError(404, 'not_found', 'Yazı bulunamadı');
+    this.assertOn();
     return this.blog.getPublic(localeOrTr(locale), slug);
   }
 

@@ -103,6 +103,7 @@ describe('1. AI-processing consent on every path that sends a photo', () => {
     const ctrl = new UserController(
       {} as never, {} as never, images as never, ds as never, catalog as never, ai as never, {} as never, limiter as never,
       {} as never, usage as never, {} as never, {} as never, {} as never, {} as never, {} as never,
+      { assert: () => undefined } as never,
     );
     const req = { query: {}, headers: {}, clientIp: '1', id: 'rid' } as never;
     const withPhoto = { messages: [{ role: 'user', text: 'Bu oda?', imageId: randomUUID() }] };

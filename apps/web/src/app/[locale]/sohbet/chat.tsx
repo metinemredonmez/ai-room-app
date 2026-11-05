@@ -7,7 +7,7 @@ import { ApiError, api } from "@/lib/api";
 import { ImageInputError, fileToUpload } from "@/lib/image";
 import { clearChatPrefill, peekChatPrefill, setStudioPrefill } from "@/lib/prefill";
 import type { Design, ImageRef, Page, Suggestion } from "@/lib/types";
-import { useApp } from "@/components/app-provider";
+import { useApp, useFeature } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { ToolIcon } from "@/components/icons";
 import { btn, card } from "@/components/ui";
@@ -19,6 +19,7 @@ const MAX_HISTORY = 20;
 
 export function Chat() {
   const { t, catalog, ensureSession, href } = useApp();
+  const feature = useFeature();
   const router = useRouter();
   const [initialImage] = useState(() => peekChatPrefill()?.image ?? null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -114,6 +115,16 @@ export function Chat() {
   }
 
   const toolName = (id: string) => catalog?.tools.find((x) => x.id === id)?.name ?? id;
+
+  // API.md §7.28: the assistant can be switched off from the admin.
+  if (!feature("assistant_chat")) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+        <h1 className="font-display text-4xl font-light">{t.chat.title}</h1>
+        <p className="mt-4 text-muted">{t.common.featureOff}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col px-4 py-8 sm:px-6 sm:py-10">

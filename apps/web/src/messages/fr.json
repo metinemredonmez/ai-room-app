@@ -54,7 +54,8 @@
     "all": "Tout",
     "favorites": "Favoris",
     "loadMore": "Voir plus",
-    "open": "Ouvrir"
+    "open": "Ouvrir",
+    "featureOff": "Cette fonctionnalité est désactivée pour le moment."
   },
   "unsubscribe": {
     "title": "E-mails promotionnels",

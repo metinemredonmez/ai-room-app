@@ -54,7 +54,8 @@
     "all": "Alle",
     "favorites": "Favoriten",
     "loadMore": "Mehr laden",
-    "open": "Öffnen"
+    "open": "Öffnen",
+    "featureOff": "Diese Funktion ist derzeit deaktiviert."
   },
   "unsubscribe": {
     "title": "Aktions-E-Mails",

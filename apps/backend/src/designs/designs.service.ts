@@ -478,12 +478,14 @@ export class DesignsService {
     await this.images.remove(d.results.map((r) => r.id));
   }
 
-  async analysis(userId: string, designId: string, imageId: string | undefined, locale: Locale, requestId: string) {
+  /** `beforeNew` runs only when a new analysis is needed (e.g. the feature flag, API.md §7.28): a cached one is always shown. */
+  async analysis(userId: string, designId: string, imageId: string | undefined, locale: Locale, requestId: string, beforeNew?: () => void) {
     const d = await this.getOwned(userId, designId);
     const target = imageId ? d.results.find((r) => r.id === imageId) : d.results[0];
     if (!target) throw notFound();
     const cached = await this.prisma.analysis.findUnique({ where: { designId_imageId: { designId, imageId: target.id } } });
     if (cached) return this.analysisDto(cached);
+    beforeNew?.();
     // A new analysis sends the result image to the AI provider: same consent and budget brake as generating it.
     await this.assertAiConsent(userId);
     await this.assertBudgetFor(userId);

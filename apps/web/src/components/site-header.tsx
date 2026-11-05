@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Building, Crown, LogOut, Menu, Sparkles, User as UserIcon, X } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { splitLocale, fmt } from "@/lib/i18n";
-import { useApp } from "./app-provider";
+import { useApp, useFeature } from "./app-provider";
 import { Logo } from "./logo";
 import { btn } from "./ui";
 import { LanguagePicker } from "./language-picker";
@@ -87,6 +87,7 @@ export function HeaderFallback() {
 
 export function SiteHeader() {
   const { t, user, logout, href, orgs } = useApp();
+  const feature = useFeature();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -94,7 +95,7 @@ export function SiteHeader() {
   const links = [
     { href: "/studio", label: t.nav.studio },
     { href: "/tasarimlarim", label: t.nav.designs },
-    { href: "/sohbet", label: t.nav.chat },
+    ...(feature("assistant_chat") ? [{ href: "/sohbet", label: t.nav.chat }] : []),
     { href: "/fiyatlar", label: t.nav.pricing },
     ...(orgs.length ? [{ href: "/ekip", label: t.team.teamLink }] : []),
   ];

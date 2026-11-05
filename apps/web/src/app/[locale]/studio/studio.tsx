@@ -6,7 +6,7 @@ import { ApiError, api } from "@/lib/api";
 import { ImageInputError, fileToUpload } from "@/lib/image";
 import { clearStudioPrefill, peekStudioPrefill, type StudioPrefill } from "@/lib/prefill";
 import type { CreateDesign, Design, ImageRef, Point, Project, SampleId, Selection, ToolId } from "@/lib/types";
-import { useApp } from "@/components/app-provider";
+import { useApp, useFeature } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { RoomIcon, ToolIcon } from "@/components/icons";
 import { ResultView } from "@/components/result-view";
@@ -67,6 +67,7 @@ function ProgressOverlay({ elapsed }: { elapsed: number }) {
 
 export function Studio() {
   const { t, catalog, catalogError, reloadCatalog, user, ensureSession, refreshUser, activeOrg, refreshOrgs } = useApp();
+  const feature = useFeature();
   const [initial] = useState(readInitial);
 
   const [toolId, setToolId] = useState<ToolId>(initial.tool ?? "redesign");
@@ -151,7 +152,8 @@ export function Studio() {
   const effFloor = catalog.floors.find((f) => f.id === floorId) ?? catalog.floors[0];
   const effColor = catalog.colors.find((c) => c.id === colorId) ?? catalog.colors[0];
   const points = steps.at(-1)?.points ?? [];
-  const canTap = Boolean(needs.points) && !tapOff && !(needs.removeAll && removeAll);
+  // API.md §7.28: tap selection can be switched off; the object is then named instead.
+  const canTap = Boolean(needs.points) && !tapOff && feature("tap_selection") && !(needs.removeAll && removeAll);
   const selectHint = t.studio.select.hint[tool.id as keyof typeof t.studio.select.hint] ?? t.studio.select.hint.replace;
 
   function clearSelection() {

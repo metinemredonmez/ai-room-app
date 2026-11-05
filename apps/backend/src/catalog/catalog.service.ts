@@ -14,6 +14,7 @@ import { PlansService } from '../billing/plans.service.js';
 import { PLANS, type Locale } from './catalog.data.js';
 import { localize } from './catalog.i18n.js';
 import { ProductCatalogService } from './product.service.js';
+import { FeaturesService } from '../features/features.service.js';
 
 // Curated style photos (assets/styles/<id>.jpg): the sample living room redesigned in that style with the
 // production image model. src/catalog and dist/catalog both resolve to apps/backend/assets. Bump the version
@@ -28,6 +29,7 @@ export class CatalogService {
   constructor(
     private prisma: PrismaService, private settings: SettingsService, private legal: LegalService, @Inject(CONFIG) private cfg: Config, private plans: PlansService,
     private product: ProductCatalogService,
+    private features: FeaturesService,
   ) {}
 
   async styles(includeInactive = false): Promise<Style[]> {
@@ -84,6 +86,8 @@ export class CatalogService {
       creditPacks: (await this.plans.forPaywall('en')).packs.flatMap((p) =>
         [...new Set([p.productIds.ios, p.productIds.android])].filter((id): id is string => !!id).map((productId) => ({ productId, credits: p.credits })),
       ),
+      /** Feature flags (API.md §7.28), also at GET /v1/features. */
+      features: this.features.current,
       /** Credits a new registered, verified account gets once; 0 = off (API.md §7.22). */
       welcomeCredits: this.settings.current.welcomeCredits,
       ...this.notices(locale),
