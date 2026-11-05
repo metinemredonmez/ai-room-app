@@ -1,13 +1,14 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/api";
 import { rememberVia } from "@/lib/attribution";
 
-export function PartnerRedirect({ slug }: { slug: string }) {
+export function PartnerRedirect() {
+  const slug = (useParams<{ slug: string }>().slug ?? "").toLowerCase();
   const { href } = useApp();
   const router = useRouter();
   const counted = useRef(false);
