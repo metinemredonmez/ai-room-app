@@ -48,7 +48,13 @@ function fake() {
         const m = members.find(mkey(w));
         return m ? (include ? { ...m, org } : m) : null;
       },
-      findMany: async ({ where: w }: { where: { userId: string } }) => members.filter((m) => m.userId === w.userId).map((m) => ({ ...m, org })),
+      findMany: async ({ where: w }: { where: { userId?: string; orgId?: string } }) =>
+        members
+          .filter((m) => (!w.userId || m.userId === w.userId) && (!w.orgId || m.orgId === w.orgId))
+          .map((m) => ({ ...m, org, user: users.find((u) => u.id === m.userId) ?? { email: null, name: null } })),
+      findFirst: async ({ where: w }: { where: { orgId: string; role: string } }) => members.find((m) => m.orgId === w.orgId && m.role === w.role) ?? null,
+      update: async ({ where: w, data }: { where: { orgId_userId: { orgId: string; userId: string } }; data: Record<string, unknown> }) => Object.assign(members.find(mkey(w))!, data),
+      delete: async ({ where: w }: { where: { orgId_userId: { orgId: string; userId: string } } }) => void members.splice(members.findIndex(mkey(w)), 1),
       count: async ({ where: w }: { where: { orgId?: string; userId?: string } }) => members.filter((m) => (!w.orgId || m.orgId === w.orgId) && (!w.userId || m.userId === w.userId)).length,
       create: async ({ data }: { data: { orgId: string; userId: string; role: string; monthlyCap: number | null } }) => void members.push({ ...data, createdAt: new Date() }),
     },
@@ -63,6 +69,7 @@ function fake() {
         return { count: hit.length };
       },
       count: async ({ where: w }: { where: Record<string, unknown> }) => invites.filter((i) => where(i, w)).length,
+      findMany: async ({ where: w }: { where: Record<string, unknown> }) => invites.filter((i) => where(i, w)),
       create: async ({ data }: { data: Omit<Invite, 'id' | 'acceptedAt' | 'acceptedBy' | 'revokedAt' | 'createdAt'> }) => {
         const i: Invite = { id: randomUUID(), acceptedAt: null, acceptedBy: null, revokedAt: null, createdAt: new Date(), ...data };
         invites.push(i);
@@ -71,6 +78,7 @@ function fake() {
     },
     orgLedger: {
       create: async ({ data }: { data: { orgId: string; userId: string; delta: number; reason: string; refId?: string } }) => void ledger.push({ ...data, createdAt: new Date() }),
+      groupBy: async () => [],
       aggregate: async ({ where: w }: { where: { orgId: string; userId: string } }) => ({
         _sum: { delta: ledger.filter((l) => l.orgId === w.orgId && l.userId === w.userId && ['generation', 'refund'].includes(l.reason)).reduce((s, l) => s + l.delta, 0) },
       }),
@@ -190,5 +198,66 @@ describe('firm workspace credits', () => {
     f.join(member.id, 'MEMBER', 3);
     expect((await f.svc.myOrgs(owner.id))[0]).toMatchObject({ role: 'OWNER', credits: 20, monthlyCap: null, remainingThisMonth: null });
     expect((await f.svc.myOrgs(member.id))[0]).toMatchObject({ role: 'MEMBER', credits: null, monthlyCap: 3, remainingThisMonth: 3 });
+  });
+});
+
+describe('the firm runs its own team (step 3)', () => {
+  async function team() {
+    const f = fake();
+    const owner = f.addUser('sahip@example.com');
+    const admin = f.addUser('yonetici@example.com');
+    const m1 = f.addUser('uye1@example.com');
+    const m2 = f.addUser('uye2@example.com');
+    f.join(owner.id, 'OWNER');
+    f.join(admin.id, 'ADMIN');
+    f.join(m1.id, 'MEMBER');
+    f.join(m2.id, 'MEMBER');
+    return { f, owner, admin, m1, m2 };
+  }
+
+  it('managers see addresses, usage and the pool; a member sees names, roles and their own allowance only', async () => {
+    const { f, owner, m1 } = await team();
+    const asOwner = await f.svc.team(f.org.id, owner.id);
+    expect(asOwner).toMatchObject({ role: 'OWNER', credits: 20 });
+    expect(asOwner.members[0]).toHaveProperty('email');
+    const asMember = await f.svc.team(f.org.id, m1.id);
+    expect(asMember).toMatchObject({ role: 'MEMBER', credits: null, memberMonthlyCap: null, invites: [] });
+    expect(asMember.members.every((m) => !('email' in m) && !('usedThisMonth' in m))).toBe(true);
+    const outsider = f.addUser('dis@example.com');
+    await expect(f.svc.team(f.org.id, outsider.id)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('an admin invites members only; a member cannot invite (AZ-01)', async () => {
+    const { f, admin, m1 } = await team();
+    await expect(f.svc.teamInvite(f.org.id, admin.id, { email: 'a@example.com', role: 'ADMIN', monthlyCap: null })).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamInvite(f.org.id, m1.id, { email: 'b@example.com', role: 'MEMBER', monthlyCap: null })).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamInvite(f.org.id, admin.id, { email: 'c@example.com', role: 'MEMBER', monthlyCap: 4 })).resolves.toMatchObject({ email: 'c@example.com', role: 'MEMBER' });
+    await expect(f.svc.teamRevokeInvite(f.org.id, m1.id, f.invites[0].id)).rejects.toMatchObject({ status: 403 });
+    await f.svc.teamRevokeInvite(f.org.id, admin.id, f.invites[0].id);
+    expect(f.invites[0].revokedAt).not.toBeNull();
+  });
+
+  it('roles: only the owner changes roles and hands over; an admin sets members\' caps; nobody edits themselves', async () => {
+    const { f, owner, admin, m1, m2 } = await team();
+    await expect(f.svc.teamUpdateMember(f.org.id, admin.id, m1.id, { role: 'ADMIN' })).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamUpdateMember(f.org.id, admin.id, owner.id, { monthlyCap: 1 })).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamUpdateMember(f.org.id, m1.id, m2.id, { monthlyCap: 1 })).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamUpdateMember(f.org.id, admin.id, admin.id, { monthlyCap: 99 })).rejects.toMatchObject({ status: 409, code: 'cannot_change_self' });
+    await f.svc.teamUpdateMember(f.org.id, admin.id, m1.id, { monthlyCap: 6 });
+    expect(f.members.find((m) => m.userId === m1.id)?.monthlyCap).toBe(6);
+    await f.svc.teamUpdateMember(f.org.id, owner.id, m2.id, { role: 'OWNER' });
+    expect(f.members.filter((m) => m.role === 'OWNER').map((m) => m.userId)).toEqual([m2.id]);
+    expect(f.members.find((m) => m.userId === owner.id)?.role).toBe('ADMIN');
+  });
+
+  it('removing and leaving: the owner stays until they hand over', async () => {
+    const { f, owner, admin, m1, m2 } = await team();
+    await expect(f.svc.teamRemoveMember(f.org.id, admin.id, owner.id)).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamRemoveMember(f.org.id, m1.id, m2.id)).rejects.toMatchObject({ status: 403 });
+    await expect(f.svc.teamRemoveMember(f.org.id, admin.id, admin.id)).rejects.toMatchObject({ status: 409, code: 'use_leave' });
+    await f.svc.teamRemoveMember(f.org.id, admin.id, m1.id);
+    await expect(f.svc.leave(f.org.id, owner.id)).rejects.toMatchObject({ status: 409, code: 'owner_transfer_required' });
+    await f.svc.leave(f.org.id, m2.id);
+    expect(f.members.map((m) => m.userId).sort()).toEqual([owner.id, admin.id].sort());
   });
 });

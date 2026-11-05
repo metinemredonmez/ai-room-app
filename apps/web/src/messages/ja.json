@@ -17,7 +17,8 @@
       "legal": "規約・ポリシー",
       "deletion": "アカウントの削除",
       "support": "サポート",
-      "invite": "チームへの招待"
+      "invite": "チームへの招待",
+      "team": "チーム"
     }
   },
   "brandTagline": "お部屋を数秒でリデザイン",
@@ -626,5 +627,47 @@
     "mismatch": "この招待は{email}に送信されました。そのアドレスでログインしてください。",
     "verifyFirst": "まずメールアドレスを確認してください。確認メールが受信トレイに届いています。",
     "switchAccount": "別のアカウントでログイン"
+  },
+  "team": {
+    "personal": "個人",
+    "switchLabel": "ワークスペース",
+    "pillRemaining": "{org}・残り{n}",
+    "pillPool": "{org}・プール{n}",
+    "title": "チーム",
+    "intro": "会社のワークスペースで作成したデザインは会社のクレジットで支払われます。個人のクレジットは使われません。",
+    "chooseFirm": "会社",
+    "yourRole": "あなたの役割：{role}",
+    "allowance": "今月の残り：{n}",
+    "noCap": "今月の上限はありません。",
+    "pool": "会社のプール：{n}クレジット",
+    "suspended": "この会社は停止中のため、ワークスペースでデザインを作成できません。",
+    "members": "メンバー",
+    "you": "あなた",
+    "cap": "月間上限",
+    "capDefault": "既定",
+    "usage": "今月",
+    "save": "保存",
+    "remove": "削除",
+    "removeConfirm": "{name}を会社から削除しますか？",
+    "transfer": "オーナー権限を譲渡",
+    "transferConfirm": "{name}をオーナーにしますか？あなたは管理者になります。",
+    "invite": "チームに招待",
+    "email": "メール",
+    "role": "役割",
+    "send": "招待を送信",
+    "sent": "招待を送信しました。",
+    "pending": "保留中の招待",
+    "revoke": "取り消す",
+    "expires": "{date}まで",
+    "leave": "会社を離れる",
+    "leaveConfirm": "{org}を離れますか？そのワークスペースのデザインにはアクセスできなくなります。",
+    "empty": "まだどの会社にも所属していません。会社からのメール招待を開くとここに表示されます。",
+    "studioNote": "会社のワークスペース：デザインは{org}のクレジットで支払われます。",
+    "teamLink": "チーム",
+    "roles": {
+      "ADMIN": "管理者",
+      "MEMBER": "メンバー",
+      "OWNER": "オーナー"
+    }
   }
 }

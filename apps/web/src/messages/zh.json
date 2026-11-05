@@ -17,7 +17,8 @@
       "legal": "法律文件",
       "deletion": "删除账户",
       "support": "帮助与支持",
-      "invite": "团队邀请"
+      "invite": "团队邀请",
+      "team": "团队"
     }
   },
   "brandTagline": "几秒钟，重新设计你的房间",
@@ -626,5 +627,47 @@
     "mismatch": "此邀请发送至 {email}，请使用该地址登录。",
     "verifyFirst": "请先验证你的邮箱，验证邮件在你的收件箱中。",
     "switchAccount": "使用其他账户登录"
+  },
+  "team": {
+    "personal": "个人",
+    "switchLabel": "工作区",
+    "pillRemaining": "{org} · 剩余 {n}",
+    "pillPool": "{org} · 额度池 {n}",
+    "title": "团队",
+    "intro": "在公司工作区中生成的设计使用公司积分支付，你的个人积分不受影响。",
+    "chooseFirm": "公司",
+    "yourRole": "你的角色：{role}",
+    "allowance": "本月剩余：{n}",
+    "noCap": "你本月没有上限。",
+    "pool": "公司额度池：{n} 积分",
+    "suspended": "该公司已暂停，无法在其工作区生成设计。",
+    "members": "成员",
+    "you": "你",
+    "cap": "每月上限",
+    "capDefault": "默认",
+    "usage": "本月",
+    "save": "保存",
+    "remove": "移除",
+    "removeConfirm": "将 {name} 移出公司？",
+    "transfer": "转让所有权",
+    "transferConfirm": "将 {name} 设为所有者？你将成为管理员。",
+    "invite": "邀请加入团队",
+    "email": "邮箱",
+    "role": "角色",
+    "send": "发送邀请",
+    "sent": "邀请已发送。",
+    "pending": "待处理的邀请",
+    "revoke": "撤回",
+    "expires": "至 {date}",
+    "leave": "离开公司",
+    "leaveConfirm": "离开 {org}？你将无法再访问其工作区中的设计。",
+    "empty": "你尚未加入任何公司。打开公司发来的邮件邀请后会显示在这里。",
+    "studioNote": "公司工作区：设计使用 {org} 的积分支付。",
+    "teamLink": "团队",
+    "roles": {
+      "ADMIN": "管理员",
+      "MEMBER": "成员",
+      "OWNER": "所有者"
+    }
   }
 }

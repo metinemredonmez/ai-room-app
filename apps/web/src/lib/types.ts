@@ -134,6 +134,8 @@ export type CreateDesign = {
   removeAll?: boolean;
   referenceImageId?: string;
   points?: Point[];
+  /** API.md §7.23: make it in this firm's workspace. */
+  orgId?: string;
 };
 
 /** A tap on the photo, 0..1 from the top-left; each point selects one object. */
@@ -147,3 +149,16 @@ export type ChatMessage = { role: "user" | "assistant"; text: string; imageId?: 
 export type Page<T> = { items: T[]; nextCursor: string | null };
 
 export type SampleId = "living_room" | "empty_room" | "bedroom" | "exterior" | "garden";
+
+/** API.md §7.23: a firm I belong to (GET /me/orgs). `credits` (the pool) only for OWNER/ADMIN. */
+export type MyOrg = {
+  id: string;
+  name: string;
+  status: "ACTIVE" | "SUSPENDED";
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  monthlyCap: number | null;
+  usedThisMonth: number;
+  remainingThisMonth: number | null;
+  credits: number | null;
+  joinedAt: string;
+};

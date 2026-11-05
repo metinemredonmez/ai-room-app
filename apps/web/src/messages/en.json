@@ -17,7 +17,8 @@
       "legal": "Legal",
       "deletion": "Delete your account",
       "support": "Support",
-      "invite": "Team invitation"
+      "invite": "Team invitation",
+      "team": "Team"
     }
   },
   "brandTagline": "Redesign your room in seconds",
@@ -626,5 +627,47 @@
     "mismatch": "This invitation was sent to {email}; sign in with that address.",
     "verifyFirst": "Verify your e-mail address first; the verification e-mail is in your inbox.",
     "switchAccount": "Sign in with another account"
+  },
+  "team": {
+    "personal": "Personal",
+    "switchLabel": "Workspace",
+    "pillRemaining": "{org} · {n} left",
+    "pillPool": "{org} · pool {n}",
+    "title": "Team",
+    "intro": "Designs made in a firm's workspace are paid from the firm's credits; your personal credits stay untouched.",
+    "chooseFirm": "Firm",
+    "yourRole": "Your role: {role}",
+    "allowance": "Left for you this month: {n}",
+    "noCap": "No monthly limit for you.",
+    "pool": "Firm pool: {n} credits",
+    "suspended": "This firm is suspended; designs can't be made in its workspace.",
+    "members": "Members",
+    "you": "you",
+    "cap": "Monthly limit",
+    "capDefault": "default",
+    "usage": "This month",
+    "save": "Save",
+    "remove": "Remove",
+    "removeConfirm": "Remove {name} from the firm?",
+    "transfer": "Hand over ownership",
+    "transferConfirm": "Make {name} the owner? You'll become an admin.",
+    "invite": "Invite to the team",
+    "email": "E-mail",
+    "role": "Role",
+    "send": "Send invitation",
+    "sent": "Invitation sent.",
+    "pending": "Pending invitations",
+    "revoke": "Withdraw",
+    "expires": "until {date}",
+    "leave": "Leave the firm",
+    "leaveConfirm": "Leave {org}? You'll no longer reach your designs in its workspace.",
+    "empty": "You're not in a firm yet. It appears here once you open a firm's e-mail invitation.",
+    "studioNote": "Firm workspace: designs are paid from {org}'s credits.",
+    "teamLink": "Team",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Member",
+      "OWNER": "Owner"
+    }
   }
 }

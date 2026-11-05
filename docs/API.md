@@ -1113,7 +1113,43 @@ istenirse 4. adımda projelerle ele alınacak.
 
 Mobil (sonra): stüdyoda "Kişisel / Firma" seçimi, `orgId` ile üretim, `GET /me/orgs` ile kalan hak.
 
+#### 7.23.3 Firmanın kendi ekibi ve web çalışma alanı (3. adım)
+
+**Yetki** (son karar sunucuda; üye olmayana 404, yetkisiz üyeye 403 `org_forbidden`)
+
+| İşlem | Sahip | Yönetici | Üye |
+|---|---|---|---|
+| Ekibi görmek | e-postalar, kullanım, davetler, havuz | aynı | yalnız ad + rol ve kendi hakkı |
+| Davet | yönetici ya da üye | yalnız üye | — |
+| Davet geri alma | ✓ | ✓ | — |
+| Rol değiştirme, sahiplik devri | ✓ (kendi dışında) | — | — |
+| Aylık sınır | herkes (kendi dışında) | yalnız üyeler | — |
+| Çıkarma | yönetici ya da üye | yalnız üye | — |
+| Ayrılma | önce devretmeli (409) | ✓ | ✓ |
+
+Kimse kendi satırını bu uçlardan değiştiremez (409 `cannot_change_self` / `use_leave`). Davet gönderme kullanıcı
+başına saatte 30. Her işlem kullanıcı adına denetlenir: `org.team_invite`, `org.team_invite_revoke`,
+`org.team_member_update`, `org.team_owner_transfer`, `org.team_member_remove`, `org.leave`.
+
+| Yöntem | Yol | Not |
+|---|---|---|
+| GET | `/orgs/:orgId` | Ekip sayfası (role göre alanlar) |
+| POST | `/orgs/:orgId/invites` | `{ email, role?, monthlyCap? }` → 201 ekip |
+| POST | `/orgs/:orgId/invites/:inviteId/revoke` | → 201 ekip |
+| PATCH | `/orgs/:orgId/members/:userId` | `{ role?, monthlyCap? }`; `role: OWNER` sahipliği devreder |
+| POST | `/orgs/:orgId/members/:userId/remove` | → 201 ekip |
+| POST | `/orgs/:orgId/leave` | → 204 |
+
+**Web**
+- Üst menüde çalışma alanı seçici ("Kişisel" / firma adları). Yalnız firma üyelerine görünür; askıdaki firma
+  seçilemez. Seçim tarayıcıda hatırlanır (`localStorage`), firmadan çıkınca kişisele döner.
+- Firma alanında:
+  - kredi göstergesi "Firma · N hak" gösterir ve ekip sayfasına gider;
+  - stüdyo `orgId` ile üretir ve "tasarımlar firma kredisinden harcar" notunu gösterir;
+  - "Tasarımlarım" o firmadaki tasarımları listeler.
+- `/ekip` sayfası (11 dil, arama motorlarına kapalı): firma seçimi, rol ve kalan hak, havuz (yöneticilere), üyeler
+  (rol, sahiplik devri, sınır, çıkarma), davet formu, bekleyen davetler, firmadan ayrılma.
+
 Sonraki adımlar:
-- **3. adım:** web ekip sayfası.
 - **4. adım:** projeler.
 - **5. adım:** logolu sunum, alan adıyla katılım, kartla ödeme, SSO.

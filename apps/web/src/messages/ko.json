@@ -17,7 +17,8 @@
       "legal": "법적 고지",
       "deletion": "계정 삭제",
       "support": "고객 지원",
-      "invite": "팀 초대"
+      "invite": "팀 초대",
+      "team": "팀"
     }
   },
   "brandTagline": "몇 초 만에 방을 새롭게 디자인해 보세요",
@@ -626,5 +627,47 @@
     "mismatch": "이 초대는 {email}(으)로 발송되었어요. 그 주소로 로그인하세요.",
     "verifyFirst": "먼저 이메일 주소를 인증하세요. 인증 메일이 받은편지함에 있어요.",
     "switchAccount": "다른 계정으로 로그인"
+  },
+  "team": {
+    "personal": "개인",
+    "switchLabel": "작업 공간",
+    "pillRemaining": "{org} · {n}회 남음",
+    "pillPool": "{org} · 풀 {n}",
+    "title": "팀",
+    "intro": "회사 작업 공간에서 만든 디자인은 회사 크레딧으로 결제돼요. 개인 크레딧은 그대로예요.",
+    "chooseFirm": "회사",
+    "yourRole": "내 역할: {role}",
+    "allowance": "이번 달 남은 횟수: {n}",
+    "noCap": "이번 달 한도가 없어요.",
+    "pool": "회사 풀: 크레딧 {n}",
+    "suspended": "이 회사는 일시 중지되어 작업 공간에서 디자인을 만들 수 없어요.",
+    "members": "멤버",
+    "you": "나",
+    "cap": "월 한도",
+    "capDefault": "기본값",
+    "usage": "이번 달",
+    "save": "저장",
+    "remove": "내보내기",
+    "removeConfirm": "{name}님을 회사에서 내보낼까요?",
+    "transfer": "소유권 이전",
+    "transferConfirm": "{name}님을 소유자로 지정할까요? 나는 관리자가 돼요.",
+    "invite": "팀에 초대",
+    "email": "이메일",
+    "role": "역할",
+    "send": "초대 보내기",
+    "sent": "초대를 보냈어요.",
+    "pending": "대기 중인 초대",
+    "revoke": "취소",
+    "expires": "{date}까지",
+    "leave": "회사 나가기",
+    "leaveConfirm": "{org}에서 나갈까요? 그 작업 공간의 디자인에 더 이상 접근할 수 없어요.",
+    "empty": "아직 소속된 회사가 없어요. 회사의 이메일 초대를 열면 여기에 표시돼요.",
+    "studioNote": "회사 작업 공간: 디자인은 {org}의 크레딧으로 결제돼요.",
+    "teamLink": "팀",
+    "roles": {
+      "ADMIN": "관리자",
+      "MEMBER": "멤버",
+      "OWNER": "소유자"
+    }
   }
 }

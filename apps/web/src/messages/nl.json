@@ -17,7 +17,8 @@
       "legal": "Juridische teksten",
       "deletion": "Account verwijderen",
       "support": "Support",
-      "invite": "Teamuitnodiging"
+      "invite": "Teamuitnodiging",
+      "team": "Team"
     }
   },
   "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
@@ -626,5 +627,47 @@
     "mismatch": "Deze uitnodiging is verstuurd naar {email}; log in met dat adres.",
     "verifyFirst": "Bevestig eerst je e-mailadres; de bevestigingsmail staat in je inbox.",
     "switchAccount": "Inloggen met een ander account"
+  },
+  "team": {
+    "personal": "Persoonlijk",
+    "switchLabel": "Werkruimte",
+    "pillRemaining": "{org} · nog {n}",
+    "pillPool": "{org} · pool {n}",
+    "title": "Team",
+    "intro": "Ontwerpen in de werkruimte van een bedrijf worden betaald met diens credits; je persoonlijke credits blijven onaangeroerd.",
+    "chooseFirm": "Bedrijf",
+    "yourRole": "Jouw rol: {role}",
+    "allowance": "Deze maand nog over: {n}",
+    "noCap": "Geen maandlimiet voor jou.",
+    "pool": "Bedrijfspool: {n} credits",
+    "suspended": "Dit bedrijf is geschorst; in de werkruimte kunnen geen ontwerpen worden gemaakt.",
+    "members": "Leden",
+    "you": "jij",
+    "cap": "Maandlimiet",
+    "capDefault": "standaard",
+    "usage": "Deze maand",
+    "save": "Opslaan",
+    "remove": "Verwijderen",
+    "removeConfirm": "{name} uit het bedrijf verwijderen?",
+    "transfer": "Eigendom overdragen",
+    "transferConfirm": "{name} eigenaar maken? Jij wordt beheerder.",
+    "invite": "Uitnodigen voor het team",
+    "email": "E-mail",
+    "role": "Rol",
+    "send": "Uitnodiging versturen",
+    "sent": "Uitnodiging verstuurd.",
+    "pending": "Openstaande uitnodigingen",
+    "revoke": "Intrekken",
+    "expires": "tot {date}",
+    "leave": "Bedrijf verlaten",
+    "leaveConfirm": "{org} verlaten? Je kunt dan niet meer bij je ontwerpen in die werkruimte.",
+    "empty": "Je zit nog niet in een bedrijf. Het verschijnt hier zodra je de e-mailuitnodiging van een bedrijf opent.",
+    "studioNote": "Bedrijfswerkruimte: ontwerpen worden betaald met de credits van {org}.",
+    "teamLink": "Team",
+    "roles": {
+      "ADMIN": "Beheerder",
+      "MEMBER": "Lid",
+      "OWNER": "Eigenaar"
+    }
   }
 }

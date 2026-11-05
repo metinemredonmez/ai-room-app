@@ -115,6 +115,7 @@ export const LIMITS = {
   supportCreate: { name: 'support-create', max: 5, windowSec: 3600 },
   orgInviteLookup: { name: 'org-invite-ip', max: 30, windowSec: 3600 },
   orgInviteAccept: { name: 'org-invite-accept', max: 20, windowSec: 3600 },
+  orgInviteSend: { name: 'org-invite-send', max: 30, windowSec: 3600 },
   supportMessage: { name: 'support-message', max: 30, windowSec: 3600 },
 } satisfies Record<string, Limit>;
 

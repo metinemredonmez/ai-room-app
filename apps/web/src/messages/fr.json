@@ -17,7 +17,8 @@
       "legal": "Mentions légales",
       "deletion": "Suppression du compte",
       "support": "Assistance",
-      "invite": "Invitation d'équipe"
+      "invite": "Invitation d'équipe",
+      "team": "Équipe"
     }
   },
   "brandTagline": "Réinventez votre pièce en quelques secondes",
@@ -626,5 +627,47 @@
     "mismatch": "Cette invitation a été envoyée à {email} ; connectez-vous avec cette adresse.",
     "verifyFirst": "Vérifiez d'abord votre adresse e-mail ; l'e-mail de vérification est dans votre boîte de réception.",
     "switchAccount": "Se connecter avec un autre compte"
+  },
+  "team": {
+    "personal": "Personnel",
+    "switchLabel": "Espace de travail",
+    "pillRemaining": "{org} · {n} restants",
+    "pillPool": "{org} · réserve {n}",
+    "title": "Équipe",
+    "intro": "Les designs créés dans l'espace d'une entreprise sont payés avec ses crédits ; vos crédits personnels ne changent pas.",
+    "chooseFirm": "Entreprise",
+    "yourRole": "Votre rôle : {role}",
+    "allowance": "Il vous reste ce mois-ci : {n}",
+    "noCap": "Aucune limite mensuelle pour vous.",
+    "pool": "Réserve de l'entreprise : {n} crédits",
+    "suspended": "Cette entreprise est suspendue ; aucun design ne peut être créé dans son espace.",
+    "members": "Membres",
+    "you": "vous",
+    "cap": "Limite mensuelle",
+    "capDefault": "par défaut",
+    "usage": "Ce mois-ci",
+    "save": "Enregistrer",
+    "remove": "Retirer",
+    "removeConfirm": "Retirer {name} de l'entreprise ?",
+    "transfer": "Céder la propriété",
+    "transferConfirm": "Faire de {name} le propriétaire ? Vous deviendrez administrateur.",
+    "invite": "Inviter dans l'équipe",
+    "email": "E-mail",
+    "role": "Rôle",
+    "send": "Envoyer l'invitation",
+    "sent": "Invitation envoyée.",
+    "pending": "Invitations en attente",
+    "revoke": "Retirer",
+    "expires": "jusqu'au {date}",
+    "leave": "Quitter l'entreprise",
+    "leaveConfirm": "Quitter {org} ? Vous n'aurez plus accès à vos designs dans son espace.",
+    "empty": "Vous n'êtes encore dans aucune entreprise. Elle apparaîtra ici dès que vous ouvrirez son invitation par e-mail.",
+    "studioNote": "Espace entreprise : les designs sont payés avec les crédits de {org}.",
+    "teamLink": "Équipe",
+    "roles": {
+      "ADMIN": "Administrateur",
+      "MEMBER": "Membre",
+      "OWNER": "Propriétaire"
+    }
   }
 }

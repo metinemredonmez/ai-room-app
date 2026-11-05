@@ -199,7 +199,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] 1. adım: firma, roller (sahip/yönetici/üye), ortak kredi havuzu, üye başı aylık sınır; admin **Firmalar** sayfaları,
   denetim, veri indirmede üyelikler. Havuz eksiye inemez (CHECK kısıtı), sahip yalnız devirle değişir.
 - [x] 2. adım: e-postayla davet (admin'den; web `/davet` kabul sayfası) + firma çalışma alanı (`orgId` ile üretim, havuz ve aylık sınır, iade havuza; çıkan üye firma tasarımına erişemez).
-- [ ] 3. adım: web ekip sayfası (üyeler, davetler, roller, kişi başı kullanım) ve üst menüde alan geçişi.
+- [x] 3. adım: firma kendi ekibini yönetir (sahip/yönetici yetkileri, API.md §7.23.3), web `/ekip` sayfası ve üst menüde Kişisel / Firma geçişi; stüdyo ve Tasarımlarım seçili alanda çalışır.
 - [ ] 4. adım: firma içinde projeler / müşteri klasörleri.
 - [ ] 5. adım: logolu müşteri sunumu (paylaşım sayfasıyla), alan adıyla katılım, kartla ödeme, kurumsal SSO.
 

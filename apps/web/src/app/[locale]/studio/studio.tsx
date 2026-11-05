@@ -66,7 +66,7 @@ function ProgressOverlay({ elapsed }: { elapsed: number }) {
 }
 
 export function Studio() {
-  const { t, catalog, catalogError, reloadCatalog, user, ensureSession, refreshUser } = useApp();
+  const { t, catalog, catalogError, reloadCatalog, user, ensureSession, refreshUser, activeOrg, refreshOrgs } = useApp();
   const [initial] = useState(readInitial);
 
   const [toolId, setToolId] = useState<ToolId>(initial.tool ?? "redesign");
@@ -257,6 +257,7 @@ export function Studio() {
     if (needs.removeAll) body.removeAll = removeAll;
     if (needs.reference && reference) body.referenceImageId = reference.id;
     if (canTap && points.length) body.points = points;
+    if (activeOrg) body.orgId = activeOrg.id; // API.md §7.23: paid by the firm
 
     setError(null);
     setElapsed(0);
@@ -271,6 +272,7 @@ export function Studio() {
     } finally {
       setBusy(false);
       void refreshUser();
+      if (activeOrg) void refreshOrgs();
     }
   }
 
@@ -338,7 +340,7 @@ export function Studio() {
               </div>
             ))}
             <p className="text-sm text-muted">{tool.description}</p>
-            {tool.isPro && user?.plan !== "PRO" && (
+            {tool.isPro && user?.plan !== "PRO" && !activeOrg && (
               <p className="flex items-center gap-1.5 text-xs text-accent">
                 <Crown className="h-3.5 w-3.5" aria-hidden /> {t.studio.proHint}
               </p>
@@ -639,8 +641,13 @@ export function Studio() {
             </button>
             <p className="text-center text-xs text-muted">
               {fmt(t.studio.cost, { n: variants })}
-              {user && user.plan !== "PRO" && <> · {fmt(t.studio.remaining, { free: user.dailyFreeRemaining, credits: user.credits })}</>}
+              {activeOrg ? (
+                activeOrg.remainingThisMonth !== null && <> · {fmt(t.team.pillRemaining, { org: activeOrg.name, n: activeOrg.remainingThisMonth })}</>
+              ) : (
+                user && user.plan !== "PRO" && <> · {fmt(t.studio.remaining, { free: user.dailyFreeRemaining, credits: user.credits })}</>
+              )}
             </p>
+            {activeOrg && <p className="text-center text-xs text-primary">{fmt(t.team.studioNote, { org: activeOrg.name })}</p>}
           </div>
         </div>
 

@@ -17,7 +17,8 @@
       "legal": "Rechtliches",
       "deletion": "Konto löschen",
       "support": "Support",
-      "invite": "Team-Einladung"
+      "invite": "Team-Einladung",
+      "team": "Team"
     }
   },
   "brandTagline": "Gestalte deinen Raum in Sekunden neu",
@@ -626,5 +627,47 @@
     "mismatch": "Diese Einladung wurde an {email} gesendet; melde dich mit dieser Adresse an.",
     "verifyFirst": "Bestätige zuerst deine E-Mail-Adresse; die Bestätigungs-E-Mail ist in deinem Posteingang.",
     "switchAccount": "Mit anderem Konto anmelden"
+  },
+  "team": {
+    "personal": "Persönlich",
+    "switchLabel": "Arbeitsbereich",
+    "pillRemaining": "{org} · {n} übrig",
+    "pillPool": "{org} · Pool {n}",
+    "title": "Team",
+    "intro": "Designs im Arbeitsbereich einer Firma werden aus deren Credits bezahlt; deine persönlichen Credits bleiben unberührt.",
+    "chooseFirm": "Firma",
+    "yourRole": "Deine Rolle: {role}",
+    "allowance": "Diesen Monat übrig: {n}",
+    "noCap": "Kein Monatslimit für dich.",
+    "pool": "Firmen-Pool: {n} Credits",
+    "suspended": "Diese Firma ist gesperrt; in ihrem Arbeitsbereich können keine Designs erstellt werden.",
+    "members": "Mitglieder",
+    "you": "du",
+    "cap": "Monatslimit",
+    "capDefault": "Standard",
+    "usage": "Diesen Monat",
+    "save": "Speichern",
+    "remove": "Entfernen",
+    "removeConfirm": "{name} aus der Firma entfernen?",
+    "transfer": "Inhaberschaft übergeben",
+    "transferConfirm": "{name} zum Inhaber machen? Du wirst Admin.",
+    "invite": "Ins Team einladen",
+    "email": "E-Mail",
+    "role": "Rolle",
+    "send": "Einladung senden",
+    "sent": "Einladung gesendet.",
+    "pending": "Offene Einladungen",
+    "revoke": "Zurückziehen",
+    "expires": "bis {date}",
+    "leave": "Firma verlassen",
+    "leaveConfirm": "{org} verlassen? Du erreichst deine Designs in ihrem Arbeitsbereich dann nicht mehr.",
+    "empty": "Du bist noch in keiner Firma. Sie erscheint hier, sobald du die E-Mail-Einladung einer Firma öffnest.",
+    "studioNote": "Firmen-Arbeitsbereich: Designs werden aus den Credits von {org} bezahlt.",
+    "teamLink": "Team",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Mitglied",
+      "OWNER": "Inhaber"
+    }
   }
 }

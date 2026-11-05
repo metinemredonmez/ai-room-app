@@ -75,9 +75,9 @@ export class AdminOrgsController {
   @Doc('Üyenin rolü ya da aylık sınırı; OWNER vermek sahipliği devreder', { body: UpdateMemberSchema, errors: [400, 401, 403, 404, 409] })
   async updateMember(@Param('id') id: string, @Param('userId') userId: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(UpdateMemberSchema, body);
-    const { detail, change } = await this.orgs.updateMember(id, userId, input);
+    const { change } = await this.orgs.updateMember(id, userId, input);
     await this.audit.record(auth.userId, change.to.role === 'OWNER' ? 'org.owner_transfer' : 'org.member_update', 'organization', id, { reason: input.reason, userId, ...change }, req.clientIp);
-    return detail;
+    return this.orgs.detail(id);
   }
 
   @MinRole('ADMIN')
@@ -85,9 +85,9 @@ export class AdminOrgsController {
   @Doc('Üyeyi firmadan çıkar (sahip çıkarılamaz)', { body: ReasonSchema, status: 201, errors: [400, 401, 403, 404, 409] })
   async removeMember(@Param('id') id: string, @Param('userId') userId: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(ReasonSchema, body);
-    const detail = await this.orgs.removeMember(id, userId);
+    await this.orgs.removeMember(id, userId);
     await this.audit.record(auth.userId, 'org.member_remove', 'organization', id, { reason: input.reason, userId }, req.clientIp);
-    return detail;
+    return this.orgs.detail(id);
   }
 
   @MinRole('ADMIN')

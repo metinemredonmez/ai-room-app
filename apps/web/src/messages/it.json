@@ -17,7 +17,8 @@
       "legal": "Documenti legali",
       "deletion": "Eliminazione dell'account",
       "support": "Assistenza",
-      "invite": "Invito al team"
+      "invite": "Invito al team",
+      "team": "Team"
     }
   },
   "brandTagline": "Riprogetta la tua stanza in pochi secondi",
@@ -626,5 +627,47 @@
     "mismatch": "Questo invito è stato inviato a {email}; accedi con quell'indirizzo.",
     "verifyFirst": "Prima verifica il tuo indirizzo e-mail; l'e-mail di verifica è nella tua casella.",
     "switchAccount": "Accedi con un altro account"
+  },
+  "team": {
+    "personal": "Personale",
+    "switchLabel": "Spazio di lavoro",
+    "pillRemaining": "{org} · ne restano {n}",
+    "pillPool": "{org} · riserva {n}",
+    "title": "Team",
+    "intro": "I design creati nello spazio di un'azienda sono pagati con i suoi crediti; i tuoi crediti personali restano invariati.",
+    "chooseFirm": "Azienda",
+    "yourRole": "Il tuo ruolo: {role}",
+    "allowance": "Ti restano questo mese: {n}",
+    "noCap": "Nessun limite mensile per te.",
+    "pool": "Riserva aziendale: {n} crediti",
+    "suspended": "Questa azienda è sospesa; non si possono creare design nel suo spazio.",
+    "members": "Membri",
+    "you": "tu",
+    "cap": "Limite mensile",
+    "capDefault": "predefinito",
+    "usage": "Questo mese",
+    "save": "Salva",
+    "remove": "Rimuovi",
+    "removeConfirm": "Rimuovere {name} dall'azienda?",
+    "transfer": "Cedi la titolarità",
+    "transferConfirm": "Rendere {name} titolare? Diventerai amministratore.",
+    "invite": "Invita nel team",
+    "email": "E-mail",
+    "role": "Ruolo",
+    "send": "Invia invito",
+    "sent": "Invito inviato.",
+    "pending": "Inviti in sospeso",
+    "revoke": "Ritira",
+    "expires": "fino al {date}",
+    "leave": "Lascia l'azienda",
+    "leaveConfirm": "Lasciare {org}? Non potrai più accedere ai tuoi design nel suo spazio.",
+    "empty": "Non fai ancora parte di nessuna azienda. Comparirà qui quando aprirai l'invito via e-mail di un'azienda.",
+    "studioNote": "Spazio aziendale: i design sono pagati con i crediti di {org}.",
+    "teamLink": "Team",
+    "roles": {
+      "ADMIN": "Amministratore",
+      "MEMBER": "Membro",
+      "OWNER": "Titolare"
+    }
   }
 }

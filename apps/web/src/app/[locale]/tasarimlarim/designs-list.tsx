@@ -12,7 +12,7 @@ import { ToolIcon } from "@/components/icons";
 import { btn } from "@/components/ui";
 
 export function DesignsList() {
-  const { t, locale, user, userReady } = useApp();
+  const { t, locale, user, userReady, activeOrg } = useApp();
   const [filter, setFilter] = useState<"all" | "favorites">("all");
   const [items, setItems] = useState<Design[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -26,9 +26,10 @@ export function DesignsList() {
       const qs = new URLSearchParams({ limit: "24" });
       if (after) qs.set("cursor", after);
       if (filter === "favorites") qs.set("favorite", "true");
+      if (activeOrg) qs.set("orgId", activeOrg.id); // API.md §7.23: one workspace at a time
       return api.get<Page<Design>>(`/designs?${qs}`);
     },
-    [filter],
+    [filter, activeOrg],
   );
 
   useEffect(() => {

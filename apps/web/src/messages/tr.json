@@ -17,7 +17,8 @@
       "legal": "Yasal metinler",
       "deletion": "Hesap silme",
       "support": "Destek",
-      "invite": "Ekip daveti"
+      "invite": "Ekip daveti",
+      "team": "Ekip"
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
@@ -626,5 +627,47 @@
     "mismatch": "Bu davet {email} adresine gönderildi; o adresle giriş yap.",
     "verifyFirst": "Önce e-posta adresini doğrula; doğrulama e-postası gelen kutunda.",
     "switchAccount": "Farklı hesapla giriş yap"
+  },
+  "team": {
+    "personal": "Kişisel",
+    "switchLabel": "Çalışma alanı",
+    "pillRemaining": "{org} · {n} hak",
+    "pillPool": "{org} · havuz {n}",
+    "title": "Ekip",
+    "intro": "Firma çalışma alanında üretilen tasarımlar firmanın kredisinden harcar; kişisel hakların etkilenmez.",
+    "chooseFirm": "Firma",
+    "yourRole": "Rolün: {role}",
+    "allowance": "Bu ay kalan hakkın: {n}",
+    "noCap": "Bu ay için sınırın yok.",
+    "pool": "Firma havuzu: {n} kredi",
+    "suspended": "Bu firma şu an askıda; firma alanında tasarım yapılamaz.",
+    "members": "Üyeler",
+    "you": "sen",
+    "cap": "Aylık sınır",
+    "capDefault": "varsayılan",
+    "usage": "Bu ay",
+    "save": "Kaydet",
+    "remove": "Çıkar",
+    "removeConfirm": "{name} firmadan çıkarılsın mı?",
+    "transfer": "Sahipliği devret",
+    "transferConfirm": "Sahiplik {name} kişisine geçsin mi? Sen yönetici olursun.",
+    "invite": "Ekibe davet et",
+    "email": "E-posta",
+    "role": "Rol",
+    "send": "Davet gönder",
+    "sent": "Davet gönderildi.",
+    "pending": "Bekleyen davetler",
+    "revoke": "Geri al",
+    "expires": "{date} tarihine kadar",
+    "leave": "Firmadan ayrıl",
+    "leaveConfirm": "{org} firmasından ayrılmak istiyor musun? Firma alanındaki tasarımlarına artık erişemezsin.",
+    "empty": "Henüz bir firmada değilsin. Firmanın e-postayla gönderdiği daveti açtığında burada görünür.",
+    "studioNote": "Firma alanındasın: tasarımlar {org} kredisinden harcar.",
+    "teamLink": "Ekip",
+    "roles": {
+      "ADMIN": "Yönetici",
+      "MEMBER": "Üye",
+      "OWNER": "Sahip"
+    }
   }
 }

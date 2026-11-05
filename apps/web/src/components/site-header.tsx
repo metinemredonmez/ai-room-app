@@ -3,7 +3,7 @@
 import Link from "@/components/locale-link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Crown, LogOut, Menu, Sparkles, User as UserIcon, X } from "lucide-react";
+import { Building, Crown, LogOut, Menu, Sparkles, User as UserIcon, X } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { splitLocale, fmt } from "@/lib/i18n";
 import { useApp } from "./app-provider";
@@ -12,9 +12,47 @@ import { btn } from "./ui";
 import { LanguagePicker } from "./language-picker";
 import { PalettePicker } from "./palette-picker";
 
+/** API.md §7.23: Personal / firm workspace. Shown only to members of a firm; suspended firms can't be picked. */
+function WorkspaceSwitcher({ className = "" }: { className?: string }) {
+  const { orgs, activeOrg, setWorkspace, t } = useApp();
+  if (!orgs.length) return null;
+  return (
+    <label className={`relative inline-flex items-center ${className}`}>
+      <span className="sr-only">{t.team.switchLabel}</span>
+      <Building className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted" aria-hidden />
+      <select
+        value={activeOrg?.id ?? ""}
+        onChange={(e) => setWorkspace(e.target.value || null)}
+        className="h-8 max-w-44 appearance-none truncate rounded-full border border-border bg-surface py-1 pl-7 pr-3 text-xs font-medium text-text outline-none transition hover:bg-surface-2 focus:ring-2 focus:ring-primary/20"
+      >
+        <option value="">{t.team.personal}</option>
+        {orgs.map((o) => (
+          <option key={o.id} value={o.id} disabled={o.status !== "ACTIVE"}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function CreditsPill() {
-  const { user, t, locale } = useApp();
+  const { user, t, locale, activeOrg } = useApp();
   if (!user) return null;
+  if (activeOrg) {
+    const text =
+      activeOrg.remainingThisMonth !== null
+        ? fmt(t.team.pillRemaining, { org: activeOrg.name, n: activeOrg.remainingThisMonth })
+        : activeOrg.credits !== null
+          ? fmt(t.team.pillPool, { org: activeOrg.name, n: activeOrg.credits })
+          : activeOrg.name;
+    return (
+      <Link href="/ekip" className="inline-flex max-w-56 items-center gap-1.5 truncate rounded-full bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:brightness-95">
+        <Building className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="truncate">{text}</span>
+      </Link>
+    );
+  }
   if (user.plan === "PRO") {
     return (
       <span
@@ -28,7 +66,7 @@ function CreditsPill() {
   return (
     <Link
       href="/fiyatlar"
-      className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:brightness-95"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary hover:brightness-95"
     >
       <Sparkles className="h-3.5 w-3.5" aria-hidden />
       {fmt(t.credits.pill, { free: user.dailyFreeRemaining, credits: user.credits })}
@@ -48,7 +86,7 @@ export function HeaderFallback() {
 }
 
 export function SiteHeader() {
-  const { t, user, logout, href } = useApp();
+  const { t, user, logout, href, orgs } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -58,6 +96,7 @@ export function SiteHeader() {
     { href: "/tasarimlarim", label: t.nav.designs },
     { href: "/sohbet", label: t.nav.chat },
     { href: "/fiyatlar", label: t.nav.pricing },
+    ...(orgs.length ? [{ href: "/ekip", label: t.team.teamLink }] : []),
   ];
 
   const path = splitLocale(pathname).path;
@@ -89,6 +128,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <WorkspaceSwitcher className="max-md:hidden" />
           <div className="hidden sm:block">
             <CreditsPill />
           </div>
@@ -126,7 +166,8 @@ export function SiteHeader() {
 
       {open && (
         <div className="border-t border-border bg-bg px-4 pb-5 pt-3 lg:hidden">
-          <div className="mb-3">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <WorkspaceSwitcher />
             <CreditsPill />
           </div>
           <nav className="flex flex-col gap-1" aria-label="Mobil menü">

@@ -44,6 +44,11 @@ export const UpdateMemberSchema = z
 export const ReasonSchema = z.object({ reason }).strict();
 export const AdminInviteSchema = z.object({ email, role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'), monthlyCap: cap.default(null), reason }).strict();
 export const InviteTokenSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict();
+export const TeamInviteSchema = z.object({ email, role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'), monthlyCap: cap.default(null) }).strict();
+export const TeamMemberSchema = z
+  .object({ role: z.enum(['OWNER', 'ADMIN', 'MEMBER']).optional(), monthlyCap: cap.optional() })
+  .strict()
+  .refine((v) => v.role !== undefined || v.monthlyCap !== undefined, { message: 'nothing_to_change' });
 export const OrgListQuery = z.object({
   q: z.string().trim().max(100).optional(),
   status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
@@ -225,7 +230,7 @@ export class OrgsService {
       await tx.orgMember.update({ where: { orgId_userId: { orgId, userId } }, data });
       return { from: { role: member.role, monthlyCap: member.monthlyCap }, to: data, previousOwner };
     });
-    return { detail: await this.detail(orgId), change };
+    return { change };
   }
 
   async removeMember(orgId: string, userId: string) {
@@ -237,7 +242,6 @@ export class OrgsService {
       if (member.role === 'OWNER') throw new AppError(409, 'owner_transfer_required', 'Sahip çıkarılamaz; önce sahipliği başka bir üyeye devret.');
       await tx.orgMember.delete({ where: { orgId_userId: { orgId, userId } } });
     });
-    return this.detail(orgId);
   }
 
   /** KVKK export: the firms this person belongs to (no other members' data). */
@@ -441,6 +445,88 @@ export class OrgsService {
       where: { createdAt: { lt: new Date(now - 90 * DAY) }, OR: [{ acceptedAt: { not: null } }, { revokedAt: { not: null } }, { expiresAt: { lt: new Date(now) } }] },
     });
     return count;
+  }
+
+  // ------------------------------------------------------------------ step 3: the firm runs its own team
+
+  private forbidden() {
+    return new AppError(403, 'org_forbidden', 'Bu işlem için firma sahibi ya da yöneticisi olmalısın.');
+  }
+
+  /**
+   * The team page. OWNER/ADMIN see e-mails, monthly use, pending invitations and the pool; a MEMBER sees names and
+   * roles of the team and their own allowance only (colleagues' usage and addresses stay with the managers).
+   */
+  async team(orgId: string, actorId: string) {
+    const me = await this.membership(orgId, actorId);
+    const manager = me.role === 'OWNER' || me.role === 'ADMIN';
+    const [members, usage, invites] = await Promise.all([
+      this.prisma.orgMember.findMany({ where: { orgId }, include: { user: { select: { email: true, name: true } } }, orderBy: [{ role: 'asc' }, { createdAt: 'asc' }] }),
+      this.monthlyUsage(orgId),
+      manager ? this.prisma.orgInvite.findMany({ where: { orgId, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'desc' } }) : Promise.resolve([]),
+    ]);
+    const org = me.org;
+    const capOf = (m: { monthlyCap: number | null }) => m.monthlyCap ?? org.memberMonthlyCap;
+    const myCap = capOf(me);
+    const myUse = usage.get(actorId) ?? 0;
+    return {
+      id: org.id, name: org.name, status: org.status, role: me.role,
+      credits: manager ? org.credits : null,
+      memberMonthlyCap: manager ? org.memberMonthlyCap : null,
+      you: { userId: actorId, monthlyCap: myCap, usedThisMonth: myUse, remainingThisMonth: myCap === null ? null : Math.max(0, myCap - myUse) },
+      members: members.map((m) => ({
+        userId: m.userId, name: m.user.name, role: m.role, you: m.userId === actorId,
+        ...(manager ? { email: m.user.email, monthlyCap: m.monthlyCap, effectiveCap: capOf(m), usedThisMonth: usage.get(m.userId) ?? 0, joinedAt: m.createdAt.toISOString() } : {}),
+      })),
+      invites: invites.map((i) => this.inviteDto(i)),
+    };
+  }
+
+  /** OWNER invites admins or members; an ADMIN invites members only. */
+  async teamInvite(orgId: string, actorId: string, input: { email: string; role: 'ADMIN' | 'MEMBER'; monthlyCap: number | null }) {
+    const me = await this.membership(orgId, actorId);
+    if (me.role === 'MEMBER' || (me.role === 'ADMIN' && input.role !== 'MEMBER')) throw this.forbidden();
+    return this.invite(orgId, input, actorId);
+  }
+
+  async teamRevokeInvite(orgId: string, actorId: string, inviteId: string) {
+    const me = await this.membership(orgId, actorId);
+    if (me.role === 'MEMBER') throw this.forbidden();
+    await this.revokeInvite(orgId, inviteId);
+  }
+
+  /**
+   * OWNER: roles (including handing over ownership) and caps of everyone else. ADMIN: caps of members only.
+   * Nobody changes their own row here (an owner hands over, a member leaves).
+   */
+  async teamUpdateMember(orgId: string, actorId: string, targetId: string, input: { role?: OrgRole; monthlyCap?: number | null }) {
+    const me = await this.membership(orgId, actorId);
+    if (!isUuid(targetId)) throw notFound();
+    if (targetId === actorId) throw new AppError(409, 'cannot_change_self', 'Kendi rolünü ya da sınırını buradan değiştiremezsin.');
+    const target = await this.prisma.orgMember.findUnique({ where: { orgId_userId: { orgId, userId: targetId } } });
+    if (!target) throw notFound();
+    if (me.role === 'MEMBER') throw this.forbidden();
+    if (me.role === 'ADMIN' && (input.role !== undefined || target.role !== 'MEMBER')) throw this.forbidden();
+    const { change } = await this.updateMember(orgId, targetId, { ...input, reason: 'team' });
+    return change;
+  }
+
+  /** OWNER removes admins and members; an ADMIN removes members. The owner is never removed (409). */
+  async teamRemoveMember(orgId: string, actorId: string, targetId: string) {
+    const me = await this.membership(orgId, actorId);
+    if (!isUuid(targetId)) throw notFound();
+    if (targetId === actorId) throw new AppError(409, 'use_leave', 'Firmadan ayrılmak için "Firmadan ayrıl"ı kullan.');
+    const target = await this.prisma.orgMember.findUnique({ where: { orgId_userId: { orgId, userId: targetId } } });
+    if (!target) throw notFound();
+    if (me.role === 'MEMBER' || (me.role === 'ADMIN' && target.role !== 'MEMBER')) throw this.forbidden();
+    await this.removeMember(orgId, targetId);
+  }
+
+  /** Anyone but the owner may leave; their firm designs stay with the firm and are no longer reachable to them. */
+  async leave(orgId: string, actorId: string) {
+    const me = await this.membership(orgId, actorId);
+    if (me.role === 'OWNER') throw new AppError(409, 'owner_transfer_required', 'Sahip firmadan ayrılamaz; önce sahipliği devret.');
+    await this.removeMember(orgId, actorId);
   }
 }
 

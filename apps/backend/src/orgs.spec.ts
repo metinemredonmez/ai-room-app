@@ -117,7 +117,7 @@ describe('firms (step 1)', () => {
     expect(members.filter((m) => m.orgId === org.id && m.role === 'OWNER').map((m) => m.userId)).toEqual([ali.id]);
     expect(members.find((m) => m.userId === owner.id)?.role).toBe('ADMIN');
     await svc.removeMember(org.id, owner.id);
-    expect(members.filter((m) => m.orgId === org.id)).toHaveLength(1);
+    expect(members.filter((m) => m.orgId === org.id)).toHaveLength(1); // removed
   });
 
   it("a member of another firm is not found through this firm's id (AZ-04)", async () => {
