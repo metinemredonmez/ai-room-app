@@ -1559,3 +1559,38 @@ Kredi düzeltmesinden farkı şudur:
 - Defter satırı `reason: 'gift'` olarak yazılır. `refId` personeldir ve kullanıcıya hiç dönmez.
 
 Admin kredi hareketleri tablosu yeni türleri okunur gösterir: Hediye, Promosyon kodu, Davet ödülü.
+
+### 7.32 Toplu hediye (sadakat ve geri dönüş) — backend + admin
+Bir gruba hediye kredi ve push bildirimi gönderilir (**Admin → Büyüme → Toplu hediye**; YediOda #63 dönüş hediyesi,
+sadakat). Kullanıcı tarafında tekli hediyeyle (§7.31) aynı görünür: bildirim gider, Kredi hareketlerim'de "Hediye"
+yazar.
+
+**Gruplar** (hepsinde yalnız gerçek kullanıcılar var: `role = USER`, aktif, misafir değil, e-postası doğrulanmış;
+personel ve misafir hiçbir zaman yoktur)
+- `inactive` + `days`: en az N gündür girmemiş (`lastSeenAt`, hiç görülmediyse kayıt tarihi). Geri dönüş hediyesi.
+- `new` + `days`: son N günde katılmış.
+- `pro`: şu an PRO; panel ya da mağaza aboneliği. Teşekkür hediyesi.
+- `all`: bütün doğrulanmış kullanıcılar.
+
+**Gönderim**
+- Önce önizleme yapılır: `POST /admin/gifts/preview { segment, days }` → `{ count, withPush, max }`. Rol SUPPORT
+  ve üstü.
+- Sonra gönderilir: `POST /admin/gifts { segment, days, credits 1–100, message ≤140, reason, expected }` → 201
+  `{ id, recipients }`. Rol ADMIN ve üstü; denetimde `gift.campaign` olarak görünür.
+- Bir seferde en çok 20.000 kişiye gönderilir. Boş grup 400 `empty_segment`, fazlası 400 `too_many` alır.
+- `expected` önizlemedeki sayıdır. Grup bunun çok üstüne çıktıysa (%10 + 10) gönderim 409 `count_changed` ile
+  durur.
+- Aynı grup, gün ve kredi 10 dakika içinde ikinci kez gönderilemez (çift tıklama, ikinci admin): 409
+  `duplicate_send`.
+- Dağıtım 500 kişilik parçalarla yapılır. Her parça tek SQL ifadesidir:
+  `GiftRecipient` (kampanya+kullanıcı birincil anahtarı, `ON CONFLICT DO NOTHING`) + `User.credits` + `CreditLedger`
+  (`reason: 'gift'`, `refId` = kampanya). Yarıda kalsa ve yeniden çalışsa da kimse iki kez almaz (BUS-02).
+  Kampanya `SENT` ya da `FAILED` olur.
+- Bildirimler kredilerden sonra arka planda gider, kullanıcının dilinde (TR/EN). `message` boşsa varsayılan metin
+  kullanılır ("Seni özledik! …"). Gönderilen bildirim sayısı kampanyaya yazılır.
+- `GET /admin/gifts` son 50 kampanyayı döner: grup, kredi, alan kişi, bildirim, gönderen.
+
+Smoke testi önizlemeyi her yerde dener; gerçek kişilere kredi verdiği için gönderimi yalnız yerel API'de dener.
+
+Sonra: otomatik kurallar (giriş serisi, doğum günü, belirli gün girmeyene kendiliğinden hediye) ve e-posta kanalı.
+Bunlar toplu gönderim (§7.16) kurallarıyla birlikte yapılacak: pazarlama izni, sessiz saat.

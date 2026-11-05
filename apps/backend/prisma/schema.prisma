@@ -141,6 +141,7 @@ model User {
   referralCode        ReferralCode?
   referralsMade       Referral[]          @relation("inviter")
   referredBy          Referral?           @relation("invitee")
+  giftsReceived       GiftRecipient[]
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
@@ -318,6 +319,36 @@ model Setting {
   value     Json
   updatedBy String?  @db.Uuid
   updatedAt DateTime @updatedAt
+}
+
+// Group gifts (API.md §7.32): one row per send. Each recipient is a GiftRecipient row (primary key campaign+user),
+// written in the same statement as the credit, so a retried or repeated run never pays anyone twice (BUS-02).
+model GiftCampaign {
+  id          String          @id @default(uuid()) @db.Uuid
+  segment     String          @db.VarChar(40)
+  days        Int?
+  credits     Int
+  message     String          @db.VarChar(140)
+  recipients  Int             @default(0)
+  pushed      Int             @default(0)
+  status      String          @default("SENDING") @db.VarChar(20)
+  createdById String?         @db.Uuid
+  createdAt   DateTime        @default(now())
+  finishedAt  DateTime?
+  gifts       GiftRecipient[]
+
+  @@index([createdAt])
+}
+
+model GiftRecipient {
+  campaignId String       @db.Uuid
+  userId     String       @db.Uuid
+  createdAt  DateTime     @default(now())
+  campaign   GiftCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, userId])
+  @@index([userId])
 }
 
 enum ReferralStatus {

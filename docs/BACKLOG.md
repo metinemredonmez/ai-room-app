@@ -17,7 +17,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Promosyon ve hediye kodları (API.md §7.29): kampanya kodu + tek kullanımlık hediye kodları (CSV), kredi ya da PRO günü; doğrulanmış hesap, kişi başı bir kez. Admin → Büyüme → Promosyon kodları; web Hesabım.
    - [x] Davet et-kazan (API.md §7.30): davet edilen kodu girince, davet eden arkadaşının ilk tasarımında (aylık sınır); program kapalı başlar. Admin → Büyüme → Davet programı; web Hesabım.
    - [x] Panelden hediye kredi + bildirim (API.md §7.31): kullanıcı ayrıntısında "Hediye gönder"; push, isteğe bağlı e-posta, kredi hareketlerinde "Hediye".
-   - [ ] Sadakat / geri dönüş hediyesi (segmente toplu hediye), influencer bağlantısı, planlı fiyat değişikliği.
+   - [x] Toplu hediye (API.md §7.32): girmeyenler / yeni katılanlar / PRO / herkes; önizle, gönder, push; kimse iki kez almaz. Admin → Büyüme → Toplu hediye.
+   - [ ] Otomatik sadakat kuralları (giriş serisi, doğum günü, kendiliğinden geri dönüş), influencer bağlantısı, planlı fiyat değişikliği.
 3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,
    App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.

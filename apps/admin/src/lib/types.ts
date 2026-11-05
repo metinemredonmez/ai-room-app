@@ -555,3 +555,20 @@ export type ReferralState = {
   top: { userId: string | null; email: string | null; rewarded: number }[];
   items: ReferralItem[];
 };
+
+// Toplu hediye (API.md §7.32).
+export type GiftSegment = "inactive" | "pro" | "new" | "all";
+export type GiftPreview = { count: number; withPush: number; max: number };
+export type GiftCampaign = {
+  id: string;
+  segment: GiftSegment;
+  days: number | null;
+  credits: number;
+  message: string;
+  recipients: number;
+  pushed: number;
+  status: string;
+  createdAt: string;
+  finishedAt: string | null;
+  createdBy: string | null;
+};
