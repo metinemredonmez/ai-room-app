@@ -86,6 +86,9 @@ export const LIMITS = {
   adminEnroll: { name: 'admin-enroll', max: 10, windowSec: 3600 },
   adminStepUp: { name: 'admin-stepup', max: 5, windowSec: 900 },
   register: { name: 'register-ip', max: 10, windowSec: 3600 },
+  // API.md §7.29: guessing promo codes is slow (per account) and costly from one address (per IP), RES-01.
+  promoUser: { name: 'promo-user', max: 10, windowSec: 3600 },
+  promoIp: { name: 'promo-ip', max: 30, windowSec: 3600 },
   forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },
   forgotAccount: { name: 'forgot-acct', max: 3, windowSec: 3600 },
   tokenIp: { name: 'email-token-ip', max: 30, windowSec: 3600 },

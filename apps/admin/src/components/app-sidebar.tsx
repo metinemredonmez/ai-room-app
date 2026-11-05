@@ -11,6 +11,7 @@ import {
   WandSparkles,
   Cpu,
   ToggleRight,
+  Ticket,
   FileText,
   ListChecks,
   Megaphone,
@@ -108,6 +109,10 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/support", label: "Destek", icon: LifeBuoy, badge: "openSupport" },
       { href: "/broadcasts", label: "Toplu Gönderim", icon: Megaphone },
     ],
+  },
+  {
+    label: "Büyüme",
+    items: [{ href: "/promo", label: "Promosyon kodları", icon: Ticket }],
   },
   {
     label: "Pazarlama",

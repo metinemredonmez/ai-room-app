@@ -511,3 +511,24 @@ export type EngineState = {
 // Özellik bayrakları (API.md §7.28).
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
+
+// Promosyon ve hediye kodları (API.md §7.29).
+export type PromoKind = "CREDITS" | "PRO_DAYS";
+export type PromoCode = {
+  id: string;
+  display: string;
+  campaign: string;
+  kind: PromoKind;
+  amount: number;
+  maxRedemptions: number | null;
+  redeemed: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  active: boolean;
+  newUsersOnly: boolean;
+  createdAt: string;
+  usable: boolean;
+};
+export type PromoList = { items: PromoCode[]; nextCursor: string | null; campaigns: { campaign: string; codes: number; redeemed: number }[] };
+export type PromoBatch = { campaign: string; kind: PromoKind; amount: number; codes: string[] };
+export type PromoRedemptions = { code: PromoCode; items: { id: string; createdAt: string; user: { id: string; email: string | null; name: string | null } | null }[] };

@@ -4,12 +4,14 @@ import { isUuid } from '../images/images.service.js';
 // show as "adjustment" only: their free-text reason and the staff member's id (stored in refId) never leave the
 // admin side.
 
-export const LEDGER_KINDS = ['daily_free', 'generation', 'refund', 'welcome', 'purchase', 'adjustment', 'other'] as const;
+export const LEDGER_KINDS = ['daily_free', 'generation', 'refund', 'welcome', 'purchase', 'promo', 'adjustment', 'other'] as const;
 export type LedgerKind = (typeof LEDGER_KINDS)[number];
 
 export function ledgerKind(reason: string): LedgerKind {
   if (reason === 'daily_free' || reason === 'generation' || reason === 'refund' || reason === 'welcome') return reason;
   if (reason.startsWith('purchase:')) return 'purchase';
+  // API.md §7.29: a promo code's credits, or its PRO days (delta 0).
+  if (reason === 'promo' || reason === 'promo_pro') return 'promo';
   if (reason.startsWith('admin:')) return 'adjustment';
   return 'other';
 }

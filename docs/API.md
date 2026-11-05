@@ -1440,3 +1440,56 @@ hâlâ gösterse bile sunucu reddeder.
 Denetim kaydı: `features.update`, gerekçe ve `assistant_chat: açık → kapalı` gibi değişiklik listesiyle.
 
 Mobil (sonra): açılışta katalogdaki `features` okunur; kapalı özelliklerin girişi gizlenir.
+
+### 7.29 Promosyon ve hediye kodları — backend + admin + web (mobil sonra)
+Kod kredi ya da PRO günü verir (**Admin → Büyüme → Promosyon kodları**; YediOda #64, maeyja coupons, fal-app promo).
+
+**İki tür**
+- **Kampanya kodu:** admin yazar (ör. `YAZ2026`, 6–32 harf ve rakam). Çok kişi kullanır, kişi başı bir kez.
+  İsteğe bağlı toplam kullanım sınırı vardır.
+- **Hediye kodları:** toplu üretilir (1–1000 adet, `XXXX-XXXX-XXXX`), her biri tek kullanımlıktır. Alfabede 0/O,
+  1/I/L ve U yoktur; 30¹² olasılık. Kodlar **yalnız üretim yanıtında** görünür, admin ekranı CSV indirir. Sistemde
+  okunur hâlde saklanmaz; listede `ABCD…WXYZ` biçiminde görünür.
+- Ortak alanlar:
+  - kampanya adı;
+  - verdiği şey: `CREDITS` (1–500) ya da `PRO_DAYS` (1–365);
+  - isteğe bağlı başlangıç ve bitiş;
+  - "yalnız yeni üyeler": kod oluşturulduktan sonra açılan hesaplar.
+
+**Kullanma: `POST /me/promo { code }` → `{ kind, amount, proUntil }`**
+- Büyük-küçük harf, boşluk ve tire fark etmez.
+- Yalnız kayıtlı ve e-postası doğrulanmış hesap kullanabilir; misafir ya da doğrulanmamış hesap 403
+  `verification_required` alır.
+- Geçersiz, süresi dolmuş, başlamamış, durdurulmuş, tükenmiş ya da yeni üyelere özel kodların hepsi tek yanıt alır:
+  404 `invalid_code` "Kod geçersiz ya da artık kullanılamıyor." Böylece kod tahmin etmeye yarayan bir ipucu
+  verilmez.
+- Aynı kişi aynı kodu bir kez kullanır → 409 `already_redeemed`.
+  - Kişi = hesap **ve** e-posta kimliği. Kimlik, hoş geldin kredisindeki normalleştirmeyle anahtarlı özet olarak
+    tutulur; Gmail noktaları ve `+etiket` aynı kişi sayılır.
+  - Hesap silinince kullanım kaydı kalır (`userId` boşalır); yeniden açılan hesap aynı kodu bir daha kullanamaz.
+- Süresiz PRO hesap PRO günü veren kodu kullanamaz: 409 `already_pro`. PRO günleri paneldeki PRO'nun üstüne
+  eklenir; mağaza aboneliği ayrıca sürer.
+- Hız sınırı (RES-01): hesap başına saatte 10, IP başına saatte 30 deneme. Başarısız denemeler de sayılır.
+- Tek işlem (BUS-02):
+  1. kod satırı `FOR UPDATE` ile kilitlenir;
+  2. uygunluk ve daha önce kullanım kontrol edilir;
+  3. kullanım kaydı yazılır (benzersiz: kod+hesap, kod+kimlik);
+  4. kredi ya da PRO verilir, sayaç artar.
+- Veritabanı kısıtı `0 ≤ redeemed ≤ maxRedemptions` sınırı ayrıca korur.
+- Defter: kredi `promo`, PRO günü `promo_pro` (delta 0) olarak yazılır. Kredi hareketlerim'de `kind: promo`
+  ("Promosyon kodu") görünür.
+
+**Admin uçları** (okuma SUPPORT, değiştirme ADMIN; hepsi denetlenir: `promo.create`, `promo.batch`, `promo.update`)
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| GET | `/admin/promo?campaign=&q=&cursor=` | Kodlar ve kampanya özetleri (kod sayısı, kullanım). `q` kampanya adında ya da tam kodla arar |
+| POST | `/admin/promo` | Kampanya kodu `{ code, campaign, kind, amount, maxRedemptions?, startsAt?, endsAt?, newUsersOnly, reason }` → 201; aynı kod 409 `code_exists` |
+| POST | `/admin/promo/batch` | Hediye kodları `{ campaign, kind, amount, count, startsAt?, endsAt?, newUsersOnly, reason }` → 201 `{ codes: [...] }` (bir kez) |
+| PATCH | `/admin/promo/:id` | `{ active?, endsAt?, maxRedemptions?, reason }`; sınır şimdiye kadarki kullanımın altına inemez |
+| GET | `/admin/promo/:id/redemptions` | Kim, ne zaman (en çok 200; silinmiş hesap "silinmiş hesap" görünür) |
+
+**Web:** Hesabım → "Promosyon kodu" kutusu (11 dil). Başarıda "{n} kredi hesabına eklendi" ya da "PRO {tarih}
+tarihine kadar açık" yazar. Misafire ve doğrulanmamış hesaba neden kullanamadığı söylenir.
+
+Gizlilik metnine eklenecek cümle (sahibinin işi, hoş geldin kredisiyle aynı): kötüye kullanımı önlemek için e-posta
+kimliğinin geri döndürülemez özeti, kod durdukça saklanır.

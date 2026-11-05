@@ -18,7 +18,7 @@ type Consents = { current: Record<ConsentKind, { current: string; granted: boole
 type RequestType = "access" | "rectification" | "erasure" | "objection" | "other";
 type DataRequest = { id: string; reference: string; type: string; status: "RECEIVED" | "IN_PROGRESS" | "COMPLETED" | "REJECTED"; response: string | null; dueAt: string; receivedAt: string };
 const REQUEST_TYPES: RequestType[] = ["access", "rectification", "erasure", "objection", "other"];
-type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "adjustment" | "other";
+type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "promo" | "adjustment" | "other";
 type LedgerEntry = { id: string; delta: number; kind: LedgerKind; designId: string | null; productId: string | null; createdAt: string };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -36,6 +36,7 @@ export function AccountView() {
   const [error, setError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
+  const [ledgerKey, setLedgerKey] = useState(0);
 
   if (deleted) {
     return (
@@ -104,7 +105,14 @@ export function AccountView() {
         </dl>
       </Section>
 
-      <LedgerSection onError={setError} />
+      <PromoSection
+        onError={setError}
+        onDone={(text) => {
+          setNotice(text);
+          setLedgerKey((k) => k + 1);
+        }}
+      />
+      <LedgerSection key={ledgerKey} onError={setError} />
       <ConsentsSection onError={setError} onSaved={() => setNotice(p.consentSaved)} />
       <DataSection onError={setError} />
       <RequestsSection onError={setError} onSent={(ref) => setNotice(fmt(p.kvkkSent, { ref }))} />
@@ -117,6 +125,61 @@ export function AccountView() {
         }}
       />
     </div>
+  );
+}
+
+/** API.md §7.29: a campaign or gift code adds credits or PRO days (verified accounts only). */
+function PromoSection({ onError, onDone }: { onError: (e: unknown) => void; onDone: (text: string) => void }) {
+  const { t, locale, user, refreshUser } = useApp();
+  const p = t.profile;
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const allowed = Boolean(user && !user.isGuest && user.emailVerified);
+
+  async function apply() {
+    setBusy(true);
+    try {
+      const r = await api.post<{ kind: "CREDITS" | "PRO_DAYS"; amount: number; proUntil: string | null }>("/me/promo", { code: code.trim() });
+      setCode("");
+      await refreshUser().catch(() => null);
+      onDone(r.kind === "CREDITS" ? fmt(p.promoCredits, { n: r.amount }) : fmt(p.promoPro, { date: formatDate(r.proUntil ?? "", locale) }));
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section title={p.promoTitle}>
+      <p className="text-sm text-muted">{allowed ? p.promoBody : p.promoNeedsAccount}</p>
+      <form
+        className="mt-4 flex flex-col gap-3 sm:flex-row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (code.trim()) void apply();
+        }}
+      >
+        <label htmlFor="promo-code" className="sr-only">
+          {p.promoTitle}
+        </label>
+        <input
+          id="promo-code"
+          className={`${input} font-mono uppercase sm:flex-1`}
+          value={code}
+          maxLength={40}
+          autoComplete="off"
+          spellCheck={false}
+          disabled={!allowed || busy}
+          placeholder={p.promoPlaceholder}
+          onChange={(e) => setCode(e.target.value)}
+        />
+        <button type="submit" disabled={!allowed || busy || !code.trim()} className={`${btn.base} ${btn.primary} ${btn.md}`}>
+          {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
+          {p.promoApply}
+        </button>
+      </form>
+    </Section>
   );
 }
 

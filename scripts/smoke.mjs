@@ -825,6 +825,44 @@ if (adminToken) {
     && audit.some((x) => x.action === 'features.update' && x.meta?.reason === 'smoke flags restore'),
     'flags: stale version 409, unknown flag 400, restored as they were, audited (LOG-01)', `${stale.status}/${unknown.status}/${back.status}`);
 }
+// API.md §7.29: promo and gift codes — verified accounts only, once per person, a single-use code goes to one of two racers.
+if (adminToken) {
+  const A = { token: adminToken };
+  const verifiedUser = async () => {
+    const email = `smoke-promo-${crypto.randomUUID()}@example.com`;
+    const r = await call('POST', '/auth/register', { body: { email, password: 'promo-password-123' } });
+    await call('POST', '/auth/email/verify', { body: { token: tokenFrom(await lastMailTo(email, 'doğrula')) } });
+    return r.json?.accessToken;
+  };
+  const credits = async (t) => (await call('GET', '/me', { token: t })).json?.credits ?? 0;
+  const shared = `SMOKE${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+  const made = await call('POST', '/admin/promo', { ...A, body: { code: shared, campaign: 'smoke', kind: 'CREDITS', amount: 3, reason: 'smoke promo' } });
+  const u1 = await verifiedUser();
+  const c0 = await credits(u1);
+  const used = await call('POST', '/me/promo', { token: u1, body: { code: `${shared.slice(0, 4).toLowerCase()}-${shared.slice(4)}` } });
+  const twice = await call('POST', '/me/promo', { token: u1, body: { code: shared } });
+  const asGuest = await call('POST', '/me/promo', { token, body: { code: shared } });
+  const nonsense = await call('POST', '/me/promo', { token: u1, body: { code: 'NOSUCHCODE1' } });
+  const ledgerPromo = ((await call('GET', '/me/credits', { token: u1 })).json?.items ?? []).some((x) => x.kind === 'promo' && x.delta === 3);
+  ok(made.status === 201 && used.status === 200 && (await credits(u1)) === c0 + 3 && twice.status === 409 && asGuest.status === 403 && nonsense.status === 404 && ledgerPromo,
+    'promo code: credits once (case/dash-insensitive), twice 409, guest 403, unknown 404, in my credit movements', `${made.status} ${used.status} ${twice.status}/${asGuest.status}/${nonsense.status}`);
+  const batch = await call('POST', '/admin/promo/batch', { ...A, body: { campaign: 'smoke', kind: 'PRO_DAYS', amount: 3, count: 2, reason: 'smoke gift codes' } });
+  const [a, b] = [await verifiedUser(), await verifiedUser()];
+  const race = await Promise.all([a, b].map((t) => call('POST', '/me/promo', { token: t, body: { code: batch.json?.codes?.[0] } })));
+  const statuses = race.map((r) => r.status).sort();
+  const winner = race.find((r) => r.status === 200);
+  ok(batch.status === 201 && batch.json.codes.length === 2 && /^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(batch.json.codes[0]) && statuses.join() === '200,404' && winner?.json?.kind === 'PRO_DAYS',
+    'gift code: two people race for one single-use code, exactly one wins (BUS-02)', `${batch.status} ${statuses.join(',')}`);
+  const list = (await call('GET', '/admin/promo?campaign=smoke', A)).json;
+  const sharedRow = list?.items?.find((x) => x.display === shared);
+  const stop = await call('PATCH', `/admin/promo/${sharedRow?.id}`, { ...A, body: { active: false, reason: 'smoke stop' } });
+  const afterStop = await call('POST', '/me/promo', { token: a, body: { code: shared } });
+  const who = await call('GET', `/admin/promo/${sharedRow?.id}/redemptions`, A);
+  const audit = (await call('GET', '/admin/audit?limit=30', A)).json?.items ?? [];
+  ok(sharedRow?.redeemed === 1 && list.items.filter((x) => x.campaign === 'smoke' && x.display.includes('…')).length >= 2 && stop.status === 200 && afterStop.status === 404 && who.json?.items?.length === 1
+    && ['promo.create', 'promo.batch', 'promo.update'].every((k) => audit.some((x) => x.action === k)),
+    'promo admin: gift codes only masked in the list, a stopped code no longer works, redemptions listed, all audited', `${stop.status}/${afterStop.status}`);
+}
 // API.md §7.22: welcome credits — once per verified identity, not again after deleting and signing up again.
 if (adminToken) {
   const A = { token: adminToken };
@@ -1009,6 +1047,9 @@ if (adminToken) {
   const sFlags = await call('GET', '/admin/features', { token: staffToken });
   const sFlagsPut = await call('PATCH', '/admin/features', { token: staffToken, body: { features: {}, reason: 'support tries', version: null } });
   ok(sFlags.status === 200 && sFlagsPut.status === 403, 'SUPPORT reads feature flags but cannot switch them (AZ-01)', `${sFlags.status}/${sFlagsPut.status}`);
+  const sPromo = await call('GET', '/admin/promo', { token: staffToken });
+  const sPromoNew = await call('POST', '/admin/promo/batch', { token: staffToken, body: { campaign: 'support', kind: 'CREDITS', amount: 500, count: 1000, reason: 'support tries' } });
+  ok(sPromo.status === 200 && sPromoNew.status === 403, 'SUPPORT sees promo codes but cannot make any (AZ-01)', `${sPromo.status}/${sPromoNew.status}`);
   const sOrgs = await call('GET', '/admin/orgs', { token: staffToken });
   const sOrgCreate = await call('POST', '/admin/orgs', { token: staffToken, body: { name: 'Support Firm', ownerEmail: userEmail, reason: 'support tries' } });
   const sOrgCredits = firmIdForStaffCheck ? await call('POST', `/admin/orgs/${firmIdForStaffCheck}/credits`, { token: staffToken, body: { delta: 100, reason: 'support tries' } }) : { status: 403 };
@@ -1040,7 +1081,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

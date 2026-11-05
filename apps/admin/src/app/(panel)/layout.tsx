@@ -7,7 +7,8 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      {/* min-w-0: a wide table scrolls inside its card instead of widening the whole page. */}
+      <SidebarInset className="min-w-0">
         <SiteHeader />
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">{children}</div>

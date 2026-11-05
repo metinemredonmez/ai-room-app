@@ -13,8 +13,9 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Model ve sağlayıcı (API.md §7.27): zincir sırası, sağlayıcı başına izinli model, maliyet ve devre durumu; sunucu varsayılanına dönüş. Yeni model yalnız `IMAGE_MODEL_ALLOWLIST` ile (lisans ve fiyat kontrolü sonrası).
    - [x] Özellik bayrakları (API.md §7.28): 7 bayrak (sohbet, maliyet analizi, dokunarak seçim, destek, misafir, kayıt, blog); sunucu reddeder, web gizler; `GET /v1/features` ve katalogda. Admin → Sistem → Özellikler.
    - [x] Araç başı hak bedeli (API.md §7.25.1): Ürün kataloğu → Araçlar; tasarım = seçenek × bedel, iade bedelle, bedel tasarıma yazılır.
-2. Büyüme: promosyon/hediye kodu, davet et-kazan, panelden hediye kredi + bildirim, sadakat, influencer bağlantısı,
-   planlı fiyat değişikliği.
+2. Büyüme
+   - [x] Promosyon ve hediye kodları (API.md §7.29): kampanya kodu + tek kullanımlık hediye kodları (CSV), kredi ya da PRO günü; doğrulanmış hesap, kişi başı bir kez. Admin → Büyüme → Promosyon kodları; web Hesabım.
+   - [ ] Davet et-kazan, panelden hediye kredi + bildirim, sadakat, influencer bağlantısı, planlı fiyat değişikliği.
 3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,
    App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.

@@ -137,6 +137,7 @@ model User {
   images              Image[]
   designs             Design[]
   ledger              CreditLedger[]
+  promoRedemptions    PromoRedemption[]
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
@@ -314,6 +315,52 @@ model Setting {
   value     Json
   updatedBy String?  @db.Uuid
   updatedAt DateTime @updatedAt
+}
+
+enum PromoKind {
+  CREDITS
+  PRO_DAYS
+}
+
+// Promotion and gift codes (API.md §7.29). A code is stored only as a keyed hash; `display` is the code itself for a
+// shared campaign code the admin typed, and a masked form for generated gift codes (shown once, at creation).
+// CHECK constraints (migration): amount > 0, 0 <= redeemed <= maxRedemptions.
+model PromoCode {
+  id             String            @id @default(uuid()) @db.Uuid
+  hash           String            @unique
+  display        String            @db.VarChar(40)
+  campaign       String            @db.VarChar(80)
+  kind           PromoKind
+  amount         Int
+  maxRedemptions Int?
+  redeemed       Int               @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  active         Boolean           @default(true)
+  newUsersOnly   Boolean           @default(false)
+  createdById    String?           @db.Uuid
+  createdAt      DateTime          @default(now())
+  redemptions    PromoRedemption[]
+
+  @@index([campaign, createdAt])
+}
+
+// One use per account and per e-mail identity (keyed hash, kept when the account is deleted, so deleting and
+// signing up again does not give the code twice — same rule as welcome credits).
+model PromoRedemption {
+  id           String    @id @default(uuid()) @db.Uuid
+  codeId       String    @db.Uuid
+  userId       String?   @db.Uuid
+  identityHash String
+  kind         PromoKind
+  amount       Int
+  createdAt    DateTime  @default(now())
+  code         PromoCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([codeId, identityHash])
+  @@unique([codeId, userId])
+  @@index([userId])
 }
 
 // Image prompt template versions from the admin (API.md §7.26). Append-only history; which one is live is the

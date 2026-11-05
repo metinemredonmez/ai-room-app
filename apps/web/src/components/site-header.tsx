@@ -139,7 +139,8 @@ export function SiteHeader() {
             <div className="hidden items-center gap-1 lg:flex">
               <Link href="/hesap" className="inline-flex max-w-40 items-center gap-1.5 truncate rounded-full px-2 py-1.5 text-sm text-muted hover:bg-surface-2 hover:text-text" title={t.nav.profile}>
                 <UserIcon className="h-4 w-4 shrink-0" aria-hidden />
-                <span className="truncate">{user.name || user.email}</span>
+                {/* Icon only until xl: at 1024 px the full address pushed the header past the screen. */}
+                <span className="truncate max-xl:sr-only">{user.name || user.email}</span>
               </Link>
               <button type="button" onClick={onLogout} className={`${btn.base} ${btn.subtle} ${btn.sm}`}>
                 <LogOut className="h-4 w-4" aria-hidden /> {t.nav.logout}
@@ -150,9 +151,11 @@ export function SiteHeader() {
               {t.nav.login}
             </Link>
           )}
-          <Link href="/studio" className={`${btn.base} ${btn.primary} ${btn.sm} max-lg:hidden`}>
-            {t.nav.tryFree}
-          </Link>
+          {!signedIn && (
+            <Link href="/studio" className={`${btn.base} ${btn.primary} ${btn.sm} max-lg:hidden`}>
+              {t.nav.tryFree}
+            </Link>
+          )}
           <button
             type="button"
             className={`${btn.base} ${btn.ghost} ${btn.icon} lg:hidden`}
