@@ -669,5 +669,24 @@
       "MEMBER": "Üye",
       "OWNER": "Sahip"
     }
+  },
+  "projects": {
+    "title": "Projeler",
+    "mine": "Benim tasarımlarım",
+    "newProject": "Yeni proje",
+    "name": "Proje adı",
+    "client": "Müşteri (isteğe bağlı)",
+    "create": "Oluştur",
+    "noneOption": "Projesiz",
+    "studioProject": "Proje",
+    "moveTo": "Projeye taşı",
+    "shared": "Projedeki tasarımları ekibin tamamı görür; projesiz tasarımların yalnız sende kalır.",
+    "fromTeam": "Ekipten",
+    "archived": "Arşiv",
+    "archive": "Arşivle",
+    "unarchive": "Yeniden aç",
+    "emptyProject": "Bu projede henüz tasarım yok.",
+    "designsCount": "{n} tasarım",
+    "teamOnly": "Ekip arkadaşının tasarımı: görebilir ve indirebilirsin."
   }
 }

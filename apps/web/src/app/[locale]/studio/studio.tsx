@@ -5,7 +5,7 @@ import { Crown, ImageUp, Info, LoaderCircle, MousePointerClick, Plus, Sparkles, 
 import { ApiError, api } from "@/lib/api";
 import { ImageInputError, fileToUpload } from "@/lib/image";
 import { clearStudioPrefill, peekStudioPrefill, type StudioPrefill } from "@/lib/prefill";
-import type { CreateDesign, Design, ImageRef, Point, SampleId, Selection, ToolId } from "@/lib/types";
+import type { CreateDesign, Design, ImageRef, Point, Project, SampleId, Selection, ToolId } from "@/lib/types";
 import { useApp } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
 import { RoomIcon, ToolIcon } from "@/components/icons";
@@ -81,6 +81,26 @@ export function Studio() {
   const [removeAll, setRemoveAll] = useState(false);
   const [reference, setReference] = useState<ImageRef | null>(null);
   const [variants, setVariants] = useState<1 | 2 | 3 | 4>(2);
+  // API.md §7.23 step 4: in a firm workspace a design can go straight into one of the firm's open projects.
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectId, setProjectId] = useState("");
+  const activeOrgId = activeOrg?.id ?? null;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProjectId("");
+    if (!activeOrgId) {
+      setProjects([]);
+      return;
+    }
+    let alive = true;
+    api
+      .get<{ items: Project[] }>(`/orgs/${activeOrgId}/projects`)
+      .then((r) => alive && setProjects(r.items))
+      .catch(() => alive && setProjects([]));
+    return () => {
+      alive = false;
+    };
+  }, [activeOrgId]);
 
   const [uploading, setUploading] = useState<"input" | "reference" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -258,6 +278,7 @@ export function Studio() {
     if (needs.reference && reference) body.referenceImageId = reference.id;
     if (canTap && points.length) body.points = points;
     if (activeOrg) body.orgId = activeOrg.id; // API.md §7.23: paid by the firm
+    if (activeOrg && projectId) body.projectId = projectId;
 
     setError(null);
     setElapsed(0);
@@ -625,6 +646,21 @@ export function Studio() {
                   ))}
                 </div>
               </div>
+              {activeOrg && projects.length > 0 && (
+                <div>
+                  <label htmlFor="studio-project" className={label}>
+                    {t.projects.studioProject}
+                  </label>
+                  <select id="studio-project" className={input} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+                    <option value="">{t.projects.noneOption}</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.clientName ? `${p.name} · ${p.clientName}` : p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </Section>
 

@@ -174,6 +174,36 @@ export default function OrgDetailPage() {
         {canEdit && <InviteForm ready={ready} busy={busy} onInvite={(body) => run("invite", () => api(path("/invites"), { method: "POST", body: { ...body, reason: why } }), "Davet gönderildi.")} />}
       </Card>
 
+      <Card title={`Projeler (${fmtInt(org.projects.length)})`} className="mt-4">
+        {org.projects.length === 0 ? (
+          <p className="py-2 text-sm text-muted-foreground">Firma henüz proje açmamış. Projeleri üyeler web&apos;de Tasarımlarım sayfasından açar.</p>
+        ) : (
+          <Table
+            head={
+              <tr>
+                <th className={th}>Proje</th>
+                <th className={th}>Müşteri</th>
+                <th className={`${th} text-right`}>Tasarım</th>
+                <th className={th}>Durum</th>
+                <th className={th}>Son değişiklik</th>
+              </tr>
+            }
+          >
+            {org.projects.map((p) => (
+              <tr key={p.id}>
+                <td className={td}>{p.name}</td>
+                <td className={`${td} text-sm text-muted-foreground`}>{p.clientName ?? "—"}</td>
+                <td className={`${td} text-right tabular`}>{fmtInt(p.designs)}</td>
+                <td className={td}>
+                  <Badge tone={p.status === "ACTIVE" ? "good" : "neutral"}>{p.status === "ACTIVE" ? "Etkin" : "Arşivde"}</Badge>
+                </td>
+                <td className={`${td} whitespace-nowrap text-xs text-muted-foreground`}>{fmtDateTime(p.updatedAt)}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Card>
+
       <Card title="Kredi hareketleri" className="mt-4">
         {org.ledger.length === 0 ? (
           <EmptyState title="Hareket yok" />

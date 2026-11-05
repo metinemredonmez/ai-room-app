@@ -669,5 +669,24 @@
       "MEMBER": "成员",
       "OWNER": "所有者"
     }
+  },
+  "projects": {
+    "title": "项目",
+    "mine": "我的设计",
+    "newProject": "新建项目",
+    "name": "项目名称",
+    "client": "客户（可选）",
+    "create": "创建",
+    "noneOption": "无项目",
+    "studioProject": "项目",
+    "moveTo": "移至项目",
+    "shared": "项目中的设计团队成员都能看到；不在项目中的设计仅你可见。",
+    "fromTeam": "来自团队",
+    "archived": "归档",
+    "archive": "归档",
+    "unarchive": "重新打开",
+    "emptyProject": "此项目还没有设计。",
+    "designsCount": "{n} 个设计",
+    "teamOnly": "团队成员的设计：你可以查看和下载。"
   }
 }

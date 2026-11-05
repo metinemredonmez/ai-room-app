@@ -1150,6 +1150,56 @@ başına saatte 30. Her işlem kullanıcı adına denetlenir: `org.team_invite`,
 - `/ekip` sayfası (11 dil, arama motorlarına kapalı): firma seçimi, rol ve kalan hak, havuz (yöneticilere), üyeler
   (rol, sahiplik devri, sınır, çıkarma), davet formu, bekleyen davetler, firmadan ayrılma.
 
-Sonraki adımlar:
-- **4. adım:** projeler.
+#### 7.23.4 Projeler (4. adım)
+Firma içinde ortak klasör; örneğin bir müşterinin dairesi.
+
+**Görünürlük**
+- Projeye konan tasarımı firmanın tüm üyeleri görür.
+- Firma alanındaki projesiz tasarımlar yalnız yapanındır.
+- Ekip arkadaşının tasarımı salt okunur (`mine: false`): görüntüleme ve indirme açık; favori, silme, analiz,
+  sohbet ve "bu sonuçla devam et" yalnız yapan kişide.
+- Firmadan çıkan kişi firma tasarımlarına erişemez. Projedeki tasarımları firmada kalır, ekip görmeye devam eder.
+  Kişi hesabını silerse tasarımları da silinir (KVKK).
+
+**Yönetim**
+- Her üye proje açabilir.
+- Adı, müşteriyi ve notu değiştirmek, arşivlemek: açan kişi ya da sahip/yönetici. Aksi hâlde 403 `org_forbidden`.
+- Yalnız boş proje silinir; içinde tasarım varsa 409 `project_not_empty`, arşivlenir.
+- Arşivdeki projeye yeni tasarım konmaz (409 `project_archived`).
+- Firmada en çok 500 etkin proje olabilir.
+
+**Ayrım (AZ-02, AZ-04)**
+- Başka firmanın proje kimliği hiçbir uçta çözülmez (404).
+- Veritabanında tasarımın `(projectId, orgId)` çifti bileşik yabancı anahtarla projenin `(id, orgId)` çiftine
+  bağlıdır; bir tasarım yalnız kendi firmasının projesinde durabilir.
+- CHECK kısıtı projesi olan tasarımın firmasız olmasını engeller.
+- Proje silinirken tasarım varsa veritabanı da reddeder (`ON DELETE RESTRICT`).
+
+**Tasarımlar**
+- `POST /designs` → `{ orgId, projectId }`: doğrudan projede üretir. Proje kontrolü ücretten önce yapılır; geçersiz
+  projede havuzdan bir şey düşmez.
+- `PATCH /designs/:id` → `{ projectId: <id> | null }`: yalnız tasarımı yapan kişi, firma tasarımını kendi firmasının
+  açık projesine taşır ya da projeden çıkarır. Kişisel tasarımda 409 `personal_design`.
+- `GET /designs?orgId=&projectId=`: projedeki herkesin tasarımları.
+- `GET /designs/:id`: kendi tasarımı ya da üyesi olduğu firmanın projesindeki tasarım. Yanıtta `mine` var.
+
+| Yöntem | Yol | Not |
+|---|---|---|
+| GET | `/orgs/:orgId/projects?status=ACTIVE\|ARCHIVED` | Tasarım sayısı ve kapak görseliyle (en çok 200) |
+| POST | `/orgs/:orgId/projects` | `{ name, clientName?, note? }` → 201 |
+| PATCH | `/orgs/:orgId/projects/:projectId` | `{ name?, clientName?, note?, status? }` |
+| POST | `/orgs/:orgId/projects/:projectId/delete` | → 204; boş değilse 409 |
+
+Denetim kaydı: `org.project_create`, `org.project_update`, `org.project_delete`.
+
+**Web**
+- Tasarımlarım (firma alanında): "Benim tasarımlarım" ve proje şeridi; proje seçilince ekibin tasarımları
+  listelenir. "Yeni proje" formu var. Kendi kartında "Projeye taşı" seçimi, ekip arkadaşının kartında "Ekipten"
+  etiketi gösterilir.
+- Stüdyoda "Proje" seçimi.
+- Sonuç görünümü başkasının tasarımında salt okunurdur.
+
+**Admin:** firma ayrıntısında projeler listesi (salt okunur).
+
+Sonraki adım:
 - **5. adım:** logolu sunum, alan adıyla katılım, kartla ödeme, SSO.

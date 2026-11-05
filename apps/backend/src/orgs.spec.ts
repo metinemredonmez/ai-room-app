@@ -34,6 +34,7 @@ function fake() {
           members: members.filter((m) => m.orgId === o.id).map((m) => ({ ...m, user: users.find((u) => u.id === m.userId)! })),
           ledger: ledger.filter((l) => l.orgId === o.id),
           invites: [],
+          projects: [],
         };
       },
       update: async ({ where, data }: { where: { id: string }; data: Partial<Org> }) => Object.assign(orgs.find((o) => o.id === where.id)!, data),

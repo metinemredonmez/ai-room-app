@@ -129,6 +129,7 @@ export class OrgsService {
         members: { include: { user: { select: { id: true, email: true, name: true, status: true } } }, orderBy: [{ role: 'asc' }, { createdAt: 'asc' }] },
         ledger: { orderBy: { createdAt: 'desc' }, take: 50 },
         invites: { where: { acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'desc' } },
+        projects: { include: { _count: { select: { designs: true } } }, orderBy: { updatedAt: 'desc' }, take: 100 },
       },
     });
     if (!org) throw notFound();
@@ -145,6 +146,7 @@ export class OrgsService {
       })),
       ledger: org.ledger.map((l) => ({ id: l.id, delta: l.delta, reason: l.reason, userId: l.userId, actorId: l.actorId, createdAt: l.createdAt.toISOString() })),
       invites: org.invites.map((i) => this.inviteDto(i)),
+      projects: org.projects.map((p) => ({ id: p.id, name: p.name, clientName: p.clientName, status: p.status, designs: p._count.designs, updatedAt: p.updatedAt.toISOString() })),
     };
   }
 

@@ -17,6 +17,8 @@ import { btn } from "./ui";
 export function ResultView({ design, onChange }: { design: Design; onChange?: (d: Design) => void }) {
   const { t, locale, catalog, href } = useApp();
   const router = useRouter();
+  // API.md §7.23 step 4: a teammate's design in a shared project is view-and-download only.
+  const own = design.mine !== false;
   const [selected, setSelected] = useState(0);
   const [analyses, setAnalyses] = useState<Record<string, Analysis>>({});
   const [analyzing, setAnalyzing] = useState(false);
@@ -95,25 +97,31 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={toggleFavorite}
-            disabled={favBusy}
-            className={`${btn.base} ${btn.ghost} ${btn.sm}`}
-            aria-pressed={design.favorite}
-            aria-label={design.favorite ? t.result.unfavorite : t.result.favorite}
-          >
-            <Heart className={`h-4 w-4 ${design.favorite ? "fill-accent text-accent" : ""}`} aria-hidden />
-          </button>
+          {own && (
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              disabled={favBusy}
+              className={`${btn.base} ${btn.ghost} ${btn.sm}`}
+              aria-pressed={design.favorite}
+              aria-label={design.favorite ? t.result.unfavorite : t.result.favorite}
+            >
+              <Heart className={`h-4 w-4 ${design.favorite ? "fill-accent text-accent" : ""}`} aria-hidden />
+            </button>
+          )}
           <a href={downloadUrl(result.url)} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
             <Download className="h-4 w-4" aria-hidden /> {t.result.download}
           </a>
-          <button type="button" onClick={askChat} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
-            <MessageCircle className="h-4 w-4" aria-hidden /> {t.result.askChat}
-          </button>
-          <button type="button" onClick={iterate} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
-            <RefreshCw className="h-4 w-4" aria-hidden /> {t.result.iterate}
-          </button>
+          {own && (
+            <>
+              <button type="button" onClick={askChat} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+                <MessageCircle className="h-4 w-4" aria-hidden /> {t.result.askChat}
+              </button>
+              <button type="button" onClick={iterate} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+                <RefreshCw className="h-4 w-4" aria-hidden /> {t.result.iterate}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -151,7 +159,9 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
 
       {error ? <ErrorNotice error={error} /> : null}
 
-      {analysis ? (
+      {!own ? (
+        <p className="text-sm text-muted">{t.projects.teamOnly}</p>
+      ) : analysis ? (
         <AnalysisPanel analysis={analysis} />
       ) : (
         <button type="button" onClick={analyze} disabled={analyzing} className={`${btn.base} ${btn.accent} ${btn.md} w-full sm:w-auto`}>

@@ -669,5 +669,24 @@
       "MEMBER": "멤버",
       "OWNER": "소유자"
     }
+  },
+  "projects": {
+    "title": "프로젝트",
+    "mine": "내 디자인",
+    "newProject": "새 프로젝트",
+    "name": "프로젝트 이름",
+    "client": "고객(선택)",
+    "create": "만들기",
+    "noneOption": "프로젝트 없음",
+    "studioProject": "프로젝트",
+    "moveTo": "프로젝트로 이동",
+    "shared": "프로젝트의 디자인은 팀 전체가 볼 수 있어요. 프로젝트에 없는 디자인은 나만 볼 수 있어요.",
+    "fromTeam": "팀에서",
+    "archived": "보관함",
+    "archive": "보관",
+    "unarchive": "다시 열기",
+    "emptyProject": "이 프로젝트에 아직 디자인이 없어요.",
+    "designsCount": "디자인 {n}개",
+    "teamOnly": "팀원의 디자인: 보기와 다운로드만 할 수 있어요."
   }
 }

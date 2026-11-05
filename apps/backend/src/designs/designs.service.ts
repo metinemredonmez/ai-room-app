@@ -16,6 +16,7 @@ import type { Design, Image, Prisma } from '../generated/prisma/client.js';
 import { ImagesService, isUuid, sniffMime } from '../images/images.service.js';
 import { UsersService, type Charge } from '../users/users.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
+import { ProjectsService } from '../orgs/projects.service.js';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
@@ -43,6 +44,8 @@ export const CreateDesignSchema = z
     points: PointsSchema.optional(),
     /** API.md §7.23: create in this firm's workspace (charged to its pool, PRO features). */
     orgId: z.uuid().optional(),
+    /** API.md §7.23 step 4: put it in this firm project (shared with the team); needs `orgId`. */
+    projectId: z.uuid().optional(),
   })
   .strict();
 export type CreateDesign = z.infer<typeof CreateDesignSchema>;
@@ -73,6 +76,7 @@ export class DesignsService {
     private consents: ConsentsService,
     @Inject(CONFIG) cfg: Config,
     private orgs: OrgsService,
+    private projects: ProjectsService,
   ) {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
@@ -86,7 +90,8 @@ export class DesignsService {
     return room ? `${head} · ${room}` : head;
   }
 
-  async toDto(d: DesignWithImages, locale: Locale = 'tr') {
+  /** `viewerId`: who is looking — a teammate sees a shared project design as not theirs (`mine: false`). */
+  async toDto(d: DesignWithImages, locale: Locale = 'tr', viewerId?: string) {
     return {
       id: d.id,
       title: await this.titleOf(d, locale),
@@ -101,6 +106,8 @@ export class DesignsService {
       favorite: d.favorite,
       featured: d.featured,
       orgId: d.orgId,
+      projectId: d.projectId,
+      mine: viewerId ? d.userId === viewerId : true,
       chargeState: d.chargeState,
       region: ((d.params ?? {}) as { region?: unknown }).region ?? null,
       queuedAt: d.queuedAt?.toISOString() ?? null,
@@ -139,6 +146,8 @@ export class DesignsService {
     const user = await this.users.get(userId);
     // A firm's workspace (API.md §7.23) is paid by the firm: PRO tools, styles and variants, no budget brake.
     const org = body.orgId ? await this.orgs.workspace(body.orgId, userId) : null;
+    if (body.projectId && !org) throw new AppError(400, 'validation_failed', 'Proje yalnız firma çalışma alanında seçilir');
+    const project = org && body.projectId ? await this.projects.usable(org.id, body.projectId) : null;
     const pro = this.users.isPro(user) || org !== null;
     const locale: Locale = isLocale(user.locale) ? user.locale : 'tr';
     const tool = TOOLS[body.tool];
@@ -174,7 +183,7 @@ export class DesignsService {
 
     const design = await this.prisma.design.create({
       data: {
-        userId, tool: body.tool, styleId: style?.id ?? null, roomId: body.roomId ?? null, orgId: org?.id ?? null,
+        userId, tool: body.tool, styleId: style?.id ?? null, roomId: body.roomId ?? null, orgId: org?.id ?? null, projectId: project?.id ?? null,
         params: params as Prisma.InputJsonValue, inputImageId: input.id, queuedAt: new Date(),
       },
     });
@@ -383,10 +392,17 @@ export class DesignsService {
     return stale.length;
   }
 
-  /** One workspace at a time: personal designs, or the caller's designs in a firm they still belong to. */
-  async list(userId: string, opts: { cursor?: string; limit: number; favorite?: boolean; orgId?: string }, locale: Locale) {
-    if (opts.orgId) await this.orgs.membership(opts.orgId, userId);
-    const where: Prisma.DesignWhereInput = { userId, orgId: opts.orgId ?? null, ...(opts.favorite ? { favorite: true } : {}) };
+  /**
+   * One workspace at a time: personal designs, or the caller's designs in a firm they still belong to. With a
+   * project: everyone's designs in that project (the shared folder), for members only.
+   */
+  async list(userId: string, opts: { cursor?: string; limit: number; favorite?: boolean; orgId?: string; projectId?: string }, locale: Locale) {
+    if (opts.projectId && !opts.orgId) throw new AppError(400, 'validation_failed', 'Proje için firma seçilmeli');
+    if (opts.projectId) await this.projects.assertVisible(opts.orgId!, opts.projectId, userId);
+    else if (opts.orgId) await this.orgs.membership(opts.orgId, userId);
+    const where: Prisma.DesignWhereInput = opts.projectId
+      ? { orgId: opts.orgId, projectId: opts.projectId }
+      : { userId, orgId: opts.orgId ?? null, ...(opts.favorite ? { favorite: true } : {}) };
     const rows = await this.prisma.design.findMany({
       where,
       include: this.include,
@@ -396,9 +412,35 @@ export class DesignsService {
     });
     const page = rows.slice(0, opts.limit);
     return {
-      items: await Promise.all(page.map((d) => this.toDto(d, locale))),
+      items: await Promise.all(page.map((d) => this.toDto(d, locale, userId))),
       nextCursor: rows.length > opts.limit ? page[page.length - 1].id : null,
     };
+  }
+
+  /**
+   * Read access: one's own design, or a teammate's design that sits in a project of a firm the caller still
+   * belongs to. Everything that changes a design keeps using getOwned (the maker only).
+   */
+  async getVisible(userId: string, id: string) {
+    if (!isUuid(id)) throw notFound();
+    const d = await this.prisma.design.findFirst({ where: { id }, include: this.include });
+    if (!d) throw notFound();
+    if (d.userId === userId) {
+      if (d.orgId) await this.orgs.membership(d.orgId, userId);
+      return d;
+    }
+    if (!d.orgId || !d.projectId) throw notFound();
+    await this.orgs.membership(d.orgId, userId);
+    return d;
+  }
+
+  /** The maker moves a firm design into one of the firm's open projects, or out of it (null). */
+  async setProject(userId: string, id: string, projectId: string | null, locale: Locale) {
+    const d = await this.getOwned(userId, id);
+    if (!d.orgId) throw new AppError(409, 'personal_design', 'Kişisel tasarımlar firma projesine taşınamaz');
+    if (projectId) await this.projects.usable(d.orgId, projectId);
+    const updated = await this.prisma.design.update({ where: { id }, data: { projectId }, include: this.include });
+    return this.toDto(updated, locale, userId);
   }
 
   async getOwned(userId: string, id: string) {

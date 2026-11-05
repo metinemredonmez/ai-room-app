@@ -57,6 +57,8 @@ const PageQuery = z.object({
   locale: z.enum(LOCALES).optional(),
   /** API.md §7.23: list this firm's workspace instead of the personal one. */
   orgId: z.uuid().optional(),
+  /** API.md §7.23 step 4: everyone's designs in this firm project (needs orgId). */
+  projectId: z.uuid().optional(),
 });
 
 @ApiTags('public')
@@ -172,7 +174,10 @@ const SampleSchema = z.object({ sample: z.enum(SAMPLE_IDS) }).strict();
 const PatchMeSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), locale: z.enum(LOCALES).optional() }).strict();
 const PushTokenSchema = z.object({ token: z.string().max(200).regex(PUSH_TOKEN_RE), platform: z.enum(['ios', 'android']) }).strict();
 const PushTokenDeleteSchema = z.object({ token: z.string().max(200) }).strict();
-const FavoriteSchema = z.object({ favorite: z.boolean() }).strict();
+const FavoriteSchema = z
+  .object({ favorite: z.boolean().optional(), /** API.md §7.23 step 4: move into a firm project, or out (null). */ projectId: z.uuid().nullable().optional() })
+  .strict()
+  .refine((v) => v.favorite !== undefined || v.projectId !== undefined, { message: 'nothing_to_change' });
 const AnalysisSchema = z.object({ imageId: z.uuid().optional() }).strict();
 const ReportSchema = z
   .object({ reason: z.enum(['inappropriate', 'offensive', 'copyright', 'privacy', 'other']), note: z.string().trim().max(500).optional() })
@@ -425,20 +430,23 @@ export class UserController {
   @Doc('Tasarımlarım (sayfalı)', { response: 'DesignPage', errors: [401] })
   async listDesigns(@Auth() auth: AuthContext, @Query() query: unknown, @Req() req: AppRequest) {
     const q = parse(PageQuery, query);
-    return this.designs.list(auth.userId, { cursor: q.cursor, limit: q.limit, favorite: q.favorite === 'true', orgId: q.orgId }, localeOf(req));
+    return this.designs.list(auth.userId, { cursor: q.cursor, limit: q.limit, favorite: q.favorite === 'true', orgId: q.orgId, projectId: q.projectId }, localeOf(req));
   }
 
   @Get('designs/:id')
   @Doc('Tasarım detayı / durum sorgulama', { response: 'Design', errors: [401, 404] })
   async getDesign(@Auth() auth: AuthContext, @Param('id') id: string, @Req() req: AppRequest) {
-    return this.designs.toDto(await this.designs.getOwned(auth.userId, id), localeOf(req));
+    // Own designs, and teammates' designs in a shared firm project (API.md §7.23 step 4).
+    return this.designs.toDto(await this.designs.getVisible(auth.userId, id), localeOf(req), auth.userId);
   }
 
   @Patch('designs/:id')
-  @Doc('Favori işaretle', { body: FavoriteSchema, response: 'Design', errors: [400, 401, 404] })
+  @Doc('Favori işaretle ya da firma projesine taşı', { body: FavoriteSchema, response: 'Design', description: '`projectId`: aynı firmanın açık projesi ya da null (yalnız tasarımı yapan).', errors: [400, 401, 404, 409] })
   async patchDesign(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
-    const { favorite } = parse(FavoriteSchema, body);
-    return this.designs.setFavorite(auth.userId, id, favorite, localeOf(req));
+    const input = parse(FavoriteSchema, body);
+    let out = input.projectId !== undefined ? await this.designs.setProject(auth.userId, id, input.projectId, localeOf(req)) : null;
+    if (input.favorite !== undefined) out = await this.designs.setFavorite(auth.userId, id, input.favorite, localeOf(req));
+    return out;
   }
 
   @Delete('designs/:id')

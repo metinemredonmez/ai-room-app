@@ -669,5 +669,24 @@
       "MEMBER": "Lid",
       "OWNER": "Eigenaar"
     }
+  },
+  "projects": {
+    "title": "Projecten",
+    "mine": "Mijn ontwerpen",
+    "newProject": "Nieuw project",
+    "name": "Projectnaam",
+    "client": "Klant (optioneel)",
+    "create": "Aanmaken",
+    "noneOption": "Geen project",
+    "studioProject": "Project",
+    "moveTo": "Naar project verplaatsen",
+    "shared": "Het hele team ziet ontwerpen in een project; ontwerpen zonder project blijven van jou.",
+    "fromTeam": "Van het team",
+    "archived": "Archief",
+    "archive": "Archiveren",
+    "unarchive": "Heropenen",
+    "emptyProject": "Nog geen ontwerpen in dit project.",
+    "designsCount": "{n} ontwerpen",
+    "teamOnly": "Ontwerp van een teamlid: je kunt het bekijken en downloaden."
   }
 }

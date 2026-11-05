@@ -20,6 +20,7 @@ import { WelcomeService } from './users/welcome.service.js';
 import { AdminOrgsController } from './orgs/orgs.admin.controller.js';
 import { OrgsController } from './orgs/orgs.controller.js';
 import { OrgsService } from './orgs/orgs.service.js';
+import { ProjectsService } from './orgs/projects.service.js';
 import { BillingService } from './billing/billing.service.js';
 import { AdminBroadcastsController, BroadcastsController, UnsubscribeController } from './broadcasts/broadcasts.controller.js';
 import { BroadcastsService } from './broadcasts/broadcasts.service.js';
@@ -66,6 +67,7 @@ import { UsersService } from './users/users.service.js';
     PlansService,
     WelcomeService,
     OrgsService,
+    ProjectsService,
     AnalyticsService,
     BroadcastsService,
     MarketingService,

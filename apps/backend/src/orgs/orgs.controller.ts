@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuditService } from '../admin/audit.service.js';
 import { UserGuard } from '../auth/tokens.service.js';
@@ -7,12 +7,13 @@ import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js'
 import { LIMITS, RateLimiter } from '../common/infra.js';
 import { Doc } from '../common/openapi.js';
 import { InviteTokenSchema, OrgsService, TeamInviteSchema, TeamMemberSchema } from './orgs.service.js';
+import { CreateProjectSchema, ProjectListQuery, ProjectsService, UpdateProjectSchema } from './projects.service.js';
 
 /** Firms seen by their members (API.md §7.23 step 2): my firms, and the invitation link. */
 @ApiTags('user')
 @Controller('v1')
 export class OrgsController {
-  constructor(private orgs: OrgsService, private limiter: RateLimiter, private audit: AuditService) {}
+  constructor(private orgs: OrgsService, private limiter: RateLimiter, private audit: AuditService, private projects: ProjectsService) {}
 
   @ApiBearerAuth('user')
   @UseGuards(UserGuard)
@@ -110,5 +111,46 @@ export class OrgsController {
   async leave(@Param('orgId') orgId: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     await this.orgs.leave(orgId, auth.userId);
     await this.audit.record(auth.userId, 'org.leave', 'organization', orgId, {}, req.clientIp);
+  }
+
+  // ---- step 4: shared projects (any member opens one; its creator or OWNER/ADMIN renames, archives, deletes)
+
+  @ApiBearerAuth('user')
+  @UseGuards(UserGuard)
+  @Get('orgs/:orgId/projects')
+  @Doc('Firma projeleri (tasarım sayısı ve kapak görseliyle)', { description: '`status` ACTIVE (varsayılan) | ARCHIVED. Üye değilse 404.', errors: [400, 401, 404] })
+  listProjects(@Param('orgId') orgId: string, @Query() query: unknown, @Auth() auth: AuthContext) {
+    return this.projects.list(orgId, auth.userId, parse(ProjectListQuery, query).status);
+  }
+
+  @ApiBearerAuth('user')
+  @UseGuards(UserGuard)
+  @Post('orgs/:orgId/projects')
+  @Doc('Proje aç', { body: CreateProjectSchema, status: 201, errors: [400, 401, 403, 404, 409] })
+  async createProject(@Param('orgId') orgId: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const project = await this.projects.create(orgId, auth.userId, parse(CreateProjectSchema, body));
+    await this.audit.record(auth.userId, 'org.project_create', 'organization', orgId, { projectId: project.id }, req.clientIp);
+    return project;
+  }
+
+  @ApiBearerAuth('user')
+  @UseGuards(UserGuard)
+  @Patch('orgs/:orgId/projects/:projectId')
+  @Doc('Projeyi düzenle ya da arşivle (açan kişi ya da OWNER/ADMIN)', { body: UpdateProjectSchema, errors: [400, 401, 403, 404] })
+  async updateProject(@Param('orgId') orgId: string, @Param('projectId') projectId: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const input = parse(UpdateProjectSchema, body);
+    const project = await this.projects.update(orgId, auth.userId, projectId, input);
+    await this.audit.record(auth.userId, 'org.project_update', 'organization', orgId, { projectId, fields: Object.keys(input) }, req.clientIp);
+    return project;
+  }
+
+  @ApiBearerAuth('user')
+  @UseGuards(UserGuard)
+  @Post('orgs/:orgId/projects/:projectId/delete')
+  @HttpCode(204)
+  @Doc('Boş projeyi sil (içinde tasarım varsa 409, arşivle)', { status: 204, errors: [401, 403, 404, 409] })
+  async deleteProject(@Param('orgId') orgId: string, @Param('projectId') projectId: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    await this.projects.remove(orgId, auth.userId, projectId);
+    await this.audit.record(auth.userId, 'org.project_delete', 'organization', orgId, { projectId }, req.clientIp);
   }
 }

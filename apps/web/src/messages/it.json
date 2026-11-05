@@ -669,5 +669,24 @@
       "MEMBER": "Membro",
       "OWNER": "Titolare"
     }
+  },
+  "projects": {
+    "title": "Progetti",
+    "mine": "I miei design",
+    "newProject": "Nuovo progetto",
+    "name": "Nome del progetto",
+    "client": "Cliente (facoltativo)",
+    "create": "Crea",
+    "noneOption": "Nessun progetto",
+    "studioProject": "Progetto",
+    "moveTo": "Sposta nel progetto",
+    "shared": "Tutto il team vede i design di un progetto; quelli senza progetto restano tuoi.",
+    "fromTeam": "Dal team",
+    "archived": "Archivio",
+    "archive": "Archivia",
+    "unarchive": "Riapri",
+    "emptyProject": "Ancora nessun design in questo progetto.",
+    "designsCount": "{n} design",
+    "teamOnly": "Design di un collega: puoi vederlo e scaricarlo."
   }
 }

@@ -200,7 +200,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   denetim, veri indirmede üyelikler. Havuz eksiye inemez (CHECK kısıtı), sahip yalnız devirle değişir.
 - [x] 2. adım: e-postayla davet (admin'den; web `/davet` kabul sayfası) + firma çalışma alanı (`orgId` ile üretim, havuz ve aylık sınır, iade havuza; çıkan üye firma tasarımına erişemez).
 - [x] 3. adım: firma kendi ekibini yönetir (sahip/yönetici yetkileri, API.md §7.23.3), web `/ekip` sayfası ve üst menüde Kişisel / Firma geçişi; stüdyo ve Tasarımlarım seçili alanda çalışır.
-- [ ] 4. adım: firma içinde projeler / müşteri klasörleri.
+- [x] 4. adım: firma projeleri (API.md §7.23.4): projedeki tasarımı ekip görür (salt okunur), projesizler yapanın; bileşik yabancı anahtar + CHECK ile firma ayrımı veritabanında da; web proje şeridi, taşıma, stüdyo seçimi; admin'de liste.
 - [ ] 5. adım: logolu müşteri sunumu (paylaşım sayfasıyla), alan adıyla katılım, kartla ödeme, kurumsal SSO.
 
 ### Masaüstü kataloglarından eksikler (4 Kasım; YediOda kataloğu, MAEYJA ve Palemi kurulum belgeleri)

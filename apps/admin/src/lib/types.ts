@@ -459,4 +459,5 @@ export type AdminOrgDetail = {
   members: AdminOrgMember[];
   ledger: { id: string; delta: number; reason: string; userId: string | null; actorId: string | null; createdAt: string }[];
   invites: { id: string; email: string; role: OrgRole; monthlyCap: number | null; expiresAt: string; createdAt: string }[];
+  projects: { id: string; name: string; clientName: string | null; status: "ACTIVE" | "ARCHIVED"; designs: number; updatedAt: string }[];
 };

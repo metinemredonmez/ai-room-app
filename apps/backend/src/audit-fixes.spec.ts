@@ -71,7 +71,7 @@ function designs(opts: { consent?: boolean; budget?: 'normal' | 'exceeded'; pro?
   const images = { owned: async () => ({ id: 'img' }), read: async () => Buffer.from('jpeg') };
   const svc = new DesignsService(
     prisma as never, images as never, users as never, {} as never, ai as never, settings as never, usage as never, {} as never,
-    consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never,
+    consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never, {} as never,
   );
   return { svc, calls, rows };
 }

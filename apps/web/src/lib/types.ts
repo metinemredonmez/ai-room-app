@@ -48,7 +48,26 @@ export type Design = {
   results: ImageRef[];
   favorite: boolean;
   featured: boolean;
+  /** API.md §7.23: firm workspace and shared project; `mine` false for a teammate's design (view only). */
+  orgId?: string | null;
+  projectId?: string | null;
+  mine?: boolean;
   createdAt: string;
+};
+
+/** API.md §7.23 step 4: a firm's shared folder. */
+export type Project = {
+  id: string;
+  orgId: string;
+  name: string;
+  clientName: string | null;
+  note: string | null;
+  status: "ACTIVE" | "ARCHIVED";
+  designs: number;
+  cover: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type AnalysisItem = {
@@ -136,6 +155,8 @@ export type CreateDesign = {
   points?: Point[];
   /** API.md §7.23: make it in this firm's workspace. */
   orgId?: string;
+  /** API.md §7.23 step 4: and put it in this project (shared with the team). */
+  projectId?: string;
 };
 
 /** A tap on the photo, 0..1 from the top-left; each point selects one object. */

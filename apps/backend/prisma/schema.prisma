@@ -214,10 +214,14 @@ model Design {
   featured     Boolean         @default(false)
   /// Made in a firm's workspace (API.md §7.23): charged to the firm's pool, visible only while the maker is a member.
   orgId        String?         @db.Uuid
+  /// In a firm project (step 4): the whole team sees it. The composite key (projectId, orgId) means a design can
+  /// only sit in a project of its own firm, enforced by the database too (AZ-02).
+  projectId    String?         @db.Uuid
   createdAt    DateTime        @default(now())
   finishedAt   DateTime?
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   org          Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  project      Project?        @relation(fields: [projectId, orgId], references: [id, orgId], onDelete: Restrict)
   inputImage   Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
   results      Image[]         @relation("results")
   analyses     Analysis[]
@@ -228,6 +232,7 @@ model Design {
   @@index([status, createdAt])
   @@index([featured])
   @@index([orgId, createdAt])
+  @@index([projectId, createdAt])
 }
 
 model Analysis {
@@ -660,6 +665,11 @@ enum OrgRole {
   MEMBER
 }
 
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 /// Corporate workspace (API.md §7.23): a firm with members and a shared credit pool. Firms are created and topped
 /// up from the admin panel (invoiced outside the app). Access to anything a firm owns is decided by OrgMember on
 /// every request, and every firm-owned row carries orgId (AZ-01/AZ-02).
@@ -678,6 +688,7 @@ model Organization {
   ledger           OrgLedger[]
   invites          OrgInvite[]
   designs          Design[]
+  projects         Project[]
 
   @@index([createdAt])
 }
@@ -735,4 +746,24 @@ model OrgInvite {
 
   @@index([orgId, createdAt])
   @@index([email])
+}
+
+/// A firm's shared folder (API.md §7.23 step 4), e.g. one client's apartment. Designs put in a project are visible
+/// to the whole team; the rest of a member's firm designs stay theirs. Projects are archived, not deleted, while
+/// they hold designs.
+model Project {
+  id         String        @id @default(uuid()) @db.Uuid
+  orgId      String        @db.Uuid
+  name       String
+  clientName String?
+  note       String?
+  status     ProjectStatus @default(ACTIVE)
+  createdBy  String?       @db.Uuid
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  org        Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  designs    Design[]
+
+  @@unique([id, orgId])
+  @@index([orgId, status, updatedAt])
 }
