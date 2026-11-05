@@ -16,7 +16,8 @@
       "profile": "Il mio account",
       "legal": "Documenti legali",
       "deletion": "Eliminazione dell'account",
-      "support": "Assistenza"
+      "support": "Assistenza",
+      "invite": "Invito al team"
     }
   },
   "brandTagline": "Riprogetta la tua stanza in pochi secondi",
@@ -601,5 +602,29 @@
     "back": "Tutte le richieste",
     "newButton": "Apri una nuova richiesta",
     "closedNote": "Questa richiesta è chiusa. Se rispondi, verrà riaperta."
+  },
+  "invite": {
+    "title": "Invito al team",
+    "loading": "Verifica dell'invito…",
+    "invitedBy": "{org} ti ha invitato nel suo team su Casalume.",
+    "role": "Il tuo ruolo: {role}",
+    "roles": {
+      "ADMIN": "Amministratore",
+      "MEMBER": "Membro",
+      "OWNER": "Titolare"
+    },
+    "sentTo": "L'invito è stato inviato a {email}.",
+    "signInPrompt": "Accedi o registrati con quell'indirizzo per accettare.",
+    "signIn": "Accedi o registrati",
+    "accept": "Accetta l'invito",
+    "accepted": "Ora fai parte del team di {org}.",
+    "toStudio": "Vai allo studio",
+    "invalid": "Questo link di invito non è valido.",
+    "expired": "Questo invito è scaduto; chiedine uno nuovo all'azienda.",
+    "used": "Questo invito è già stato usato.",
+    "revoked": "Questo invito è stato ritirato.",
+    "mismatch": "Questo invito è stato inviato a {email}; accedi con quell'indirizzo.",
+    "verifyFirst": "Prima verifica il tuo indirizzo e-mail; l'e-mail di verifica è nella tua casella.",
+    "switchAccount": "Accedi con un altro account"
   }
 }

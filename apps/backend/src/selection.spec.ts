@@ -28,7 +28,7 @@ function service(opts: { owned?: boolean; consent?: boolean; requireConsent?: bo
   const usageSvc = { record: async (u: unknown) => void calls.recorded.push(u), budget: async () => ({ state: 'normal', brakeMode: 'free_paused' }) };
   const designs = new DesignsService(
     {} as never, images as never, {} as never, {} as never, ai as never, settings as never, usageSvc as never,
-    {} as never, consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never,
+    {} as never, consents as never, { MAX_CONCURRENT_GENERATIONS: 1 } as never, {} as never,
   );
   return { designs, calls };
 }

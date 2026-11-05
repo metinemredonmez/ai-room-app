@@ -33,6 +33,7 @@ function fake() {
           ...o,
           members: members.filter((m) => m.orgId === o.id).map((m) => ({ ...m, user: users.find((u) => u.id === m.userId)! })),
           ledger: ledger.filter((l) => l.orgId === o.id),
+          invites: [],
         };
       },
       update: async ({ where, data }: { where: { id: string }; data: Partial<Org> }) => Object.assign(orgs.find((o) => o.id === where.id)!, data),
@@ -63,7 +64,7 @@ function fake() {
     users.push(u);
     return u;
   };
-  return { svc: new OrgsService(prisma as never), users, orgs, members, ledger, addUser };
+  return { svc: new OrgsService(prisma as never, {} as never, {} as never), users, orgs, members, ledger, addUser };
 }
 
 const create = (ownerEmail: string, extra: Record<string, unknown> = {}) => CreateOrgSchema.parse({ name: 'Mimar Ofisi', ownerEmail, reason: 'sözleşme 2026/12', ...extra });

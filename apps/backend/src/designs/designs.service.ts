@@ -15,6 +15,7 @@ import { log } from '../common/log.js';
 import type { Design, Image, Prisma } from '../generated/prisma/client.js';
 import { ImagesService, isUuid, sniffMime } from '../images/images.service.js';
 import { UsersService, type Charge } from '../users/users.service.js';
+import { OrgsService } from '../orgs/orgs.service.js';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
@@ -40,6 +41,8 @@ export const CreateDesignSchema = z
     removeAll: z.boolean().optional(),
     referenceImageId: z.uuid().optional(),
     points: PointsSchema.optional(),
+    /** API.md §7.23: create in this firm's workspace (charged to its pool, PRO features). */
+    orgId: z.uuid().optional(),
   })
   .strict();
 export type CreateDesign = z.infer<typeof CreateDesignSchema>;
@@ -69,6 +72,7 @@ export class DesignsService {
     private queues: QueuesService,
     private consents: ConsentsService,
     @Inject(CONFIG) cfg: Config,
+    private orgs: OrgsService,
   ) {
     this.slots = new Semaphore(cfg.MAX_CONCURRENT_GENERATIONS);
   }
@@ -96,6 +100,7 @@ export class DesignsService {
       results: [...d.results].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).map((r) => this.images.ref(r)),
       favorite: d.favorite,
       featured: d.featured,
+      orgId: d.orgId,
       chargeState: d.chargeState,
       region: ((d.params ?? {}) as { region?: unknown }).region ?? null,
       queuedAt: d.queuedAt?.toISOString() ?? null,
@@ -132,7 +137,9 @@ export class DesignsService {
     const settings = this.settings.current;
     if (settings.maintenance.enabled) throw new AppError(503, 'busy', settings.maintenance.messageTr);
     const user = await this.users.get(userId);
-    const pro = this.users.isPro(user);
+    // A firm's workspace (API.md §7.23) is paid by the firm: PRO tools, styles and variants, no budget brake.
+    const org = body.orgId ? await this.orgs.workspace(body.orgId, userId) : null;
+    const pro = this.users.isPro(user) || org !== null;
     const locale: Locale = isLocale(user.locale) ? user.locale : 'tr';
     const tool = TOOLS[body.tool];
     if (tool.isPro && !pro) throw new AppError(402, 'pro_required', 'Bu araç PRO üyelere özel');
@@ -167,21 +174,25 @@ export class DesignsService {
 
     const design = await this.prisma.design.create({
       data: {
-        userId, tool: body.tool, styleId: style?.id ?? null, roomId: body.roomId ?? null,
+        userId, tool: body.tool, styleId: style?.id ?? null, roomId: body.roomId ?? null, orgId: org?.id ?? null,
         params: params as Prisma.InputJsonValue, inputImageId: input.id, queuedAt: new Date(),
       },
     });
 
-    let charge: Charge;
+    // Personal designs spend the daily free slots then credits; firm designs spend the firm's pool (chargeDay null).
+    let charge: Charge | null = null;
     try {
-      charge = await this.users.charge(userId, variants, design.id);
+      if (org) await this.orgs.charge(org.id, userId, variants, design.id);
+      else charge = await this.users.charge(userId, variants, design.id);
     } catch (e) {
       await this.prisma.design.delete({ where: { id: design.id } });
       throw e;
     }
     await this.prisma.design.update({
       where: { id: design.id },
-      data: { chargeState: 'HELD', chargeDay: charge.day, freeUsed: charge.fromFree, creditsUsed: charge.fromCredits },
+      data: charge
+        ? { chargeState: 'HELD', chargeDay: charge.day, freeUsed: charge.fromFree, creditsUsed: charge.fromCredits }
+        : { chargeState: 'HELD', chargeDay: null, freeUsed: 0, creditsUsed: variants },
     });
 
     if (mode === 'async') {
@@ -228,9 +239,10 @@ export class DesignsService {
   async process(designId: string, opts: { finalAttempt: boolean; requestId?: string }): Promise<void> {
     const d = await this.prisma.design.findUnique({ where: { id: designId }, include: { user: true } });
     if (!d || d.status !== 'PENDING') return;
+    const pro = this.users.isPro(d.user) || Boolean(d.orgId);
     // The budget may have run out while this design waited in the queue: a FREE design then stops here,
     // before any provider call, and its held credits go back.
-    if (!this.users.isPro(d.user)) {
+    if (!pro) {
       const budget = await this.usage.budget();
       if (budget.state === 'exceeded' && budget.brakeMode === 'free_paused') {
         await this.fail(designId, 'generation_paused');
@@ -240,7 +252,6 @@ export class DesignsService {
     await this.prisma.design.update({ where: { id: designId }, data: { startedAt: new Date() } });
     const params = (d.params ?? {}) as Record<string, string | number | boolean | undefined>;
     const style = d.styleId ? (await this.catalog.styles(true)).find((s) => s.id === d.styleId) : undefined;
-    const pro = this.users.isPro(d.user);
     const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
     const points = PointsSchema.safeParse((d.params as { points?: unknown } | null)?.points);
     try {
@@ -300,7 +311,7 @@ export class DesignsService {
    * out of HELD refunds; a retried job finds it CAPTURED and refunds nothing.
    */
   private async settleSuccess(
-    d: { id: string; userId: string; params: Prisma.JsonValue; creditsUsed: number; freeUsed: number; chargeDay: string | null },
+    d: { id: string; userId: string; orgId: string | null; params: Prisma.JsonValue; creditsUsed: number; freeUsed: number; chargeDay: string | null },
     produced: number,
     data: Prisma.DesignUpdateInput,
   ) {
@@ -309,8 +320,9 @@ export class DesignsService {
     const refundFree = Math.min(missing - refundCredits, d.freeUsed);
     await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.design.updateMany({ where: { id: d.id, chargeState: 'HELD' }, data: { chargeState: 'CAPTURED' } });
-      const refund = claimed.count === 1 && refundCredits + refundFree > 0 && d.chargeDay !== null;
-      if (refund) await this.users.refund(d.userId, { day: d.chargeDay!, fromFree: refundFree, fromCredits: refundCredits }, d.id, tx);
+      const refund = claimed.count === 1 && refundCredits + refundFree > 0 && (d.chargeDay !== null || Boolean(d.orgId));
+      if (refund && d.orgId) await this.orgs.refund(d.orgId, d.userId, refundCredits, d.id, tx);
+      else if (refund) await this.users.refund(d.userId, { day: d.chargeDay!, fromFree: refundFree, fromCredits: refundCredits }, d.id, tx);
       await tx.design.update({
         where: { id: d.id },
         data: { ...data, ...(refund ? { creditsUsed: d.creditsUsed - refundCredits, freeUsed: d.freeUsed - refundFree } : {}) },
@@ -341,7 +353,8 @@ export class DesignsService {
         if (!d || d.chargeState !== 'HELD') return false;
         const claimed = await tx.design.updateMany({ where: { id: designId, chargeState: 'HELD' }, data: { chargeState: 'RELEASED' } });
         if (claimed.count !== 1) return false;
-        if (d.chargeDay) await this.users.refund(d.userId, { day: d.chargeDay, fromFree: d.freeUsed, fromCredits: d.creditsUsed }, designId, tx);
+        if (d.orgId) await this.orgs.refund(d.orgId, d.userId, d.creditsUsed, designId, tx);
+        else if (d.chargeDay) await this.users.refund(d.userId, { day: d.chargeDay, fromFree: d.freeUsed, fromCredits: d.creditsUsed }, designId, tx);
         return true;
       });
     } catch (err) {
@@ -370,8 +383,10 @@ export class DesignsService {
     return stale.length;
   }
 
-  async list(userId: string, opts: { cursor?: string; limit: number; favorite?: boolean }, locale: Locale) {
-    const where: Prisma.DesignWhereInput = { userId, ...(opts.favorite ? { favorite: true } : {}) };
+  /** One workspace at a time: personal designs, or the caller's designs in a firm they still belong to. */
+  async list(userId: string, opts: { cursor?: string; limit: number; favorite?: boolean; orgId?: string }, locale: Locale) {
+    if (opts.orgId) await this.orgs.membership(opts.orgId, userId);
+    const where: Prisma.DesignWhereInput = { userId, orgId: opts.orgId ?? null, ...(opts.favorite ? { favorite: true } : {}) };
     const rows = await this.prisma.design.findMany({
       where,
       include: this.include,
@@ -390,6 +405,8 @@ export class DesignsService {
     if (!isUuid(id)) throw notFound();
     const d = await this.prisma.design.findFirst({ where: { id, userId }, include: this.include });
     if (!d) throw notFound();
+    // A firm design stays the firm's: someone who left (or was removed) no longer reaches it (AZ-01).
+    if (d.orgId) await this.orgs.membership(d.orgId, userId);
     return d;
   }
 

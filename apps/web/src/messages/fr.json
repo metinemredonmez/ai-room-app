@@ -16,7 +16,8 @@
       "profile": "Mon compte",
       "legal": "Mentions légales",
       "deletion": "Suppression du compte",
-      "support": "Assistance"
+      "support": "Assistance",
+      "invite": "Invitation d'équipe"
     }
   },
   "brandTagline": "Réinventez votre pièce en quelques secondes",
@@ -601,5 +602,29 @@
     "back": "Toutes les demandes",
     "newButton": "Nouvelle demande",
     "closedNote": "Cette demande est fermée. Si vous répondez, elle sera rouverte."
+  },
+  "invite": {
+    "title": "Invitation d'équipe",
+    "loading": "Vérification de l'invitation…",
+    "invitedBy": "{org} vous invite à rejoindre son équipe sur Casalume.",
+    "role": "Votre rôle : {role}",
+    "roles": {
+      "ADMIN": "Administrateur",
+      "MEMBER": "Membre",
+      "OWNER": "Propriétaire"
+    },
+    "sentTo": "L'invitation a été envoyée à {email}.",
+    "signInPrompt": "Connectez-vous ou inscrivez-vous avec cette adresse pour accepter.",
+    "signIn": "Se connecter ou s'inscrire",
+    "accept": "Accepter l'invitation",
+    "accepted": "Vous faites maintenant partie de l'équipe {org}.",
+    "toStudio": "Aller au studio",
+    "invalid": "Ce lien d'invitation n'est pas valide.",
+    "expired": "Cette invitation a expiré ; demandez-en une nouvelle à l'entreprise.",
+    "used": "Cette invitation a déjà été utilisée.",
+    "revoked": "Cette invitation a été retirée.",
+    "mismatch": "Cette invitation a été envoyée à {email} ; connectez-vous avec cette adresse.",
+    "verifyFirst": "Vérifiez d'abord votre adresse e-mail ; l'e-mail de vérification est dans votre boîte de réception.",
+    "switchAccount": "Se connecter avec un autre compte"
   }
 }

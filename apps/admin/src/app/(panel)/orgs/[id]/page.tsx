@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Coins, UserMinus, UserPlus } from "lucide-react";
+import { ArrowLeft, Coins, Mail, UserMinus, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -130,6 +130,48 @@ export default function OrgDetailPage() {
           </Table>
         )}
         {canEdit && <AddMember ready={ready} busy={busy} onAdd={(body) => run("add", () => api(path("/members"), { method: "POST", body: { ...body, reason: why } }), "Üye eklendi.")} />}
+      </Card>
+
+      <Card title={`Bekleyen davetler (${fmtInt(org.invites.length)})`} className="mt-4">
+        {org.invites.length === 0 ? (
+          <p className="py-2 text-sm text-muted-foreground">Bekleyen davet yok.</p>
+        ) : (
+          <Table
+            head={
+              <tr>
+                <th className={th}>E-posta</th>
+                <th className={th}>Rol</th>
+                <th className={th}>Aylık sınır</th>
+                <th className={th}>Geçerlilik</th>
+                <th className={th} />
+              </tr>
+            }
+          >
+            {org.invites.map((i) => (
+              <tr key={i.id}>
+                <td className={td}>{i.email}</td>
+                <td className={td}>{ROLE[i.role]}</td>
+                <td className={`${td} tabular`}>{i.monthlyCap === null ? "Firma varsayılanı" : fmtInt(i.monthlyCap)}</td>
+                <td className={`${td} whitespace-nowrap text-xs text-muted-foreground`}>{fmtDateTime(i.expiresAt)} tarihine kadar</td>
+                <td className={`${td} text-right`}>
+                  {canEdit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={!ready}
+                      loading={busy === `inv-${i.id}`}
+                      onClick={() => run(`inv-${i.id}`, () => api(path(`/invites/${i.id}/revoke`), { method: "POST", body: { reason: why } }), "Davet geri alındı.")}
+                      aria-label="Daveti geri al"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </Table>
+        )}
+        {canEdit && <InviteForm ready={ready} busy={busy} onInvite={(body) => run("invite", () => api(path("/invites"), { method: "POST", body: { ...body, reason: why } }), "Davet gönderildi.")} />}
       </Card>
 
       <Card title="Kredi hareketleri" className="mt-4">
@@ -334,7 +376,7 @@ function AddMember({ ready, busy, onAdd }: { ready: boolean; busy: string | null
   }
   return (
     <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
-      <Field label="Üye ekle (e-posta)" htmlFor="add-email" hint="Kayıtlı ve e-postası doğrulanmış kullanıcı. E-postayla davet sonraki adımda gelecek.">
+      <Field label="Üye ekle (e-posta)" htmlFor="add-email" hint="Hesabı olan ve e-postası doğrulanmış kullanıcı. Hesabı yoksa aşağıdan e-postayla davet et.">
         <Input id="add-email" type="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} className="w-72" />
       </Field>
       <Field label="Rol" htmlFor="add-role">
@@ -348,6 +390,38 @@ function AddMember({ ready, busy, onAdd }: { ready: boolean; busy: string | null
       </Field>
       <Button type="submit" variant="primary" loading={busy === "add"} disabled={!ready || !email.trim()}>
         <UserPlus className="h-4 w-4" aria-hidden /> Ekle
+      </Button>
+    </form>
+  );
+}
+
+function InviteForm({ ready, busy, onInvite }: { ready: boolean; busy: string | null; onInvite: (body: { email: string; role: "ADMIN" | "MEMBER"; monthlyCap: number | null }) => Promise<boolean> }) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
+  const [cap, setCap] = useState("");
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (await onInvite({ email: email.trim(), role, monthlyCap: cap.trim() ? Number(cap) : null })) {
+      setEmail("");
+      setCap("");
+    }
+  }
+  return (
+    <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
+      <Field label="E-postayla davet et" htmlFor="inv-email" hint="Tek kullanımlık bağlantı 7 gün geçerli; yalnız bu adresle kabul edilir.">
+        <Input id="inv-email" type="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} className="w-72" />
+      </Field>
+      <Field label="Rol" htmlFor="inv-role">
+        <Select id="inv-role" value={role} onChange={(e) => setRole(e.target.value as "ADMIN" | "MEMBER")} className="w-32">
+          <option value="MEMBER">Üye</option>
+          <option value="ADMIN">Yönetici</option>
+        </Select>
+      </Field>
+      <Field label="Aylık sınır" htmlFor="inv-cap">
+        <Input id="inv-cap" type="number" min={1} max={100000} value={cap} onChange={(e) => setCap(e.target.value)} placeholder="varsayılan" className="w-36" />
+      </Field>
+      <Button type="submit" variant="primary" loading={busy === "invite"} disabled={!ready || !email.trim()}>
+        <Mail className="h-4 w-4" aria-hidden /> Davet gönder
       </Button>
     </form>
   );

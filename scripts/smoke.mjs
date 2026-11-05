@@ -762,6 +762,43 @@ if (adminToken) {
   ok(exported?.organizations?.some((o) => o.organization === 'Smoke Mimarlık' && o.role === 'OWNER'), 'firm memberships are in the KVKK data export');
   const orgAudit = new Set(((await call('GET', '/admin/audit?limit=30', A)).json?.items ?? []).map((x) => x.action));
   ok(['org.create', 'org.credits', 'org.member_add', 'org.owner_transfer', 'org.member_remove'].every((a) => orgAudit.has(a)), 'firm changes are audited (LOG-01)');
+
+  // Step 2: the firm workspace spends the pool and the member's monthly cap; designs stay in the workspace.
+  await call('POST', `/admin/orgs/${orgId}/credits`, { ...A, body: { delta: 20, reason: 'smoke top-up' } });
+  const mSample = await call('POST', '/uploads/sample', { token: member.token, body: { sample: 'living_room' } });
+  const orgDesign = await call('POST', '/designs', { token: member.token, body: { tool: 'redesign', inputImageId: mSample.json?.image?.id, styleId: 'modern', variants: 2, orgId } });
+  const pool = (await call('GET', `/admin/orgs/${orgId}`, A)).json;
+  const personal = (await call('GET', '/designs', { token: member.token })).json?.items ?? [];
+  const inFirm = (await call('GET', `/designs?orgId=${orgId}`, { token: member.token })).json?.items ?? [];
+  ok(orgDesign.status === 201 && orgDesign.json?.orgId === orgId && pool?.credits === 24 && !personal.some((d) => d.id === orgDesign.json.id) && inFirm.some((d) => d.id === orgDesign.json.id),
+    "a firm design spends the firm's pool and stays in the firm workspace", `${orgDesign.status} pool=${pool?.credits}`);
+  const overCap = await call('POST', '/designs', { token: member.token, body: { tool: 'redesign', inputImageId: mSample.json?.image?.id, styleId: 'modern', variants: 4, orgId } });
+  const mine = (await call('GET', '/me/orgs', { token: member.token })).json ?? [];
+  ok(overCap.status === 402 && overCap.json?.error?.code === 'member_cap_reached' && mine[0]?.usedThisMonth === 2 && mine[0]?.remainingThisMonth === 3,
+    "the member's monthly cap stops firm spending", `${overCap.status} used=${mine[0]?.usedThisMonth}`);
+  const strangerDesign = await call('POST', '/designs', { token: owner.token, body: { tool: 'redesign', inputImageId: mSample.json?.image?.id, variants: 1, orgId } });
+  ok(strangerDesign.status === 404, "a non-member can't spend a firm's pool (AZ-01)", String(strangerDesign.status));
+
+  // Step 2: e-mail invitation — only the invited, verified address; single use.
+  const invitee = await verifiedUser('firm-invitee');
+  const sent = await call('POST', `/admin/orgs/${orgId}/invites`, { ...A, body: { email: invitee.email, role: 'MEMBER', monthlyCap: 3, reason: 'smoke invite' } });
+  const inviteToken = tokenFrom(await lastMailTo(invitee.email, 'davet'));
+  const look = await call('POST', '/orgs/invites/lookup', { body: { token: inviteToken } });
+  ok(sent.status === 201 && sent.json?.invites?.length === 1 && look.json?.status === 'pending' && look.json?.orgName === 'Smoke Mimarlık' && look.json?.email?.includes('***'),
+    'invitation mailed; the link shows the firm and a masked address', `${sent.status}/${look.json?.status}`);
+  const wrong = await call('POST', '/orgs/invites/accept', { token: owner.token, body: { token: inviteToken } });
+  const right = await call('POST', '/orgs/invites/accept', { token: invitee.token, body: { token: inviteToken } });
+  const again = await call('POST', '/orgs/invites/accept', { token: invitee.token, body: { token: inviteToken } });
+  ok(wrong.status === 403 && wrong.json?.error?.code === 'invite_email_mismatch' && right.status === 200 && right.json?.already === false && again.json?.already === true,
+    'only the invited address accepts; accepting twice is harmless', `${wrong.status}/${right.status}/${again.json?.already}`);
+  const iSample = await call('POST', '/uploads/sample', { token: invitee.token, body: { sample: 'bedroom' } });
+  const iDesign = await call('POST', '/designs', { token: invitee.token, body: { tool: 'redesign', inputImageId: iSample.json?.image?.id, styleId: 'modern', variants: 1, orgId } });
+  await call('POST', `/admin/orgs/${orgId}/members/${invitee.id}/remove`, { ...A, body: { reason: 'smoke leave' } });
+  const afterLeave = await call('GET', `/designs/${iDesign.json?.id}`, { token: invitee.token });
+  ok(iDesign.status === 201 && afterLeave.status === 404, 'a removed member no longer reaches the firm design (AZ-01)', `${iDesign.status}/${afterLeave.status}`);
+  await call('PATCH', `/admin/orgs/${orgId}`, { ...A, body: { status: 'SUSPENDED', reason: 'smoke suspend' } });
+  const suspended = await call('POST', '/designs', { token: member.token, body: { tool: 'redesign', inputImageId: mSample.json?.image?.id, styleId: 'modern', variants: 1, orgId } });
+  ok(suspended.status === 403 && suspended.json?.error?.code === 'org_suspended', 'a suspended firm stops spending', String(suspended.status));
   firmIdForStaffCheck = orgId;
 }
 // #6 admin roles + MFA recovery (AZ-05, AUT-01, AUT-04). Admin login is limited to 5 / 15 min per IP,
@@ -833,7 +870,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

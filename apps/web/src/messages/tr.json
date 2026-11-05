@@ -16,7 +16,8 @@
       "profile": "Hesabım",
       "legal": "Yasal metinler",
       "deletion": "Hesap silme",
-      "support": "Destek"
+      "support": "Destek",
+      "invite": "Ekip daveti"
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
@@ -601,5 +602,29 @@
     "back": "Tüm talepler",
     "newButton": "Yeni talep aç",
     "closedNote": "Bu talep kapandı. Cevap yazarsan yeniden açılır."
+  },
+  "invite": {
+    "title": "Ekip daveti",
+    "loading": "Davet kontrol ediliyor…",
+    "invitedBy": "{org} seni Casalume'de ekibine davet etti.",
+    "role": "Rolün: {role}",
+    "roles": {
+      "ADMIN": "Yönetici",
+      "MEMBER": "Üye",
+      "OWNER": "Sahip"
+    },
+    "sentTo": "Davet {email} adresine gönderildi.",
+    "signInPrompt": "Kabul etmek için bu adresle giriş yap ya da kayıt ol.",
+    "signIn": "Giriş yap ya da kayıt ol",
+    "accept": "Daveti kabul et",
+    "accepted": "Artık {org} ekibindesin.",
+    "toStudio": "Stüdyoya git",
+    "invalid": "Bu davet bağlantısı geçersiz.",
+    "expired": "Bu davetin süresi dolmuş; firmadan yeni davet iste.",
+    "used": "Bu davet daha önce kullanılmış.",
+    "revoked": "Bu davet geri alınmış.",
+    "mismatch": "Bu davet {email} adresine gönderildi; o adresle giriş yap.",
+    "verifyFirst": "Önce e-posta adresini doğrula; doğrulama e-postası gelen kutunda.",
+    "switchAccount": "Farklı hesapla giriş yap"
   }
 }

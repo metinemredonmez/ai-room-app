@@ -16,7 +16,8 @@
       "profile": "My account",
       "legal": "Legal",
       "deletion": "Delete your account",
-      "support": "Support"
+      "support": "Support",
+      "invite": "Team invitation"
     }
   },
   "brandTagline": "Redesign your room in seconds",
@@ -601,5 +602,29 @@
     "back": "All requests",
     "newButton": "Open a new request",
     "closedNote": "This request is closed. Replying reopens it."
+  },
+  "invite": {
+    "title": "Team invitation",
+    "loading": "Checking the invitation…",
+    "invitedBy": "{org} invited you to their team on Casalume.",
+    "role": "Your role: {role}",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Member",
+      "OWNER": "Owner"
+    },
+    "sentTo": "The invitation was sent to {email}.",
+    "signInPrompt": "Sign in or sign up with that address to accept.",
+    "signIn": "Sign in or sign up",
+    "accept": "Accept the invitation",
+    "accepted": "You're now on the {org} team.",
+    "toStudio": "Go to the studio",
+    "invalid": "This invitation link isn't valid.",
+    "expired": "This invitation has expired; ask the firm for a new one.",
+    "used": "This invitation has already been used.",
+    "revoked": "This invitation was withdrawn.",
+    "mismatch": "This invitation was sent to {email}; sign in with that address.",
+    "verifyFirst": "Verify your e-mail address first; the verification e-mail is in your inbox.",
+    "switchAccount": "Sign in with another account"
   }
 }

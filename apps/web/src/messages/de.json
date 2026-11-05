@@ -16,7 +16,8 @@
       "profile": "Mein Konto",
       "legal": "Rechtliches",
       "deletion": "Konto löschen",
-      "support": "Support"
+      "support": "Support",
+      "invite": "Team-Einladung"
     }
   },
   "brandTagline": "Gestalte deinen Raum in Sekunden neu",
@@ -601,5 +602,29 @@
     "back": "Alle Anfragen",
     "newButton": "Neue Anfrage stellen",
     "closedNote": "Diese Anfrage ist geschlossen. Wenn du antwortest, wird sie wieder geöffnet."
+  },
+  "invite": {
+    "title": "Team-Einladung",
+    "loading": "Einladung wird geprüft…",
+    "invitedBy": "{org} hat dich in sein Team bei Casalume eingeladen.",
+    "role": "Deine Rolle: {role}",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Mitglied",
+      "OWNER": "Inhaber"
+    },
+    "sentTo": "Die Einladung wurde an {email} gesendet.",
+    "signInPrompt": "Melde dich mit dieser Adresse an oder registriere dich, um anzunehmen.",
+    "signIn": "Anmelden oder registrieren",
+    "accept": "Einladung annehmen",
+    "accepted": "Du bist jetzt im Team von {org}.",
+    "toStudio": "Zum Studio",
+    "invalid": "Dieser Einladungslink ist ungültig.",
+    "expired": "Diese Einladung ist abgelaufen; bitte die Firma um eine neue.",
+    "used": "Diese Einladung wurde bereits verwendet.",
+    "revoked": "Diese Einladung wurde zurückgezogen.",
+    "mismatch": "Diese Einladung wurde an {email} gesendet; melde dich mit dieser Adresse an.",
+    "verifyFirst": "Bestätige zuerst deine E-Mail-Adresse; die Bestätigungs-E-Mail ist in deinem Posteingang.",
+    "switchAccount": "Mit anderem Konto anmelden"
   }
 }

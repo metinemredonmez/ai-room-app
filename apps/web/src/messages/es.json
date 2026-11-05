@@ -16,7 +16,8 @@
       "profile": "Mi cuenta",
       "legal": "Textos legales",
       "deletion": "Eliminar cuenta",
-      "support": "Soporte"
+      "support": "Soporte",
+      "invite": "Invitación de equipo"
     }
   },
   "brandTagline": "Rediseña tu habitación en segundos",
@@ -601,5 +602,29 @@
     "back": "Todas las solicitudes",
     "newButton": "Abrir nueva solicitud",
     "closedNote": "Esta solicitud está cerrada. Si respondes, se volverá a abrir."
+  },
+  "invite": {
+    "title": "Invitación de equipo",
+    "loading": "Comprobando la invitación…",
+    "invitedBy": "{org} te ha invitado a su equipo en Casalume.",
+    "role": "Tu rol: {role}",
+    "roles": {
+      "ADMIN": "Administrador",
+      "MEMBER": "Miembro",
+      "OWNER": "Propietario"
+    },
+    "sentTo": "La invitación se envió a {email}.",
+    "signInPrompt": "Inicia sesión o regístrate con esa dirección para aceptar.",
+    "signIn": "Iniciar sesión o registrarse",
+    "accept": "Aceptar la invitación",
+    "accepted": "Ya formas parte del equipo de {org}.",
+    "toStudio": "Ir al estudio",
+    "invalid": "Este enlace de invitación no es válido.",
+    "expired": "Esta invitación ha caducado; pide una nueva a la empresa.",
+    "used": "Esta invitación ya se ha usado.",
+    "revoked": "Esta invitación fue retirada.",
+    "mismatch": "Esta invitación se envió a {email}; inicia sesión con esa dirección.",
+    "verifyFirst": "Primero verifica tu correo; el correo de verificación está en tu bandeja de entrada.",
+    "switchAccount": "Iniciar sesión con otra cuenta"
   }
 }

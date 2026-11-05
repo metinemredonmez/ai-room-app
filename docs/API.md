@@ -1059,9 +1059,61 @@ fatura dışarıda kesilir.
 | PATCH | `/admin/orgs/:id/members/:userId` | ADMIN | `{ role?, monthlyCap?, reason }`; `role: OWNER` sahipliği devreder |
 | POST | `/admin/orgs/:id/members/:userId/remove` | ADMIN | `{ reason }`; sahip çıkarılamaz |
 
+#### 7.23.2 Davet ve firma çalışma alanı (2. adım)
+
+**Davet**
+- Admin'den gönderilir: firma ayrıntısı → **Bekleyen davetler** → e-posta, rol (`ADMIN | MEMBER`), aylık sınır.
+  Firmanın kendi yöneticilerinin davet göndermesi 3. adımda gelecek.
+- Bağlantı: `WEB_APP_URL[/<dil>]/davet#token=<43 karakter>`. Adres isteğin Host başlığından değil, ortamdan kurulur
+  (MAIL-01). Jeton URL parçasında (`#`) durur, sunucu loglarına girmez; veritabanında yalnız SHA-256 özeti tutulur.
+- 7 gün geçerli ve tek kullanımlık (koşullu güncelleme). Aynı adrese yeniden davet eski bağlantıyı geçersiz kılar.
+  Bir firmada en çok 50 bekleyen davet olur. Askıdaki firma davet gönderemez.
+- Kabul kuralları:
+  - Yalnız davetin gönderildiği adresle, kayıtlı, doğrulanmış, etkin ve yönetici olmayan hesap kabul eder.
+  - Yanlış adres: 403 `invite_email_mismatch`, iletide maskeli adres (`a***@alan`).
+  - Doğrulanmamış adres: 403 `email_not_verified`.
+  - Misafir: 403 `registration_required`.
+  - Yönetici hesabı: 422 `staff_account`.
+  - Süresi dolmuş, kullanılmış ya da geri alınmış davet: 410.
+  - Aynı hesapla ikinci kabul zararsızdır (`already: true`).
+- Web `/davet` sayfası (11 dil):
+  - Firma, rol ve maskeli adresi gösterir.
+  - Giriş yapılmamışsa bağlantıyı tarayıcı oturumunda (sessionStorage) tutar; giriş ya da kayıt sonrası sayfaya döner.
+  - Arama motorlarına kapalıdır.
+- Kapanmış davetler 90 gün sonra silinir (`retention` → `orgInvites`).
+- Denetim kaydı: `org.invite`, `org.invite_revoke`, `org.invite_accept`.
+
+**Firma çalışma alanı**
+- `POST /designs` gövdesine `orgId` eklenince tasarım firma alanında açılır:
+  - PRO araç, stil ve varyant sınırı geçerli olur; filigran ve bütçe freni uygulanmaz.
+  - Firma havuzundan harcar, kullanıcının günlük ücretsiz hakkından ve kredisinden harcamaz.
+- Harcama kontrolü firma satırı kilitlenerek yapılır (AZ-01, BUS-01):
+  - üyelik yoksa 404;
+  - askıdaki firmada 403 `org_suspended`;
+  - üyenin aylık sınırı dolduysa 402 `member_cap_reached`;
+  - havuz yetmezse 402 `org_insufficient_credits`.
+- Başarısız ya da eksik sonuçta iade havuza döner (`refund`) ve aylık sınır da geri açılır.
+- Görünürlük:
+  - `GET /designs` yalnız kişisel tasarımları listeler. `GET /designs?orgId=` kişinin o firmadaki tasarımlarını
+    listeler, üyelik gerekir.
+  - Firma tasarımına (`GET /designs/:id`, analiz, silme vb.) yalnız hâlâ üye olan erişir. Çıkarılan kişiye 404.
+- `GET /me/orgs`: firmalarım. Rol, aylık sınır, bu ayki kullanım ve kalan döner; havuz kredisi yalnız `OWNER` ve
+  `ADMIN` için.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/me/orgs` | kullanıcı | Firmalarım |
+| POST | `/orgs/invites/lookup` | herkes | `{ token }` → `{ orgName, role, email (maskeli), status, expiresAt }`; IP başına saatte 30 |
+| POST | `/orgs/invites/accept` | kullanıcı | `{ token }` → `{ orgId, orgName, role, already }`; saatte 20 |
+| POST | `/admin/orgs/:id/invites` | ADMIN | `{ email, role, monthlyCap?, reason }` → 201 firma ayrıntısı |
+| POST | `/admin/orgs/:id/invites/:inviteId/revoke` | ADMIN | `{ reason }` |
+
+Not: üye hesabını silerse firma alanındaki tasarımları da silinir (KVKK, hesap verisi). Firmanın kalıcı arşivi
+istenirse 4. adımda projelerle ele alınacak.
+
+Mobil (sonra): stüdyoda "Kişisel / Firma" seçimi, `orgId` ile üretim, `GET /me/orgs` ile kalan hak.
+
 Sonraki adımlar:
-- **2. adım:** e-postayla davet ve "Kişisel / Firma" çalışma alanı. Firma alanındaki tasarım havuzdan ve üyenin
-  aylık sınırından harcar.
 - **3. adım:** web ekip sayfası.
 - **4. adım:** projeler.
 - **5. adım:** logolu sunum, alan adıyla katılım, kartla ödeme, SSO.

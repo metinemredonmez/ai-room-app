@@ -61,6 +61,13 @@ export const authApi = {
 };
 
 /** Reads `#token=…` once and strips it from the address bar so it doesn't linger in history. */
+/** API.md §7.23: a firm's e-mail invitation. */
+export type InviteInfo = { orgName: string; role: "OWNER" | "ADMIN" | "MEMBER"; email: string; status: "pending" | "accepted" | "revoked" | "expired"; expiresAt: string };
+export const orgsApi = {
+  lookupInvite: (token: string) => api.post<InviteInfo>("/orgs/invites/lookup", { token }),
+  acceptInvite: (token: string) => api.post<{ orgId: string; orgName: string; role: string; already: boolean }>("/orgs/invites/accept", { token }),
+};
+
 export function takeFragmentToken(): string | null {
   if (typeof window === "undefined") return null;
   const token = new URLSearchParams(window.location.hash.slice(1)).get("token");

@@ -289,7 +289,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
   it('firms: SUPPORT reads, only ADMIN changes (AZ-01/AZ-05)', () => {
     const r = (name: string) => Reflect.getMetadata(MIN_ROLE, (AdminOrgsController.prototype as unknown as Record<string, object>)[name]);
     expect(['list', 'detail'].map(r)).toEqual(['SUPPORT', 'SUPPORT']);
-    expect(['create', 'update', 'credits', 'addMember', 'updateMember', 'removeMember'].map(r)).toEqual(Array(6).fill('ADMIN'));
+    expect(['create', 'update', 'credits', 'addMember', 'updateMember', 'removeMember', 'invite', 'revokeInvite'].map(r)).toEqual(Array(8).fill('ADMIN'));
   });
 
   const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN', amr = ['pwd', 'otp'], panelKey: string | null = null) => {

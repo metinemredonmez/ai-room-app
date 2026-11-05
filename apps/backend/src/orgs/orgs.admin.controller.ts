@@ -6,7 +6,7 @@ import { AdminGuard } from '../auth/tokens.service.js';
 import { parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { Doc } from '../common/openapi.js';
-import { AddMemberSchema, CreateOrgSchema, OrgCreditsSchema, OrgListQuery, OrgsService, ReasonSchema, UpdateMemberSchema, UpdateOrgSchema } from './orgs.service.js';
+import { AddMemberSchema, AdminInviteSchema, CreateOrgSchema, OrgCreditsSchema, OrgListQuery, OrgsService, ReasonSchema, UpdateMemberSchema, UpdateOrgSchema } from './orgs.service.js';
 
 /** Firms in the admin panel (API.md §7.23). SUPPORT reads; ADMIN changes, always with a reason, always audited. */
 @ApiTags('admin')
@@ -88,5 +88,25 @@ export class AdminOrgsController {
     const detail = await this.orgs.removeMember(id, userId);
     await this.audit.record(auth.userId, 'org.member_remove', 'organization', id, { reason: input.reason, userId }, req.clientIp);
     return detail;
+  }
+
+  @MinRole('ADMIN')
+  @Post(':id/invites')
+  @Doc('E-postayla davet gönder (7 gün, tek kullanımlık)', { body: AdminInviteSchema, status: 201, errors: [400, 401, 403, 404, 409] })
+  async invite(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const input = parse(AdminInviteSchema, body);
+    const invite = await this.orgs.invite(id, input, auth.userId);
+    await this.audit.record(auth.userId, 'org.invite', 'organization', id, { reason: input.reason, inviteId: invite.id, role: input.role }, req.clientIp);
+    return this.orgs.detail(id);
+  }
+
+  @MinRole('ADMIN')
+  @Post(':id/invites/:inviteId/revoke')
+  @Doc('Bekleyen daveti geri al', { body: ReasonSchema, status: 201, errors: [400, 401, 403, 404] })
+  async revokeInvite(@Param('id') id: string, @Param('inviteId') inviteId: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const input = parse(ReasonSchema, body);
+    await this.orgs.revokeInvite(id, inviteId);
+    await this.audit.record(auth.userId, 'org.invite_revoke', 'organization', id, { reason: input.reason, inviteId }, req.clientIp);
+    return this.orgs.detail(id);
   }
 }

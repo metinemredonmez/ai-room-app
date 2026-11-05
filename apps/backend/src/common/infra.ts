@@ -113,6 +113,8 @@ export const LIMITS = {
   oauthLogin: { name: 'oauth-login', max: 30, windowSec: 900 },
   dataRequests: { name: 'data-requests', max: 5, windowSec: 86_400 },
   supportCreate: { name: 'support-create', max: 5, windowSec: 3600 },
+  orgInviteLookup: { name: 'org-invite-ip', max: 30, windowSec: 3600 },
+  orgInviteAccept: { name: 'org-invite-accept', max: 20, windowSec: 3600 },
   supportMessage: { name: 'support-message', max: 30, windowSec: 3600 },
 } satisfies Record<string, Limit>;
 

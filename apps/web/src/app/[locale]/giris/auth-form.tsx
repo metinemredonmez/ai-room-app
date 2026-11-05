@@ -10,6 +10,15 @@ import { ErrorNotice } from "@/components/error-notice";
 import { LogoMark } from "@/components/logo";
 import { btn, input, label } from "@/components/ui";
 
+/** A firm invitation opened before signing in (API.md §7.23) brings the user back to it afterwards. */
+function hasPendingInvite() {
+  try {
+    return Boolean(sessionStorage.getItem("casalume.invite"));
+  } catch {
+    return false;
+  }
+}
+
 // Giriş / kayıt: sade iki sütun. Solda form, geniş ekranda sağda gerçek bir önce/sonra görseli ve kısa tanıtım
 // (metinler ana sayfanınkiyle aynı, 11 dilde hazır). Görselin kendi "yapay zekâ ile oluşturuldu" etiketi sağ altta görünür kalır.
 
@@ -43,7 +52,7 @@ export function AuthForm() {
       const res = login ? await authApi.login(email, password) : await authApi.register(email, password, name || undefined);
       setUser(res.user);
       await refreshUser();
-      router.push(href("/studio"));
+      router.push(href(hasPendingInvite() ? "/davet" : "/studio"));
     } catch (err) {
       setError(err instanceof ApiError && err.status === 401 ? new ApiError(401, "validation_failed", t.auth.invalid) : err);
     } finally {

@@ -198,7 +198,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 ### Kurumsal hesaplar (firmalar, API.md §7.23)
 - [x] 1. adım: firma, roller (sahip/yönetici/üye), ortak kredi havuzu, üye başı aylık sınır; admin **Firmalar** sayfaları,
   denetim, veri indirmede üyelikler. Havuz eksiye inemez (CHECK kısıtı), sahip yalnız devirle değişir.
-- [ ] 2. adım: e-postayla davet + "Kişisel / Firma" çalışma alanı; firma alanında tasarım havuzdan ve aylık sınırdan harcar.
+- [x] 2. adım: e-postayla davet (admin'den; web `/davet` kabul sayfası) + firma çalışma alanı (`orgId` ile üretim, havuz ve aylık sınır, iade havuza; çıkan üye firma tasarımına erişemez).
 - [ ] 3. adım: web ekip sayfası (üyeler, davetler, roller, kişi başı kullanım) ve üst menüde alan geçişi.
 - [ ] 4. adım: firma içinde projeler / müşteri klasörleri.
 - [ ] 5. adım: logolu müşteri sunumu (paylaşım sayfasıyla), alan adıyla katılım, kartla ödeme, kurumsal SSO.

@@ -16,7 +16,8 @@
       "profile": "我的账户",
       "legal": "法律文件",
       "deletion": "删除账户",
-      "support": "帮助与支持"
+      "support": "帮助与支持",
+      "invite": "团队邀请"
     }
   },
   "brandTagline": "几秒钟，重新设计你的房间",
@@ -601,5 +602,29 @@
     "back": "全部工单",
     "newButton": "新建工单",
     "closedNote": "此工单已关闭。回复后将重新开启。"
+  },
+  "invite": {
+    "title": "团队邀请",
+    "loading": "正在检查邀请…",
+    "invitedBy": "{org} 邀请你加入其在 Casalume 的团队。",
+    "role": "你的角色：{role}",
+    "roles": {
+      "ADMIN": "管理员",
+      "MEMBER": "成员",
+      "OWNER": "所有者"
+    },
+    "sentTo": "邀请已发送至 {email}。",
+    "signInPrompt": "请使用该地址登录或注册以接受邀请。",
+    "signIn": "登录或注册",
+    "accept": "接受邀请",
+    "accepted": "你已加入 {org} 团队。",
+    "toStudio": "前往工作室",
+    "invalid": "此邀请链接无效。",
+    "expired": "此邀请已过期，请向公司索取新的邀请。",
+    "used": "此邀请已被使用。",
+    "revoked": "此邀请已被撤回。",
+    "mismatch": "此邀请发送至 {email}，请使用该地址登录。",
+    "verifyFirst": "请先验证你的邮箱，验证邮件在你的收件箱中。",
+    "switchAccount": "使用其他账户登录"
   }
 }

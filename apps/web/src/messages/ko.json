@@ -16,7 +16,8 @@
       "profile": "내 계정",
       "legal": "법적 고지",
       "deletion": "계정 삭제",
-      "support": "고객 지원"
+      "support": "고객 지원",
+      "invite": "팀 초대"
     }
   },
   "brandTagline": "몇 초 만에 방을 새롭게 디자인해 보세요",
@@ -601,5 +602,29 @@
     "back": "전체 문의",
     "newButton": "새 문의 작성",
     "closedNote": "종료된 문의예요. 답장을 보내면 다시 열려요."
+  },
+  "invite": {
+    "title": "팀 초대",
+    "loading": "초대를 확인하는 중…",
+    "invitedBy": "{org}에서 Casalume 팀에 초대했어요.",
+    "role": "내 역할: {role}",
+    "roles": {
+      "ADMIN": "관리자",
+      "MEMBER": "멤버",
+      "OWNER": "소유자"
+    },
+    "sentTo": "초대가 {email}(으)로 발송되었어요.",
+    "signInPrompt": "수락하려면 이 주소로 로그인하거나 가입하세요.",
+    "signIn": "로그인 또는 가입",
+    "accept": "초대 수락",
+    "accepted": "이제 {org} 팀의 일원이에요.",
+    "toStudio": "스튜디오로 이동",
+    "invalid": "유효하지 않은 초대 링크예요.",
+    "expired": "초대가 만료되었어요. 회사에 새 초대를 요청하세요.",
+    "used": "이미 사용된 초대예요.",
+    "revoked": "취소된 초대예요.",
+    "mismatch": "이 초대는 {email}(으)로 발송되었어요. 그 주소로 로그인하세요.",
+    "verifyFirst": "먼저 이메일 주소를 인증하세요. 인증 메일이 받은편지함에 있어요.",
+    "switchAccount": "다른 계정으로 로그인"
   }
 }

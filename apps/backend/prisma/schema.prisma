@@ -212,9 +212,12 @@ model Design {
   startedAt    DateTime?
   favorite     Boolean         @default(false)
   featured     Boolean         @default(false)
+  /// Made in a firm's workspace (API.md §7.23): charged to the firm's pool, visible only while the maker is a member.
+  orgId        String?         @db.Uuid
   createdAt    DateTime        @default(now())
   finishedAt   DateTime?
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org          Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
   inputImage   Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
   results      Image[]         @relation("results")
   analyses     Analysis[]
@@ -224,6 +227,7 @@ model Design {
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([featured])
+  @@index([orgId, createdAt])
 }
 
 model Analysis {
@@ -672,6 +676,8 @@ model Organization {
   updatedAt        DateTime    @updatedAt
   members          OrgMember[]
   ledger           OrgLedger[]
+  invites          OrgInvite[]
+  designs          Design[]
 
   @@index([createdAt])
 }
@@ -707,4 +713,26 @@ model OrgLedger {
 
   @@index([orgId, createdAt])
   @@index([orgId, userId, createdAt])
+}
+
+/// An e-mail invitation to a firm (API.md §7.23 step 2). Only the token's hash is stored; the link is single-use,
+/// expires after 7 days and is accepted only by a verified account with the same address.
+model OrgInvite {
+  id         String       @id @default(uuid()) @db.Uuid
+  orgId      String       @db.Uuid
+  email      String
+  role       OrgRole      @default(MEMBER)
+  monthlyCap Int?
+  tokenHash  String       @unique
+  /// Who sent it: a member (OWNER/ADMIN) or a staff account.
+  invitedBy  String?      @db.Uuid
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  acceptedBy String?      @db.Uuid
+  revokedAt  DateTime?
+  createdAt  DateTime     @default(now())
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([email])
 }

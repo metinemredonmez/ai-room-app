@@ -55,6 +55,8 @@ const PageQuery = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   favorite: z.enum(['true', 'false']).optional(),
   locale: z.enum(LOCALES).optional(),
+  /** API.md §7.23: list this firm's workspace instead of the personal one. */
+  orgId: z.uuid().optional(),
 });
 
 @ApiTags('public')
@@ -423,7 +425,7 @@ export class UserController {
   @Doc('Tasarımlarım (sayfalı)', { response: 'DesignPage', errors: [401] })
   async listDesigns(@Auth() auth: AuthContext, @Query() query: unknown, @Req() req: AppRequest) {
     const q = parse(PageQuery, query);
-    return this.designs.list(auth.userId, { cursor: q.cursor, limit: q.limit, favorite: q.favorite === 'true' }, localeOf(req));
+    return this.designs.list(auth.userId, { cursor: q.cursor, limit: q.limit, favorite: q.favorite === 'true', orgId: q.orgId }, localeOf(req));
   }
 
   @Get('designs/:id')

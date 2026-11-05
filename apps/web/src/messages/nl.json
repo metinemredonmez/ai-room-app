@@ -16,7 +16,8 @@
       "profile": "Mijn account",
       "legal": "Juridische teksten",
       "deletion": "Account verwijderen",
-      "support": "Support"
+      "support": "Support",
+      "invite": "Teamuitnodiging"
     }
   },
   "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
@@ -601,5 +602,29 @@
     "back": "Alle aanvragen",
     "newButton": "Nieuwe aanvraag starten",
     "closedNote": "Deze aanvraag is gesloten. Als je antwoordt, wordt hij weer geopend."
+  },
+  "invite": {
+    "title": "Teamuitnodiging",
+    "loading": "Uitnodiging controleren…",
+    "invitedBy": "{org} heeft je uitgenodigd voor hun team op Casalume.",
+    "role": "Jouw rol: {role}",
+    "roles": {
+      "ADMIN": "Beheerder",
+      "MEMBER": "Lid",
+      "OWNER": "Eigenaar"
+    },
+    "sentTo": "De uitnodiging is verstuurd naar {email}.",
+    "signInPrompt": "Log in of registreer je met dat adres om te accepteren.",
+    "signIn": "Inloggen of registreren",
+    "accept": "Uitnodiging accepteren",
+    "accepted": "Je zit nu in het team van {org}.",
+    "toStudio": "Naar de studio",
+    "invalid": "Deze uitnodigingslink is ongeldig.",
+    "expired": "Deze uitnodiging is verlopen; vraag het bedrijf om een nieuwe.",
+    "used": "Deze uitnodiging is al gebruikt.",
+    "revoked": "Deze uitnodiging is ingetrokken.",
+    "mismatch": "Deze uitnodiging is verstuurd naar {email}; log in met dat adres.",
+    "verifyFirst": "Bevestig eerst je e-mailadres; de bevestigingsmail staat in je inbox.",
+    "switchAccount": "Inloggen met een ander account"
   }
 }
