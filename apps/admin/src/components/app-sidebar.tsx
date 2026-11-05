@@ -20,6 +20,7 @@ import {
   Megaphone,
   LogOut,
   Palette,
+  SwatchBook,
   Scale,
   ScrollText,
   SlidersHorizontal,
@@ -154,6 +155,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/settings", label: "Ayarlar", icon: SlidersHorizontal },
       { href: "/features", label: "Özellikler", icon: ToggleRight },
+      { href: "/theme", label: "Renk temaları", icon: SwatchBook },
       { href: "/jobs", label: "Zamanlı işler", icon: ListChecks },
       { href: "/audit", label: "Denetim kaydı", icon: ScrollText },
       { href: "/system", label: "Sistem durumu", icon: Activity },

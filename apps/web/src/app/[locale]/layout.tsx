@@ -4,11 +4,13 @@ import { Suspense } from "react";
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProvider } from "@/components/app-provider";
 import { SiteFooter } from "@/components/site-footer";
+import { ThemeOptionsProvider } from "@/components/palette-picker";
 import { HeaderFallback, SiteHeader } from "@/components/site-header";
 import { VerifyBanner } from "@/components/verify-banner";
 import { LOCALES, LOCALE_TAGS, isLocale } from "@/lib/i18n";
 import { loadMessages } from "@/lib/messages";
 import { PALETTE_BOOT_SCRIPT } from "@/lib/palette";
+import { getTheme, themeCss, themeOptions } from "@/lib/theme";
 import "../globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -52,18 +54,22 @@ export const viewport: Viewport = {
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const messages = await loadMessages(locale);
+  const [messages, theme] = await Promise.all([loadMessages(locale), getTheme()]);
   return (
     // The boot script may set data-palette before React hydrates, hence suppressHydrationWarning on <html> only.
     <html lang={LOCALE_TAGS[locale]} className={`${jakarta.variable} ${cormorant.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PALETTE_BOOT_SCRIPT }} />
+        {/* Colour themes from the admin (API.md §7.34); every value is checked to be #rrggbb in lib/theme.ts. */}
+        {theme && <style dangerouslySetInnerHTML={{ __html: themeCss(theme) }} />}
       </head>
       <body className="flex min-h-full flex-col">
         <AppProvider locale={locale} messages={messages}>
-          <Suspense fallback={<HeaderFallback />}>
-            <SiteHeader />
-          </Suspense>
+          <ThemeOptionsProvider options={theme ? themeOptions(theme) : null}>
+            <Suspense fallback={<HeaderFallback />}>
+              <SiteHeader />
+            </Suspense>
+          </ThemeOptionsProvider>
           <VerifyBanner />
           <main className="flex-1">{children}</main>
           <SiteFooter />

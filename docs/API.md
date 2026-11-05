@@ -1624,3 +1624,40 @@ Denetim kaydında `partner.create` ve `partner.update` görünür.
 
 Saklama: `Partner`, `PartnerVisitDay` (ortak ve İstanbul günü başına bir sayaç satırı) ve `PartnerAttribution`
 (hesap başına bir satır; hesap silinince silinir). Ziyaretçiye ait kişisel veri tutulmaz.
+
+### 7.34 Renk temaları — backend + admin + web (mobil sonra)
+Kullanıcıların seçebildiği renk temaları panelden yönetilir (**Admin → Sistem → Renk temaları**).
+
+**Palet nedir**
+- Koyudan açığa 6 ton (ör. `#211713 … #F6EEDB`) ve web ile uygulamanın boyadığı 11 renk değişkeni:
+  `primary`, `primaryStrong`, `primarySoft`, `accent`, `accentSoft`, `bg`, `surface`, `surface2`, `text`, `muted`, `border`.
+- Yeni paletin değişkenlerini sunucu tonlardan üretir. Dört özgün tema (Kil, Pirinç, Mürekkep, Erik) elle ayarlı
+  değişkenlerini korur.
+- Hazır gelen 12 palet: Kil (varsayılan), Pirinç, Mürekkep, Erik, Kahve, Tarçın, Gül Kurusu, Vişne, Lavanta, Orman,
+  Petrol, Arduvaz.
+
+**Okunurluk (her kayıtta ölçülür)**
+- Engelleyen kontroller, en az 4.5:1 (WCAG AA): metin, ikincil metin, beyaz buton yazısı, ana renkli yazı. Geçmeyen
+  palet açılamaz; kapalı taslak olarak kaydedilebilir (400 `contrast_failed`).
+- Uyarılar: vurgu (accent) rengi hem koyu yazının arkasında hem küçük renkli yazı olarak kullanıldığı için ölçülür
+  ama kaydı engellemez.
+
+**Güvenlik:** renkler web'de bir `<style>` öğesine yazılır. Bu yüzden yalnız `#rrggbb` renkler ve kısa ad olarak
+`^[a-z][a-z0-9-]{1,23}$` kabul edilir. Web de aynı denetimi yeniden yapar (INP-01 / WEB-01).
+
+**Uçlar**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/theme` | herkese açık | `{ defaultId, palettes: [{ id, name: { tr, en }, tones[6], tokens }] }`. Yalnız açık paletler, varsayılan önce; 60 sn önbellek |
+| GET | `/admin/theme` | SUPPORT | Tüm paletler: `enabled` ve okunurluk raporu (`contrast.blocking`, `contrast.warnings`), `builtinIds`, `version` |
+| PATCH | `/admin/theme` | ADMIN | `{ theme: { defaultId, palettes }, reason, version }`. Hepsi birlikte kaydedilir. Varsayılan açık olmalı, kısa adlar tekil, en çok 24 palet. Eski sürüm 409 |
+| POST | `/admin/theme/derive` | SUPPORT | `{ tones[6] }` → `{ tones, tokens, contrast }`. Önizleme; kaydetmez |
+
+Denetim kaydında `theme.update` görünür; değişiklik listesi örneği: `varsayılan: kil → kahve`, `orman: kapandı`,
+`eklendi: …`, `silindi: …`.
+
+**Web:** temalar birkaç dakikalık önbellekle sunucuda okunur ve `<style>` olarak sayfaya yazılır, böylece doğru renk
+ilk anda görünür. Ziyaretçinin seçimi tarayıcıda (localStorage) kalır. Panelden kapatılan bir tema seçilmişse
+varsayılan görünür. API okunamazsa site yerleşik Kil temasında kalır ve tema menüsü gizlenir.
+
+**Kapsam dışı:** panelin kendi renk seçeneği (Panel rengi) şimdilik dört sabit temadır.

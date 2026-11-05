@@ -825,6 +825,36 @@ if (adminToken) {
     && audit.some((x) => x.action === 'features.update' && x.meta?.reason === 'smoke flags restore'),
     'flags: stale version 409, unknown flag 400, restored as they were, audited (LOG-01)', `${stale.status}/${unknown.status}/${back.status}`);
 }
+// API.md §7.34: colour themes — public read, admin saves the whole set under a version; markup in a colour is refused;
+// an unreadable palette cannot be switched on; put back as it was.
+if (adminToken) {
+  const A = { token: adminToken };
+  const pub = await call('GET', '/theme');
+  const hex = (v) => /^#[0-9a-f]{6}$/.test(v);
+  ok(pub.status === 200 && pub.json?.palettes?.[0]?.id === pub.json?.defaultId && pub.json.palettes.every((p) => p.tones.length === 6 && Object.values(p.tokens).every(hex)),
+    'themes are public: default first, six tones and #rrggbb tokens each', `${pub.status} ${pub.json?.palettes?.length}`);
+  const t0 = (await call('GET', '/admin/theme', A)).json;
+  const strip = (p) => ({ id: p.id, name: p.name, tones: p.tones, tokens: p.tokens, enabled: p.enabled });
+  const base = { defaultId: t0.defaultId, palettes: t0.palettes.map(strip) };
+  const save = (theme, version, reason = 'smoke theme test') => call('PATCH', '/admin/theme', { ...A, body: { theme, reason, version } });
+  const other = base.palettes.find((p) => p.enabled && p.id !== base.defaultId);
+  const moved = await save({ ...base, defaultId: other.id }, t0.version);
+  const pub2 = await call('GET', '/theme');
+  const evil = structuredClone(base);
+  evil.palettes[0].tokens.primary = 'red}</style><script>alert(1)</script>';
+  const injected = await save(evil, moved.json?.version ?? null);
+  const pale = ['#9a9a9a', '#aaaaaa', '#bbbbbb', '#cccccc', '#dddddd', '#eeeeee'];
+  const derived = await call('POST', '/admin/theme/derive', { ...A, body: { tones: pale } });
+  const unreadable = await save({ ...base, palettes: [...base.palettes, { id: 'smoke-soluk', name: { tr: 'Soluk', en: 'Pale' }, tones: pale, tokens: derived.json?.tokens, enabled: true }] }, moved.json?.version ?? null);
+  const stale = await save(base, t0.version);
+  const back = await save(base, moved.json?.version ?? null, 'smoke theme restore');
+  const audit = (await call('GET', '/admin/audit?limit=20', A)).json?.items ?? [];
+  ok(moved.status === 200 && pub2.json?.defaultId === other.id && injected.status === 400 && derived.status === 200 && derived.json?.contrast?.blocking?.length > 0
+    && unreadable.status === 400 && unreadable.json?.error?.code === 'contrast_failed' && stale.status === 409 && back.status === 200 && back.json?.defaultId === base.defaultId
+    && audit.some((x) => x.action === 'theme.update' && x.meta?.reason === 'smoke theme restore'),
+    'themes: default moves, markup refused, unreadable palette refused, stale 409, restored and audited (LOG-01)',
+    `${moved.status}/${injected.status}/${unreadable.status}/${stale.status}/${back.status}`);
+}
 // Verified accounts made by the promo block, reused by the referral block: sign-ups are rate-limited per IP (10/h).
 const verifiedPool = [];
 // API.md §7.29: promo and gift codes — verified accounts only, once per person, a single-use code goes to one of two racers.
@@ -1142,6 +1172,9 @@ if (adminToken) {
   const sFlags = await call('GET', '/admin/features', { token: staffToken });
   const sFlagsPut = await call('PATCH', '/admin/features', { token: staffToken, body: { features: {}, reason: 'support tries', version: null } });
   ok(sFlags.status === 200 && sFlagsPut.status === 403, 'SUPPORT reads feature flags but cannot switch them (AZ-01)', `${sFlags.status}/${sFlagsPut.status}`);
+  const sTheme = await call('GET', '/admin/theme', { token: staffToken });
+  const sThemePut = await call('PATCH', '/admin/theme', { token: staffToken, body: { theme: {}, reason: 'support tries', version: null } });
+  ok(sTheme.status === 200 && sThemePut.status === 403, 'SUPPORT sees the colour themes but cannot change them (AZ-01)', `${sTheme.status}/${sThemePut.status}`);
   const sPromo = await call('GET', '/admin/promo', { token: staffToken });
   const sPromoNew = await call('POST', '/admin/promo/batch', { token: staffToken, body: { campaign: 'support', kind: 'CREDITS', amount: 500, count: 1000, reason: 'support tries' } });
   ok(sPromo.status === 200 && sPromoNew.status === 403, 'SUPPORT sees promo codes but cannot make any (AZ-01)', `${sPromo.status}/${sPromoNew.status}`);
@@ -1187,7 +1220,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject', '/v1/admin/users/{id}/gift', '/v1/admin/gifts', '/v1/admin/gifts/preview', '/v1/partners/{slug}/visit', '/v1/me/attribution', '/v1/admin/partners', '/v1/admin/partners/{id}'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject', '/v1/admin/users/{id}/gift', '/v1/admin/gifts', '/v1/admin/gifts/preview', '/v1/partners/{slug}/visit', '/v1/me/attribution', '/v1/admin/partners', '/v1/admin/partners/{id}', '/v1/theme', '/v1/admin/theme', '/v1/admin/theme/derive'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

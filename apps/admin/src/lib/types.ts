@@ -512,6 +512,21 @@ export type EngineState = {
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
 
+// Renk temaları (API.md §7.34).
+export const THEME_TOKEN_KEYS = ["primary", "primaryStrong", "primarySoft", "accent", "accentSoft", "bg", "surface", "surface2", "text", "muted", "border"] as const;
+export type ThemeTokens = Record<(typeof THEME_TOKEN_KEYS)[number], string>;
+export type ContrastCheck = { pair: string; ratio: number; min: number };
+export type ContrastReport = { blocking: ContrastCheck[]; warnings: ContrastCheck[] };
+export type ThemePalette = { id: string; name: { tr: string; en: string }; tones: string[]; tokens: ThemeTokens; enabled: boolean };
+export type ThemeState = {
+  defaultId: string;
+  palettes: Array<ThemePalette & { contrast: ContrastReport }>;
+  builtinIds: string[];
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
 // Promosyon ve hediye kodları (API.md §7.29).
 export type PromoKind = "CREDITS" | "PRO_DAYS";
 export type PromoCode = {

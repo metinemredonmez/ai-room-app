@@ -1,16 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Check } from "lucide-react";
-import { currentPalette, PALETTES, setPalette, subscribePalette } from "@/lib/palette";
+import { chosenPalette, setPalette, subscribePalette, type ThemeOptions } from "@/lib/palette";
 import { useApp } from "./app-provider";
 import { btn } from "./ui";
 
-/** Small colour-theme menu for the header: four swatches, the choice is remembered in this browser. */
+// The themes come from the admin (API.md §7.34) through the layout; without them (API unreachable) the menu is hidden
+// and the site stays on the built-in theme.
+
+const ThemeOptionsContext = createContext<ThemeOptions | null>(null);
+
+export function ThemeOptionsProvider({ options, children }: { options: ThemeOptions | null; children: React.ReactNode }) {
+  return <ThemeOptionsContext.Provider value={options}>{children}</ThemeOptionsContext.Provider>;
+}
+
+const safe = (c: string) => (/^#[0-9a-f]{6}$/.test(c) ? c : "transparent");
+
+/** Colour-theme menu for the header; the choice is remembered in this browser. */
 export function PalettePicker({ className = "" }: { className?: string }) {
   const { locale } = useApp();
+  const options = useContext(ThemeOptionsContext);
   const [open, setOpen] = useState(false);
-  const active = useSyncExternalStore(subscribePalette, currentPalette, () => "kil" as const);
+  const chosen = useSyncExternalStore(subscribePalette, chosenPalette, () => null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,8 +38,9 @@ export function PalettePicker({ className = "" }: { className?: string }) {
     };
   }, [open]);
 
+  if (!options || options.palettes.length < 2) return null;
   const label = locale === "tr" ? "Renk teması" : "Colour theme";
-  const current = PALETTES.find((p) => p.id === active) ?? PALETTES[0];
+  const active = options.palettes.find((p) => p.id === chosen) ?? options.palettes.find((p) => p.id === options.defaultId) ?? options.palettes[0];
 
   return (
     <div ref={ref} className={`relative ${className}`}>
@@ -39,29 +52,33 @@ export function PalettePicker({ className = "" }: { className?: string }) {
         aria-label={label}
         className={`${btn.base} ${btn.subtle} h-9 px-2.5`}
       >
-        <span className="h-4 w-4 rounded-full ring-2 ring-surface shadow" style={{ background: current.swatch }} />
+        <span className="h-4 w-4 rounded-full ring-2 ring-surface shadow" style={{ background: safe(active.primary) }} />
       </button>
       {open && (
         <div
           role="radiogroup"
           aria-label={label}
-          className="absolute right-0 top-11 z-50 w-48 rounded-2xl border border-border bg-surface p-1.5 shadow-card"
+          className="absolute right-0 top-11 z-50 max-h-[70vh] w-60 overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-card"
         >
-          {PALETTES.map((p) => (
+          {options.palettes.map((p) => (
             <button
               key={p.id}
               type="button"
               role="radio"
-              aria-checked={active === p.id}
+              aria-checked={active.id === p.id}
               onClick={() => {
-                setPalette(p.id);
+                setPalette(p.id, options.defaultId);
                 setOpen(false);
               }}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm hover:bg-surface-2"
             >
-              <span className="h-5 w-5 rounded-full ring-1 ring-black/10" style={{ background: p.swatch }} />
-              <span className="flex-1">{locale === "tr" ? p.tr : p.en}</span>
-              {active === p.id && <Check className="h-4 w-4 text-primary" aria-hidden />}
+              <span className="flex h-4 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10" aria-hidden>
+                {p.tones.map((t, i) => (
+                  <span key={`${t}-${i}`} className="flex-1" style={{ background: safe(t) }} />
+                ))}
+              </span>
+              <span className="flex-1 truncate">{locale === "tr" ? p.name.tr : p.name.en}</span>
+              {active.id === p.id && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />}
             </button>
           ))}
         </div>

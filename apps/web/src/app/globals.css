@@ -18,49 +18,8 @@
   color-scheme: light;
 }
 
-/* Colour themes the user can pick (Kil is the default above). Text and filled buttons keep ≥ 4.5:1 contrast
-   against their backgrounds in every theme. The brand mark stays terracotta in all of them. */
-:root[data-palette="pirinc"] {
-  --primary: #8a6a2f;
-  --primary-strong: #725724;
-  --primary-soft: #f3ecdd;
-  --accent: #c8a46a;
-  --accent-soft: #f2e8d4;
-  --bg: #f7f4ee;
-  --surface: #ffffff;
-  --surface-2: #eee8db;
-  --text: #161513;
-  --muted: #6b655b;
-  --border: #e6dfd1;
-}
-
-:root[data-palette="murekkep"] {
-  --primary: #24406e;
-  --primary-strong: #1a3157;
-  --primary-soft: #e6edf7;
-  --accent: #e08a3c;
-  --accent-soft: #fbeadb;
-  --bg: #f4f6f9;
-  --surface: #ffffff;
-  --surface-2: #e8edf3;
-  --text: #141a26;
-  --muted: #5f6878;
-  --border: #dde3ec;
-}
-
-:root[data-palette="erik"] {
-  --primary: #7a3e63;
-  --primary-strong: #63304f;
-  --primary-soft: #f5e9ef;
-  --accent: #c27c8a;
-  --accent-soft: #f6e6ea;
-  --bg: #f8f3f4;
-  --surface: #ffffff;
-  --surface-2: #efe5e8;
-  --text: #22171d;
-  --muted: #6c5f66;
-  --border: #eadde2;
-}
+/* Further colour themes come from the admin (API.md §7.34): the layout writes them into a <style> element
+   (lib/theme.ts). Kil above is only the fallback for when the API cannot be read. */
 
 /* Dark palette: opt-in only (class "dark" on <html>); the site is light by default. */
 :root.dark {
