@@ -1661,3 +1661,37 @@ ilk anda görünür. Ziyaretçinin seçimi tarayıcıda (localStorage) kalır. P
 varsayılan görünür. API okunamazsa site yerleşik Kil temasında kalır ve tema menüsü gizlenir.
 
 **Kapsam dışı:** panelin kendi renk seçeneği (Panel rengi) şimdilik dört sabit temadır.
+
+### 7.35 Sadakat kuralları (kendiliğinden hediye) — backend + admin
+Kendiliğinden verilen hediye krediler (**Admin → Büyüme → Sadakat kuralları**; YediOda #63). Üç kural da kapalı
+başlar; her biri panelden açılır ve ayarlanır.
+
+**Kurallar**
+- **Giriş serisi** (`streak`): kullanıcı İstanbul takviminde üst üste N gün (3–60) etkin olunca kredi alır (1–20). Serinin
+  her katında yeniden alır (7, 14, 21… gün); bir gün kaçarsa seri 1'den başlar.
+  - Gün, o günün ilk oturumlu isteğinde sayılır (`UserGuard`).
+  - Sayım tek bir SQL ile yapılır; aynı anda gelen istekler günü bir kez sayar.
+  - Seri `User.streakDays` ve `User.streakDay` alanlarında tutulur.
+- **Hesap yıldönümü** (`anniversary`): hesabın açıldığı günün her yıl dönümünde kredi (1–50). 29 Şubat hesapları artık
+  yıl olmayan yıllarda 28 Şubat'ta alır. Doğum günü için doğum tarihi gerekir; KVKK veri en azaltma gereği toplanmaz.
+- **Kendiliğinden geri dönüş** (`winback`): N gündür (7–365) gelmeyenlere kredi (1–20) ve "Seni özledik" bildirimi.
+  - Aynı kişi bekleme süresi (30–365 gün) dolmadan yeniden almaz.
+  - Günde en çok `dailyCap` kişi (1–2000) alır, en son bırakanlar önce (RES).
+
+**Kimler alır, nasıl:** yalnız etkin, misafir olmayan, e-postası doğrulanmış USER hesaplar.
+- Her hediye bir `LoyaltyGrant` satırıdır ve (kullanıcı, kural, dönem) tekildir, bu yüzden kimse iki kez almaz (BUS-02).
+  Dönem: seri için ödeme günü, yıldönümü için yıl, geri dönüş için gün.
+- Kredi hareketinde `loyalty:streak` / `loyalty:anniversary` / `loyalty:winback` yazar; uygulamada `kind: gift` görünür.
+- Bildirim varsayılan Türkçe/İngilizce metinle gider; panelde kural başına özel metin (en çok 140 karakter) yazılabilir.
+
+**Günlük iş:** `loyalty`, her gün 11:00 (İstanbul). Yıldönümü ve geri dönüşü verir ve JobRun'a yazar. Yeniden
+çalıştırmak güvenlidir.
+
+**Uçlar**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/admin/loyalty` | SUPPORT | `settings`, `stats` (kural başına son 30 gün kişi ve kredi, toplam), `today` (bugün kim alır: `anniversary`, `winback`, `winbackWaiting`), `lastRun`, `version` |
+| PATCH | `/admin/loyalty` | ADMIN | `{ settings, reason, version }`. Üç kural birlikte gönderilir; sınır dışı ya da bilinmeyen alan 400, eski sürüm 409 |
+| POST | `/admin/loyalty/run` | ADMIN | `{ reason }` → `{ anniversary, winback }`. Günlük işi şimdi çalıştırır; o gün zaten alan yeniden almaz |
+
+Denetim kaydında `loyalty.update` (değişiklik listesiyle) ve `loyalty.run` görünür.

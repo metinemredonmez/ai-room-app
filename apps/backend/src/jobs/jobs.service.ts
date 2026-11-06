@@ -19,6 +19,7 @@ import { MarketingService } from '../marketing/marketing.service.js';
 import { SupportService } from '../support/support.service.js';
 import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
+import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -46,6 +47,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     @Inject(CONFIG) private cfg: Config,
     private welcome: WelcomeService,
     private orgs: OrgsService,
+    private loyalty: LoyaltyService,
   ) {}
 
   async onModuleInit() {
@@ -81,6 +83,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       { pattern: '0 9 * * 1', tz: 'Europe/Istanbul' },
       { name: 'weekly-report' },
     );
+    // API.md §7.35: anniversary and win-back gifts once a day, at an hour a push is welcome.
+    await this.queues.maintenance.upsertJobScheduler('loyalty', { pattern: '0 11 * * *', tz: 'Europe/Istanbul' }, { name: 'loyalty' });
     await this.queues.maintenance.upsertJobScheduler(
       'kvkk-deadlines',
       { pattern: '0 9 * * *', tz: 'Europe/Istanbul' },
@@ -155,6 +159,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         job.name === 'retention' ? await this.retention()
         : job.name === 'kvkk-deadlines' ? await this.dataRequests.deadlineDigest()
         : job.name === 'broadcasts-due' ? await this.broadcasts.due()
+        : job.name === 'loyalty' ? await this.loyalty.runDaily()
         : job.name === 'weekly-report' ? await this.marketing.runReport(true, null).then((r) => ({ draftId: r.items[0]?.id }))
         : { failedStale: await this.designs.reconcile(), marketingStale: await this.marketing.reconcile() };
       await this.prisma.jobRun.update({

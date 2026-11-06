@@ -4,11 +4,12 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { jwtVerify, SignJWT } from 'jose';
 import { CONFIG, type Config } from '../config.js';
 import { unauthorized, AppError } from '../common/errors.js';
-import type { AppRequest } from '../common/http.js';
+import { todayInIstanbul, type AppRequest } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
 import type { User } from '../generated/prisma/client.js';
 import { MIN_ROLE, atLeast, isAdminRole, type AdminRole } from '../admin/roles.js';
 import { log } from '../common/log.js';
+import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { randomToken, sha256 } from './crypto.js';
 
 // TOK-01 / TOK-02: HS256 only, fixed issuer, one audience per purpose, explicit token type.
@@ -135,20 +136,24 @@ function bearer(req: AppRequest): string {
 /** AZ-01: authenticated app user whose account is active and whose token version is current. */
 @Injectable()
 export class UserGuard implements CanActivate {
-  constructor(private tokens: TokensService, private prisma: PrismaService) {}
+  constructor(private tokens: TokensService, private prisma: PrismaService, private loyalty: LoyaltyService) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<AppRequest>();
     const claims = await this.tokens.verify(bearer(req), AUD_APP);
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
-      select: { id: true, role: true, isGuest: true, status: true, tokenVersion: true, lastSeenAt: true },
+      select: { id: true, role: true, isGuest: true, status: true, tokenVersion: true, lastSeenAt: true, streakDay: true },
     });
     if (!user || user.tokenVersion !== claims.ver) throw unauthorized();
     if (user.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
     req.auth = { userId: user.id, role: user.role, isGuest: user.isGuest, admin: false };
     if (!user.lastSeenAt || Date.now() - user.lastSeenAt.getTime() > 5 * 60_000) {
       void this.prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined);
+    }
+    // API.md §7.35: the first request of an Istanbul day moves the streak (and may pay its gift), in the background.
+    if (user.streakDay !== todayInIstanbul()) {
+      void this.loyalty.activeDay(user.id).catch((e: Error) => log.warn('loyalty_streak_failed', { error: e.name }));
     }
     return true;
   }

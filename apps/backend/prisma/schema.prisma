@@ -119,6 +119,8 @@ model User {
   mfaEnrollBefore   DateTime? // set on promotion / MFA reset: enrollment window (AUT-04)
   tokenVersion      Int        @default(0) // bumped to revoke every access token (SES-04)
   lastSeenAt        DateTime?
+  streakDays        Int        @default(0) // consecutive Istanbul days with activity (API.md §7.35)
+  streakDay         String?    @db.VarChar(10) // last active day, YYYY-MM-DD Europe/Istanbul
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
@@ -143,6 +145,7 @@ model User {
   referredBy          Referral?           @relation("invitee")
   giftsReceived       GiftRecipient[]
   partnerAttribution  PartnerAttribution?
+  loyaltyGrants       LoyaltyGrant[]
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
@@ -930,4 +933,19 @@ model Project {
 
   @@unique([id, orgId])
   @@index([orgId, status, updatedAt])
+}
+
+/// Automatic loyalty gifts (API.md §7.35): one row per person, rule and period, so nobody is paid twice.
+/// periodKey: streak = the day the streak reached a multiple of its length, anniversary = the year, winback = the day.
+model LoyaltyGrant {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  rule      String   @db.VarChar(20)
+  periodKey String   @db.VarChar(20)
+  credits   Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rule, periodKey])
+  @@index([rule, createdAt])
 }

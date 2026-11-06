@@ -20,7 +20,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Panelden hediye kredi + bildirim (API.md §7.31): kullanıcı ayrıntısında "Hediye gönder"; push, isteğe bağlı e-posta, kredi hareketlerinde "Hediye".
    - [x] Toplu hediye (API.md §7.32): girmeyenler / yeni katılanlar / PRO / herkes; önizle, gönder, push; kimse iki kez almaz. Admin → Büyüme → Toplu hediye.
    - [x] Ortak (influencer) bağlantıları (API.md §7.33): /p/<ad>, ziyaret, kayıt, tasarım, ödeme, net gelir, tahmini komisyon. Admin → Büyüme → Ortaklar.
-   - [ ] Otomatik sadakat kuralları (giriş serisi, doğum günü, kendiliğinden geri dönüş), planlı fiyat değişikliği.
+   - [x] Otomatik sadakat kuralları (API.md §7.35): giriş serisi, hesap yıldönümü (doğum günü yerine; KVKK), kendiliğinden geri dönüş; hepsi kapalı başlar. Admin → Büyüme → Sadakat kuralları.
+   - [ ] Planlı fiyat değişikliği.
 3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,
    App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.

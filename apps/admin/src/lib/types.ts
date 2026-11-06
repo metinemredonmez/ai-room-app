@@ -512,6 +512,24 @@ export type EngineState = {
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
 
+// Sadakat kuralları (API.md §7.35).
+export type LoyaltyMessage = { tr: string; en: string };
+export type LoyaltySettings = {
+  streak: { enabled: boolean; days: number; credits: number; message: LoyaltyMessage };
+  anniversary: { enabled: boolean; credits: number; message: LoyaltyMessage };
+  winback: { enabled: boolean; inactiveDays: number; credits: number; cooldownDays: number; dailyCap: number; message: LoyaltyMessage };
+};
+export type LoyaltyRule = keyof LoyaltySettings;
+export type LoyaltyState = {
+  settings: LoyaltySettings;
+  stats: Record<LoyaltyRule, { last30: number; credits30: number; total: number }>;
+  today: { anniversary: number; winback: number; winbackWaiting: number };
+  lastRun: { at: string; status: string; details: Record<string, unknown> } | null;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
 // Renk temaları (API.md §7.34).
 export const THEME_TOKEN_KEYS = ["primary", "primaryStrong", "primarySoft", "accent", "accentSoft", "bg", "surface", "surface2", "text", "muted", "border"] as const;
 export type ThemeTokens = Record<(typeof THEME_TOKEN_KEYS)[number], string>;

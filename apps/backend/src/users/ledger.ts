@@ -16,6 +16,8 @@ export function ledgerKind(reason: string): LedgerKind {
   if (reason === 'referral_invitee' || reason === 'referral_inviter') return 'referral';
   // API.md §7.31: a gift from the team (the staff member's id stays in refId, never shown).
   if (reason === 'gift') return 'gift';
+  // API.md §7.35: automatic loyalty gifts (streak, anniversary, win-back) read as a gift in the app.
+  if (reason.startsWith('loyalty:')) return 'gift';
   if (reason.startsWith('admin:')) return 'adjustment';
   return 'other';
 }
