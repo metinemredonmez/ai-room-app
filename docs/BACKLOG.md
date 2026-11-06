@@ -82,7 +82,7 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
   - [ ] “Odan bozulmaz” sözü: maske dışı değişmezlik ölçülür, gerekirse sonuç reddedilip yeniden üretilir.
 
 ## Şu an
-- [x] Dört renk teması (Kil · Pirinç · Mürekkep · Erik): web (başlıktaki seçici) ve admin (kullanıcı menüsü). Açık tema varsayılan.
+- [x] Renk temaları: 12 palet panelden (API.md §7.34); web başlıktaki seçici. Panelin kendi renk menüsü hâlâ 4 sabit tema.
 - [x] Web ana sayfası: gerçek fotoğraflar (Nano Banana 2 önce/sonra), Casalume logosu, ince serif başlıklar.
 - [x] Stil kartları: 15 stilin gerçek önizlemesi Nano Banana 2 ile (`apps/backend/assets/styles/`).
 - [ ] Web fiyatlar: “Seç” → “Uygulamadan abone ol” (App Store / Google Play); canlıda demo PRO düğmesi gizli.
@@ -201,7 +201,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   devam eder; abone listesi ve RevenueCat ile elle eşitleme. Kaynak: palemi `billing/catalog`, fal-app `subscriptions`.
   - [ ] Mobil ödeme ekranı (sen): `GET /v1/billing/catalog` + RevenueCat teklifleri `productIds` ile eşleşir.
 - [ ] Deneme süresi + dürüst paywall (ilk ücret tarihi düğmenin üstünde) + “Aboneliği yönet” + deneme hatırlatması (sen, palemi).
-- [ ] Davet et – kazan (ücretsiz tasarım hakkı) + promosyon/hediye kodu + mimar/influencer ortaklık bağlantısı (fal-app).
+- [x] Davet et – kazan (ücretsiz tasarım hakkı) + promosyon/hediye kodu + mimar/influencer ortaklık bağlantısı (fal-app) — API.md §7.29, §7.30, §7.33.
 - [x] Panelden toplu push/kampanya (API.md §7.16): pazarlama izni, haftalık sınır, sessiz saatler, ticari ifade kontrolü,
   test gönderimi, teslim ve açılma raporu (fal-app). Mobil (sen): bildirime dokununca `POST /v1/broadcasts/:id/opened`,
   Android `news` kanalı.
@@ -215,7 +215,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
 - [ ] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi), admin CMS (SSS, ana sayfa) (fal-app, maeyja).
 - [ ] Admin’de `support@casalume.app` gelen kutusu (maeyja `mailbox`, IMAP): kullanıcı e-postalarını panelden okuyup yanıtlamak.
-- [ ] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — kredi paketleriyle birleşir.
+- [x] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — API.md §7.29.
 - [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).
 - [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
   Keychain temizliği, uygulama içi değerlendirme istemi.
@@ -240,16 +240,16 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [ ] Mağaza inceleme (App Review) hesabı: süreli, denetimli (Palemi) · kolay
 - [ ] Kurucu uyarıları: satın alma bildirimi, disk/iş hatası/bütçe eşiği (YediOda #71, #90, #92) · orta
 - [ ] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) · kolay
-- [ ] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) · kolay
+- [x] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) — API.md §7.28
 - [ ] İstemci hata ucu (mobil/web hataları) (YediOda #106) · kolay
 - [ ] Hesap silmede 30 gün geri alma penceresi (YediOda #18) · orta
-- [ ] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) · orta
+- [x] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) — API.md §7.26, §7.27
 - [ ] llms.txt (MAEYJA, YediOda #94) · kolay
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta
 - [ ] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) · kolay
 - [ ] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) · kolay
 - [ ] Mağaza olayları CSV dışa aktarımı (Palemi) · kolay
-- [ ] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) · orta
+- [x] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) — API.md §7.31, §7.32 (kendiliğinden kurallar açık: üstte Büyüme)
 - [ ] A/B deney altyapısı (YediOda #74) · kolay, düşük öncelik
 Uymayanlar (alınmayacak): fal/astroloji/tarot içerikleri, ses (TTS/STT), kriz süzgeci, RAG, e-ticaret sepet/kargo/iade,
 makyaj ve renk analizi, astrolog portalı ve akademi, telefonla giriş.
