@@ -539,6 +539,33 @@
       "adjustment": "客服调整",
       "other": "其他"
     },
+    "sessionsTitle": "会话",
+    "sessionsBody": "已登录你账户的设备。如果看到不认识的设备，请结束该会话并修改密码。",
+    "sessionsThis": "此设备",
+    "sessionsLastUsed": "最近活动：{time}",
+    "sessionsClose": "结束",
+    "sessionsCloseOthers": "结束其他所有会话",
+    "sessionsClosedOthers": "已结束 {n} 个会话。",
+    "sessionsClosed": "会话已结束。",
+    "sessionsEmpty": "没有打开的会话。",
+    "sessionsIpNote": "位置为大致位置：仅保存 IP 地址的前半部分。",
+    "loginsTitle": "最近登录",
+    "loginsOk": "已登录",
+    "loginsFailed": "登录失败",
+    "loginsReasons": {
+      "bad_password": "密码错误",
+      "bad_second_factor": "验证码错误",
+      "suspended": "账户已停用"
+    },
+    "loginsMethods": {
+      "password": "邮箱",
+      "register": "注册",
+      "guest": "访客",
+      "google": "Google",
+      "apple": "Apple",
+      "admin": "管理后台",
+      "review": "审核账号"
+    },
     "privacyTitle": "隐私与授权",
     "aiConsent": "AI 处理及跨境传输",
     "aiConsentHint": "生成设计所必需。撤回后将无法生成新设计；你的账户和已保存的设计仍会保留。",

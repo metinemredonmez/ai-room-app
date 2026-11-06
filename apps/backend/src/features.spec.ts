@@ -83,7 +83,7 @@ describe('feature flags', () => {
     const prisma = { user: { findUnique: async () => null, create: async () => void created++ } };
     const ctrl = new AuthController(
       prisma as never, {} as never, {} as never, { hit: async () => undefined } as never, {} as never, {} as never, {} as never,
-      { DEVICE_PEPPER: 'p'.repeat(32) } as never, {} as never, svc,
+      { DEVICE_PEPPER: 'p'.repeat(32) } as never, {} as never, svc, {} as never,
     );
     const req = { clientIp: '1.1.1.1', headers: {} } as never;
     await expect(ctrl.guest({ deviceId: 'device-0123456789abcdef' }, req)).rejects.toMatchObject({ status: 403, code: 'feature_disabled' });

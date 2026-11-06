@@ -16,7 +16,9 @@ import { hashPassword, newTotpSecret, otpauthUri, sha256, verifyPassword, verify
 import { EmailTokensService } from './email-tokens.service.js';
 import { OAuthService } from './oauth.service.js';
 import { WelcomeService, welcomeEmailKey } from '../users/welcome.service.js';
-import { AUD_APP, TokensService, UserGuard } from './tokens.service.js';
+import { clientInfo } from './client-info.js';
+import { SessionsService } from './sessions.service.js';
+import { AUD_APP, TokensService, UserGuard, type SessionMethod } from './tokens.service.js';
 
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
 // PWD (NIST 800-63B): length over composition rules; 10+ chars, no arbitrary complexity rules.
@@ -65,11 +67,15 @@ export class AuthController {
     @Inject(CONFIG) private cfg: Config,
     private welcome: WelcomeService,
     private features: FeaturesService,
+    private sessions: SessionsService,
   ) {}
 
-  private async respond(userId: string, familyId?: string) {
+  /** A new sign-in: a new session (API.md §7.37) and a line in the sign-in history. */
+  private async respond(userId: string, method: SessionMethod, req: AppRequest) {
     const user = await this.users.get(userId);
-    const tokens = await this.tokens.issueUser(user, familyId);
+    const client = clientInfo(req);
+    const tokens = await this.tokens.issueUser(user, undefined, { method, client });
+    this.sessions.recordLogin(user.id, true, method, client);
     return { ...tokens, user: this.users.toDto(user) };
   }
 
@@ -82,12 +88,12 @@ export class AuthController {
     const existing = await this.prisma.user.findUnique({ where: { deviceHash } });
     if (existing) {
       if (existing.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
-      return this.respond(existing.id);
+      return this.respond(existing.id, 'guest', req);
     }
     // API.md §7.28: no new guests while switched off; a device that already has a guest account still signs in.
     this.features.assert('guest_mode');
     const user = await this.prisma.user.create({ data: { deviceHash, isGuest: true } });
-    return this.respond(user.id);
+    return this.respond(user.id, 'guest', req);
   }
 
   @Post('register')
@@ -117,7 +123,7 @@ export class AuthController {
     if (guestId) await this.tokens.revokeAll(user.id).catch(() => undefined); // SES-02: new session on privilege change
     log.info('user_registered', { userId: user.id, upgradedGuest: Boolean(guestId) });
     void this.emailTokens.sendVerification(user).catch((e: Error) => log.error('mail_failed', { kind: 'verify', error: e.name }));
-    return this.respond(user.id);
+    return this.respond(user.id, 'register', req);
   }
 
   @Post('login')
@@ -131,12 +137,17 @@ export class AuthController {
     const ok = await verifyPassword(user?.passwordHash, input.password);
     if (!user || !ok) {
       log.warn('login_failed', { ip: req.clientIp, reason: user ? 'bad_password' : 'unknown_account' });
+      // API.md §7.37: the account owner sees failed attempts too; unknown addresses leave no trace.
+      if (user) this.sessions.recordLogin(user.id, false, 'password', clientInfo(req), 'bad_password');
       throw INVALID();
     }
-    if (user.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
+    if (user.status !== 'ACTIVE') {
+      this.sessions.recordLogin(user.id, false, 'password', clientInfo(req), 'suspended');
+      throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
+    }
     await this.limiter.reset(LIMITS.loginAccount, sha256(input.email));
     log.info('login_succeeded', { userId: user.id, ip: req.clientIp });
-    return this.respond(user.id);
+    return this.respond(user.id, 'password', req);
   }
 
   /** TOK-03: step 1 of Apple / Google sign-in — a single-use nonce for this attempt (10 minutes). */
@@ -152,7 +163,7 @@ export class AuthController {
   async google(@Body() body: unknown, @Req() req: AppRequest, @Headers('authorization') authorization?: string) {
     const input = parse(GoogleSchema, body);
     await this.limiter.hit(LIMITS.oauthLogin, req.clientIp);
-    return this.oauth.signIn('google', { token: input.idToken, nonce: input.nonce, authorization });
+    return this.oauth.signIn('google', { token: input.idToken, nonce: input.nonce, authorization, client: clientInfo(req) });
   }
 
   @Post('oauth/apple')
@@ -161,7 +172,7 @@ export class AuthController {
     const input = parse(AppleSchema, body);
     await this.limiter.hit(LIMITS.oauthLogin, req.clientIp);
     return this.oauth.signIn('apple', {
-      token: input.identityToken, nonce: input.nonce, authorizationCode: input.authorizationCode, name: input.name, authorization,
+      token: input.identityToken, nonce: input.nonce, authorizationCode: input.authorizationCode, name: input.name, authorization, client: clientInfo(req),
     });
   }
 
@@ -170,7 +181,7 @@ export class AuthController {
   async refresh(@Body() body: unknown, @Req() req: AppRequest) {
     const { refreshToken } = parse(RefreshSchema, body);
     await this.limiter.hit(LIMITS.ip, req.clientIp);
-    const { user, tokens } = await this.tokens.rotate(refreshToken);
+    const { user, tokens } = await this.tokens.rotate(refreshToken, clientInfo(req));
     return { ...tokens, user: this.users.toDto(user) };
   }
 
@@ -263,6 +274,7 @@ export class AdminAuthController {
     private limiter: RateLimiter,
     private audit: AuditService,
     private security: AdminSecurityService,
+    private sessions: SessionsService,
   ) {}
 
   /**
@@ -281,8 +293,10 @@ export class AdminAuthController {
     await this.limiter.hit(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
     const ok = await verifyPassword(user?.passwordHash, input.password);
-    const fail = async () => {
+    const fail = async (reason: 'bad_password' | 'bad_second_factor' = 'bad_password') => {
       await this.audit.record(null, 'admin.login_failed', 'user', user?.id ?? null, { email: sha256(input.email).slice(0, 12) }, req.clientIp);
+      // API.md §7.37: failed attempts on a real staff account show in its sign-in history.
+      if (user && isAdminRole(user.role)) this.sessions.recordLogin(user.id, false, 'admin', clientInfo(req), reason);
       return new AppError(401, 'unauthorized', 'Giriş bilgileri hatalı');
     };
     if (!user || !ok || !isAdminRole(user.role) || user.status !== 'ACTIVE') throw await fail();
@@ -295,12 +309,12 @@ export class AdminAuthController {
     }
     // No factor at all fails like a wrong code: a correct password alone reveals nothing. Checked after the
     // enrollment branch, so a newly promoted admin learns that setup is due without having a code yet.
-    if (!devSkip && !input.otp && !input.backupCode) throw await fail();
+    if (!devSkip && !input.otp && !input.backupCode) throw await fail('bad_second_factor');
     // Recovery codes are only spent after the password checked out.
     const remaining = input.backupCode ? await this.security.consumeBackupCode(user.id, input.backupCode) : null;
     const passed = devSkip || (input.backupCode ? remaining !== null : await this.security.claimTotp(user, input.otp!));
     const factor = devSkip ? (panel ? 'panel' : 'dev') : input.backupCode ? 'backup' : 'otp';
-    if (!passed) throw await fail();
+    if (!passed) throw await fail('bad_second_factor');
     await this.limiter.reset(LIMITS.loginAccount, sha256(`admin:${input.email}`));
     await this.audit.record(user.id, 'admin.login', 'user', user.id, { factor, ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) }, req.clientIp);
     if (remaining !== null) {
@@ -311,6 +325,7 @@ export class AdminAuthController {
       ]);
     }
     if (devSkip) log.warn('admin_login_without_mfa', { userId: user.id, via: factor });
+    this.sessions.recordLogin(user.id, true, 'admin', clientInfo(req));
     const tokens = await this.tokens.issueAdmin(user, factor);
     return { ...tokens, admin: this.users.toDto(user), ...(remaining !== null ? { backupCodesRemaining: remaining } : {}) };
   }

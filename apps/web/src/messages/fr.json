@@ -539,6 +539,33 @@
       "adjustment": "Ajustement par le support",
       "other": "Autre"
     },
+    "sessionsTitle": "Sessions",
+    "sessionsBody": "Appareils connectés à ton compte. Si tu en vois un que tu ne reconnais pas, ferme-le et change ton mot de passe.",
+    "sessionsThis": "Cet appareil",
+    "sessionsLastUsed": "Dernière activité : {time}",
+    "sessionsClose": "Fermer",
+    "sessionsCloseOthers": "Fermer toutes les autres sessions",
+    "sessionsClosedOthers": "{n} sessions fermées.",
+    "sessionsClosed": "Session fermée.",
+    "sessionsEmpty": "Aucune session ouverte.",
+    "sessionsIpNote": "L’emplacement est approximatif : seule la première partie de l’adresse IP est conservée.",
+    "loginsTitle": "Connexions récentes",
+    "loginsOk": "Connexion",
+    "loginsFailed": "Tentative échouée",
+    "loginsReasons": {
+      "bad_password": "mot de passe incorrect",
+      "bad_second_factor": "code de vérification incorrect",
+      "suspended": "compte suspendu"
+    },
+    "loginsMethods": {
+      "password": "par e-mail",
+      "register": "inscription",
+      "guest": "invité",
+      "google": "avec Google",
+      "apple": "avec Apple",
+      "admin": "panneau d’administration",
+      "review": "compte de vérification"
+    },
     "privacyTitle": "Confidentialité et consentements",
     "aiConsent": "Traitement par IA et transfert à l'étranger",
     "aiConsentHint": "Nécessaire pour créer des designs. Si vous le retirez, vous ne pourrez plus créer de nouveaux designs ; votre compte et vos designs enregistrés sont conservés.",

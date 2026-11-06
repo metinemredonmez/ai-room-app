@@ -121,10 +121,22 @@ async function visitorIp(): Promise<string | null> {
   }
 }
 
+async function visitorUserAgent(): Promise<string | null> {
+  try {
+    const ua = (await requestHeaders()).get("user-agent");
+    return ua ? ua.slice(0, 300) : null;
+  } catch {
+    return null; // outside a request (build time)
+  }
+}
+
 export async function callBackend(call: BackendCall): Promise<Response> {
   const headers = new Headers({ accept: "application/json" });
   const ip = await visitorIp();
   if (ip) headers.set("x-forwarded-for", ip);
+  // API.md §7.37: the visitor's browser, so "Sessions" can say "Chrome · macOS" instead of this server.
+  const ua = await visitorUserAgent();
+  if (ua) headers.set("user-agent", ua);
   if (call.contentType) headers.set("content-type", call.contentType);
   if (call.bearer) headers.set("authorization", `Bearer ${call.bearer}`);
   if (call.locale) headers.set("accept-language", call.locale);

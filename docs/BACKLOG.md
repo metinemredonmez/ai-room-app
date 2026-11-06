@@ -22,8 +22,9 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Ortak (influencer) bağlantıları (API.md §7.33): /p/<ad>, ziyaret, kayıt, tasarım, ödeme, net gelir, tahmini komisyon. Admin → Büyüme → Ortaklar.
    - [x] Otomatik sadakat kuralları (API.md §7.35): giriş serisi, hesap yıldönümü (doğum günü yerine; KVKK), kendiliğinden geri dönüş; hepsi kapalı başlar. Admin → Büyüme → Sadakat kuralları.
    - [x] Planlı fiyat değişikliği (API.md §7.36): araç kredi bedeli ve paket kredisi; başlangıç/bitiş, otomatik geri dönüş, elle değişikliğe dokunmaz. Admin → Gelir ve maliyet → Planlı fiyatlar. Mağaza fiyatları mağazalardan.
-3. Hesap ve güvenlik: aktif oturumlar + giriş geçmişi (admin'den kapatma), admin parola değiştirme, TOTP şifreli,
-   App Review hesabı.
+3. Hesap ve güvenlik
+   - [x] Aktif oturumlar + giriş geçmişi (API.md §7.37): web Hesabım → Oturumlar; kapatılan oturum anında düşer (SES-04); admin kullanıcı ayrıntısında görür ve kapatır.
+   - [ ] Admin parola değiştirme, TOTP şifreli, yaygın parola reddi, App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
@@ -234,7 +235,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Hoş geldin kredisi (API.md §7.22): Ayarlar'dan miktar; e-posta / Apple / Google kimliği başına bir kez, hesap silinse de (HMAC özeti 3 yıl); web doğrulama sayfasında 11 dilde mesaj (Palemi 5.7)
   - [ ] Gizlilik metnine kimlik özeti cümlesi (sahibi); mobil kutlama ve kayıt teklifi (sen)
 - [x] Kredi hareketlerim (API.md §7.24): web Hesabım'da 11 dilde, sayfalı; yönetici gerekçesi gizli (YediOda #57). Mobil (sen): Profil → Kredi hareketlerim
-- [ ] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) · orta
+- [x] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) — API.md §7.37
 - [ ] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) · kolay
 - [ ] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) · kolay
 - [ ] Admin hesabında parola değiştirme (Palemi panel) · kolay

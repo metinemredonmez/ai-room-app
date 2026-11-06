@@ -218,6 +218,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       where: { OR: [{ expiresAt: { lt: new Date(now) } }, { revokedAt: { lt: new Date(now - 7 * DAY) } }] },
     });
     const runs = await this.prisma.jobRun.deleteMany({ where: { startedAt: { lt: new Date(now - 30 * DAY) } } });
+    // API.md §7.37: sign-in history 90 days; closed or long-unused sessions 90 days after their last use.
+    const logins = await this.prisma.loginEvent.deleteMany({ where: { createdAt: { lt: new Date(now - 90 * DAY) } } });
+    const sessions = await this.prisma.authSession.deleteMany({ where: { lastUsedAt: { lt: new Date(now - 90 * DAY) } } });
     let mails = 0;
     for (const dir of ['outbox', 'push-outbox']) {
       const outbox = path.resolve(this.cfg.DATA_DIR, dir);
@@ -238,7 +241,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const welcomeGrants = await this.welcome.purgeOld(now);
     const orgInvites = await this.orgs.purgeInvites(now);
     return {
-      images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count,
+      images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, loginEvents: logins.count, authSessions: sessions.count,
       outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites,
     };
   }

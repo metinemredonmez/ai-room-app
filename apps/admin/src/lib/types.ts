@@ -512,6 +512,12 @@ export type EngineState = {
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
 
+// Oturumlar ve giriş geçmişi (API.md §7.37).
+export type AdminUserSessions = {
+  sessions: Array<{ id: string; device: string; ipPrefix: string; method: string; createdAt: string; lastUsedAt: string; current: boolean }>;
+  logins: Array<{ ok: boolean; method: string; reason: string | null; device: string; ipPrefix: string; createdAt: string }>;
+};
+
 // Planlı fiyat değişikliği (API.md §7.36).
 export type PriceTarget = { kind: "tool" | "pack"; key: string; label: string; value: number; max: number; active: boolean };
 export type PriceScheduleStatus = "SCHEDULED" | "ACTIVE" | "DONE" | "CANCELLED" | "FAILED";

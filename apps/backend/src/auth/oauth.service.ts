@@ -13,6 +13,8 @@ import { AppleService } from './apple.service.js';
 import { randomToken, sha256 } from './crypto.js';
 import { IdTokenVerifier, type IdClaims, type OAuthProvider } from './oidc.js';
 import { decideLink } from './oauth-link.js';
+import type { ClientInfo } from './client-info.js';
+import { SessionsService } from './sessions.service.js';
 import { AUD_APP, TokensService } from './tokens.service.js';
 
 const NONCE_TTL_SEC = 600;
@@ -24,6 +26,8 @@ export interface SignInInput {
   authorizationCode?: string;
   name?: string;
   authorization?: string;
+  /** Where the sign-in came from (API.md §7.37). */
+  client?: ClientInfo;
 }
 
 const isUniqueViolation = (e: unknown) =>
@@ -49,6 +53,7 @@ export class OAuthService {
     @Inject(CONFIG) private cfg: Config,
     private welcome: WelcomeService,
     private features: FeaturesService,
+    private sessions: SessionsService,
   ) {
     const list = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
     this.verifier = new IdTokenVerifier({ google: list(cfg.GOOGLE_CLIENT_IDS), apple: list(cfg.APPLE_CLIENT_IDS) });
@@ -154,8 +159,10 @@ export class OAuthService {
       welcomeCredits = await this.welcome.grant(userId, keys);
     }
     const user = await this.users.get(userId);
+    const client = input.client ?? { device: 'Bilinmeyen cihaz', ipPrefix: '?' };
+    this.sessions.recordLogin(user.id, true, provider, client);
     return {
-      ...(await this.tokens.issueUser(user)),
+      ...(await this.tokens.issueUser(user, undefined, { method: provider, client })),
       user: this.users.toDto(user),
       result: decision.kind === 'create' ? 'created' : decision.kind === 'login' ? 'signed_in' : 'linked',
       welcomeCredits,

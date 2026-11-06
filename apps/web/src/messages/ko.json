@@ -539,6 +539,33 @@
       "adjustment": "고객지원 조정",
       "other": "기타"
     },
+    "sessionsTitle": "세션",
+    "sessionsBody": "계정에 로그인된 기기입니다. 모르는 기기가 있다면 세션을 종료하고 비밀번호를 변경하세요.",
+    "sessionsThis": "이 기기",
+    "sessionsLastUsed": "마지막 활동: {time}",
+    "sessionsClose": "종료",
+    "sessionsCloseOthers": "다른 모든 세션 종료",
+    "sessionsClosedOthers": "세션 {n}개를 종료했습니다.",
+    "sessionsClosed": "세션을 종료했습니다.",
+    "sessionsEmpty": "열린 세션이 없습니다.",
+    "sessionsIpNote": "위치는 대략적입니다. IP 주소의 앞부분만 저장합니다.",
+    "loginsTitle": "최근 로그인",
+    "loginsOk": "로그인",
+    "loginsFailed": "실패한 시도",
+    "loginsReasons": {
+      "bad_password": "잘못된 비밀번호",
+      "bad_second_factor": "잘못된 인증 코드",
+      "suspended": "계정 정지"
+    },
+    "loginsMethods": {
+      "password": "이메일",
+      "register": "회원가입",
+      "guest": "게스트",
+      "google": "Google",
+      "apple": "Apple",
+      "admin": "관리자 패널",
+      "review": "심사용 계정"
+    },
     "privacyTitle": "개인정보 및 동의",
     "aiConsent": "AI 처리 및 해외 이전",
     "aiConsentHint": "디자인을 만들려면 필요해요. 동의를 철회하면 새 디자인은 만들 수 없지만, 계정과 저장된 디자인은 그대로 남아요.",

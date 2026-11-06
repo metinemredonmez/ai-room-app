@@ -1726,3 +1726,37 @@ Mağaza fiyatları (App Store Connect, Play Console) buradan değişmez.
 
 Denetim kaydında `price_schedule.create` ve `price_schedule.cancel` (yönetici) görünür; `price_schedule.start`,
 `price_schedule.end` ve `price_schedule.failed` sistem tarafından yazılır.
+
+### 7.37 Oturumlar ve giriş geçmişi — backend + web + admin (mobil sonra)
+Kullanıcı açık oturumlarını görür ve kapatır (web: **Hesabım → Oturumlar**). Destek ekibi aynısını kullanıcı
+ayrıntısında görür (**Admin → Kullanıcılar → kullanıcı → Açık oturumlar / Son giriş denemeleri**; YediOda #5–6).
+
+**Oturum nedir:** her giriş bir refresh ailesidir ve bir `AuthSession` satırı açar. Satırda şunlar tutulur:
+- yöntem: password / register / guest / google / apple;
+- cihaz etiketi: "Chrome · macOS", "Casalume iOS 1.4.0";
+- kısaltılmış IP: IPv4 /24, IPv6 /48 (KVKK veri en azaltma);
+- açılış ve son etkinlik.
+
+Web BFF ziyaretçinin tarayıcısını (`user-agent`) API'ye iletir; uygulama `X-App-Platform` ve `X-App-Version` gönderir.
+
+**Anında kapatma (SES-04):** uygulama erişim token'ı oturumu `sid` olarak taşır ve `UserGuard` her istekte oturumun
+açık olduğunu kontrol eder. Kapatılan oturumun erişim token'ı bir sonraki istekte 401 alır, refresh token'ı da
+geçersizdir; kişinin diğer cihazları çalışmaya devam eder.
+- Çıkış ve refresh token'ın tekrar kullanılması (SES-05) da o oturumu kapatır.
+- Parola sıfırlama, ban ve "hepsini kapat" bütün oturumları kapatır.
+- Bu sürümden önce açılmış oturumlar ilk yenilemede yöntemi `unknown` olarak kaydedilir.
+
+**Giriş geçmişi:** var olan hesaplardaki başarılı ve başarısız denemeler (`bad_password`, `bad_second_factor`,
+`suspended`); admin girişleri dahil. Bilinmeyen e-postalarla yapılan denemeler hiç tutulmaz. 90 gün saklanır;
+kapanmış ya da 90 gündür kullanılmamış oturumlar da o zaman silinir (saklama işi).
+
+**Uçlar**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/me/sessions` | oturum | `{ items: [{ id, device, ipPrefix, method, createdAt, lastUsedAt, current }] }` |
+| DELETE | `/me/sessions/:id` | oturum | 204. Kendi oturumu değilse 404. Bu cihazınki de kapatılabilir (çıkış gibi) |
+| POST | `/me/sessions/revoke-others` | oturum | `{ revoked }`. Bu cihaz dışındakileri kapatır |
+| GET | `/me/logins` | oturum | Son 20 deneme: `{ ok, method, reason, device, ipPrefix, createdAt }` |
+| GET | `/admin/users/:id/sessions` | SUPPORT | `{ sessions, logins }` (son 50 deneme) |
+| POST | `/admin/users/:id/sessions/:sid/revoke` | ADMIN | `{ reason }`. Denetim: `user.session_revoke` |
+| POST | `/admin/users/:id/sessions/revoke-all` | ADMIN | `{ reason }`. `tokenVersion` artar. Denetim: `user.sessions_revoke_all` |

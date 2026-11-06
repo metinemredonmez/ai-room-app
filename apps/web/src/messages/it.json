@@ -539,6 +539,33 @@
       "adjustment": "Correzione dell’assistenza",
       "other": "Altro"
     },
+    "sessionsTitle": "Sessioni",
+    "sessionsBody": "Dispositivi con accesso al tuo account. Se ne vedi uno che non riconosci, chiudilo e cambia la password.",
+    "sessionsThis": "Questo dispositivo",
+    "sessionsLastUsed": "Ultima attività: {time}",
+    "sessionsClose": "Chiudi",
+    "sessionsCloseOthers": "Chiudi tutte le altre sessioni",
+    "sessionsClosedOthers": "{n} sessioni chiuse.",
+    "sessionsClosed": "Sessione chiusa.",
+    "sessionsEmpty": "Nessuna sessione aperta.",
+    "sessionsIpNote": "La posizione è approssimativa: viene conservata solo la prima parte dell’indirizzo IP.",
+    "loginsTitle": "Accessi recenti",
+    "loginsOk": "Accesso",
+    "loginsFailed": "Tentativo non riuscito",
+    "loginsReasons": {
+      "bad_password": "password errata",
+      "bad_second_factor": "codice di verifica errato",
+      "suspended": "account sospeso"
+    },
+    "loginsMethods": {
+      "password": "con e-mail",
+      "register": "registrazione",
+      "guest": "ospite",
+      "google": "con Google",
+      "apple": "con Apple",
+      "admin": "pannello di amministrazione",
+      "review": "account di revisione"
+    },
     "privacyTitle": "Privacy e consensi",
     "aiConsent": "Trattamento con l'IA e trasferimento all'estero",
     "aiConsentHint": "Necessario per creare progetti. Se lo revochi non potrai crearne di nuovi; il tuo account e i progetti salvati restano.",

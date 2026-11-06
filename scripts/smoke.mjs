@@ -110,13 +110,18 @@ const wholeRoomTap = await call('POST', '/designs', {
 });
 ok(wholeRoomTap.status === 400, 'tap selection refused for whole-room tools', `status ${wholeRoomTap.status}`);
 
-// SES-05: refresh rotation with reuse detection.
-const r1 = await call('POST', '/auth/refresh', { body: { refreshToken: guest.json.refreshToken } });
+// SES-05: refresh rotation with reuse detection — on a second sign-in of the same guest, so the main session lives on.
+const reuseSession = await call('POST', '/auth/guest', { body: { deviceId } });
+const r1 = await call('POST', '/auth/refresh', { body: { refreshToken: reuseSession.json.refreshToken } });
 ok(r1.status === 201, 'refresh rotates');
-const reuse = await call('POST', '/auth/refresh', { body: { refreshToken: guest.json.refreshToken } });
+const reuse = await call('POST', '/auth/refresh', { body: { refreshToken: reuseSession.json.refreshToken } });
 ok(reuse.status === 401, 'refresh token reuse rejected (SES-05)');
 const familyRevoked = await call('POST', '/auth/refresh', { body: { refreshToken: r1.json.refreshToken } });
 ok(familyRevoked.status === 401, 'whole refresh family revoked after reuse');
+// API.md §7.37: the reuse also closes that session, so a possibly stolen access token stops at once; others stay.
+const reusedAccess = await call('GET', '/me', { token: r1.json.accessToken });
+const mainAccess = await call('GET', '/me', { token });
+ok(reusedAccess.status === 401 && mainAccess.status === 200, 'after reuse the session\'s access token stops too; the device\'s other session stays', `${reusedAccess.status}/${mainAccess.status}`);
 
 // Admin: user token must not open admin routes; MFA login does.
 const userOnAdmin = await call('GET', '/admin/stats', { token });
@@ -219,6 +224,45 @@ ok(oldSession.status === 401 && oldRefresh.status === 401, 'all sessions revoked
 const oldPw = await call('POST', '/auth/login', { body: { email: userEmail, password: 'first-password-123' } });
 const newPw = await call('POST', '/auth/login', { body: { email: userEmail, password: 'second-password-456' } });
 ok(oldPw.status === 401 && newPw.status === 201, 'old password rejected, new password works');
+
+// API.md §7.37: active sessions and sign-in history. One guest device signed in three times = three sessions.
+{
+  const mac = { 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36' };
+  const dev = `smoke-sessions-${crypto.randomUUID()}`;
+  const s1 = await call('POST', '/auth/guest', { body: { deviceId: dev }, headers: mac });
+  const s2 = await call('POST', '/auth/guest', { body: { deviceId: dev } });
+  const s3 = await call('POST', '/auth/guest', { body: { deviceId: dev } });
+  const list = await call('GET', '/me/sessions', { token: s1.json?.accessToken });
+  const mine = list.json?.items ?? [];
+  const current = mine.find((x) => x.current);
+  ok(list.status === 200 && mine.length === 3 && current?.device === 'Chrome · macOS' && /\.0\/24$|::\/48$|^\?$/.test(current?.ipPrefix ?? '') && mine.filter((x) => x.current).length === 1,
+    'sessions: three sign-ins listed, this device marked, only a shortened IP', JSON.stringify(current));
+  const other = (await call('GET', '/me/sessions', { token: s2.json?.accessToken })).json?.items?.find((x) => x.current)?.id;
+  const closeOne = await call('DELETE', `/me/sessions/${other}`, { token: s1.json?.accessToken });
+  const closedNow = await call('GET', '/me', { token: s2.json?.accessToken });
+  const closedRefresh = await call('POST', '/auth/refresh', { body: { refreshToken: s2.json?.refreshToken } });
+  const stillOk = await call('GET', '/me', { token: s3.json?.accessToken });
+  const notMine = await call('DELETE', `/me/sessions/${crypto.randomUUID()}`, { token: s1.json?.accessToken });
+  ok(closeOne.status === 204 && closedNow.status === 401 && closedRefresh.status === 401 && stillOk.status === 200 && notMine.status === 404,
+    'closing a session stops its access token at once and its refresh token; other devices keep working (SES-04)',
+    `${closeOne.status}/${closedNow.status}/${closedRefresh.status}/${stillOk.status}/${notMine.status}`);
+  const others = await call('POST', '/me/sessions/revoke-others', { token: s1.json?.accessToken });
+  const s3After = await call('GET', '/me', { token: s3.json?.accessToken });
+  const s1After = await call('GET', '/me', { token: s1.json?.accessToken });
+  ok(others.status === 200 && others.json?.revoked === 1 && s3After.status === 401 && s1After.status === 200, '"close all other sessions" keeps this device only', `${others.json?.revoked} ${s3After.status}/${s1After.status}`);
+  const history = (await call('GET', '/me/logins', { token: newPw.json?.accessToken })).json?.items ?? [];
+  ok(history.some((x) => x.ok === false && x.reason === 'bad_password') && history.some((x) => x.ok === true && x.method === 'password') && history.every((x) => !('userId' in x)),
+    'sign-in history shows the failed attempt with the old password and the successful one', JSON.stringify(history.slice(0, 2)));
+  if (adminToken) {
+    const guestId = (await call('GET', '/me', { token: s1.json?.accessToken })).json?.id;
+    const adm = await call('GET', `/admin/users/${guestId}/sessions`, { token: adminToken });
+    const noReason = await call('POST', `/admin/users/${guestId}/sessions/revoke-all`, { token: adminToken, body: {} });
+    const all = await call('POST', `/admin/users/${guestId}/sessions/revoke-all`, { token: adminToken, body: { reason: 'smoke sessions revoke all' } });
+    const s1Gone = await call('GET', '/me', { token: s1.json?.accessToken });
+    ok(adm.status === 200 && adm.json?.sessions?.length === 1 && adm.json?.logins?.filter((x) => x.method === 'guest').length >= 3 && noReason.status === 400 && all.status === 200 && s1Gone.status === 401,
+      'admin sees the sessions and sign-ins, closes them all with a reason (SES-04)', `${adm.status} ${adm.json?.sessions?.length}/${adm.json?.logins?.length} ${noReason.status}/${all.status}/${s1Gone.status}`);
+  }
+}
 
 // ---------------------------------------------------------------- v1.1: queue, settings, KVKK, reports
 const v11 = await call('POST', '/auth/guest', { body: { deviceId: `smoke-${crypto.randomUUID()}` } });
@@ -1237,6 +1281,9 @@ if (adminToken) {
   const sPrices = await call('GET', '/admin/price-schedules', { token: staffToken });
   const sPricePlan = await call('POST', '/admin/price-schedules', { token: staffToken, body: { kind: 'tool', key: 'redesign', value: 1, startsAt: new Date(Date.now() + 86_400_000).toISOString(), endsAt: null, reason: 'support tries' } });
   ok(sPrices.status === 200 && sPricePlan.status === 403, 'SUPPORT sees planned prices but cannot plan one (AZ-01)', `${sPrices.status}/${sPricePlan.status}`);
+  const sSess = await call('GET', `/admin/users/${staffId}/sessions`, { token: staffToken });
+  const sSessAll = await call('POST', `/admin/users/${staffId}/sessions/revoke-all`, { token: staffToken, body: { reason: 'support tries' } });
+  ok(sSess.status === 200 && sSessAll.status === 403, 'SUPPORT sees sessions but cannot close them (AZ-01)', `${sSess.status}/${sSessAll.status}`);
   const sPromo = await call('GET', '/admin/promo', { token: staffToken });
   const sPromoNew = await call('POST', '/admin/promo/batch', { token: staffToken, body: { campaign: 'support', kind: 'CREDITS', amount: 500, count: 1000, reason: 'support tries' } });
   ok(sPromo.status === 200 && sPromoNew.status === 403, 'SUPPORT sees promo codes but cannot make any (AZ-01)', `${sPromo.status}/${sPromoNew.status}`);
@@ -1282,7 +1329,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject', '/v1/admin/users/{id}/gift', '/v1/admin/gifts', '/v1/admin/gifts/preview', '/v1/partners/{slug}/visit', '/v1/me/attribution', '/v1/admin/partners', '/v1/admin/partners/{id}', '/v1/theme', '/v1/admin/theme', '/v1/admin/theme/derive', '/v1/admin/loyalty', '/v1/admin/loyalty/run', '/v1/admin/price-schedules', '/v1/admin/price-schedules/{id}/cancel'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject', '/v1/admin/users/{id}/gift', '/v1/admin/gifts', '/v1/admin/gifts/preview', '/v1/partners/{slug}/visit', '/v1/me/attribution', '/v1/admin/partners', '/v1/admin/partners/{id}', '/v1/theme', '/v1/admin/theme', '/v1/admin/theme/derive', '/v1/admin/loyalty', '/v1/admin/loyalty/run', '/v1/admin/price-schedules', '/v1/admin/price-schedules/{id}/cancel', '/v1/me/sessions', '/v1/me/sessions/{id}', '/v1/me/sessions/revoke-others', '/v1/me/logins', '/v1/admin/users/{id}/sessions', '/v1/admin/users/{id}/sessions/{sid}/revoke', '/v1/admin/users/{id}/sessions/revoke-all'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

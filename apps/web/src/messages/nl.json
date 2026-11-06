@@ -539,6 +539,33 @@
       "adjustment": "Correctie door support",
       "other": "Overig"
     },
+    "sessionsTitle": "Sessies",
+    "sessionsBody": "Apparaten die bij je account zijn ingelogd. Zie je er een die je niet herkent, sluit die dan en wijzig je wachtwoord.",
+    "sessionsThis": "Dit apparaat",
+    "sessionsLastUsed": "Laatst actief: {time}",
+    "sessionsClose": "Sluiten",
+    "sessionsCloseOthers": "Alle andere sessies sluiten",
+    "sessionsClosedOthers": "{n} sessies gesloten.",
+    "sessionsClosed": "Sessie gesloten.",
+    "sessionsEmpty": "Geen open sessies.",
+    "sessionsIpNote": "De locatie is bij benadering: alleen het eerste deel van het IP-adres wordt bewaard.",
+    "loginsTitle": "Recente aanmeldingen",
+    "loginsOk": "Aangemeld",
+    "loginsFailed": "Mislukte poging",
+    "loginsReasons": {
+      "bad_password": "onjuist wachtwoord",
+      "bad_second_factor": "onjuiste verificatiecode",
+      "suspended": "account geschorst"
+    },
+    "loginsMethods": {
+      "password": "met e-mail",
+      "register": "registratie",
+      "guest": "gast",
+      "google": "met Google",
+      "apple": "met Apple",
+      "admin": "beheerpaneel",
+      "review": "reviewaccount"
+    },
     "privacyTitle": "Privacy en toestemmingen",
     "aiConsent": "Verwerking met AI en doorgifte naar het buitenland",
     "aiConsentHint": "Nodig om ontwerpen te maken. Trek je dit in, dan kun je geen nieuwe ontwerpen maken; je account en opgeslagen ontwerpen blijven bestaan.",

@@ -539,6 +539,33 @@
       "adjustment": "Anpassung durch den Support",
       "other": "Sonstiges"
     },
+    "sessionsTitle": "Sitzungen",
+    "sessionsBody": "Geräte, die bei deinem Konto angemeldet sind. Wenn du eines nicht erkennst, schließe es und ändere dein Passwort.",
+    "sessionsThis": "Dieses Gerät",
+    "sessionsLastUsed": "Zuletzt aktiv: {time}",
+    "sessionsClose": "Schließen",
+    "sessionsCloseOthers": "Alle anderen Sitzungen schließen",
+    "sessionsClosedOthers": "{n} Sitzungen geschlossen.",
+    "sessionsClosed": "Sitzung geschlossen.",
+    "sessionsEmpty": "Keine offenen Sitzungen.",
+    "sessionsIpNote": "Der Ort ist ungefähr: Nur der erste Teil der IP-Adresse wird gespeichert.",
+    "loginsTitle": "Letzte Anmeldungen",
+    "loginsOk": "Angemeldet",
+    "loginsFailed": "Fehlgeschlagener Versuch",
+    "loginsReasons": {
+      "bad_password": "falsches Passwort",
+      "bad_second_factor": "falscher Bestätigungscode",
+      "suspended": "Konto gesperrt"
+    },
+    "loginsMethods": {
+      "password": "mit E-Mail",
+      "register": "Registrierung",
+      "guest": "Gast",
+      "google": "mit Google",
+      "apple": "mit Apple",
+      "admin": "Admin-Bereich",
+      "review": "Prüfkonto"
+    },
     "privacyTitle": "Datenschutz und Einwilligungen",
     "aiConsent": "KI-Verarbeitung und Übermittlung ins Ausland",
     "aiConsentHint": "Wird zum Erstellen von Designs benötigt. Wenn du sie widerrufst, kannst du keine neuen Designs erstellen; dein Konto und deine gespeicherten Designs bleiben erhalten.",

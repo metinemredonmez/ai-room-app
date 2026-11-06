@@ -10,6 +10,7 @@ import type { User } from '../generated/prisma/client.js';
 import { MIN_ROLE, atLeast, isAdminRole, type AdminRole } from '../admin/roles.js';
 import { log } from '../common/log.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
+import type { ClientInfo } from './client-info.js';
 import { randomToken, sha256 } from './crypto.js';
 
 // TOK-01 / TOK-02: HS256 only, fixed issuer, one audience per purpose, explicit token type.
@@ -25,7 +26,12 @@ interface Claims {
   ver: number;
   typ: 'access';
   amr?: string[];
+  /** API.md §7.37: the session (refresh family) this app token belongs to; a closed session's tokens stop at once. */
+  sid?: string;
 }
+
+export type SessionMethod = 'password' | 'register' | 'guest' | 'google' | 'apple' | 'review';
+export type SessionOrigin = { method: SessionMethod; client: ClientInfo };
 
 @Injectable()
 export class TokensService {
@@ -49,8 +55,8 @@ export class TokensService {
     return a.length === b.length && timingSafeEqual(a, b);
   }
 
-  private sign(user: Pick<User, 'id' | 'tokenVersion'>, audience: string, ttlSec: number, amr?: string[]) {
-    return new SignJWT({ ver: user.tokenVersion, typ: 'access', ...(amr ? { amr } : {}) })
+  private sign(user: Pick<User, 'id' | 'tokenVersion'>, audience: string, ttlSec: number, amr?: string[], sid?: string) {
+    return new SignJWT({ ver: user.tokenVersion, typ: 'access', ...(amr ? { amr } : {}), ...(sid ? { sid } : {}) })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setSubject(user.id)
       .setIssuer(ISSUER)
@@ -73,12 +79,19 @@ export class TokensService {
     }
   }
 
-  async issueUser(user: User, familyId: string = randomUUID()) {
+  /** A new sign-in (no familyId) opens a session row (API.md §7.37); a rotation keeps the family and its session. */
+  async issueUser(user: User, familyId?: string, origin?: SessionOrigin) {
+    const family = familyId ?? randomUUID();
+    if (!familyId) {
+      await this.prisma.authSession.create({
+        data: { id: family, userId: user.id, method: origin?.method ?? 'unknown', device: origin?.client.device ?? 'Bilinmeyen cihaz', ipPrefix: origin?.client.ipPrefix ?? '?' },
+      });
+    }
     const refreshToken = randomToken(32);
     await this.prisma.refreshToken.create({
-      data: { userId: user.id, familyId, tokenHash: sha256(refreshToken), expiresAt: new Date(Date.now() + REFRESH_TTL_MS) },
+      data: { userId: user.id, familyId: family, tokenHash: sha256(refreshToken), expiresAt: new Date(Date.now() + REFRESH_TTL_MS) },
     });
-    return { accessToken: await this.sign(user, AUD_APP, ACCESS_TTL_SEC), refreshToken, expiresIn: ACCESS_TTL_SEC };
+    return { accessToken: await this.sign(user, AUD_APP, ACCESS_TTL_SEC, undefined, family), refreshToken, expiresIn: ACCESS_TTL_SEC };
   }
 
   /**
@@ -91,14 +104,15 @@ export class TokensService {
   }
 
   /** SES-05: single-use rotation; presenting a used token revokes the whole family. */
-  async rotate(refreshToken: string): Promise<{ user: User; tokens: Awaited<ReturnType<TokensService['issueUser']>> }> {
+  async rotate(refreshToken: string, client?: ClientInfo): Promise<{ user: User; tokens: Awaited<ReturnType<TokensService['issueUser']>> }> {
     const row = await this.prisma.refreshToken.findUnique({ where: { tokenHash: sha256(refreshToken) }, include: { user: true } });
     if (!row) throw unauthorized();
     if (row.usedAt || row.revokedAt) {
-      await this.prisma.refreshToken.updateMany({
-        where: { familyId: row.familyId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
+      const now = new Date();
+      await this.prisma.$transaction([
+        this.prisma.refreshToken.updateMany({ where: { familyId: row.familyId, revokedAt: null }, data: { revokedAt: now } }),
+        this.prisma.authSession.updateMany({ where: { id: row.familyId, revokedAt: null }, data: { revokedAt: now } }),
+      ]);
       throw unauthorized('Oturum yeniden kullanım nedeniyle kapatıldı');
     }
     if (row.expiresAt < new Date() || row.user.status !== 'ACTIVE') throw unauthorized();
@@ -107,22 +121,54 @@ export class TokensService {
       data: { usedAt: new Date() },
     });
     if (claimed.count !== 1) throw unauthorized(); // lost a race with a concurrent refresh
+    // Families opened before sessions were recorded get their row on the first rotation.
+    await this.prisma.authSession.upsert({
+      where: { id: row.familyId },
+      create: { id: row.familyId, userId: row.userId, method: 'unknown', device: client?.device ?? 'Bilinmeyen cihaz', ipPrefix: client?.ipPrefix ?? '?' },
+      update: { lastUsedAt: new Date(), ...(client ? { device: client.device, ipPrefix: client.ipPrefix } : {}) },
+    });
     return { user: row.user, tokens: await this.issueUser(row.user, row.familyId) };
   }
 
   async revoke(refreshToken: string) {
     const row = await this.prisma.refreshToken.findUnique({ where: { tokenHash: sha256(refreshToken) } });
     if (row) {
-      await this.prisma.refreshToken.updateMany({ where: { familyId: row.familyId, revokedAt: null }, data: { revokedAt: new Date() } });
+      const now = new Date();
+      await this.prisma.$transaction([
+        this.prisma.refreshToken.updateMany({ where: { familyId: row.familyId, revokedAt: null }, data: { revokedAt: now } }),
+        this.prisma.authSession.updateMany({ where: { id: row.familyId, revokedAt: null }, data: { revokedAt: now } }),
+      ]);
     }
   }
 
   /** SES-04: bumping tokenVersion invalidates every outstanding access token; refresh families go too. */
   async revokeAll(userId: string) {
+    const now = new Date();
     await this.prisma.$transaction([
       this.prisma.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } }),
-      this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+      this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: now } }),
+      this.prisma.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: now } }),
     ]);
+  }
+
+  /** SES-04 (API.md §7.37): close one session of this user; its access token is refused from the next request. */
+  async revokeSession(userId: string, sessionId: string): Promise<boolean> {
+    const now = new Date();
+    const [, closed] = await this.prisma.$transaction([
+      this.prisma.refreshToken.updateMany({ where: { userId, familyId: sessionId, revokedAt: null }, data: { revokedAt: now } }),
+      this.prisma.authSession.updateMany({ where: { userId, id: sessionId, revokedAt: null }, data: { revokedAt: now } }),
+    ]);
+    return closed.count > 0;
+  }
+
+  /** Every session but this one (families opened before sessions were recorded included). */
+  async revokeOthers(userId: string, keepSessionId: string): Promise<number> {
+    const now = new Date();
+    const [, closed] = await this.prisma.$transaction([
+      this.prisma.refreshToken.updateMany({ where: { userId, familyId: { not: keepSessionId }, revokedAt: null }, data: { revokedAt: now } }),
+      this.prisma.authSession.updateMany({ where: { userId, id: { not: keepSessionId }, revokedAt: null }, data: { revokedAt: now } }),
+    ]);
+    return closed.count;
   }
 }
 
@@ -143,11 +189,19 @@ export class UserGuard implements CanActivate {
     const claims = await this.tokens.verify(bearer(req), AUD_APP);
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
-      select: { id: true, role: true, isGuest: true, status: true, tokenVersion: true, lastSeenAt: true, streakDay: true },
+      select: {
+        id: true, role: true, isGuest: true, status: true, tokenVersion: true, lastSeenAt: true, streakDay: true,
+        ...(claims.sid ? { authSessions: { where: { id: claims.sid }, select: { revokedAt: true } } } : {}),
+      },
     });
     if (!user || user.tokenVersion !== claims.ver) throw unauthorized();
+    // SES-04: a closed session's access token stops working at once, not when it expires.
+    if (claims.sid) {
+      const session = (user as { authSessions?: Array<{ revokedAt: Date | null }> }).authSessions?.[0];
+      if (!session || session.revokedAt) throw unauthorized('Bu oturum kapatıldı');
+    }
     if (user.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
-    req.auth = { userId: user.id, role: user.role, isGuest: user.isGuest, admin: false };
+    req.auth = { userId: user.id, role: user.role, isGuest: user.isGuest, admin: false, sessionId: claims.sid ?? null };
     if (!user.lastSeenAt || Date.now() - user.lastSeenAt.getTime() > 5 * 60_000) {
       void this.prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined);
     }

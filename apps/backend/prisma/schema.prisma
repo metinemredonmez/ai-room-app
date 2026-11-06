@@ -146,6 +146,8 @@ model User {
   giftsReceived       GiftRecipient[]
   partnerAttribution  PartnerAttribution?
   loyaltyGrants       LoyaltyGrant[]
+  authSessions        AuthSession[]
+  loginEvents         LoginEvent[]
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
@@ -970,4 +972,37 @@ model PriceSchedule {
 
   @@index([status, startsAt])
   @@index([kind, targetKey])
+}
+
+/// A signed-in device (API.md §7.37): one row per refresh-token family. Shown to the user ("Oturumlar") and the admin,
+/// closable one by one (SES-04: the access token carries `sid`, so a closed session stops working at once).
+/// Only a shortened IP is kept (/24 for IPv4, /48 for IPv6) — enough to recognise a place, not a household.
+model AuthSession {
+  id         String    @id @db.Uuid // = RefreshToken.familyId
+  userId     String    @db.Uuid
+  method     String    @db.VarChar(12) // password | register | guest | google | apple
+  device     String    @db.VarChar(80)
+  ipPrefix   String    @db.VarChar(50)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lastUsedAt])
+}
+
+/// Sign-in attempts on existing accounts (API.md §7.37), kept 90 days. Unknown e-mail addresses are not recorded.
+model LoginEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  ok        Boolean
+  method    String   @db.VarChar(12) // password | register | guest | google | apple | admin
+  reason    String?  @db.VarChar(30) // bad_password | bad_second_factor | suspended
+  device    String   @db.VarChar(80)
+  ipPrefix  String   @db.VarChar(50)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }

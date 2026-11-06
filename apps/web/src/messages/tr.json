@@ -539,6 +539,33 @@
       "adjustment": "Destek ekibinden düzenleme",
       "other": "Diğer"
     },
+    "sessionsTitle": "Oturumlar",
+    "sessionsBody": "Hesabına giriş yapılmış cihazlar. Tanımadığın bir cihaz görürsen kapat ve şifreni değiştir.",
+    "sessionsThis": "Bu cihaz",
+    "sessionsLastUsed": "Son etkinlik: {time}",
+    "sessionsClose": "Kapat",
+    "sessionsCloseOthers": "Diğer tüm oturumları kapat",
+    "sessionsClosedOthers": "{n} oturum kapatıldı.",
+    "sessionsClosed": "Oturum kapatıldı.",
+    "sessionsEmpty": "Açık oturum yok.",
+    "sessionsIpNote": "Konum yaklaşıktır: IP adresinin yalnız ilk kısmı saklanır.",
+    "loginsTitle": "Son girişler",
+    "loginsOk": "Giriş",
+    "loginsFailed": "Başarısız deneme",
+    "loginsReasons": {
+      "bad_password": "yanlış şifre",
+      "bad_second_factor": "doğrulama kodu hatalı",
+      "suspended": "hesap askıda"
+    },
+    "loginsMethods": {
+      "password": "e-posta ile",
+      "register": "kayıt",
+      "guest": "misafir",
+      "google": "Google ile",
+      "apple": "Apple ile",
+      "admin": "yönetim paneli",
+      "review": "inceleme hesabı"
+    },
     "privacyTitle": "Gizlilik ve izinler",
     "aiConsent": "Yapay zekâ ile işleme ve yurt dışına aktarım",
     "aiConsentHint": "Tasarım üretmek için gerekli. Geri çekersen yeni tasarım üretemezsin; hesabın ve kayıtlı tasarımların durur.",

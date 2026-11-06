@@ -9,6 +9,8 @@ export interface AuthContext {
   role: Role;
   isGuest: boolean;
   admin: boolean; // true only for MFA-complete admin-audience tokens
+  /** App tokens: the session (refresh family) the token belongs to (API.md §7.37); null for older tokens and admins. */
+  sessionId?: string | null;
 }
 
 export type AppRequest = Request & { id: string; clientIp: string; auth?: AuthContext };

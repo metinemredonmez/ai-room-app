@@ -539,6 +539,33 @@
       "adjustment": "Ajuste del equipo de soporte",
       "other": "Otro"
     },
+    "sessionsTitle": "Sesiones",
+    "sessionsBody": "Dispositivos con sesión iniciada en tu cuenta. Si ves uno que no reconoces, ciérralo y cambia tu contraseña.",
+    "sessionsThis": "Este dispositivo",
+    "sessionsLastUsed": "Última actividad: {time}",
+    "sessionsClose": "Cerrar",
+    "sessionsCloseOthers": "Cerrar todas las demás sesiones",
+    "sessionsClosedOthers": "{n} sesiones cerradas.",
+    "sessionsClosed": "Sesión cerrada.",
+    "sessionsEmpty": "No hay sesiones abiertas.",
+    "sessionsIpNote": "La ubicación es aproximada: solo se guarda la primera parte de la dirección IP.",
+    "loginsTitle": "Inicios de sesión recientes",
+    "loginsOk": "Sesión iniciada",
+    "loginsFailed": "Intento fallido",
+    "loginsReasons": {
+      "bad_password": "contraseña incorrecta",
+      "bad_second_factor": "código de verificación incorrecto",
+      "suspended": "cuenta suspendida"
+    },
+    "loginsMethods": {
+      "password": "con correo",
+      "register": "registro",
+      "guest": "invitado",
+      "google": "con Google",
+      "apple": "con Apple",
+      "admin": "panel de administración",
+      "review": "cuenta de revisión"
+    },
     "privacyTitle": "Privacidad y permisos",
     "aiConsent": "Procesamiento con IA y transferencia al extranjero",
     "aiConsentHint": "Es necesario para crear diseños. Si lo retiras, no podrás crear diseños nuevos; tu cuenta y tus diseños guardados se mantienen.",

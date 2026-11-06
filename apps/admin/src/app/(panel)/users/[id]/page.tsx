@@ -9,7 +9,7 @@ import { useFeedback } from "@/components/feedback";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, PageHeader, Select, Spinner, Table, td, th } from "@/components/common";
 import { api, ApiError, useApi } from "@/lib/api";
 import { fmtDate, fmtDateTime, fmtInt } from "@/lib/format";
-import type { AdminStyle, AdminUser, AdminUserDetail } from "@/lib/types";
+import type { AdminMe, AdminStyle, AdminUser, AdminUserDetail, AdminUserSessions } from "@/lib/types";
 
 function toDateInput(iso: string | null): string {
   if (!iso) return "";
@@ -294,9 +294,94 @@ export default function UserDetailPage() {
               )}
             </Card>
           </div>
+
+          <UserSessions userId={user.id} />
         </>
       )}
     </>
+  );
+}
+
+const LOGIN_METHOD: Record<string, string> = { password: "E-posta", register: "Kayıt", guest: "Misafir", google: "Google", apple: "Apple", admin: "Yönetim paneli", review: "İnceleme hesabı", unknown: "—" };
+const LOGIN_REASON: Record<string, string> = { bad_password: "yanlış parola", bad_second_factor: "doğrulama kodu hatalı", suspended: "hesap askıda" };
+
+/** API.md §7.37: open sessions (close one or all) and the last sign-in attempts. SUPPORT reads; ADMIN closes. */
+function UserSessions({ userId }: { userId: string }) {
+  const data = useApi<AdminUserSessions>(`/users/${encodeURIComponent(userId)}/sessions`);
+  const me = useApi<AdminMe>("/me");
+  const canEdit = me.data ? ["ADMIN", "SUPER_ADMIN"].includes(me.data.role) : false;
+  const { toast } = useFeedback();
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function close(sessionId: string | null) {
+    const reason = window.prompt(sessionId ? "Neden bu oturum kapatılıyor? (denetim kaydına yazılır)" : "Neden bütün oturumlar kapatılıyor? (denetim kaydına yazılır)");
+    if (!reason || reason.trim().length < 3) return;
+    setBusy(sessionId ?? "all");
+    try {
+      await api(sessionId ? `/users/${encodeURIComponent(userId)}/sessions/${sessionId}/revoke` : `/users/${encodeURIComponent(userId)}/sessions/revoke-all`, { method: "POST", body: { reason: reason.trim() } });
+      toast("success", sessionId ? "Oturum kapatıldı." : "Bütün oturumlar kapatıldı.");
+      data.reload();
+    } catch (e) {
+      toast("error", e instanceof ApiError ? e.message : "Kapatılamadı.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mt-5 grid gap-5 xl:grid-cols-2">
+      <Card
+        title="Açık oturumlar"
+        actions={canEdit && data.data && data.data.sessions.length > 0 ? (
+          <Button size="sm" variant="ghost" loading={busy === "all"} onClick={() => void close(null)}>Hepsini kapat</Button>
+        ) : undefined}
+      >
+        {data.error && !data.data ? (
+          <ErrorState message={data.error.message} onRetry={data.reload} />
+        ) : !data.data ? (
+          <Spinner />
+        ) : data.data.sessions.length === 0 ? (
+          <EmptyState title="Açık oturum yok" />
+        ) : (
+          <Table head={<tr><th className={th}>Cihaz</th><th className={th}>Son etkinlik</th><th className={th}>Açılış</th><th className={th} /></tr>}>
+            {data.data.sessions.map((s) => (
+              <tr key={s.id}>
+                <td className={td}>
+                  <div className="font-medium text-fg">{s.device}</div>
+                  <div className="text-[11px] text-muted-foreground">{LOGIN_METHOD[s.method] ?? s.method} · {s.ipPrefix}</div>
+                </td>
+                <td className={`${td} whitespace-nowrap text-xs`}>{fmtDateTime(s.lastUsedAt)}</td>
+                <td className={`${td} whitespace-nowrap text-xs text-muted-foreground`}>{fmtDateTime(s.createdAt)}</td>
+                <td className={`${td} text-right`}>
+                  {canEdit && <Button size="sm" variant="ghost" loading={busy === s.id} onClick={() => void close(s.id)}>Kapat</Button>}
+                </td>
+              </tr>
+            ))}
+          </Table>
+        )}
+        <p className="mt-2 text-[11px] text-muted-foreground">Kapatılan oturum hemen düşer. IP’nin yalnız ilk kısmı saklanır.</p>
+      </Card>
+      <Card title="Son giriş denemeleri">
+        {!data.data ? (
+          <Spinner />
+        ) : data.data.logins.length === 0 ? (
+          <EmptyState title="Kayıt yok" description="Giriş geçmişi 90 gün tutulur." />
+        ) : (
+          <Table head={<tr><th className={th}>Tarih</th><th className={th}>Sonuç</th><th className={th}>Cihaz</th></tr>}>
+            {data.data.logins.map((l, i) => (
+              <tr key={`${l.createdAt}-${i}`}>
+                <td className={`${td} whitespace-nowrap text-xs text-muted-foreground`}>{fmtDateTime(l.createdAt)}</td>
+                <td className={td}>
+                  {l.ok ? <Badge tone="good">Giriş</Badge> : <Badge tone="danger">Başarısız</Badge>}
+                  <span className="ml-1 text-xs text-muted-foreground">{LOGIN_METHOD[l.method] ?? l.method}{!l.ok && l.reason ? ` · ${LOGIN_REASON[l.reason] ?? l.reason}` : ""}</span>
+                </td>
+                <td className={`${td} text-xs`}>{l.device} <span className="text-muted-foreground">· {l.ipPrefix}</span></td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Card>
+    </div>
   );
 }
 

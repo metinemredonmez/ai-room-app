@@ -539,6 +539,33 @@
       "adjustment": "Adjustment by support",
       "other": "Other"
     },
+    "sessionsTitle": "Sessions",
+    "sessionsBody": "Devices signed in to your account. If you see one you don't recognise, close it and change your password.",
+    "sessionsThis": "This device",
+    "sessionsLastUsed": "Last active: {time}",
+    "sessionsClose": "Close",
+    "sessionsCloseOthers": "Close all other sessions",
+    "sessionsClosedOthers": "{n} sessions closed.",
+    "sessionsClosed": "Session closed.",
+    "sessionsEmpty": "No open sessions.",
+    "sessionsIpNote": "Location is approximate: only the first part of the IP address is kept.",
+    "loginsTitle": "Recent sign-ins",
+    "loginsOk": "Signed in",
+    "loginsFailed": "Failed attempt",
+    "loginsReasons": {
+      "bad_password": "wrong password",
+      "bad_second_factor": "wrong verification code",
+      "suspended": "account suspended"
+    },
+    "loginsMethods": {
+      "password": "with e-mail",
+      "register": "sign-up",
+      "guest": "guest",
+      "google": "with Google",
+      "apple": "with Apple",
+      "admin": "admin panel",
+      "review": "review account"
+    },
     "privacyTitle": "Privacy and consents",
     "aiConsent": "AI processing and transfer abroad",
     "aiConsentHint": "Needed to create designs. If you withdraw it you can't create new designs; your account and saved designs stay.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Download, LoaderCircle, ShieldCheck, Trash2 } from "lucide-react";
+import { CheckCircle2, Download, LoaderCircle, MonitorSmartphone, ShieldCheck, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import Link from "@/components/locale-link";
 import { useApp } from "@/components/app-provider";
@@ -21,6 +21,8 @@ type DataRequest = { id: string; reference: string; type: string; status: "RECEI
 const REQUEST_TYPES: RequestType[] = ["access", "rectification", "erasure", "objection", "other"];
 type LedgerKind = "daily_free" | "generation" | "refund" | "welcome" | "purchase" | "promo" | "referral" | "gift" | "adjustment" | "other";
 type LedgerEntry = { id: string; delta: number; kind: LedgerKind; designId: string | null; productId: string | null; createdAt: string };
+type Session = { id: string; device: string; ipPrefix: string; method: string; createdAt: string; lastUsedAt: string; current: boolean };
+type LoginEntry = { ok: boolean; method: string; reason: string | null; device: string; ipPrefix: string; createdAt: string };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -121,6 +123,14 @@ export function AccountView() {
         }}
       />
       <LedgerSection key={ledgerKey} onError={setError} />
+      <SessionsSection
+        onError={setError}
+        onNotice={setNotice}
+        onSignedOut={async () => {
+          await logout().catch(() => undefined);
+          await refreshUser().catch(() => null);
+        }}
+      />
       <ConsentsSection onError={setError} onSaved={() => setNotice(p.consentSaved)} />
       <DataSection onError={setError} />
       <RequestsSection onError={setError} onSent={(ref) => setNotice(fmt(p.kvkkSent, { ref }))} />
@@ -302,6 +312,118 @@ function ReferralSection({ onError, onDone }: { onError: (e: unknown) => void; o
 }
 
 /** API.md §7.24: the user's own credit movements, newest first, paged. */
+/** API.md §7.37: signed-in devices (close one or all others) and recent sign-ins, failed attempts included. */
+function SessionsSection({ onError, onNotice, onSignedOut }: { onError: (e: unknown) => void; onNotice: (text: string) => void; onSignedOut: () => Promise<void> }) {
+  const { t, locale } = useApp();
+  const p = t.profile;
+  const [sessions, setSessions] = useState<Session[] | null>(null);
+  const [logins, setLogins] = useState<LoginEntry[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const load = useCallback(
+    () =>
+      Promise.all([api.get<{ items: Session[] }>("/me/sessions"), api.get<{ items: LoginEntry[] }>("/me/logins")])
+        .then(([s, l]) => {
+          setSessions(s.items);
+          setLogins(l.items.slice(0, 8));
+        })
+        .catch(onError),
+    [onError],
+  );
+  useEffect(() => {
+    void load();
+  }, [load]);
+  const time = (iso: string) => new Date(iso).toLocaleString(LOCALE_TAGS[locale], { dateStyle: "medium", timeStyle: "short" });
+  const reasons = p.loginsReasons as Record<string, string>;
+  const methods = p.loginsMethods as Record<string, string>;
+
+  async function close(s: Session) {
+    setBusy(s.id);
+    try {
+      await api.del(`/me/sessions/${s.id}`);
+      if (s.current) return void (await onSignedOut());
+      onNotice(p.sessionsClosed);
+      await load();
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function closeOthers() {
+    setBusy("others");
+    try {
+      const r = await api.post<{ revoked: number }>("/me/sessions/revoke-others", {});
+      onNotice(fmt(p.sessionsClosedOthers, { n: String(r.revoked) }));
+      await load();
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Section title={p.sessionsTitle}>
+      <p className="text-sm text-muted">{p.sessionsBody}</p>
+      {sessions === null ? (
+        <LoaderCircle className="mt-5 h-5 w-5 animate-spin text-muted" aria-hidden />
+      ) : sessions.length === 0 ? (
+        <p className="mt-5 text-sm text-muted">{p.sessionsEmpty}</p>
+      ) : (
+        <ul className="mt-5 divide-y divide-border">
+          {sessions.map((s) => (
+            <li key={s.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+              <div className="flex min-w-0 items-start gap-3">
+                <MonitorSmartphone className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {s.device}
+                    {s.current && <span className="ml-2 rounded-full bg-primary-soft px-2 py-0.5 text-xs font-normal text-primary">{p.sessionsThis}</span>}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {fmt(p.sessionsLastUsed, { time: time(s.lastUsedAt) })} · {s.ipPrefix}
+                  </p>
+                </div>
+              </div>
+              <button type="button" className={`${btn.base} ${btn.ghost} ${btn.sm} shrink-0`} disabled={busy !== null} onClick={() => void close(s)}>
+                {busy === s.id ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : p.sessionsClose}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {sessions && sessions.length > 1 && (
+        <button type="button" className={`${btn.base} ${btn.ghost} ${btn.sm} mt-4`} disabled={busy !== null} onClick={() => void closeOthers()}>
+          {busy === "others" && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />} {p.sessionsCloseOthers}
+        </button>
+      )}
+      <p className="mt-3 text-xs text-muted">{p.sessionsIpNote}</p>
+
+      <h3 className="mt-8 text-sm font-medium">{p.loginsTitle}</h3>
+      {logins === null ? null : (
+        <ul className="mt-3 divide-y divide-border">
+          {logins.map((l, i) => (
+            <li key={`${l.createdAt}-${i}`} className="flex items-center justify-between gap-4 py-2.5 text-sm">
+              <div className="min-w-0">
+                <p className={l.ok ? "" : "font-medium text-danger"}>
+                  {l.ok ? p.loginsOk : p.loginsFailed}
+                  {methods[l.method] ? ` · ${methods[l.method]}` : ""}
+                  {!l.ok && l.reason && reasons[l.reason] ? ` (${reasons[l.reason]})` : ""}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">
+                  {l.device} · {l.ipPrefix}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs text-muted">{time(l.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 function LedgerSection({ onError }: { onError: (e: unknown) => void }) {
   const { t, locale } = useApp();
   const p = t.profile;

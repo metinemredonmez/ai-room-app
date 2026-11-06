@@ -539,6 +539,33 @@
       "adjustment": "サポートによる調整",
       "other": "その他"
     },
+    "sessionsTitle": "セッション",
+    "sessionsBody": "アカウントにサインインしているデバイスです。見覚えのないデバイスがあれば、セッションを終了してパスワードを変更してください。",
+    "sessionsThis": "このデバイス",
+    "sessionsLastUsed": "最終アクティビティ：{time}",
+    "sessionsClose": "終了",
+    "sessionsCloseOthers": "他のすべてのセッションを終了",
+    "sessionsClosedOthers": "{n} 件のセッションを終了しました。",
+    "sessionsClosed": "セッションを終了しました。",
+    "sessionsEmpty": "開いているセッションはありません。",
+    "sessionsIpNote": "場所はおおよそです。IP アドレスの先頭部分のみを保存しています。",
+    "loginsTitle": "最近のサインイン",
+    "loginsOk": "サインイン",
+    "loginsFailed": "失敗した試行",
+    "loginsReasons": {
+      "bad_password": "パスワードが違います",
+      "bad_second_factor": "確認コードが違います",
+      "suspended": "アカウント停止中"
+    },
+    "loginsMethods": {
+      "password": "メール",
+      "register": "新規登録",
+      "guest": "ゲスト",
+      "google": "Google",
+      "apple": "Apple",
+      "admin": "管理パネル",
+      "review": "審査用アカウント"
+    },
     "privacyTitle": "プライバシーと同意",
     "aiConsent": "AIによる処理と国外への移転",
     "aiConsentHint": "デザインの作成に必要です。同意を撤回すると新しいデザインは作成できなくなりますが、アカウントと保存済みのデザインはそのまま残ります。",
