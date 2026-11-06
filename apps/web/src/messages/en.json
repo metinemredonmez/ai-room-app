@@ -75,6 +75,7 @@
     "payload_too_large": "The photo is too large (max 10 MB).",
     "unsupported_media_type": "Unsupported file type. Upload JPEG, PNG, WEBP or HEIC.",
     "unauthorized": "Your session expired. Please sign in again.",
+    "weak_password": "This password is too common or easy to guess. Choose a longer, personal one (a short phrase of a few words works well).",
     "forbidden": "You're not allowed to do that.",
     "not_found": "We couldn't find that.",
     "network": "Couldn't connect. Check your internet connection.",

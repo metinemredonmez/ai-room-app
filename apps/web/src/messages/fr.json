@@ -75,6 +75,7 @@
     "payload_too_large": "La photo est trop volumineuse (10 Mo maximum).",
     "unsupported_media_type": "Type de fichier non pris en charge. Importez un fichier JPEG, PNG, WEBP ou HEIC.",
     "unauthorized": "Votre session a expiré. Veuillez vous reconnecter.",
+    "weak_password": "Ce mot de passe est trop courant ou facile à deviner. Choisis-en un plus long et personnel (une courte phrase de quelques mots convient bien).",
     "forbidden": "Vous n'êtes pas autorisé à effectuer cette action.",
     "not_found": "Élément introuvable.",
     "network": "Connexion impossible. Vérifiez votre connexion Internet.",

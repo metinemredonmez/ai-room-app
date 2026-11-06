@@ -75,6 +75,7 @@
     "payload_too_large": "Fotoğraf çok büyük (en fazla 10 MB).",
     "unsupported_media_type": "Bu dosya türü desteklenmiyor. JPEG, PNG, WEBP veya HEIC yükle.",
     "unauthorized": "Oturumun sona erdi. Lütfen tekrar giriş yap.",
+    "weak_password": "Bu şifre çok yaygın ya da tahmin edilmesi kolay. Daha uzun ve sana özgü bir şifre seç (örneğin birkaç kelimelik bir cümle).",
     "forbidden": "Bu işlem için yetkin yok.",
     "not_found": "Aradığın kayıt bulunamadı.",
     "network": "Bağlantı kurulamadı. İnternetini kontrol et.",

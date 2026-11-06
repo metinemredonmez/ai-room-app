@@ -17,6 +17,7 @@ import { EmailTokensService } from './email-tokens.service.js';
 import { OAuthService } from './oauth.service.js';
 import { WelcomeService, welcomeEmailKey } from '../users/welcome.service.js';
 import { clientInfo } from './client-info.js';
+import { assertPassword, MIN_ADMIN } from './password-policy.js';
 import { SessionsService } from './sessions.service.js';
 import { AUD_APP, TokensService, UserGuard, type SessionMethod } from './tokens.service.js';
 
@@ -101,6 +102,7 @@ export class AuthController {
   async register(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(RegisterSchema, body);
     this.features.assert('signup');
+    assertPassword(input.password, { email: input.email }); // PWD (API.md §7.38): no common or guessable passwords
     await this.limiter.hit(LIMITS.register, req.clientIp);
     if (await this.prisma.user.findUnique({ where: { email: input.email } })) {
       throw new AppError(409, 'conflict', 'Bu e-posta ile kayıtlı bir hesap var');
@@ -219,7 +221,10 @@ export class AuthController {
   async resetPassword(@Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(ResetSchema, body);
     await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
+    // PWD (API.md §7.38): checked before the token is spent, so a refused password does not cost the link.
+    assertPassword(input.password);
     const user = await this.emailTokens.consume(input.token, 'RESET_PASSWORD');
+    assertPassword(input.password, { email: user.email, min: isAdminRole(user.role) ? MIN_ADMIN : undefined });
     await this.prisma.user.update({
       where: { id: user.id },
       data: { passwordHash: await hashPassword(input.password), emailVerifiedAt: user.emailVerifiedAt ?? new Date() },

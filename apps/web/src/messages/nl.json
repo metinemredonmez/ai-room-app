@@ -75,6 +75,7 @@
     "payload_too_large": "De foto is te groot (max. 10 MB).",
     "unsupported_media_type": "Dit bestandstype wordt niet ondersteund. Upload JPEG, PNG, WEBP of HEIC.",
     "unauthorized": "Je sessie is verlopen. Log opnieuw in.",
+    "weak_password": "Dit wachtwoord is te gebruikelijk of makkelijk te raden. Kies een langer, persoonlijk wachtwoord (een korte zin van een paar woorden werkt goed).",
     "forbidden": "Je hebt geen toestemming voor deze actie.",
     "not_found": "We konden niet vinden wat je zoekt.",
     "network": "Geen verbinding. Controleer je internet.",

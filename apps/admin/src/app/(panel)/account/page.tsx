@@ -2,13 +2,15 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { Copy, Download, KeyRound, ShieldCheck, ShieldOff } from "lucide-react";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { ErrorState, PageHeader, Spinner } from "@/components/common";
 import { useFeedback } from "@/components/feedback";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, ApiError, useApi } from "@/lib/api";
 import { ROLE_LABELS } from "@/lib/format";
@@ -45,6 +47,7 @@ export default function AccountPage() {
             </CardContent>
           </Card>
           <SecurityCard me={me.data} onChanged={me.reload} />
+          <PasswordCard />
         </div>
       )}
     </>
@@ -155,6 +158,68 @@ function SecurityCard({ me, onChanged }: { me: AdminMe; onChanged: () => void })
             </div>
           </div>
         ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * API.md §7.38: the admin's own password. The current one is required; the new one is at least 12 characters and not a
+ * common or guessable password. Every session ends afterwards, so the panel signs in again.
+ */
+function PasswordCard() {
+  const { toast } = useFeedback();
+  const router = useRouter();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [repeat, setRepeat] = useState("");
+  const [busy, setBusy] = useState(false);
+  const mismatch = repeat.length > 0 && next !== repeat;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (next !== repeat) return;
+    setBusy(true);
+    try {
+      await api("/me/password", { method: "POST", body: { currentPassword: current, newPassword: next } });
+      toast("success", "Parolan değişti; bütün oturumların kapandı. Yeni parolanla giriş yap.");
+      await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+      router.replace("/login");
+      router.refresh();
+    } catch (err) {
+      toast("error", err instanceof ApiError ? err.message : "Parola değiştirilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="h-4 w-4" aria-hidden /> Parolayı değiştir
+        </CardTitle>
+        <CardDescription>En az 12 karakter; yaygın ya da e-postanı içeren parolalar kabul edilmez. Değişiklikten sonra bütün oturumların kapanır ve e-posta bildirimi gider.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={(e) => void submit(e)} className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="pw-current">Mevcut parola</Label>
+            <Input id="pw-current" type="password" autoComplete="current-password" value={current} maxLength={128} onChange={(e) => setCurrent(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pw-new">Yeni parola</Label>
+            <Input id="pw-new" type="password" autoComplete="new-password" value={next} minLength={12} maxLength={128} onChange={(e) => setNext(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pw-repeat">Yeni parola (tekrar)</Label>
+            <Input id="pw-repeat" type="password" autoComplete="new-password" value={repeat} maxLength={128} onChange={(e) => setRepeat(e.target.value)} aria-invalid={mismatch} />
+            {mismatch && <p className="text-xs text-destructive">Parolalar aynı değil.</p>}
+          </div>
+          <Button type="submit" disabled={busy || !current || next.length < 12 || next !== repeat} className="justify-self-start">
+            {busy ? "Değiştiriliyor…" : "Parolayı değiştir"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

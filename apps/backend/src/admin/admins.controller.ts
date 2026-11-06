@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
+import { hashPassword, verifyPassword } from '../auth/crypto.js';
+import { assertPassword, MIN_ADMIN } from '../auth/password-policy.js';
 import { AdminGuard, TokensService } from '../auth/tokens.service.js';
 import { AppError, notFound, parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
@@ -14,6 +16,7 @@ import { AuditService } from './audit.service.js';
 import { ADMIN_ROLES, MinRole } from './roles.js';
 
 const StepUp = z.object({ otp: z.string().regex(/^\d{6}$/) }).strict();
+const PasswordChange = z.object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(1).max(128) }).strict();
 const RoleChange = z.object({ role: z.enum(['USER', ...ADMIN_ROLES]), reason: z.string().trim().min(5).max(300) }).strict();
 const Reason = z.object({ reason: z.string().trim().min(5).max(300) }).strict();
 
@@ -54,6 +57,30 @@ export class AdminSelfController {
     await this.audit.record(user.id, 'admin.backup_codes_regenerated', 'user', user.id, {}, req.clientIp);
     this.security.notify(user, 'Yedek kodların yenilendi', ['Casalume yönetim hesabının yedek kodları yenilendi; eski kodlar artık geçersiz.']);
     return { backupCodes };
+  }
+
+  /**
+   * API.md §7.38: the admin's own password. The current password is required (ASVS V6.2.3), the new one follows the
+   * policy (at least 12 characters, not common, not the e-mail), and every session ends afterwards (SES-04) —
+   * the panel signs in again. A wrong current password is a failed step-up (403), capped per admin.
+   */
+  @Post('password')
+  @Doc('Kendi parolamı değiştir (mevcut parola gerekir; sonra bütün oturumlar kapanır)', { body: PasswordChange, status: 201, errors: [400, 401, 403, 429] })
+  async changePassword(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(PasswordChange, body);
+    await this.limiter.hit(LIMITS.adminStepUp, auth.userId);
+    const user = await this.users.get(auth.userId);
+    if (!(await verifyPassword(user.passwordHash, input.currentPassword))) {
+      await this.audit.record(user.id, 'admin.password_change_failed', 'user', user.id, {}, req.clientIp);
+      throw new AppError(403, 'step_up_failed', 'Mevcut parola hatalı.');
+    }
+    assertPassword(input.newPassword, { email: user.email, min: MIN_ADMIN });
+    if (await verifyPassword(user.passwordHash, input.newPassword)) throw new AppError(400, 'same_password', 'Yeni parola eskisiyle aynı olamaz.');
+    await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.newPassword) } });
+    await this.tokens.revokeAll(user.id);
+    await this.audit.record(user.id, 'admin.password_changed', 'user', user.id, {}, req.clientIp);
+    this.security.notify(user, 'Parolan değişti', ['Casalume yönetim hesabının parolası değiştirildi ve bütün oturumlar kapatıldı.', 'Bunu sen yapmadıysan hemen bir SUPER_ADMIN ile iletişime geç.']);
+    return { ok: true, signedOut: true };
   }
 }
 

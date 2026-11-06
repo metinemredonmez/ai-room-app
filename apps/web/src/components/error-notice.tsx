@@ -25,6 +25,8 @@ export function useErrorText() {
         return t.errors.unsupported_media_type;
       case "unauthorized":
         return t.errors.unauthorized;
+      case "weak_password":
+        return t.errors.weak_password;
       case "forbidden":
         return err.message || t.errors.forbidden;
       case "not_found":

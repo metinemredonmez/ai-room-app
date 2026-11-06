@@ -13,7 +13,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Model ve sağlayıcı (API.md §7.27): zincir sırası, sağlayıcı başına izinli model, maliyet ve devre durumu; sunucu varsayılanına dönüş. Yeni model yalnız `IMAGE_MODEL_ALLOWLIST` ile (lisans ve fiyat kontrolü sonrası).
    - [x] Özellik bayrakları (API.md §7.28): 7 bayrak (sohbet, maliyet analizi, dokunarak seçim, destek, misafir, kayıt, blog); sunucu reddeder, web gizler; `GET /v1/features` ve katalogda. Admin → Sistem → Özellikler.
    - [x] Araç başı hak bedeli (API.md §7.25.1): Ürün kataloğu → Araçlar; tasarım = seçenek × bedel, iade bedelle, bedel tasarıma yazılır.
-   - [x] Renk temaları (API.md §7.34): 12 palet (4 özgün + 8 yeni), aç/kapa, varsayılan, yeni palet (6 ton yapıştır, önizle), okunurluk denetimi; web sağ üst menü. Admin → Sistem → Renk temaları. Mobil `GET /v1/theme` okur (sen).
+   - [x] Renk temaları (API.md §7.34): 36 palet (4 özgün + 8 referans + 24 palet kütüphanesinden), aç/kapa, varsayılan, yeni palet (6 ton yapıştır, önizle), okunurluk denetimi; web sağ üst menü. Admin → Sistem → Renk temaları. Mobil `GET /v1/theme` okur (sen).
 2. Büyüme
    - [x] Promosyon ve hediye kodları (API.md §7.29): kampanya kodu + tek kullanımlık hediye kodları (CSV), kredi ya da PRO günü; doğrulanmış hesap, kişi başı bir kez. Admin → Büyüme → Promosyon kodları; web Hesabım.
    - [x] Davet et-kazan (API.md §7.30): davet edilen kodu girince, davet eden arkadaşının ilk tasarımında (aylık sınır); program kapalı başlar. Admin → Büyüme → Davet programı; web Hesabım.
@@ -24,7 +24,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Planlı fiyat değişikliği (API.md §7.36): araç kredi bedeli ve paket kredisi; başlangıç/bitiş, otomatik geri dönüş, elle değişikliğe dokunmaz. Admin → Gelir ve maliyet → Planlı fiyatlar. Mağaza fiyatları mağazalardan.
 3. Hesap ve güvenlik
    - [x] Aktif oturumlar + giriş geçmişi (API.md §7.37): web Hesabım → Oturumlar; kapatılan oturum anında düşer (SES-04); admin kullanıcı ayrıntısında görür ve kapatır.
-   - [ ] Admin parola değiştirme, TOTP şifreli, yaygın parola reddi, App Review hesabı.
+   - [x] Yaygın parola reddi + admin parola değiştirme (API.md §7.38).
+   - [ ] TOTP şifreli, App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
@@ -236,9 +237,9 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
   - [ ] Gizlilik metnine kimlik özeti cümlesi (sahibi); mobil kutlama ve kayıt teklifi (sen)
 - [x] Kredi hareketlerim (API.md §7.24): web Hesabım'da 11 dilde, sayfalı; yönetici gerekçesi gizli (YediOda #57). Mobil (sen): Profil → Kredi hareketlerim
 - [x] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) — API.md §7.37
-- [ ] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) · kolay
+- [x] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) — API.md §7.38
 - [ ] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) · kolay
-- [ ] Admin hesabında parola değiştirme (Palemi panel) · kolay
+- [x] Admin hesabında parola değiştirme (Palemi panel) — API.md §7.38
 - [ ] Mağaza inceleme (App Review) hesabı: süreli, denetimli (Palemi) · kolay
 - [ ] Kurucu uyarıları: satın alma bildirimi, disk/iş hatası/bütçe eşiği (YediOda #71, #90, #92) · orta
 - [ ] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) · kolay

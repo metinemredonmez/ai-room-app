@@ -75,6 +75,7 @@
     "payload_too_large": "照片过大（最大 10 MB）。",
     "unsupported_media_type": "不支持此文件类型。请上传 JPEG、PNG、WEBP 或 HEIC。",
     "unauthorized": "登录已过期，请重新登录。",
+    "weak_password": "这个密码太常见或容易被猜到。请选择更长、更独特的密码（几个词组成的短句就很好）。",
     "forbidden": "你无权执行此操作。",
     "not_found": "未找到相关内容。",
     "network": "无法连接，请检查网络。",

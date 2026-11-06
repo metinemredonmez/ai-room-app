@@ -1633,8 +1633,15 @@ Kullanıcıların seçebildiği renk temaları panelden yönetilir (**Admin → 
   `primary`, `primaryStrong`, `primarySoft`, `accent`, `accentSoft`, `bg`, `surface`, `surface2`, `text`, `muted`, `border`.
 - Yeni paletin değişkenlerini sunucu tonlardan üretir. Dört özgün tema (Kil, Pirinç, Mürekkep, Erik) elle ayarlı
   değişkenlerini korur.
-- Hazır gelen 12 palet: Kil (varsayılan), Pirinç, Mürekkep, Erik, Kahve, Tarçın, Gül Kurusu, Vişne, Lavanta, Orman,
-  Petrol, Arduvaz.
+- Hazır gelen 36 palet:
+  - 4 özgün tema: Kil (varsayılan), Pirinç, Mürekkep, Erik;
+  - 8 referans palet: Karamel Krem, Kakao Latte, Leylak Alacakaranlık, Kara Kiraz, Mürdüm Kadife, Orman Sisi, Derin
+    Petrol, Gece Arduvazı;
+  - sahibinin palet kütüphanesinden 24 palet (`~/Desktop/renk-paletlerim/palet-kutuphanesi`, aynı OKLCH formülü).
+- Daha önce dağıtılmış paletlerin kısa adları değişmez, ziyaretçinin kayıtlı seçimi çalışmaya devam eder.
+- Panelden kaydedilmiş bir listeye sonradan eklenen yerleşik paletler açık olarak eklenir. Panelden bilerek silinen
+  palet geri gelmez: kayıt, bildiği yerleşik kısa adları `seen` alanında tutar.
+- En çok 48 palet.
 
 **Okunurluk (her kayıtta ölçülür)**
 - Engelleyen kontroller, en az 4.5:1 (WCAG AA): metin, ikincil metin, beyaz buton yazısı, ana renkli yazı. Geçmeyen
@@ -1661,6 +1668,24 @@ ilk anda görünür. Ziyaretçinin seçimi tarayıcıda (localStorage) kalır. P
 varsayılan görünür. API okunamazsa site yerleşik Kil temasında kalır ve tema menüsü gizlenir.
 
 **Kapsam dışı:** panelin kendi renk seçeneği (Panel rengi) şimdilik dört sabit temadır.
+
+**Mobil (uygulama):** aynı listeyi `GET /v1/theme` ile okur; ayrı bir palet kopyası tutulmaz. Panelde açılan ya da
+kapatılan tema ve varsayılan uygulamaya da yansır.
+- Açılışta okunur ve cihazda saklanır. Yanıt gelmezse saklanan liste, o da yoksa uygulamanın kendi Kil teması
+  kullanılır.
+- Kullanıcının seçimi cihazda `id` olarak tutulur. Seçilen `id` listede yoksa (panelden kapatılmışsa) `defaultId`
+  kullanılır.
+- Renkler `tokens` içindedir: `bg`, `surface`, `surface2`, `text`, `muted`, `border`, `primary` (beyaz yazılı buton),
+  `primaryStrong` (basılı hâl), `primarySoft`, `accent`, `accentSoft`. Menüde `tones` (6 renk) şerit olarak gösterilir,
+  ad `name.tr` ya da `name.en` olur.
+- React Native örneği:
+  ```ts
+  const res = await fetch(`${API}/theme`);
+  const { defaultId, palettes } = await res.json();
+  const chosen = palettes.find((p) => p.id === saved) ?? palettes.find((p) => p.id === defaultId)!;
+  const c = chosen.tokens; // <View style={{ backgroundColor: c.bg }}><Text style={{ color: c.text }}>…</Text></View>
+  ```
+- Koyu mod için ayrı renkler henüz yok; gerekirse sunucu aynı 6 tondan koyu değişkenleri de üretebilir.
 
 ### 7.35 Sadakat kuralları (kendiliğinden hediye) — backend + admin
 Kendiliğinden verilen hediye krediler (**Admin → Büyüme → Sadakat kuralları**; YediOda #63). Üç kural da kapalı
@@ -1760,3 +1785,25 @@ kapanmış ya da 90 gündür kullanılmamış oturumlar da o zaman silinir (sakl
 | GET | `/admin/users/:id/sessions` | SUPPORT | `{ sessions, logins }` (son 50 deneme) |
 | POST | `/admin/users/:id/sessions/:sid/revoke` | ADMIN | `{ reason }`. Denetim: `user.session_revoke` |
 | POST | `/admin/users/:id/sessions/revoke-all` | ADMIN | `{ reason }`. `tokenVersion` artar. Denetim: `user.sessions_revoke_all` |
+
+### 7.38 Parola kuralı ve yöneticinin parola değiştirmesi — backend + web + admin
+**Kural** (PWD / ASVS V6.2, NIST 800-63B): kayıt, parola sıfırlama ve yöneticinin kendi değişikliği için aynıdır.
+- Uzunluk: kullanıcı en az 10, yönetici en az 12, en çok 128 karakter (bayt değil, karakter sayılır).
+- Reddedilenler (400 `weak_password`, `reason` alanıyla):
+  - `common`: listedeki yaygın parolalar ve sonuna rakam ya da işaret eklenmiş halleri (`password2026!`,
+    `Galatasaray1905`). Liste: SecLists'in en yaygın 3000 parolası (kaynağı sabitlenmiş, MIT,
+    `apps/backend/assets/security/README.md`) ile Türkçe, klavye ve marka sözcükleri;
+  - `contains_email`: e-posta adresinin kullanıcı adı kısmını içeren parola;
+  - `repetitive`: en çok iki farklı karakterden oluşan parola;
+  - `too_short`, `too_long`.
+- Karakter türü zorlaması ve sessiz kırpma yoktur. Uzun, kişisel cümleler kabul edilir.
+- Liste eksikse ya da 3000 girdiden azsa API başlamaz (fail-closed). Hiçbir dış servise parola gönderilmez.
+- Parola sıfırlamada kural bağlantı harcanmadan önce uygulanır; reddedilen parola bağlantıyı yakmaz.
+- Web `weak_password` için kendi çevirisini gösterir (11 dil).
+
+**Yöneticinin parolası:** `POST /admin/me/password` `{ currentPassword, newPassword }`; panelde **Hesabım →
+Parolayı değiştir**.
+- Mevcut parola gerekir (ASVS V6.2.3). Yanlışsa 403 `step_up_failed`; deneme sayısı yönetici başına 15 dakikada 5.
+- Yeni parola aynıysa 400 `same_password`.
+- Başarılı değişiklikten sonra bütün oturumlar kapanır (SES-04) ve panel yeniden girişe yönlendirir. E-posta
+  bildirimi gider; denetim kaydında `admin.password_changed` görünür (başarısızsa `admin.password_change_failed`).
