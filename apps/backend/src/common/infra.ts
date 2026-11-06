@@ -95,6 +95,8 @@ export const LIMITS = {
   clientErrors: { name: 'client-errors', max: 20, windowSec: 600 },
   // API.md §7.44: CSV exports, per admin.
   exports: { name: 'exports', max: 30, windowSec: 3600 },
+  // API.md §7.45: the admin command palette's search, per admin.
+  adminSearch: { name: 'admin-search', max: 120, windowSec: 60 },
   forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },
   forgotAccount: { name: 'forgot-acct', max: 3, windowSec: 3600 },
   tokenIp: { name: 'email-token-ip', max: 30, windowSec: 3600 },

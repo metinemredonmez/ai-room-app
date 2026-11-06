@@ -1944,3 +1944,17 @@ bildirilir.
 - RFC 4180 tırnaklama ve UTF-8 BOM vardır, Excel'de Türkçe karakterler doğru görünür.
 - En çok 50 000 satır döner; kesilirse `X-Export-Truncated: true` başlığı gelir.
 - Hız sınırı: yönetici başına saatte 30. Her dışa aktarma denetlenir (`export.csv`: tür, aralık, satır sayısı).
+
+### 7.45 Komut paleti — backend + admin
+Panelin her yerinde **⌘K / Ctrl+K** (ya da üst çubuktaki "Ara…") tek bir arama açar (MAEYJA).
+
+- **Sayfalar:** menüdeki bütün sayfalar istemcide aranır. Türkçe harf duyarsızdır: "uyari", "Uyarılar ve hatalar"
+  sayfasını bulur.
+- **Kayıtlar:** `GET /admin/search?q=` (SUPPORT; 2–80 karakter) → `{ users, designs, tickets, orgs }`, her birinden en
+  çok 5 sonuç.
+  - kullanıcı: e-posta, ad ya da kimlik → kullanıcı ayrıntısı;
+  - tasarım: kimlik → sahibinin tasarımları;
+  - destek: `DST-…` ya da konu → talep;
+  - firma: ad ya da kimlik → firma ayrıntısı.
+- Hız sınırı yönetici başına dakikada 120; palet kullanıcı tablosunu taramak için kullanılamaz (RES).
+- Klavye: ↑↓ seç, Enter aç, Esc kapat. Yazarken istekler 200 ms beklenir; eski bir yanıt yenisinin üstüne yazamaz.

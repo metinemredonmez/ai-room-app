@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { EXTRA_PAGES, NAV, isActive } from "@/components/app-sidebar";
+import { CommandPalette, CommandPaletteButton } from "@/components/command-palette";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
@@ -17,6 +18,8 @@ export function SiteHeader() {
         {current && current.href !== "/" && <span className="hidden text-muted-foreground sm:inline">{current.group} /</span>}
         <span className="truncate font-medium">{current?.label ?? "Yönetim paneli"}</span>
       </nav>
+      <CommandPaletteButton />
+      <CommandPalette />
     </header>
   );
 }

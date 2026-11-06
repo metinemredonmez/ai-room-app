@@ -32,7 +32,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Zamanlı işi panelden çalıştırma + gecikme tespiti (API.md §7.42).
    - [x] İstemci hata ucu (API.md §7.43): web bağlı; mobil aynı ucu kullanacak (sen).
    - [x] CSV dışa aktarma (API.md §7.44): ödeme olayları, abonelikler, AI maliyeti, ortaklar, denetim kaydı (SUPER_ADMIN); formül enjeksiyonuna karşı korumalı.
-   - [ ] Komut paleti.
+   - [x] Komut paleti (API.md §7.45): ⌘K; sayfalar, kullanıcılar, tasarımlar, destek, firmalar.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
@@ -256,7 +256,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [ ] llms.txt (MAEYJA, YediOda #94) · kolay
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta
 - [ ] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) · kolay
-- [ ] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) · kolay
+- [x] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) — API.md §7.45
 - [x] Mağaza olayları CSV dışa aktarımı (Palemi) — API.md §7.44
 - [x] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) — API.md §7.31, §7.32 (kendiliğinden kurallar açık: üstte Büyüme)
 - [ ] A/B deney altyapısı (YediOda #74) · kolay, düşük öncelik
