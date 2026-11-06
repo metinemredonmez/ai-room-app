@@ -1884,3 +1884,17 @@ son görülmeden 90 gün sonra silinir.
 | PATCH | `/admin/alerts` | ADMIN | `{ settings, reason, version }`. Denetim: `alerts.update` |
 | POST | `/admin/alerts/test` | ADMIN | Deneme uyarısı → `{ sent, reason }` |
 | POST | `/admin/alerts/errors/:id/resolve` | ADMIN | Çözüldü say. Denetim: `alerts.error_resolved` |
+
+### 7.42 Zamanlı işler: panelden çalıştırma ve gecikme tespiti — backend + admin
+**Admin → Sistem → Zamanlı işler → Zamanlama** (YediOda #91).
+
+- `GET /admin/jobs` (ADMIN) yanıtına `schedules` eklendi. Her zamanlayıcı için: `name`, `every` / `pattern`, `next`
+  (sonraki çalışma), `lastRun` (son durum), `late`, `runnable`.
+- **Gecikme:** sonraki çalışma 10 dakikadan (dakikalık işlerde üç aralıktan) fazla geride kaldıysa `late`. İşçi
+  durmuş ya da takılmış demektir. Kurucu uyarısı gider (§7.41, iş uyarıları açıkken 6 saatte bir).
+- **Elle çalıştırma:** `POST /admin/jobs/:name/run` (ADMIN, `{ reason }`) → 202 `{ queued, jobId }`.
+  - Yalnız tekrarı zararsız işler çalıştırılabilir: `reconcile-designs`, `broadcasts-due`, `price-schedules`,
+    `retention`, `loyalty`, `kvkk-deadlines`, `weekly-report`.
+  - Mağaza olayları ve Apple token iptali elle çalıştırılamaz (404).
+  - Aynı dakikadaki ikinci istek aynı işe denk gelir, yeni iş açmaz.
+  - Denetim: `jobs.run`.

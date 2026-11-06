@@ -451,6 +451,18 @@ export class AdminController {
   }
 
   @MinRole('ADMIN')
+  @Post('jobs/:name/run')
+  @HttpCode(202)
+  @Doc('Zamanlı işi şimdi çalıştır (yalnız tekrarı zararsız işler; gerekçe zorunlu, denetlenir)', { body: z.object({ reason: z.string().min(3).max(200) }), status: 202, errors: [400, 401, 403, 404] })
+  async runJob(@Param('name') name: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const { reason } = parse(z.object({ reason: z.string().trim().min(3).max(200) }).strict(), body);
+    const out = await this.jobs.runNow(name);
+    if (!out) throw notFound();
+    await this.audit.record(auth.userId, 'jobs.run', 'job', name, { reason }, req.clientIp);
+    return out;
+  }
+
+  @MinRole('ADMIN')
   @Get('system')
   @Doc('Sistem durumu (AI, DB, Redis)', { errors: [401, 403] })
   async system() {

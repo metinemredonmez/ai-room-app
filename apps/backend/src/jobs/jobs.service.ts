@@ -21,6 +21,7 @@ import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
+import { isManualJob, scheduleStatus } from './schedules.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -249,7 +250,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  /** API.md §7.42: run a listed (idempotent) maintenance job now; a second click in the same minute queues nothing. */
+  async runNow(name: string) {
+    if (!isManualJob(name)) return null;
+    const minute = Math.floor(Date.now() / 60_000);
+    const job = await this.queues.maintenance.add(name, {}, { jobId: `manual-${name}-${minute}`, removeOnComplete: 200, removeOnFail: 200 });
+    return { queued: true, jobId: job.id ?? null };
+  }
+
   async overview(limit: number) {
+    const schedules = await scheduleStatus(this.queues.maintenance, this.prisma).catch(() => []);
     const [runs, counts] = await Promise.all([
       this.prisma.jobRun.findMany({ orderBy: { startedAt: 'desc' }, take: limit }),
       this.queues.designs.getJobCounts('waiting', 'active', 'failed', 'delayed'),
@@ -262,6 +272,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       })),
       queue: { waiting: counts.waiting ?? 0, active: counts.active ?? 0, failed: counts.failed ?? 0, delayed: counts.delayed ?? 0 },
       notifications: { waiting: push.waiting ?? 0, active: push.active ?? 0, failed: push.failed ?? 0, delayed: push.delayed ?? 0 },
+      schedules,
     };
   }
 }

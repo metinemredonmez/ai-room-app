@@ -163,7 +163,8 @@ export type JobRun = {
   startedAt: string;
   finishedAt: string | null;
 };
-export type JobsOverview = { items: JobRun[]; queue: { waiting: number; active: number; failed: number; delayed: number } };
+export type JobSchedule = { name: string; every: number | null; pattern: string | null; next: string | null; late: boolean; runnable: boolean; lastRun: { status: string; startedAt: string } | null };
+export type JobsOverview = { items: JobRun[]; queue: { waiting: number; active: number; failed: number; delayed: number }; schedules: JobSchedule[] };
 
 export type BillingEventStatus = "queued" | "processed" | "unmatched" | "ignored" | "failed";
 export type BillingEvent = {

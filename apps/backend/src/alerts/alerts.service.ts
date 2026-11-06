@@ -9,6 +9,8 @@ import { CONFIG, type Config } from '../config.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { MailerService, renderActionMail } from '../mail/mailer.service.js';
 import { UsageService } from '../usage/usage.service.js';
+import { QueuesService } from '../jobs/queues.service.js';
+import { scheduleStatus } from '../jobs/schedules.js';
 import { alertsDiff, classify, DEFAULT_ALERTS, HOURLY_CAP, parseAlerts, type AlertKind, type AlertSettings, type ErrorContext } from './alerts.rules.js';
 
 // Founder alerts (API.md §7.41). Errors reach us through reportError (setErrorSink): grouped by fingerprint, a new or
@@ -32,7 +34,7 @@ export class AlertsService implements OnModuleInit, OnModuleDestroy {
   private meta: { updatedAt: Date | null; updatedBy: string | null } = { updatedAt: null, updatedBy: null };
   private timers: NodeJS.Timeout[] = [];
 
-  constructor(private prisma: PrismaService, private mailer: MailerService, private usage: UsageService, @Inject(CONFIG) private cfg: Config) {}
+  constructor(private prisma: PrismaService, private mailer: MailerService, private usage: UsageService, @Inject(CONFIG) private cfg: Config, private queues?: QueuesService) {}
 
   async onModuleInit() {
     await this.reload().catch((e: Error) => log.warn('alerts_load_failed', { error: e.name }));
@@ -124,6 +126,19 @@ export class AlertsService implements OnModuleInit, OnModuleDestroy {
             path: '/system',
           });
         }
+      }
+    }
+    // API.md §7.42: a scheduler whose next run is long overdue means the worker stopped.
+    if (s.jobs.enabled && this.queues) {
+      const late = (await scheduleStatus(this.queues.maintenance, this.prisma).catch(() => [])).filter((j) => j.late);
+      out.lateJobs = late.map((j) => j.name);
+      for (const j of late) {
+        await this.send('job', `late:${j.name}`, 6 * HOUR, {
+          subject: `Zamanlı iş gecikti: ${j.name}`,
+          heading: 'Bir zamanlı iş zamanında çalışmadı',
+          lines: [`İş: ${j.name}`, `Beklenen: ${j.next ?? '?'}`, 'İşçi durmuş ya da takılmış olabilir; Sistem durumu ve pm2 loglarına bak.'],
+          path: '/jobs',
+        });
       }
     }
     if (s.budget.enabled) {
