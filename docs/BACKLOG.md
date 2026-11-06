@@ -37,7 +37,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Ana sayfa ve SSS panelden (API.md §7.46): metinler 11 dilde, SSS, bölümleri gizleme, duyuru çubuğu. Admin → İçerik → Ana sayfa ve SSS.
    - [x] Bekleme listesi + bülten (API.md §7.47): çift onay, listeden çıkma, KVKK saklama, admin ekranı, CSV. Admin → Pazarlama → Bekleme listesi.
    - [ ] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır.
-   - [ ] Yaşam döngüsü e-postaları.
+   - [x] Yaşam döngüsü e-postaları (API.md §7.48): ilk tasarım hatırlatması, ikinci adım, geri çağırma; izinli, abonelikten çıkışlı, sessiz saat ve günlük sınırla. Admin → Pazarlama → Yaşam döngüsü e-postaları.
    - [ ] Eski görünümdeki 8 admin ekranı.
 
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
@@ -223,7 +223,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   (web `/abonelikten-cik`) + RFC 8058 tek tık, gönderen kimliği alt bilgide, günlük sınır (`emailDailyCap`, varsayılan 300),
   saniyede bir e-posta. E-posta şablonları eski “AI Room” markasından Casalume’a çevrildi.
 - [ ] Toplu e-postayı büyük listelerde Brevo gibi bir sağlayıcıya taşımak (hazal paylaşımlı; itibar riski) — liste büyüyünce.
-- [ ] Yaşam döngüsü e-postaları ve geri çağırma (fal-app).
+- [x] Yaşam döngüsü e-postaları ve geri çağırma (fal-app) — API.md §7.48.
 - [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).

@@ -6,7 +6,7 @@ import type { PrismaService } from '../common/infra.js';
 // minute jobs): the worker has stopped or is stuck. Jobs on MANUAL_JOBS can also be run from the panel; each one is
 // safe to repeat (idempotent), which is why only these are listed.
 
-export const MANUAL_JOBS = ['reconcile-designs', 'broadcasts-due', 'price-schedules', 'retention', 'loyalty', 'kvkk-deadlines', 'weekly-report'] as const;
+export const MANUAL_JOBS = ['reconcile-designs', 'broadcasts-due', 'price-schedules', 'retention', 'loyalty', 'lifecycle', 'kvkk-deadlines', 'weekly-report'] as const;
 export type ManualJob = (typeof MANUAL_JOBS)[number];
 export const isManualJob = (v: string): v is ManualJob => (MANUAL_JOBS as readonly string[]).includes(v);
 

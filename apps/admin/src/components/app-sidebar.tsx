@@ -18,6 +18,7 @@ import {
   Handshake,
   FileText,
   ListChecks,
+  MailCheck,
   MailPlus,
   Megaphone,
   LogOut,
@@ -142,6 +143,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/marketing/seo", label: "SEO", icon: Search },
       { href: "/marketing/report", label: "Haftalık rapor", icon: ChartNoAxesColumn },
       { href: "/waitlist", label: "Bekleme listesi", icon: MailPlus },
+      { href: "/lifecycle", label: "Yaşam döngüsü e-postaları", icon: MailCheck },
     ],
   },
   {

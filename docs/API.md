@@ -2032,3 +2032,45 @@ bırakır (fal-app, maeyja, Yedi Oda #67). Hesaptan bağımsızdır (`WaitlistEn
 | PATCH | `/admin/waitlist/settings` | ADMIN | `{ settings: { enabled }, reason, version }` |
 | POST | `/admin/waitlist/:id/delete` | ADMIN | `{ reason }` |
 | GET | `/admin/exports/waitlist?from=&to=` | SUPER_ADMIN | onaylı adresler (CSV) |
+
+### 7.48 Yaşam döngüsü e-postaları — backend + admin
+Admin → Pazarlama → **Yaşam döngüsü e-postaları** (fal-app; Yedi Oda #67 D+3 / D+7 / D+14). Üç adım vardır. Her
+biri panelden açılır, günleri ve Türkçe / İngilizce metni (diğer bütün diller İngilizce) düzenlenir. Hepsi kapalı
+başlar.
+
+| Adım | Kime | Ne sıklıkla |
+|---|---|---|
+| İlk tasarım hatırlatması (`onboarding`) | Kaydından `afterDays` gün (1–14, varsayılan 2) sonra hiç başarılı tasarımı olmayan | kişi başına bir kez |
+| İkinci adım (`firstResult`) | Kaydından `afterDays` gün (2–30, varsayılan 5) sonra tam bir tasarımı olan | kişi başına bir kez |
+| Geri çağırma (`inactive`) | `inactiveDays` gündür (7–180, varsayılan 21) gelmeyen, en az bir tasarımı olan | en çok `cooldownDays` günde bir (30–365, varsayılan 90) |
+
+- **Pencere:** tek seferlik adımlar yalnız son 7 gün içinde o noktaya gelenlere gider. Geri çağırma, eşiği en çok
+  60 gün geçmiş olanlara gider. Bir adım açıldığında aylar önce kaydolmuş herkese birden e-posta gitmez.
+- **Kurallar (ETK / İYS):**
+  - Gönderilenler ticari ileti sayılır. Yalnız geçerli pazarlama izni olan, doğrulanmış, gerçek kullanıcılara gider;
+    misafir, personel ve inceleme hesabı dışarıda kalır.
+  - Her e-postada abonelikten çıkma bağlantısı ve RFC 8058 tek tık vardır. Toplu Gönderim'in sayfası ve ucu kullanılır;
+    gönderim kaydının kimliği teslim kimliği yerine geçer.
+  - Sessiz saatlerde gönderilmez.
+  - Toplu Gönderim ile ortak günlük e-posta sınırına (`emailDailyCap`) sayılır.
+  - Bir kişiye iki yaşam döngüsü e-postası arasında en az 3 gün olur.
+- **Gönderim:** `lifecycle` zamanlı işi her saat başı 20'de kısa bir tur çalıştırır.
+  - Tur başına en çok `perRun` e-posta (1–200, varsayılan 50) gider, saniyede bir.
+  - Her e-posta önce `LifecycleSend` satırı olur; benzersiz anahtar (kişi, adım, dönem). Yeniden çalıştırma,
+    çökme ya da ikinci işçi aynı adımı iki kez göndermez.
+  - Kayıtlar 400 gün tutulur (`retention`).
+- **Panel:**
+  - Adım başına son 30 günde gönderilen / gönderilemeyen ve şu an izni olup bekleyen kişi sayısı.
+  - Bugün giden e-posta / günlük sınır, sessiz saatler.
+  - "Deneme (TR / EN)": kaydedilmemiş metin yöneticinin kendi adresine `[Deneme]` önekiyle gider; abonelikten
+    çıkma bağlantısı hiçbir şey yapmaz.
+  - "Turu şimdi çalıştır" Zamanlı işler ucunu kullanır.
+  - SUPPORT görür; ADMIN düzenler. Kayıt gerekçe ve sürümle olur (409). Denetim kaydı `lifecycle.update`; metin
+    yazılmaz, yalnız "metin değişti" yazılır.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/admin/lifecycle` | SUPPORT | `{ settings, version, last30, waiting, email }` |
+| PATCH | `/admin/lifecycle` | ADMIN | `{ settings, reason, version }` |
+| POST | `/admin/lifecycle/test` | ADMIN | `{ rule, locale: tr\|en, settings }` → `{ sentTo }`; yönetici başına 10 dakikada 20 |
+| POST | `/admin/jobs/lifecycle/run` | ADMIN | `{ reason }` → 202 |

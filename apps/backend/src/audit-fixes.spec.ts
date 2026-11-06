@@ -200,6 +200,7 @@ describe('5. marketing e-mail: consent and quiet hours checked before every mess
     const mailed: string[] = [];
     const settings = { current: { broadcast: { emailDailyCap: 300, quietStart: '00:00', quietEnd: '00:00', weeklyMarketingCap: 5 } } };
     const prisma = {
+      lifecycleSend: { count: async () => 0 }, // §7.48 mails share the daily cap
       broadcastDelivery: {
         count: async () => 0,
         groupBy: async () => [],

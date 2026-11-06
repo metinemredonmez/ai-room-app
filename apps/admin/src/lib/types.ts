@@ -751,3 +751,24 @@ export type WaitlistOverview = {
   byPlatform: { ios: number; android: number; any: number };
   daily: Array<{ day: string; signups: number; confirmed: number }>;
 };
+
+// Yaşam döngüsü e-postaları (API.md §7.48)
+export const LIFECYCLE_RULES = ["onboarding", "firstResult", "inactive"] as const;
+export type LifecycleRule = (typeof LIFECYCLE_RULES)[number];
+type LifecycleCopy = { enabled: boolean; subject: { tr: string; en: string }; body: { tr: string; en: string }; link: string | null };
+export type LifecycleSettings = {
+  onboarding: LifecycleCopy & { afterDays: number };
+  firstResult: LifecycleCopy & { afterDays: number };
+  inactive: LifecycleCopy & { inactiveDays: number; cooldownDays: number };
+  perRun: number;
+};
+export type LifecycleState = {
+  settings: LifecycleSettings;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  last30: Record<LifecycleRule, { sent: number; failed: number }>;
+  waiting: Record<LifecycleRule, number>;
+  email: { sentToday: number; dailyCap: number; quietStart: string; quietEnd: string; quietNow: boolean };
+  changes?: string[];
+};

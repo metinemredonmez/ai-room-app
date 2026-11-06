@@ -21,6 +21,7 @@ import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { WaitlistService } from '../waitlist/waitlist.service.js';
+import { LifecycleService } from '../lifecycle/lifecycle.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
 import { isManualJob, scheduleStatus } from './schedules.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
@@ -53,6 +54,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private loyalty: LoyaltyService,
     private prices: PriceScheduleService,
     private waitlist: WaitlistService,
+    private lifecycle: LifecycleService,
   ) {}
 
   async onModuleInit() {
@@ -90,6 +92,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       { pattern: '0 9 * * 1', tz: 'Europe/Istanbul' },
       { name: 'weekly-report' },
     );
+    // API.md §7.48: lifecycle e-mails, a short round every hour (the round itself skips the quiet hours).
+    await this.queues.maintenance.upsertJobScheduler('lifecycle', { pattern: '20 * * * *', tz: 'Europe/Istanbul' }, { name: 'lifecycle' });
     // API.md §7.35: anniversary and win-back gifts once a day, at an hour a push is welcome.
     await this.queues.maintenance.upsertJobScheduler('loyalty', { pattern: '0 11 * * *', tz: 'Europe/Istanbul' }, { name: 'loyalty' });
     await this.queues.maintenance.upsertJobScheduler(
@@ -173,6 +177,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         : job.name === 'kvkk-deadlines' ? await this.dataRequests.deadlineDigest()
         : job.name === 'broadcasts-due' ? await this.broadcasts.due()
         : job.name === 'loyalty' ? await this.loyalty.runDaily()
+        : job.name === 'lifecycle' ? await this.lifecycle.run()
         : job.name === 'weekly-report' ? await this.marketing.runReport(true, null).then((r) => ({ draftId: r.items[0]?.id }))
         : { failedStale: await this.designs.reconcile(), marketingStale: await this.marketing.reconcile() };
       await this.prisma.jobRun.update({
@@ -248,9 +253,10 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const orgInvites = await this.orgs.purgeInvites(now);
     // API.md §7.47: unconfirmed waiting-list addresses after 7 days, left ones after 30.
     const waitlist = await this.waitlist.purge(now);
+    const lifecycleSends = await this.lifecycle.purge(now);
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, loginEvents: logins.count, authSessions: sessions.count, alertLogs: alertLogs.count, errorGroups: errorGroups.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends,
     };
   }
 

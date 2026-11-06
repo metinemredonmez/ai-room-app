@@ -97,7 +97,8 @@ export class BroadcastsService {
   }
 
   /** User ids whose latest marketing decision is a grant still valid for the published text. */
-  private async withMarketingConsent(userIds: string[]): Promise<Set<string>> {
+  /** Users whose latest marketing consent is granted and still valid (also used by lifecycle e-mails, §7.48). */
+  async withMarketingConsent(userIds: string[]): Promise<Set<string>> {
     const ok = new Set<string>();
     for (let i = 0; i < userIds.length; i += INSERT_CHUNK) {
       const rows = await this.prisma.consent.findMany({
@@ -335,10 +336,14 @@ export class BroadcastsService {
     return (userId: string) => (!consented.has(userId) ? 'consent_missing' : (thisWeek.get(userId) ?? 0) >= cap ? 'weekly_cap' : null);
   }
 
-  private async emailSentToday() {
-    return this.prisma.broadcastDelivery.count({
-      where: { status: 'SENT', broadcast: { channel: 'EMAIL' }, sentAt: { gte: new Date(`${todayInIstanbul()}T00:00:00+03:00`) } },
-    });
+  /** E-mails sent today (Istanbul) by broadcasts and lifecycle mails (§7.48): one shared `emailDailyCap`. */
+  async emailSentToday() {
+    const since = new Date(`${todayInIstanbul()}T00:00:00+03:00`);
+    const [broadcasts, lifecycle] = await Promise.all([
+      this.prisma.broadcastDelivery.count({ where: { status: 'SENT', broadcast: { channel: 'EMAIL' }, sentAt: { gte: since } } }),
+      this.prisma.lifecycleSend.count({ where: { status: 'SENT', createdAt: { gte: since } } }),
+    ]);
+    return broadcasts + lifecycle;
   }
 
   /**
@@ -387,7 +392,8 @@ export class BroadcastsService {
     return later.length > 0 ? 'email_daily_cap' : null;
   }
 
-  private mailFor(b: Pick<Broadcast, 'kind' | 'title' | 'body' | 'link'>, to: { email: string; locale: string }, deliveryId: string) {
+  /** The e-mail for one delivery; lifecycle mails (§7.48) use it with their own send id as the delivery id. */
+  mailFor(b: Pick<Broadcast, 'kind' | 'title' | 'body' | 'link'>, to: { email: string; locale: string }, deliveryId: string) {
     const sig = unsubscribeSignature(deliveryId, this.unsubKey);
     const q = `r=${encodeURIComponent(deliveryId)}&t=${encodeURIComponent(sig)}`;
     const marketing = b.kind === 'MARKETING';
@@ -406,7 +412,11 @@ export class BroadcastsService {
       throw new AppError(400, 'invalid_link', 'Bağlantı geçersiz');
     }
     if (deliveryId === TEST_DELIVERY) return { ok: true };
-    const d = isUuid(deliveryId) ? await this.prisma.broadcastDelivery.findUnique({ where: { id: deliveryId }, select: { userId: true } }) : null;
+    // A lifecycle e-mail (§7.48) carries its send id in the same link: ids are UUIDs, so the two never collide.
+    const d = isUuid(deliveryId)
+      ? ((await this.prisma.broadcastDelivery.findUnique({ where: { id: deliveryId }, select: { userId: true } })) ??
+        (await this.prisma.lifecycleSend.findUnique({ where: { id: deliveryId }, select: { userId: true } })))
+      : null;
     // The delivery row may be gone (180-day purge, account deleted): the link still answers "done".
     if (d) await this.consents.record(d.userId, 'marketing', this.legal.versionOf('marketing').version, false, ip);
     log.info('broadcast_unsubscribe', { found: Boolean(d) });
