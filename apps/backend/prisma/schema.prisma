@@ -949,3 +949,25 @@ model LoyaltyGrant {
   @@unique([userId, rule, periodKey])
   @@index([rule, createdAt])
 }
+
+/// Scheduled price changes (API.md §7.36): a tool's credit price or a pack's credits change at `startsAt` and, with
+/// `endsAt`, go back afterwards. The change is written into the catalogs themselves (what the admin sees is what is live).
+model PriceSchedule {
+  id            String    @id @default(uuid()) @db.Uuid
+  kind          String    @db.VarChar(10) // tool | pack
+  targetKey     String    @db.VarChar(40)
+  value         Int
+  previousValue Int?
+  startsAt      DateTime
+  endsAt        DateTime?
+  status        String    @default("SCHEDULED") @db.VarChar(12) // SCHEDULED | ACTIVE | DONE | CANCELLED | FAILED
+  note          String    @db.VarChar(200)
+  outcome       String?   @db.VarChar(200)
+  createdById   String?   @db.Uuid
+  createdAt     DateTime  @default(now())
+  appliedAt     DateTime?
+  endedAt       DateTime?
+
+  @@index([status, startsAt])
+  @@index([kind, targetKey])
+}

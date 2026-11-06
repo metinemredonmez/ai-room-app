@@ -512,6 +512,29 @@ export type EngineState = {
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
 
+// Planlı fiyat değişikliği (API.md §7.36).
+export type PriceTarget = { kind: "tool" | "pack"; key: string; label: string; value: number; max: number; active: boolean };
+export type PriceScheduleStatus = "SCHEDULED" | "ACTIVE" | "DONE" | "CANCELLED" | "FAILED";
+export type PriceScheduleItem = {
+  id: string;
+  kind: "tool" | "pack";
+  key: string;
+  label: string;
+  current: number | null;
+  value: number;
+  previousValue: number | null;
+  startsAt: string;
+  endsAt: string | null;
+  status: PriceScheduleStatus;
+  note: string;
+  outcome: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  appliedAt: string | null;
+  endedAt: string | null;
+};
+export type PriceSchedules = { targets: PriceTarget[]; items: PriceScheduleItem[] };
+
 // Sadakat kuralları (API.md §7.35).
 export type LoyaltyMessage = { tr: string; en: string };
 export type LoyaltySettings = {

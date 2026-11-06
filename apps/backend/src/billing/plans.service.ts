@@ -3,6 +3,7 @@ import { AppError } from '../common/errors.js';
 import { PrismaService } from '../common/infra.js';
 import { CONFIG, type Config } from '../config.js';
 import { Prisma } from '../generated/prisma/client.js';
+import type { SetPriceResult } from '../catalog/product.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { catalogDiff, creditsFor, defaultCatalog, nextCatalog, parseStored, publicCatalog, type CatalogInput, type StoredCatalog } from './plans.rules.js';
 
@@ -87,5 +88,32 @@ export class PlansService {
     });
     this.cache = { at: Date.now(), catalog: result.next, updatedAt: result.updatedAt, updatedBy: actorId };
     return { changes: result.changes };
+  }
+
+  /** Current packs, read fresh (scheduled price changes, API.md §7.36). */
+  async packs() {
+    return (await this.state(true)).catalog.packs;
+  }
+
+  /**
+   * How many credits one pack grants, for scheduled price changes (API.md §7.36). With `onlyIf`, it changes only while
+   * it is still that value, so undoing a scheduled change never overwrites an edit made by hand in the meantime.
+   */
+  async setPackCredits(key: string, credits: number, onlyIf: number | null, actorId: string | null): Promise<SetPriceResult> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 AS locked FROM (SELECT pg_advisory_xact_lock(hashtext(${KEY}))) AS l`;
+      const row = await tx.setting.findUnique({ where: { key: KEY } });
+      const prev = row ? parseStored(row.value, this.defaults) : this.defaults;
+      const pack = prev.packs.find((p) => p.key === key);
+      if (!pack) return { status: 'missing' as const };
+      if (onlyIf !== null && pack.credits !== onlyIf) return { status: 'changed' as const, current: pack.credits };
+      const next: StoredCatalog = { ...prev, packs: prev.packs.map((p) => (p.key === key ? { ...p, credits } : p)) };
+      const value = next as unknown as Prisma.InputJsonValue;
+      const saved = await tx.setting.upsert({ where: { key: KEY }, create: { key: KEY, value, updatedBy: actorId }, update: { value, updatedBy: actorId } });
+      return { status: 'ok' as const, before: pack.credits, next, updatedAt: saved.updatedAt };
+    });
+    if (result.status !== 'ok') return result;
+    this.cache = { at: Date.now(), catalog: result.next, updatedAt: result.updatedAt, updatedBy: actorId };
+    return { status: 'ok', before: result.before };
   }
 }

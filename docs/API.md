@@ -1695,3 +1695,34 @@ başlar; her biri panelden açılır ve ayarlanır.
 | POST | `/admin/loyalty/run` | ADMIN | `{ reason }` → `{ anniversary, winback }`. Günlük işi şimdi çalıştırır; o gün zaten alan yeniden almaz |
 
 Denetim kaydında `loyalty.update` (değişiklik listesiyle) ve `loyalty.run` görünür.
+
+### 7.36 Planlı fiyat değişikliği — backend + admin
+Casalume'un kendi belirlediği fiyatlar zamanlanır (**Admin → Gelir ve maliyet → Planlı fiyatlar**):
+- bir aracın kredi bedeli (§7.25.1; 1–10);
+- bir paketin verdiği kredi (§7.21; 1–10000).
+
+Mağaza fiyatları (App Store Connect, Play Console) buradan değişmez.
+
+**Akış**
+- Plan; araç ya da paket, yeni değer, başlangıç ve isteğe bağlı bitiş ister.
+  - Başlangıç geçmişte olamaz (5 dk tolerans) ve en çok bir yıl sonrası olabilir.
+  - Geçici değişiklik 15 dakika ile 180 gün arası sürer.
+  - Bitiş yoksa değişiklik kalıcıdır.
+- Aynı araç ya da paket için aralıkları çakışan iki plan olamaz (409 `overlap`, kilit altında).
+- Değişiklik katalogların kendisine yazılır: panelde görünen, o an geçerli olandır. `price-schedules` işi her dakika
+  çalışır:
+  - başlangıcı gelen planı uygular ve eski değeri `previousValue` olarak saklar;
+  - bitişi gelende eski değere döner.
+- Geri dönüş yalnız değer hâlâ planlanan değerse yapılır. Biri arada elle değiştirdiyse dokunulmaz ve sonuçta yazar.
+- Her adım satırı koşullu güncellemeyle sahiplenir; iki çalışma aynı adımı yapamaz (BUS-02).
+- Durumlar: `SCHEDULED`, `ACTIVE`, `DONE`, `CANCELLED`, `FAILED` (araç ya da paket katalogdan kalkmışsa).
+
+**Uçlar**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/admin/price-schedules` | SUPPORT | `targets` (araç ve paketler, bugünkü değerleriyle) ve `items` (açık planlar önce, sonra son 50) |
+| POST | `/admin/price-schedules` | ADMIN | `{ kind: tool\|pack, key, value, startsAt, endsAt\|null, reason }` → 201 `{ id }` |
+| POST | `/admin/price-schedules/:id/cancel` | ADMIN | `{ reason }`. Başlamamışsa iptal eder (`cancelled`); sürüyorsa şimdi bitirir (`ended`); kapanmışsa 409 |
+
+Denetim kaydında `price_schedule.create` ve `price_schedule.cancel` (yönetici) görünür; `price_schedule.start`,
+`price_schedule.end` ve `price_schedule.failed` sistem tarafından yazılır.

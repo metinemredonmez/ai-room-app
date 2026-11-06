@@ -140,4 +140,29 @@ export class ProductCatalogService implements OnModuleInit, OnModuleDestroy {
     this.meta = { updatedAt: result.updatedAt, updatedBy: actorId };
     return { changes: result.changes };
   }
+
+  /**
+   * One tool's credit price, for scheduled price changes (API.md §7.36). With `onlyIf`, the price changes only while it
+   * is still that value, so undoing a scheduled change never overwrites an edit made by hand in the meantime.
+   */
+  async setToolCredits(toolId: string, credits: number, onlyIf: number | null, actorId: string | null): Promise<SetPriceResult> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 AS locked FROM (SELECT pg_advisory_xact_lock(hashtext(${KEY}))) AS l`;
+      const row = await tx.setting.findUnique({ where: { key: KEY } });
+      const prev = row ? parseStoredProduct(row.value, this.defaults).catalog : this.defaults;
+      const tool = prev.tools.find((t) => t.id === toolId);
+      if (!tool) return { status: 'missing' as const };
+      if (onlyIf !== null && tool.credits !== onlyIf) return { status: 'changed' as const, current: tool.credits };
+      const next: StoredProduct = { ...prev, tools: prev.tools.map((t) => (t.id === toolId ? { ...t, credits } : t)) };
+      const value = next as unknown as Prisma.InputJsonValue;
+      const saved = await tx.setting.upsert({ where: { key: KEY }, create: { key: KEY, value, updatedBy: actorId }, update: { value, updatedBy: actorId } });
+      return { status: 'ok' as const, before: tool.credits, next, updatedAt: saved.updatedAt };
+    });
+    if (result.status !== 'ok') return result;
+    this.value = result.next;
+    this.meta = { updatedAt: result.updatedAt, updatedBy: actorId };
+    return { status: 'ok', before: result.before };
+  }
 }
+
+export type SetPriceResult = { status: 'ok'; before: number } | { status: 'missing' } | { status: 'changed'; current: number };

@@ -20,6 +20,7 @@ import { SupportService } from '../support/support.service.js';
 import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
+import { PriceScheduleService } from '../prices/price-schedule.service.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
 
 const DAY = 86_400_000;
@@ -48,6 +49,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private welcome: WelcomeService,
     private orgs: OrgsService,
     private loyalty: LoyaltyService,
+    private prices: PriceScheduleService,
   ) {}
 
   async onModuleInit() {
@@ -73,6 +75,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
     await this.queues.maintenance.upsertJobScheduler('reconcile-designs', { every: 60_000 }, { name: 'reconcile-designs' });
     await this.queues.maintenance.upsertJobScheduler('broadcasts-due', { every: 60_000 }, { name: 'broadcasts-due' });
+    // API.md §7.36: scheduled price changes start and end within a minute of their time.
+    await this.queues.maintenance.upsertJobScheduler('price-schedules', { every: 60_000 }, { name: 'price-schedules' });
     await this.queues.maintenance.upsertJobScheduler(
       'retention',
       { pattern: '30 3 * * *', tz: 'Europe/Istanbul' },
@@ -153,6 +157,12 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // Store events track their own status in WebhookEvent; they don't belong in the cron log.
     if (job.name === 'revenuecat-event') return this.billing.process((job.data as { eventId: string }).eventId);
     if (job.name === 'apple-revoke') return this.appleRevoke(job as Job<{ clientId: string; tokenEnc: string }>);
+    // Runs every minute and usually has nothing to do: only a run that changed something is written to the cron log.
+    if (job.name === 'price-schedules') {
+      const out = await this.prices.due();
+      if (out.started || out.ended || out.failed) await this.prisma.jobRun.create({ data: { name: job.name, status: 'ok', details: out, finishedAt: new Date() } });
+      return out;
+    }
     const run = await this.prisma.jobRun.create({ data: { name: job.name, status: 'running' } });
     try {
       const details =

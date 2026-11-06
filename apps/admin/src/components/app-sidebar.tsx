@@ -34,6 +34,7 @@ import {
   Crown,
   Building,
   Package,
+  CalendarClock,
   Newspaper,
   Search,
   ShieldCheck,
@@ -148,6 +149,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/subscriptions", label: "Abonelikler", icon: Crown },
       { href: "/plans", label: "Planlar ve paketler", icon: Package },
+      { href: "/price-schedules", label: "Planlı fiyatlar", icon: CalendarClock },
       { href: "/billing", label: "Ödeme olayları", icon: CreditCard },
       { href: "/ai-costs", label: "AI maliyeti", icon: Coins },
     ],
