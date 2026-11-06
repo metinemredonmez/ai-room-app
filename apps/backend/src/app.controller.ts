@@ -137,11 +137,12 @@ export class PublicController {
   }
 
   @Get('inspiration')
-  @Doc('İlham galerisi: öne çıkarılan tasarımlar + stil kartları')
+  @Doc('İlham galerisi: sahibinin izin verdiği öne çıkarılan tasarımlar + stil kartları')
   async inspiration(@Req() req: AppRequest) {
     const locale = localeOf(req);
+    // Only designs their owner allowed (API.md §7.51), from accounts still active.
     const featured = await this.prisma.design.findMany({
-      where: { featured: true, status: 'SUCCEEDED' },
+      where: { featured: true, status: 'SUCCEEDED', shareConsentAt: { not: null }, user: { status: 'ACTIVE' } },
       include: { results: { take: 1, orderBy: { createdAt: 'asc' } } },
       orderBy: { createdAt: 'desc' },
       take: 30,
@@ -179,9 +180,15 @@ const PushTokenSchema = z.object({ token: z.string().max(200).regex(PUSH_TOKEN_R
 const PushTokenDeleteSchema = z.object({ token: z.string().max(200) }).strict();
 const LedgerQuery = z.object({ cursor: z.uuid().optional(), limit: z.coerce.number().int().min(1).max(50).default(20) });
 const FavoriteSchema = z
-  .object({ favorite: z.boolean().optional(), /** API.md §7.23 step 4: move into a firm project, or out (null). */ projectId: z.uuid().nullable().optional() })
+  .object({
+    favorite: z.boolean().optional(),
+    /** API.md §7.23 step 4: move into a firm project, or out (null). */
+    projectId: z.uuid().nullable().optional(),
+    /** API.md §7.51: allow (or withdraw) showing this design in the public inspiration gallery. */
+    shareable: z.boolean().optional(),
+  })
   .strict()
-  .refine((v) => v.favorite !== undefined || v.projectId !== undefined, { message: 'nothing_to_change' });
+  .refine((v) => v.favorite !== undefined || v.projectId !== undefined || v.shareable !== undefined, { message: 'nothing_to_change' });
 const AnalysisSchema = z.object({ imageId: z.uuid().optional() }).strict();
 const ReportSchema = z
   .object({ reason: z.enum(['inappropriate', 'offensive', 'copyright', 'privacy', 'other']), note: z.string().trim().max(500).optional() })
@@ -466,11 +473,17 @@ export class UserController {
   }
 
   @Patch('designs/:id')
-  @Doc('Favori işaretle ya da firma projesine taşı', { body: FavoriteSchema, response: 'Design', description: '`projectId`: aynı firmanın açık projesi ya da null (yalnız tasarımı yapan).', errors: [400, 401, 404, 409] })
+  @Doc('Favori, firma projesi ya da galeride paylaşım izni', {
+    body: FavoriteSchema,
+    response: 'Design',
+    description: '`projectId`: aynı firmanın açık projesi ya da null (yalnız tasarımı yapan). `shareable`: İlham galerisinde gösterilme izni; geri çekince galeriden hemen kalkar (firma tasarımında 409).',
+    errors: [400, 401, 404, 409],
+  })
   async patchDesign(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(FavoriteSchema, body);
     let out = input.projectId !== undefined ? await this.designs.setProject(auth.userId, id, input.projectId, localeOf(req)) : null;
     if (input.favorite !== undefined) out = await this.designs.setFavorite(auth.userId, id, input.favorite, localeOf(req));
+    if (input.shareable !== undefined) out = await this.designs.setShareable(auth.userId, id, input.shareable, localeOf(req));
     return out;
   }
 

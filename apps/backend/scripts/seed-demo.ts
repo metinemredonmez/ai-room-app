@@ -176,7 +176,9 @@ async function main() {
         provider: 'gemini', status, error: status === 'FAILED' ? pick(['provider_timeout', 'safety_blocked', 'no_change']) : null,
         inputImageId, creditsUsed: owner.pro || n % 6 ? 0 : 1, freeUsed: owner.pro ? 0 : 1, chargeDay: createdAt.toISOString().slice(0, 10),
         chargeState: status === 'FAILED' ? 'RELEASED' : status === 'PENDING' ? 'HELD' : 'CAPTURED',
+        // A featured design always has its owner's gallery permission (API.md §7.51; a CHECK in the database).
         queuedAt: createdAt, startedAt: createdAt, favorite: n % 5 === 0, featured: status === 'SUCCEEDED' && n % 8 === 2,
+        shareConsentAt: status === 'SUCCEEDED' && n % 4 === 2 ? createdAt : null,
         createdAt, finishedAt: status === 'PENDING' ? null : new Date(createdAt.getTime() + int(9, 40) * 1000),
       },
     });

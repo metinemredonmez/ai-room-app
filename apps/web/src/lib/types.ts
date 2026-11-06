@@ -48,6 +48,8 @@ export type Design = {
   results: ImageRef[];
   favorite: boolean;
   featured: boolean;
+  /** API.md §7.51: the owner allows it in the public inspiration gallery. */
+  shareable?: boolean;
   /** API.md §7.23: firm workspace and shared project; `mine` false for a teammate's design (view only). */
   orgId?: string | null;
   projectId?: string | null;

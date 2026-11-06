@@ -177,10 +177,26 @@ if (admin.status === 401 || admin.status === 429) {
   ok(badDays.status === 400 && badEnv.status === 400 && badSeg.status === 400, 'analytics query parameters are bounded (INP-01)', `${badDays.status}/${badEnv.status}/${badSeg.status}`);
   const userAnalytics = await call('GET', '/admin/analytics/engagement', { token });
   ok(userAnalytics.status === 401 || userAnalytics.status === 403, 'a user token cannot read analytics', String(userAnalytics.status));
+  // API.md §7.51: the gallery shows a room only with its owner's permission.
+  const featNoConsent = await call('PATCH', `/admin/designs/${design.json.id}`, { token: admin.json.accessToken, body: { featured: true } });
+  ok(featNoConsent.status === 409 && featNoConsent.json?.error?.code === 'no_share_consent', 'a design cannot be featured without its owner\'s permission', String(featNoConsent.status));
+  const grant = await call('PATCH', `/designs/${design.json.id}`, { token, body: { shareable: true } });
+  ok(grant.status === 200 && grant.json?.shareable === true, 'the owner allows the gallery for a design', String(grant.status));
   const feat = await call('PATCH', `/admin/designs/${design.json.id}`, { token: admin.json.accessToken, body: { featured: true } });
   ok(feat.status === 200 && feat.json?.featured === true, 'admin features a design');
   const insp = await call('GET', '/inspiration');
   ok(insp.json?.items?.some((i) => i.id === design.json.id), 'featured design appears in inspiration');
+  const withdraw = await call('PATCH', `/designs/${design.json.id}`, { token, body: { shareable: false } });
+  const inspAfter = await call('GET', '/inspiration');
+  ok(withdraw.status === 200 && withdraw.json?.shareable === false && withdraw.json?.featured === false && !inspAfter.json?.items?.some((i) => i.id === design.json.id),
+    'withdrawing the permission unfeatures the design and it leaves the gallery at once', `${withdraw.status} featured=${withdraw.json?.featured}`);
+  const notMine = await call('PATCH', `/designs/${design.json.id}`, { token: other.json?.accessToken, body: { shareable: true } });
+  ok(notMine.status === 404, 'nobody else can give that permission (AZ-01)', String(notMine.status));
+  const sharedOnly = await call('GET', '/admin/designs?shareable=true', { token: admin.json.accessToken });
+  ok(sharedOnly.status === 200 && sharedOnly.json.items.every((d) => d.shareable === true), 'admin lists only designs with permission', String(sharedOnly.json?.items?.length));
+  // Featured again for the checks below (the owner allows it once more).
+  await call('PATCH', `/designs/${design.json.id}`, { token, body: { shareable: true } });
+  await call('PATCH', `/admin/designs/${design.json.id}`, { token: admin.json.accessToken, body: { featured: true } });
   const audit = await call('GET', '/admin/audit?limit=5', { token: admin.json.accessToken });
   ok(audit.json?.items?.some((a) => a.action === 'design.feature'), 'admin action audited (LOG-01)');
   // Admin list filters (new-design screens): audit by area and actor, users by kind / plan / status, billing counts.

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Heart, LoaderCircle, MessageCircle, Receipt, RefreshCw, TriangleAlert } from "lucide-react";
+import { Download, Heart, Images, LoaderCircle, MessageCircle, Receipt, RefreshCw, TriangleAlert } from "lucide-react";
 import { api, downloadUrl } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { setChatPrefill, setStudioPrefill } from "@/lib/prefill";
@@ -24,6 +24,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [favBusy, setFavBusy] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
 
   const result = design.results[Math.min(selected, design.results.length - 1)];
   const analysis = result ? analyses[result.id] : undefined;
@@ -38,6 +39,19 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
       setError(e);
     } finally {
       setFavBusy(false);
+    }
+  }
+
+  /** API.md §7.51: the owner's permission for the public inspiration gallery; withdrawing takes it out at once. */
+  async function toggleShare() {
+    setShareBusy(true);
+    try {
+      const updated = await api.patch<Design>(`/designs/${design.id}`, { shareable: !design.shareable });
+      onChange?.(updated);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShareBusy(false);
     }
   }
 
@@ -168,6 +182,27 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
           {analyzing ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <Receipt className="h-4 w-4" aria-hidden />}
           {analyzing ? t.result.analyzing : t.result.analyze}
         </button>
+      )}
+
+      {own && !design.orgId && design.status === "SUCCEEDED" && (
+        <div className="rounded-3xl border border-border bg-surface p-5">
+          <p className="flex items-center gap-2 font-medium">
+            <Images className="h-4 w-4 text-primary" aria-hidden /> {t.result.shareTitle}
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.result.shareText}</p>
+          <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={Boolean(design.shareable)}
+              onChange={toggleShare}
+              disabled={shareBusy}
+              className="h-4 w-4 accent-[var(--primary)]"
+            />
+            {t.result.shareLabel}
+            {shareBusy && <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted" aria-hidden />}
+          </label>
+          {design.featured && design.shareable && <p className="mt-2 text-xs text-primary">{t.result.shareLive}</p>}
+        </div>
       )}
     </div>
   );

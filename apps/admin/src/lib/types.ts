@@ -52,6 +52,8 @@ export type Design = {
   results: ImageRef[];
   favorite: boolean;
   featured: boolean;
+  /** API.md §7.51: the owner allows the public inspiration gallery. */
+  shareable?: boolean;
   createdAt: string;
 };
 

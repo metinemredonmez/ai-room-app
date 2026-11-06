@@ -112,6 +112,8 @@ export class DesignsService {
       results: [...d.results].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).map((r) => this.images.ref(r)),
       favorite: d.favorite,
       featured: d.featured,
+      /** API.md §7.51: the owner allows it in the public inspiration gallery. */
+      shareable: d.shareConsentAt !== null,
       orgId: d.orgId,
       projectId: d.projectId,
       mine: viewerId ? d.userId === viewerId : true,
@@ -479,6 +481,22 @@ export class DesignsService {
   async setFavorite(userId: string, id: string, favorite: boolean, locale: Locale) {
     await this.getOwned(userId, id);
     const d = await this.prisma.design.update({ where: { id }, data: { favorite }, include: this.include });
+    return this.toDto(d, locale);
+  }
+
+  /**
+   * API.md §7.51: the owner allows (or withdraws) showing a design in the public inspiration gallery. Withdrawing
+   * also unfeatures it, so it leaves the gallery at once. A firm design is the firm's and its client's: never shared.
+   */
+  async setShareable(userId: string, id: string, shareable: boolean, locale: Locale) {
+    const owned = await this.getOwned(userId, id);
+    if (shareable && owned.orgId) throw new AppError(409, 'org_design', 'Firma tasarımları galeride paylaşılamaz.');
+    const d = await this.prisma.design.update({
+      where: { id },
+      data: shareable ? { shareConsentAt: owned.shareConsentAt ?? new Date() } : { shareConsentAt: null, featured: false },
+      include: this.include,
+    });
+    if (!shareable && owned.featured) log.info('design_share_withdrawn', { designId: id });
     return this.toDto(d, locale);
   }
 

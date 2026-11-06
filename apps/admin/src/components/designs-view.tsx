@@ -40,7 +40,7 @@ import { fmtDateTime, STATUS_LABELS, TOOL_LABELS, toolLabel } from "@/lib/format
 import type { AdminDesign, AdminMe, AdminStyle, Design } from "@/lib/types";
 
 type View = "grid" | "list";
-type Tab = "all" | "featured" | Design["status"];
+type Tab = "all" | "featured" | "shareable" | Design["status"];
 
 const TABS: { value: Tab; label: string }[] = [
   { value: "all", label: "Tümü" },
@@ -48,7 +48,11 @@ const TABS: { value: Tab; label: string }[] = [
   { value: "FAILED", label: STATUS_LABELS.FAILED },
   { value: "PENDING", label: STATUS_LABELS.PENDING },
   { value: "featured", label: "Öne çıkanlar" },
+  { value: "shareable", label: "Paylaşım izni olanlar" },
 ];
+/** API.md §7.51: only a successful design whose owner allowed the gallery can be featured. */
+const featureBlock = (d: Design) =>
+  d.featured ? null : d.status !== "SUCCEEDED" ? "Yalnız başarılı tasarımlar öne çıkarılabilir" : !d.shareable ? "Kullanıcı galeride paylaşılmasına izin vermedi" : null;
 const ALL = "all";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -76,8 +80,9 @@ export function DesignsView({ initialUserId }: { initialUserId: string }) {
   // The API takes a full user id only; a half-typed one would just come back as a 400.
   const userIdValid = UUID_RE.test(userId);
   const designs = usePaged<AdminDesign>("/designs", {
-    status: tab === "all" || tab === "featured" ? "" : tab,
+    status: tab === "all" || tab === "featured" || tab === "shareable" ? "" : tab,
     featured: tab === "featured" ? "true" : "",
+    shareable: tab === "shareable" ? "true" : "",
     tool: tool === ALL ? "" : tool,
     styleId: styleId === ALL ? "" : styleId,
     userId: userIdValid ? userId : "",
@@ -150,7 +155,7 @@ export function DesignsView({ initialUserId }: { initialUserId: string }) {
 
   return (
     <>
-      <PageHeader title="Tasarımlar" description="Tüm üretimler; moderasyon ve ilham galerisi seçimi" />
+      <PageHeader title="Tasarımlar" description="Tüm üretimler; moderasyon ve ilham galerisi seçimi. Galeride yalnız sahibinin izin verdiği tasarım öne çıkarılabilir; izin geri çekilince tasarım galeriden kendiliğinden kalkar." />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <ToggleGroup type="single" variant="outline" size="sm" value={tab} onValueChange={(v) => v && setTab(v as Tab)} aria-label="Durum">
@@ -223,7 +228,7 @@ export function DesignsView({ initialUserId }: { initialUserId: string }) {
         <GridSkeleton />
       ) : designs.items.length === 0 ? (
         <EmptyState
-          title={tab === "featured" && !filtered ? "Öne çıkan tasarım yok" : "Tasarım bulunamadı"}
+          title={tab === "featured" ? "Öne çıkan tasarım yok" : tab === "shareable" ? "Galeri izni verilmiş tasarım yok" : "Tasarım bulunamadı"}
           description={filtered ? "Filtreleri değiştirip tekrar dene." : "Kullanıcılar henüz tasarım üretmedi."}
         />
       ) : (
@@ -407,8 +412,8 @@ function DesignActions({
           <Maximize2 aria-hidden /> Ayrıntılar
         </DropdownMenuItem>
         {canFeature && (
-          <DropdownMenuItem onSelect={onFeature} disabled={!d.featured && d.status !== "SUCCEEDED"}>
-            <Star aria-hidden /> {d.featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
+          <DropdownMenuItem onSelect={onFeature} disabled={featureBlock(d) !== null} title={featureBlock(d) ?? undefined}>
+            <Star aria-hidden /> {d.featured ? "Öne çıkarmayı kaldır" : d.shareable ? "Öne çıkar" : "Öne çıkar (izin yok)"}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onSelect={onUserFilter}>
@@ -512,6 +517,8 @@ function DetailSheet({
                     </Badge>
                   )}
                 </dd>
+                <dt className="text-muted-foreground">Galeri izni</dt>
+                <dd>{d.shareable ? <span className="text-good">Kullanıcı izin verdi</span> : <span className="text-muted-foreground">İzin yok</span>}</dd>
                 <dt className="text-muted-foreground">Kullanıcı</dt>
                 <dd className="min-w-0 truncate">
                   <Link href={`/users/${encodeURIComponent(d.userId)}`} className="text-primary hover:underline">
@@ -540,8 +547,8 @@ function DetailSheet({
                   <Button
                     variant={d.featured ? "secondary" : "default"}
                     onClick={onFeature}
-                    disabled={busy || (!d.featured && d.status !== "SUCCEEDED")}
-                    title={!d.featured && d.status !== "SUCCEEDED" ? "Yalnız başarılı tasarımlar öne çıkarılabilir" : undefined}
+                    disabled={busy || featureBlock(d) !== null}
+                    title={featureBlock(d) ?? undefined}
                   >
                     <Star fill={d.featured ? "currentColor" : "none"} aria-hidden />
                     {d.featured ? "Öne çıkarmayı kaldır" : "İlham galerisinde öne çıkar"}

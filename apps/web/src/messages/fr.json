@@ -416,7 +416,11 @@
     "analyze": "Obtenir la liste d'achats et le budget",
     "analyzing": "Analyse en cours…",
     "failed": "Ce design n'a pas pu être généré.",
-    "sliderLabel": "Curseur de comparaison avant/après"
+    "sliderLabel": "Curseur de comparaison avant/après",
+    "shareTitle": "Partager dans la galerie d'inspiration",
+    "shareText": "Si vous l'activez, l'équipe Casalume peut montrer l'image finale de ce design dans la galerie d'inspiration de l'application. Votre photo d'origine et votre nom ne sont jamais affichés. Vous pouvez le désactiver à tout moment ; il quitte alors la galerie immédiatement.",
+    "shareLabel": "Peut être montré dans la galerie",
+    "shareLive": "Ce design est actuellement dans la galerie d'inspiration."
   },
   "analysis": {
     "title": "Liste d'achats et budget",

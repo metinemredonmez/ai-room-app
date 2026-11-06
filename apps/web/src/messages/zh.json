@@ -416,7 +416,11 @@
     "analyze": "生成购物清单和预算",
     "analyzing": "分析中…",
     "failed": "此设计生成失败。",
-    "sliderLabel": "前后对比滑块"
+    "sliderLabel": "前后对比滑块",
+    "shareTitle": "在灵感图库中分享",
+    "shareText": "开启后，Casalume 团队可以在应用的灵感图库中展示此设计的结果图。你的原始照片和姓名不会显示。你可以随时关闭，关闭后会立即从图库中移除。",
+    "shareLabel": "可在图库中展示",
+    "shareLive": "此设计目前在灵感图库中。"
   },
   "analysis": {
     "title": "购物清单和预算",

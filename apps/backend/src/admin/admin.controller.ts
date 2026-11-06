@@ -48,6 +48,8 @@ const DesignsQuery = z.object({
   styleId: z.string().regex(/^[a-z_]{2,40}$/).optional(),
   userId: z.uuid().optional(),
   featured: z.enum(['true', 'false']).optional(),
+  /** API.md §7.51: the owner allows the gallery. */
+  shareable: z.enum(['true', 'false']).optional(),
 });
 const PatchUser = z
   .object({ status: z.enum(['ACTIVE', 'BANNED']).optional(), plan: z.enum(['FREE', 'PRO']).optional(), planExpiresAt: z.iso.datetime().nullable().optional() })
@@ -241,6 +243,7 @@ export class AdminController {
       ...(q.styleId ? { styleId: q.styleId } : {}),
       ...(q.userId ? { userId: q.userId } : {}),
       ...(q.featured ? { featured: q.featured === 'true' } : {}),
+      ...(q.shareable ? { shareConsentAt: q.shareable === 'true' ? { not: null } : null } : {}),
     };
     const rows = await this.prisma.design.findMany({
       where, include: { inputImage: true, results: true, user: { select: { email: true } } },
@@ -255,13 +258,15 @@ export class AdminController {
 
   @MinRole('EDITOR')
   @Patch('designs/:id')
-  @Doc('Öne çıkar / kaldır', { errors: [400, 401, 403, 404] })
+  @Doc('Öne çıkar / kaldır (yalnız sahibinin izin verdiği tasarım)', { errors: [400, 401, 403, 404, 409] })
   async patchDesign(@Param('id') id: string, @Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const { featured } = parse(z.object({ featured: z.boolean() }).strict(), body);
     if (!isUuid(id)) throw notFound();
     const exists = await this.prisma.design.findUnique({ where: { id } });
     if (!exists) throw notFound();
     if (featured && exists.status !== 'SUCCEEDED') throw new AppError(400, 'bad_request', 'Yalnız başarılı tasarımlar öne çıkarılabilir');
+    // API.md §7.51: a room photo is the user's; only a design its owner allowed goes into the public gallery.
+    if (featured && !exists.shareConsentAt) throw new AppError(409, 'no_share_consent', 'Kullanıcı bu tasarımın galeride paylaşılmasına izin vermedi.');
     const d = await this.prisma.design.update({ where: { id }, data: { featured }, include: { inputImage: true, results: true } });
     await this.audit.record(auth.userId, featured ? 'design.feature' : 'design.unfeature', 'design', id, {}, req.clientIp);
     return this.designs.toDto(d);

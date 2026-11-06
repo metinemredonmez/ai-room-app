@@ -416,7 +416,11 @@
     "analyze": "Crea lista della spesa e budget",
     "analyzing": "Analisi in corso…",
     "failed": "Non è stato possibile generare questo design.",
-    "sliderLabel": "Cursore di confronto prima/dopo"
+    "sliderLabel": "Cursore di confronto prima/dopo",
+    "shareTitle": "Condividi nella galleria di ispirazione",
+    "shareText": "Se lo attivi, il team di Casalume può mostrare l'immagine finale di questo progetto nella galleria di ispirazione dell'app. La tua foto di partenza e il tuo nome non vengono mai mostrati. Puoi disattivarlo quando vuoi; esce subito dalla galleria.",
+    "shareLabel": "Può essere mostrato nella galleria",
+    "shareLive": "Questo progetto è ora nella galleria di ispirazione."
   },
   "analysis": {
     "title": "Lista della spesa e budget",

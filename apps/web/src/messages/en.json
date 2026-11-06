@@ -416,7 +416,11 @@
     "analyze": "Get shopping list & budget",
     "analyzing": "Analyzing…",
     "failed": "This design couldn't be generated.",
-    "sliderLabel": "Before/after comparison slider"
+    "sliderLabel": "Before/after comparison slider",
+    "shareTitle": "Share in the inspiration gallery",
+    "shareText": "If you turn this on, the Casalume team may show this design's result image in the app's inspiration gallery. Your before photo and your name are never shown. You can turn it off at any time; it leaves the gallery at once.",
+    "shareLabel": "Can be shown in the gallery",
+    "shareLive": "This design is in the inspiration gallery now."
   },
   "analysis": {
     "title": "Shopping list & budget",

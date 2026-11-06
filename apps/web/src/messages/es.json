@@ -416,7 +416,11 @@
     "analyze": "Obtener lista de compras y presupuesto",
     "analyzing": "Analizando…",
     "failed": "No se pudo generar este diseño.",
-    "sliderLabel": "Control deslizante de comparación antes/después"
+    "sliderLabel": "Control deslizante de comparación antes/después",
+    "shareTitle": "Compartir en la galería de inspiración",
+    "shareText": "Si lo activas, el equipo de Casalume puede mostrar la imagen final de este diseño en la galería de inspiración de la app. Tu foto de antes y tu nombre nunca se muestran. Puedes desactivarlo cuando quieras; sale de la galería al momento.",
+    "shareLabel": "Se puede mostrar en la galería",
+    "shareLive": "Este diseño está ahora en la galería de inspiración."
   },
   "analysis": {
     "title": "Lista de compras y presupuesto",

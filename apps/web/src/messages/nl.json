@@ -416,7 +416,11 @@
     "analyze": "Boodschappenlijst en budget maken",
     "analyzing": "Analyseren…",
     "failed": "Dit ontwerp kon niet worden gemaakt.",
-    "sliderLabel": "Schuifregelaar voor/na-vergelijking"
+    "sliderLabel": "Schuifregelaar voor/na-vergelijking",
+    "shareTitle": "Delen in de inspiratiegalerij",
+    "shareText": "Als je dit aanzet, mag het Casalume-team de eindafbeelding van dit ontwerp tonen in de inspiratiegalerij van de app. Je vooraf-foto en je naam worden nooit getoond. Je kunt het altijd uitzetten; dan verdwijnt het meteen uit de galerij.",
+    "shareLabel": "Mag in de galerij getoond worden",
+    "shareLive": "Dit ontwerp staat nu in de inspiratiegalerij."
   },
   "analysis": {
     "title": "Boodschappenlijst en budget",

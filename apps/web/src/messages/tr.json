@@ -416,7 +416,11 @@
     "analyze": "Alışveriş listesi ve bütçe çıkar",
     "analyzing": "Analiz ediliyor…",
     "failed": "Bu tasarım üretilemedi.",
-    "sliderLabel": "Önce/sonra karşılaştırma kaydırıcısı"
+    "sliderLabel": "Önce/sonra karşılaştırma kaydırıcısı",
+    "shareTitle": "İlham galerisinde paylaş",
+    "shareText": "Açarsan Casalume ekibi bu tasarımın sonuç görselini uygulamadaki İlham galerisinde gösterebilir. Önceki fotoğrafın ve adın görünmez. İstediğin zaman kapatabilirsin; kapatınca galeriden hemen kalkar.",
+    "shareLabel": "Galeride paylaşılabilir",
+    "shareLive": "Bu tasarım şu an İlham galerisinde."
   },
   "analysis": {
     "title": "Alışveriş listesi ve bütçe",

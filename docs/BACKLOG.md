@@ -106,7 +106,7 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - [ ] **Yayından hemen önce demo veriyi sil** (5 Kasım'da canlıya yüklendi; yalnız işaretli kayıtları siler, gerçek veriye dokunmaz):
   `sudo -iu casalume bash -lc 'cd /var/www/casalume/app/apps/backend && NODE_ENV=production npm run db:seed:demo -- --clear'`
 - [ ] KVKK metinleri fal-app derinliğinde (aydınlatma, açık rıza, yurt dışı aktarım, saklama süreleri, çerez, başvuru).
-- [ ] İlham galerisi için kullanıcı izni (tasarım başına; geri çekince galeriden kalkar).
+- [x] İlham galerisi için kullanıcı izni (tasarım başına; geri çekince galeriden kalkar) — API.md §7.51. Mobil sonuç ekranındaki kutu: sen.
 - [ ] Sohbet ve alışveriş listesi: Kaptan (Türkiye’de, OpenAI uyumlu) — şimdilik canlıda “kullanılamıyor”.
 - [ ] Mobil: açık rıza ekranı, “İçeriği bildir”, zorunlu güncelleme, dört renk, açılış animasyonu (palemi tarzı).
 - [ ] Mobil: Google ve Apple ile giriş (backend hazır).

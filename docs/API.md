@@ -2133,3 +2133,35 @@ ekranından gelir; kodda sabit plan listesi (`PLANS`) kalmadı.
 | GET | `/catalog` | `plans`: satıştaki ve web fiyatı olan dönemler (`id: pro_<dönem>`, `priceTRY`, `badge`, yeni `highlight`). Yeni `pricing: { name, tagline, features, packs: [{ key, name, credits, highlight, priceTRY }], limits }` |
 | GET | `/billing/catalog` | Dönemlerde `badge` ve `webPriceTRY`, paketlerde `webPriceTRY` (bilgi amaçlı) |
 | PATCH | `/admin/billing/catalog` | Dönemde `webPriceTRY`, `badgeTr`, `badgeEn`; pakette `webPriceTRY`. Eski istemcinin göndermediği alanlar boş sayılır |
+
+### 7.51 İlham galerisi için kullanıcı izni
+
+İlham galerisi (`GET /v1/inspiration`, mobilde İlham sekmesi) kullanıcının oda fotoğrafından üretilmiş sonucu herkese
+gösterir. Bu yüzden artık yalnız sahibinin izin verdiği tasarım galeriye girer (KVKK: kişisel verinin herkese açılması
+açık izin ister).
+
+- **İzin tasarım başınadır:** kullanıcı kendi tasarımında "Galeride paylaşılabilir" kutusunu işaretler
+  (`PATCH /v1/designs/:id { shareable: true }`). Web'de sonuç ekranının altında açıklamasıyla birlikte görünür:
+  galeride yalnız sonuç görseli ve "stil · oda" başlığı çıkar; önceki fotoğraf ve ad görünmez.
+- **Geri çekme:** `shareable: false` izni siler ve öne çıkarmayı aynı anda kaldırır; tasarım galeriden hemen düşer
+  (galeri ucu önbelleklenmez).
+- **Firma tasarımı paylaşılamaz** (409 `org_design`): firmanın ve müşterisinin evidir.
+- **Admin:**
+  - Öne çıkarma yalnız izinli ve başarılı tasarımda olur (409 `no_share_consent`).
+  - Tasarımlar ekranında "Paylaşım izni olanlar" süzgeci ve ayrıntıda izin durumu var.
+  - Öne çıkarma EDITOR ve üstünün işidir.
+- **Galeri:** yalnız öne çıkan, başarılı, izinli ve sahibi aktif (engellenmemiş) tasarımlar listelenir.
+- **Veritabanı:** `Design.shareConsentAt` (izin zamanı; null = izin yok).
+  - CHECK `Design_featured_needs_consent`: izinsiz tasarım öne çıkarılmış olamaz.
+  - Göç sırasında, gerçek kullanıcıların izinsiz öne çıkan tasarımları galeriden alındı; hiçbir şey silinmedi.
+  - Demo hesapların öne çıkan tasarımları (sahte hesaplar, `@demo.casalume.invalid`) izinli sayıldı; demo tohumu da
+    izni yazar.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| PATCH | `/designs/:id` | sahibi | `{ shareable: boolean }` (favori / proje ile birlikte de gönderilebilir); yanıt tasarım, `shareable` alanıyla |
+| GET | `/designs`, `/designs/:id` | sahibi | Tasarımda yeni `shareable` |
+| GET | `/admin/designs` | SUPPORT | Yeni süzgeç `shareable=true\|false` |
+| PATCH | `/admin/designs/:id` | EDITOR | `{ featured: true }` izin yoksa 409 `no_share_consent` |
+
+Mobil (sen): sonuç ekranına aynı kutu ve açıklama; `PATCH /v1/designs/:id { shareable }`.

@@ -416,7 +416,11 @@
     "analyze": "Einkaufsliste & Budget erstellen",
     "analyzing": "Wird analysiert…",
     "failed": "Dieses Design konnte nicht erstellt werden.",
-    "sliderLabel": "Vorher-Nachher-Vergleichsregler"
+    "sliderLabel": "Vorher-Nachher-Vergleichsregler",
+    "shareTitle": "In der Inspirationsgalerie teilen",
+    "shareText": "Wenn du das einschaltest, darf das Casalume-Team das Ergebnisbild dieses Designs in der Inspirationsgalerie der App zeigen. Dein Vorher-Foto und dein Name werden nie gezeigt. Du kannst es jederzeit ausschalten; dann verschwindet es sofort aus der Galerie.",
+    "shareLabel": "Darf in der Galerie gezeigt werden",
+    "shareLive": "Dieses Design ist gerade in der Inspirationsgalerie."
   },
   "analysis": {
     "title": "Einkaufsliste & Budget",
