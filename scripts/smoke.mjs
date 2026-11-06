@@ -219,7 +219,8 @@ const resetToken = tokenFrom(resetMail);
 const wrongPurpose = await call('POST', '/auth/email/verify', { body: { token: resetToken } });
 ok(wrongPurpose.status === 400, 'reset token rejected for another purpose (AUT-03)');
 // API.md §7.38: a common password is refused before the link is spent.
-const weakReset = await call('POST', '/auth/password/reset', { body: { token: resetToken, password: 'qwerty123456' } });
+const commonPassword = 'qwerty123456'; // gitleaks:allow — a deliberately common test password, not a secret
+const weakReset = await call('POST', '/auth/password/reset', { body: { token: resetToken, password: commonPassword } });
 ok(weakReset.status === 400 && weakReset.json?.error?.code === 'weak_password' && weakReset.json?.error?.reason === 'common', 'reset refuses a common password (PWD)', JSON.stringify(weakReset.json?.error));
 const reset = await call('POST', '/auth/password/reset', { body: { token: resetToken, password: 'second-password-456' } });
 ok(reset.status === 204, 'password reset with token');
