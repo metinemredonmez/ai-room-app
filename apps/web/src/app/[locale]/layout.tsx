@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
+import { AnnouncementBar } from "@/components/announcement-bar";
 import { AppProvider } from "@/components/app-provider";
 import { ErrorReporter } from "@/components/error-reporter";
 import { SiteFooter } from "@/components/site-footer";
@@ -11,6 +12,7 @@ import { VerifyBanner } from "@/components/verify-banner";
 import { LOCALES, LOCALE_TAGS, isLocale } from "@/lib/i18n";
 import { loadMessages } from "@/lib/messages";
 import { PALETTE_BOOT_SCRIPT } from "@/lib/palette";
+import { siteContent } from "@/lib/site-content";
 import { getTheme, themeCss, themeOptions } from "@/lib/theme";
 import "../globals.css";
 
@@ -55,7 +57,7 @@ export const viewport: Viewport = {
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const [messages, theme] = await Promise.all([loadMessages(locale), getTheme()]);
+  const [messages, theme, site] = await Promise.all([loadMessages(locale), getTheme(), siteContent(locale)]);
   return (
     // The boot script may set data-palette before React hydrates, hence suppressHydrationWarning on <html> only.
     <html lang={LOCALE_TAGS[locale]} className={`${jakarta.variable} ${cormorant.variable} h-full antialiased`} suppressHydrationWarning>
@@ -67,6 +69,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
       <body className="flex min-h-full flex-col">
         <AppProvider locale={locale} messages={messages}>
           <ErrorReporter />
+          <AnnouncementBar announcement={site.announcement} />
           <ThemeOptionsProvider options={theme ? themeOptions(theme) : null}>
             <Suspense fallback={<HeaderFallback />}>
               <SiteHeader />

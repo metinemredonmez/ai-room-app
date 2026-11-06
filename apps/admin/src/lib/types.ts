@@ -692,3 +692,36 @@ export type PartnerRow = {
   revenueUsd: number;
   commissionUsd: number;
 };
+
+// Ana sayfa ve SSS (API.md §7.46)
+export const SITE_SECTIONS = ["gallery", "tools", "features", "pro", "how", "styles", "pricing", "faq"] as const;
+export type SiteSection = (typeof SITE_SECTIONS)[number];
+export const SITE_TEXT_LIMITS = {
+  badge: 60, heroTitle: 80, heroText: 320, ctaPrimary: 30, ctaSecondary: 30, galleryTitle: 60, galleryText: 180, toolsTitle: 70,
+  toolsText: 180, moreTools: 180, featuresTitle: 90, featuresText: 180, proBadge: 40, proTitle: 80, proText: 280, howTitle: 60,
+  stylesTitle: 60, stylesText: 90, pricingTitle: 40, pricingText: 160, faqTitle: 50, finalTitle: 90, finalCta: 30,
+} as const;
+export type SiteTextKey = keyof typeof SITE_TEXT_LIMITS;
+export const SITE_LIST_LIMITS = { trust: { items: 4, length: 40 }, proPoints: { items: 6, length: 90 } } as const;
+export type SiteListKey = keyof typeof SITE_LIST_LIMITS;
+export const SITE_FAQ_LIMITS = { items: 20, q: 160, a: 1000 } as const;
+export type FaqItem = { q: string; a: string };
+export type SiteLocaleTexts = Partial<Record<SiteTextKey, string>> & Partial<Record<SiteListKey, string[]>> & { faq?: FaqItem[] };
+export type SiteDefaultTexts = Record<SiteTextKey, string> & Record<SiteListKey, string[]> & { faq: FaqItem[] };
+export type SiteAnnouncement = {
+  enabled: boolean;
+  tone: "info" | "promo" | "warning";
+  link: string | null;
+  text: Partial<Record<Locale, string>>;
+  startsAt: string | null;
+  endsAt: string | null;
+};
+export type SiteContentDoc = { sections: Record<SiteSection, boolean>; announcement: SiteAnnouncement; texts: Partial<Record<Locale, SiteLocaleTexts>> };
+export type SiteContentState = {
+  content: SiteContentDoc;
+  defaults: Partial<Record<Locale, SiteDefaultTexts>>;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  changes?: string[];
+};

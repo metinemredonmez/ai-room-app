@@ -1958,3 +1958,32 @@ Panelin her yerinde **⌘K / Ctrl+K** (ya da üst çubuktaki "Ara…") tek bir a
   - firma: ad ya da kimlik → firma ayrıntısı.
 - Hız sınırı yönetici başına dakikada 120; palet kullanıcı tablosunu taramak için kullanılamaz (RES).
 - Klavye: ↑↓ seç, Enter aç, Esc kapat. Yazarken istekler 200 ms beklenir; eski bir yanıt yenisinin üstüne yazamaz.
+
+### 7.46 Ana sayfa ve SSS panelden — backend + admin + web (mobil okuyabilir)
+Admin → İçerik → **Ana sayfa ve SSS** (MAEYJA "İçerik → Ana sayfa / SSS", duyuru çubuğu). Tek bir ayar satırı
+(`site.content`); diğer ayarlar gibi 15 sn'de bir okunur, sürümle ve kilitle kaydedilir (BUS-02).
+
+- **Bölümler:** ana sayfadaki örnekler, araçlar, özellikler, mimarlar için, nasıl çalışır, stiller, fiyatlar ve SSS
+  bölümleri ayrı ayrı kapatılabilir. Üst bölüm ve son çağrı her zaman görünür.
+- **Metinler (dil başına):** üst bölüm (rozet, başlık, açıklama, iki düğme, en çok 4 güven maddesi), bölüm başlıkları ve
+  açıklamaları, mimarlar için maddeleri (en çok 6), son çağrı ve SSS (en çok 20 soru; soru ≤160, cevap ≤1000 karakter,
+  cevapta boş satırla paragraf).
+  - Değiştirilmeyen metin sitenin kendi çevirisini kullanır. Panel her alanda sitenin bugünkü metnini soluk gösterir;
+    "Düzenle" o metinle başlatır. Sitenin metnine eşit bir değer kaydedilmez.
+  - Sitenin metinleri `apps/backend/assets/site/landing-defaults.json` dosyasından gelir. Dosya
+    `node scripts/landing-defaults.mjs` ile web çevirilerinden üretilir; ikisi ayrışırsa birim testi düşer.
+- **Duyuru çubuğu:** her sayfanın üstünde görünür. Görünüm bilgi / kampanya / uyarı; metin ≤140 karakter.
+  - Başlangıç ve bitiş saati isteğe bağlıdır; çubuk yalnız bu aralıkta görünür.
+  - Ziyaretçinin dilinde metin yoksa İngilizcesi, o da yoksa hiçbir şey gösterilmez.
+  - Bağlantı yalnız kendi sayfalarımıza: `/studio`, `/fiyatlar`, `/sohbet`, `/blog` ya da `/blog/<adres>` (EXT-02).
+- **Güvenlik:** her şey düz metindir; istemciler HTML olarak değil metin olarak çizer (WEB-01). Denetim ve yön
+  (bidi) karakterleri reddedilir (PRS-01). Web yanıtı yeniden denetler (INP-01). Denetim kaydında yalnız değişen
+  bölüm, dil ve alan adları vardır, metinler yoktur (LOG-01).
+- **Web:** birkaç dakikalık önbellekle okur; kayıt deploy gerekmeden birkaç dakikada görünür. API yanıt vermezse sitenin
+  kendi içeriği gösterilir.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/v1/site/content?locale=` | herkese açık | `{ sections, announcement, texts }`; `texts` yalnız değiştirilen metinlerdir; `max-age=60` |
+| GET | `/admin/site-content` | SUPPORT | `{ content, defaults (11 dil), version, updatedAt, updatedBy }` |
+| PATCH | `/admin/site-content` | EDITOR | `{ content, reason, version }`; eski sürüm 409; denetim `site_content.update` |

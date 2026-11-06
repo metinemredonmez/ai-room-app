@@ -21,6 +21,7 @@ import {
   Megaphone,
   LogOut,
   Palette,
+  PanelsTopLeft,
   SwatchBook,
   TabletSmartphone,
   BellRing,
@@ -101,6 +102,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/designs", label: "Tasarımlar", icon: Sparkles },
       { href: "/reports", label: "İçerik bildirimleri", icon: Flag, badge: "openReports" },
       { href: "/styles", label: "Stiller", icon: Palette },
+      { href: "/site-content", label: "Ana sayfa ve SSS", icon: PanelsTopLeft },
     ],
   },
   {

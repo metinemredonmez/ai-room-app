@@ -33,7 +33,11 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] İstemci hata ucu (API.md §7.43): web bağlı; mobil aynı ucu kullanacak (sen).
    - [x] CSV dışa aktarma (API.md §7.44): ödeme olayları, abonelikler, AI maliyeti, ortaklar, denetim kaydı (SUPER_ADMIN); formül enjeksiyonuna karşı korumalı.
    - [x] Komut paleti (API.md §7.45): ⌘K; sayfalar, kullanıcılar, tasarımlar, destek, firmalar.
-5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
+5. İçerik
+   - [x] Ana sayfa ve SSS panelden (API.md §7.46): metinler 11 dilde, SSS, bölümleri gizleme, duyuru çubuğu. Admin → İçerik → Ana sayfa ve SSS.
+   - [ ] Bekleme listesi + bülten.
+   - [ ] Yaşam döngüsü e-postaları.
+   - [ ] Eski görünümdeki 8 admin ekranı.
 
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
 Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamını değiştirmek kolay ve çoğu uygulamada var,
@@ -222,7 +226,8 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
-- [ ] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi), admin CMS (SSS, ana sayfa) (fal-app, maeyja).
+- [ ] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi) (fal-app, maeyja).
+- [x] Admin CMS: SSS, ana sayfa metinleri, bölümler, duyuru çubuğu (maeyja) — API.md §7.46.
 - [ ] Admin’de `support@casalume.app` gelen kutusu (maeyja `mailbox`, IMAP): kullanıcı e-postalarını panelden okuyup yanıtlamak.
 - [x] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — API.md §7.29.
 - [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).

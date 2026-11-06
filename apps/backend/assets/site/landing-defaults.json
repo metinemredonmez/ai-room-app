@@ -1,0 +1,640 @@
+{
+ "tr": {
+  "badge": "Türkiye'nin yapay zekâ destekli iç mimarı",
+  "heroTitle": "Odanı saniyeler içinde yeniden tasarla.",
+  "heroText": "Bir fotoğraf yükle, stilini seç; Casalume odanı yeniden döşesin, duvarını boyasın, zeminini değiştirsin. Üstelik beğendiğin tasarımın alışveriş listesini ve TL bütçesini de çıkarsın.",
+  "ctaPrimary": "Hemen tasarla",
+  "ctaSecondary": "Nasıl çalışır?",
+  "galleryTitle": "Gerçek fotoğraflar, gerçek sonuçlar",
+  "galleryText": "Solda fotoğrafın kendisi, sağda Casalume'nin ürettiği tasarım. Ortadaki tutamacı sürükle.",
+  "toolsTitle": "İçeriden dışarıya, her alan",
+  "toolsText": "Boş bir odadan bahçe terasına kadar; aracını seç, gerisini Casalume yapsın.",
+  "moreTools": "Ayrıca: duvar boyası, yeni zemin, nesne silme, değiştirme, referans stil ve kendi tarifin.",
+  "featuresTitle": "Bir iç mimarın yapacağı her şey, cebinde",
+  "featuresText": "Dünyadaki en iyi örnekleri inceledik; Türkiye'de yaşayan biri için eksik olanları ekledik.",
+  "proBadge": "Profesyoneller için",
+  "proTitle": "Mimarlar ve iç mimarlar için de",
+  "proText": "Müşterine ilk görüşmede birkaç stil seçeneğini dakikalar içinde göster; malzeme listesi ve TL bütçesiyle konuşmayı somutlaştır.",
+  "howTitle": "Üç adımda yeni evin",
+  "stylesTitle": "Sana uygun stili bul",
+  "stylesText": "Bir stile dokun, stüdyo o stille açılsın.",
+  "pricingTitle": "Esnek planlar",
+  "pricingText": "Ücretsiz başla; daha fazlası için haftalık, aylık veya yıllık PRO'ya geç.",
+  "faqTitle": "Sık sorulan sorular",
+  "finalTitle": "Hayalindeki oda bir fotoğraf uzağında.",
+  "finalCta": "Ücretsiz tasarla",
+  "trust": [
+   "Kayıt gerekmez",
+   "Günde 3 ücretsiz tasarım",
+   "KVKK uyumlu"
+  ],
+  "proPoints": [
+   "Aynı fotoğraftan dört varyant (PRO)",
+   "Malzeme listesi ve TL bütçe tahmini",
+   "Filigransız yüksek çözünürlük (PRO)",
+   "Yakında: proje klasörleri ve müşteriye paylaşım"
+  ],
+  "faq": [
+   {
+    "q": "Fotoğraflarım güvende mi?",
+    "a": "Yüklediğin fotoğraflar yeniden kodlanır ve konum (GPS) dahil tüm EXIF bilgileri silinir. Görseller yalnızca süreli, imzalı bağlantılarla açılır ve hesabını sildiğinde tüm tasarımların silinir."
+   },
+   {
+    "q": "Kayıt olmadan kullanabilir miyim?",
+    "a": "Evet. Misafir olarak hemen başlayabilirsin; tasarımlarını kaybetmemek için daha sonra e-posta ile hesabını oluşturman yeterli."
+   },
+   {
+    "q": "Bütçe tahminleri ne kadar doğru?",
+    "a": "Fiyatlar, yapay zekânın Türkiye pazarına göre yaptığı tahmini aralıklardır. Satın almadan önce mağaza fiyatlarını kontrol etmeni öneririz."
+   },
+   {
+    "q": "Odamın duvarları ve pencereleri değişir mi?",
+    "a": "Hayır. Casalume oda geometrisini, pencereleri ve kamera açısını koruyarak yalnızca dekorasyonu, mobilyayı ve yüzeyleri değiştirir."
+   },
+   {
+    "q": "PRO aboneliği nasıl iptal ederim?",
+    "a": "Mobilde App Store / Google Play abonelik ayarlarından, web'de hesap sayfandan istediğin zaman iptal edebilirsin."
+   }
+  ]
+ },
+ "en": {
+  "badge": "AI interior designer, built for Türkiye",
+  "heroTitle": "Redesign your room in seconds.",
+  "heroText": "Upload a photo and pick a style. Casalume refurnishes the room, repaints the walls and swaps the floor — then turns the design into a shopping list with a budget in Turkish lira.",
+  "ctaPrimary": "Start designing",
+  "ctaSecondary": "How it works",
+  "galleryTitle": "Real photos, real results",
+  "galleryText": "The photo itself on the left, the Casalume design on the right. Drag the handle.",
+  "toolsTitle": "Inside and out",
+  "toolsText": "From an empty room to a garden terrace: pick a tool and let Casalume do the rest.",
+  "moreTools": "Also: wall paint, new floor, object removal, replace, reference style and your own recipe.",
+  "featuresTitle": "Everything an interior designer does, in your pocket",
+  "featuresText": "We studied the best apps worldwide and added what people in Türkiye were missing.",
+  "proBadge": "For professionals",
+  "proTitle": "Built for architects and interior designers too",
+  "proText": "Show your client a few style options within minutes of the first meeting, and make the talk concrete with a material list and a TRY budget.",
+  "howTitle": "Your new home in three steps",
+  "stylesTitle": "Find your style",
+  "stylesText": "Tap a style to open the studio with it.",
+  "pricingTitle": "Flexible plans",
+  "pricingText": "Start free; go PRO weekly, monthly or yearly when you need more.",
+  "faqTitle": "Frequently asked questions",
+  "finalTitle": "Your dream room is one photo away.",
+  "finalCta": "Design for free",
+  "trust": [
+   "No sign-up needed",
+   "3 free designs a day",
+   "KVKK compliant"
+  ],
+  "proPoints": [
+   "Four variants from one photo (PRO)",
+   "Material list and TRY budget estimate",
+   "Watermark-free high resolution (PRO)",
+   "Coming soon: project folders and client sharing"
+  ],
+  "faq": [
+   {
+    "q": "Are my photos safe?",
+    "a": "Uploaded photos are re-encoded and all EXIF data, including GPS location, is removed. Images are only reachable through expiring signed links, and deleting your account deletes all your designs."
+   },
+   {
+    "q": "Can I use it without signing up?",
+    "a": "Yes. Start as a guest right away; create an account with your email later so you don't lose your designs."
+   },
+   {
+    "q": "How accurate are the budget estimates?",
+    "a": "Prices are AI-estimated ranges for the Turkish market. Please check store prices before buying."
+   },
+   {
+    "q": "Will my walls and windows change?",
+    "a": "No. Casalume keeps the room geometry, windows and camera angle and only changes decor, furniture and surfaces."
+   },
+   {
+    "q": "How do I cancel PRO?",
+    "a": "Cancel anytime from App Store / Google Play subscriptions on mobile, or from your account page on the web."
+   }
+  ]
+ },
+ "de": {
+  "badge": "Die KI-Innenarchitektin aus der Türkei",
+  "heroTitle": "Gestalte deinen Raum in Sekunden neu.",
+  "heroText": "Lade ein Foto hoch und wähle deinen Stil – Casalume richtet deinen Raum neu ein, streicht die Wände und tauscht den Boden. Und für dein Lieblingsdesign gibt's gleich die Einkaufsliste samt Budget in TL dazu.",
+  "ctaPrimary": "Jetzt gestalten",
+  "ctaSecondary": "So funktioniert's",
+  "galleryTitle": "Echte Fotos, echte Ergebnisse",
+  "galleryText": "Links das Originalfoto, rechts das Design von Casalume. Zieh den Regler in der Mitte.",
+  "toolsTitle": "Drinnen wie draußen – jeder Bereich",
+  "toolsText": "Vom leeren Zimmer bis zur Gartenterrasse: Wähl dein Tool, den Rest erledigt Casalume.",
+  "moreTools": "Außerdem: Wandfarbe, neuer Boden, Objekte entfernen, ersetzen, Referenzstil und dein eigenes Rezept.",
+  "featuresTitle": "Alles, was eine Innenarchitektin kann – in deiner Tasche",
+  "featuresText": "Wir haben uns die besten Beispiele weltweit angesehen und ergänzt, was Menschen in der Türkei gefehlt hat.",
+  "proBadge": "Für Profis",
+  "proTitle": "Auch für Architekt:innen und Innenarchitekt:innen",
+  "proText": "Zeig deinen Kund:innen schon beim ersten Termin in wenigen Minuten mehrere Stiloptionen – und mach das Gespräch mit Materialliste und TL-Budget greifbar.",
+  "howTitle": "In drei Schritten zum neuen Zuhause",
+  "stylesTitle": "Finde deinen Stil",
+  "stylesText": "Tippe auf einen Stil und das Studio öffnet sich damit.",
+  "pricingTitle": "Flexible Pläne",
+  "pricingText": "Starte kostenlos; für mehr wechselst du wöchentlich, monatlich oder jährlich zu PRO.",
+  "faqTitle": "Häufige Fragen",
+  "finalTitle": "Dein Traumzimmer ist nur ein Foto entfernt.",
+  "finalCta": "Kostenlos gestalten",
+  "trust": [
+   "Keine Anmeldung nötig",
+   "3 kostenlose Designs pro Tag",
+   "KVKK-konform"
+  ],
+  "proPoints": [
+   "Vier Varianten aus einem Foto (PRO)",
+   "Materialliste und Budgetschätzung in TL",
+   "Hohe Auflösung ohne Wasserzeichen (PRO)",
+   "Demnächst: Projektordner und Teilen mit Kund:innen"
+  ],
+  "faq": [
+   {
+    "q": "Sind meine Fotos sicher?",
+    "a": "Deine hochgeladenen Fotos werden neu codiert und alle EXIF-Daten, inklusive Standort (GPS), werden gelöscht. Bilder sind nur über zeitlich begrenzte, signierte Links abrufbar, und wenn du dein Konto löschst, werden alle deine Designs gelöscht."
+   },
+   {
+    "q": "Kann ich die App ohne Registrierung nutzen?",
+    "a": "Ja. Du kannst sofort als Gast loslegen; damit deine Designs nicht verloren gehen, erstellst du später einfach ein Konto mit deiner E-Mail."
+   },
+   {
+    "q": "Wie genau sind die Budgetschätzungen?",
+    "a": "Die Preise sind von der KI geschätzte Spannen für den türkischen Markt. Wir empfehlen dir, vor dem Kauf die Preise im Geschäft zu prüfen."
+   },
+   {
+    "q": "Verändern sich die Wände und Fenster meines Raums?",
+    "a": "Nein. Casalume behält Raumgeometrie, Fenster und Kamerawinkel bei und ändert nur Deko, Möbel und Oberflächen."
+   },
+   {
+    "q": "Wie kündige ich mein PRO-Abo?",
+    "a": "Du kannst jederzeit kündigen – mobil in den Abo-Einstellungen von App Store / Google Play, im Web auf deiner Kontoseite."
+   }
+  ]
+ },
+ "es": {
+  "badge": "El interiorista con IA de Türkiye",
+  "heroTitle": "Rediseña tu habitación en segundos.",
+  "heroText": "Sube una foto y elige un estilo: Casalume amuebla de nuevo tu habitación, pinta las paredes y cambia el suelo. Además, convierte el diseño que te guste en una lista de compras con presupuesto en TL.",
+  "ctaPrimary": "Empieza a diseñar",
+  "ctaSecondary": "¿Cómo funciona?",
+  "galleryTitle": "Fotos reales, resultados reales",
+  "galleryText": "A la izquierda, la foto original; a la derecha, el diseño creado por Casalume. Arrastra el control central.",
+  "toolsTitle": "Por dentro y por fuera, cada espacio",
+  "toolsText": "Desde una habitación vacía hasta la terraza del jardín: elige tu herramienta y deja que Casalume haga el resto.",
+  "moreTools": "Además: pintura de paredes, suelo nuevo, borrar objetos, reemplazar, estilo de referencia y tu propia receta.",
+  "featuresTitle": "Todo lo que hace un interiorista, en tu bolsillo",
+  "featuresText": "Analizamos los mejores ejemplos del mundo y añadimos lo que le faltaba a quien vive en Türkiye.",
+  "proBadge": "Para profesionales",
+  "proTitle": "También para arquitectos e interioristas",
+  "proText": "Muestra a tu cliente varias opciones de estilo en minutos desde la primera reunión y concreta la conversación con una lista de materiales y un presupuesto en TL.",
+  "howTitle": "Tu nueva casa en tres pasos",
+  "stylesTitle": "Encuentra tu estilo",
+  "stylesText": "Toca un estilo y el estudio se abrirá con él.",
+  "pricingTitle": "Planes flexibles",
+  "pricingText": "Empieza gratis; si necesitas más, pásate a PRO semanal, mensual o anual.",
+  "faqTitle": "Preguntas frecuentes",
+  "finalTitle": "La habitación de tus sueños está a una foto de distancia.",
+  "finalCta": "Diseña gratis",
+  "trust": [
+   "Sin registro",
+   "3 diseños gratis al día",
+   "Conforme a la KVKK"
+  ],
+  "proPoints": [
+   "Cuatro variantes de la misma foto (PRO)",
+   "Lista de materiales y presupuesto estimado en TL",
+   "Alta resolución sin marca de agua (PRO)",
+   "Próximamente: carpetas de proyecto y compartir con clientes"
+  ],
+  "faq": [
+   {
+    "q": "¿Están seguras mis fotos?",
+    "a": "Las fotos que subes se recodifican y se eliminan todos los datos EXIF, incluida la ubicación (GPS). Las imágenes solo se abren mediante enlaces firmados con caducidad y, si eliminas tu cuenta, se borran todos tus diseños."
+   },
+   {
+    "q": "¿Puedo usarlo sin registrarme?",
+    "a": "Sí. Puedes empezar ahora como invitado; para no perder tus diseños, solo tienes que crear tu cuenta con tu correo más adelante."
+   },
+   {
+    "q": "¿Qué tan precisos son los presupuestos estimados?",
+    "a": "Los precios son rangos estimados por la IA según el mercado de Turquía. Te recomendamos comprobar los precios en tienda antes de comprar."
+   },
+   {
+    "q": "¿Cambiarán las paredes y ventanas de mi habitación?",
+    "a": "No. Casalume conserva la geometría de la habitación, las ventanas y el ángulo de cámara, y solo cambia la decoración, los muebles y las superficies."
+   },
+   {
+    "q": "¿Cómo cancelo la suscripción PRO?",
+    "a": "Puedes cancelarla cuando quieras desde los ajustes de suscripción de App Store / Google Play en el móvil o desde tu página de cuenta en la web."
+   }
+  ]
+ },
+ "fr": {
+  "badge": "L'architecte d'intérieur IA de la Turquie",
+  "heroTitle": "Réinventez votre pièce en quelques secondes.",
+  "heroText": "Importez une photo, choisissez un style : Casalume remeuble votre pièce, repeint les murs et change le sol. Et en prime, il établit la liste d'achats et le budget en TL du design qui vous plaît.",
+  "ctaPrimary": "Commencer",
+  "ctaSecondary": "Comment ça marche ?",
+  "galleryTitle": "De vraies photos, de vrais résultats",
+  "galleryText": "À gauche la photo d'origine, à droite le design créé par Casalume. Faites glisser la poignée centrale.",
+  "toolsTitle": "De l'intérieur à l'extérieur, chaque espace",
+  "toolsText": "De la pièce vide à la terrasse du jardin : choisissez votre outil, Casalume s'occupe du reste.",
+  "moreTools": "Et aussi : peinture murale, nouveau sol, suppression d'objets, remplacement, style de référence et votre propre recette.",
+  "featuresTitle": "Tout ce que fait un architecte d'intérieur, dans votre poche",
+  "featuresText": "Nous avons étudié les meilleures applications au monde et ajouté ce qui manquait aux habitants de la Turquie.",
+  "proBadge": "Pour les professionnels",
+  "proTitle": "Aussi pour les architectes et architectes d'intérieur",
+  "proText": "Montrez à votre client plusieurs options de style en quelques minutes dès le premier rendez-vous, et concrétisez l'échange avec une liste de matériaux et un budget en TL.",
+  "howTitle": "Votre nouveau chez-vous en trois étapes",
+  "stylesTitle": "Trouvez le style qui vous ressemble",
+  "stylesText": "Touchez un style pour ouvrir le studio avec celui-ci.",
+  "pricingTitle": "Des formules flexibles",
+  "pricingText": "Commencez gratuitement ; pour aller plus loin, passez à PRO à la semaine, au mois ou à l'année.",
+  "faqTitle": "Questions fréquentes",
+  "finalTitle": "La pièce de vos rêves n'est qu'à une photo.",
+  "finalCta": "Créer gratuitement",
+  "trust": [
+   "Sans inscription",
+   "3 designs gratuits par jour",
+   "Conforme KVKK"
+  ],
+  "proPoints": [
+   "Quatre variantes à partir d'une même photo (PRO)",
+   "Liste de matériaux et estimation du budget en TL",
+   "Haute résolution sans filigrane (PRO)",
+   "Bientôt : dossiers de projet et partage avec le client"
+  ],
+  "faq": [
+   {
+    "q": "Mes photos sont-elles en sécurité ?",
+    "a": "Les photos importées sont réencodées et toutes les données EXIF, y compris la localisation (GPS), sont supprimées. Les images ne sont accessibles que via des liens signés à durée limitée, et la suppression de votre compte efface tous vos designs."
+   },
+   {
+    "q": "Puis-je l'utiliser sans m'inscrire ?",
+    "a": "Oui. Vous pouvez commencer tout de suite en tant qu'invité ; il vous suffira ensuite de créer un compte avec votre e-mail pour ne pas perdre vos designs."
+   },
+   {
+    "q": "Les estimations de budget sont-elles fiables ?",
+    "a": "Les prix sont des fourchettes estimées par l'IA pour le marché turc. Nous vous conseillons de vérifier les prix en magasin avant tout achat."
+   },
+   {
+    "q": "Les murs et les fenêtres de ma pièce vont-ils changer ?",
+    "a": "Non. Casalume conserve la géométrie de la pièce, les fenêtres et l'angle de vue, et ne modifie que la décoration, le mobilier et les surfaces."
+   },
+   {
+    "q": "Comment résilier mon abonnement PRO ?",
+    "a": "Vous pouvez résilier à tout moment depuis les réglages d'abonnement App Store / Google Play sur mobile, ou depuis la page de votre compte sur le web."
+   }
+  ]
+ },
+ "it": {
+  "badge": "L'interior designer con AI nato in Turchia",
+  "heroTitle": "Riprogetta la tua stanza in pochi secondi.",
+  "heroText": "Carica una foto e scegli uno stile: Casalume riarreda la stanza, ridipinge le pareti e cambia il pavimento. E in più trasforma il progetto che ti piace in una lista della spesa con il budget in lire turche.",
+  "ctaPrimary": "Inizia a progettare",
+  "ctaSecondary": "Come funziona?",
+  "galleryTitle": "Foto vere, risultati veri",
+  "galleryText": "A sinistra la foto originale, a destra il progetto creato da Casalume. Trascina la maniglia al centro.",
+  "toolsTitle": "Dentro e fuori, ogni spazio",
+  "toolsText": "Da una stanza vuota alla terrazza in giardino: scegli lo strumento, al resto pensa Casalume.",
+  "moreTools": "E inoltre: pittura pareti, nuovo pavimento, rimozione e sostituzione oggetti, stile di riferimento e la tua ricetta personale.",
+  "featuresTitle": "Tutto ciò che fa un interior designer, in tasca",
+  "featuresText": "Abbiamo studiato i migliori esempi al mondo e aggiunto ciò che mancava a chi vive in Turchia.",
+  "proBadge": "Per i professionisti",
+  "proTitle": "Anche per architetti e interior designer",
+  "proText": "Mostra al tuo cliente diverse opzioni di stile in pochi minuti già al primo incontro e rendi la conversazione concreta con lista materiali e budget in TL.",
+  "howTitle": "La tua nuova casa in tre passi",
+  "stylesTitle": "Trova lo stile giusto per te",
+  "stylesText": "Tocca uno stile e lo studio si aprirà con quello.",
+  "pricingTitle": "Piani flessibili",
+  "pricingText": "Inizia gratis; per avere di più passa a PRO settimanale, mensile o annuale.",
+  "faqTitle": "Domande frequenti",
+  "finalTitle": "La stanza dei tuoi sogni è a una foto di distanza.",
+  "finalCta": "Progetta gratis",
+  "trust": [
+   "Nessuna registrazione",
+   "3 progetti gratis al giorno",
+   "Conforme al KVKK"
+  ],
+  "proPoints": [
+   "Quattro varianti dalla stessa foto (PRO)",
+   "Lista materiali e stima del budget in TL",
+   "Alta risoluzione senza filigrana (PRO)",
+   "Presto: cartelle di progetto e condivisione con i clienti"
+  ],
+  "faq": [
+   {
+    "q": "Le mie foto sono al sicuro?",
+    "a": "Le foto che carichi vengono ricodificate e tutti i dati EXIF, compresa la posizione (GPS), vengono eliminati. Le immagini sono accessibili solo tramite link firmati a scadenza e, se elimini il tuo account, tutti i tuoi progetti vengono cancellati."
+   },
+   {
+    "q": "Posso usarla senza registrarmi?",
+    "a": "Sì. Puoi iniziare subito come ospite; per non perdere i tuoi progetti, ti basta creare un account con la tua e-mail in un secondo momento."
+   },
+   {
+    "q": "Quanto sono precise le stime del budget?",
+    "a": "I prezzi sono fasce indicative stimate dall'intelligenza artificiale per il mercato turco. Ti consigliamo di verificare i prezzi nei negozi prima di acquistare."
+   },
+   {
+    "q": "Le pareti e le finestre della mia stanza cambieranno?",
+    "a": "No. Casalume mantiene la geometria della stanza, le finestre e l'angolazione della foto, e cambia solo arredamento, mobili e superfici."
+   },
+   {
+    "q": "Come disdico l'abbonamento PRO?",
+    "a": "Puoi disdirlo quando vuoi: su mobile dalle impostazioni degli abbonamenti di App Store / Google Play, sul web dalla pagina del tuo account."
+   }
+  ]
+ },
+ "ru": {
+  "badge": "ИИ-дизайнер интерьеров из Турции",
+  "heroTitle": "Новый дизайн комнаты за секунды.",
+  "heroText": "Загрузите фото и выберите стиль — Casalume заново обставит комнату, перекрасит стены и сменит пол. А ещё составит список покупок и бюджет в TL для понравившегося дизайна.",
+  "ctaPrimary": "Начать дизайн",
+  "ctaSecondary": "Как это работает?",
+  "galleryTitle": "Реальные фото, реальные результаты",
+  "galleryText": "Слева — исходное фото, справа — дизайн от Casalume. Перетащите ползунок посередине.",
+  "toolsTitle": "Внутри и снаружи — любое пространство",
+  "toolsText": "От пустой комнаты до садовой террасы: выберите инструмент, остальное сделает Casalume.",
+  "moreTools": "А также: покраска стен, новый пол, удаление и замена предметов, стиль по образцу и ваш собственный рецепт.",
+  "featuresTitle": "Всё, что делает дизайнер интерьеров, — в вашем кармане",
+  "featuresText": "Мы изучили лучшие примеры в мире и добавили то, чего не хватало жителям Турции.",
+  "proBadge": "Для профессионалов",
+  "proTitle": "И для архитекторов и дизайнеров интерьера",
+  "proText": "Покажите клиенту несколько вариантов стиля за считаные минуты уже на первой встрече, а список материалов и бюджет в TL сделают разговор предметным.",
+  "howTitle": "Ваш новый дом в три шага",
+  "stylesTitle": "Найдите свой стиль",
+  "stylesText": "Нажмите на стиль — и студия откроется с ним.",
+  "pricingTitle": "Гибкие тарифы",
+  "pricingText": "Начните бесплатно, а когда понадобится больше — переходите на PRO на неделю, месяц или год.",
+  "faqTitle": "Частые вопросы",
+  "finalTitle": "Комната вашей мечты — всего в одном фото.",
+  "finalCta": "Создать дизайн бесплатно",
+  "trust": [
+   "Без регистрации",
+   "3 бесплатных дизайна в день",
+   "Соответствует KVKK"
+  ],
+  "proPoints": [
+   "Четыре варианта из одного фото (PRO)",
+   "Список материалов и оценка бюджета в TL",
+   "Высокое разрешение без водяного знака (PRO)",
+   "Скоро: папки проектов и отправка клиенту"
+  ],
+  "faq": [
+   {
+    "q": "Мои фото в безопасности?",
+    "a": "Загруженные фото перекодируются, а все данные EXIF, включая геолокацию (GPS), удаляются. Изображения открываются только по временным подписанным ссылкам, а при удалении аккаунта удаляются все ваши дизайны."
+   },
+   {
+    "q": "Можно пользоваться без регистрации?",
+    "a": "Да. Начните сразу как гость; чтобы не потерять дизайны, позже просто создайте аккаунт по e-mail."
+   },
+   {
+    "q": "Насколько точны оценки бюджета?",
+    "a": "Цены — это примерные диапазоны, рассчитанные ИИ для рынка Турции. Перед покупкой рекомендуем уточнить цены в магазинах."
+   },
+   {
+    "q": "Изменятся ли стены и окна моей комнаты?",
+    "a": "Нет. Casalume сохраняет геометрию комнаты, окна и ракурс и меняет только декор, мебель и поверхности."
+   },
+   {
+    "q": "Как отменить подписку PRO?",
+    "a": "В любой момент: на телефоне — в настройках подписок App Store / Google Play, в веб-версии — на странице аккаунта."
+   }
+  ]
+ },
+ "nl": {
+  "badge": "De AI-interieurarchitect van Turkije",
+  "heroTitle": "Ontwerp je kamer in een paar seconden opnieuw.",
+  "heroText": "Upload een foto en kies een stijl: Casalume richt je kamer opnieuw in, schildert je muren en vervangt je vloer. En je krijgt er meteen een boodschappenlijst en een budget in TL bij.",
+  "ctaPrimary": "Begin met ontwerpen",
+  "ctaSecondary": "Hoe werkt het?",
+  "galleryTitle": "Echte foto's, echte resultaten",
+  "galleryText": "Links de originele foto, rechts het ontwerp van Casalume. Sleep de schuifregelaar in het midden.",
+  "toolsTitle": "Binnen en buiten, elke ruimte",
+  "toolsText": "Van een lege kamer tot een tuinterras: kies je tool en laat Casalume de rest doen.",
+  "moreTools": "Verder: muurverf, nieuwe vloer, objecten wissen, vervangen, referentiestijl en je eigen recept.",
+  "featuresTitle": "Alles wat een interieurarchitect doet, op zak",
+  "featuresText": "We bekeken de beste voorbeelden wereldwijd en voegden toe wat mensen in Turkije misten.",
+  "proBadge": "Voor professionals",
+  "proTitle": "Ook voor architecten en interieurontwerpers",
+  "proText": "Laat je klant al bij het eerste gesprek binnen enkele minuten een paar stijlopties zien en maak het gesprek concreet met een materiaallijst en een budget in TL.",
+  "howTitle": "In drie stappen je nieuwe huis",
+  "stylesTitle": "Vind de stijl die bij je past",
+  "stylesText": "Tik op een stijl en de studio opent met die stijl.",
+  "pricingTitle": "Flexibele abonnementen",
+  "pricingText": "Begin gratis; stap over op PRO per week, maand of jaar als je meer wilt.",
+  "faqTitle": "Veelgestelde vragen",
+  "finalTitle": "Je droomkamer is maar één foto verwijderd.",
+  "finalCta": "Gratis ontwerpen",
+  "trust": [
+   "Geen registratie nodig",
+   "3 gratis ontwerpen per dag",
+   "KVKK-conform"
+  ],
+  "proPoints": [
+   "Vier varianten van één foto (PRO)",
+   "Materiaallijst en budgetschatting in TL",
+   "Hoge resolutie zonder watermerk (PRO)",
+   "Binnenkort: projectmappen en delen met klanten"
+  ],
+  "faq": [
+   {
+    "q": "Zijn mijn foto's veilig?",
+    "a": "Je geüploade foto's worden opnieuw gecodeerd en alle EXIF-gegevens, inclusief locatie (GPS), worden verwijderd. Afbeeldingen zijn alleen bereikbaar via tijdelijke, ondertekende links, en als je je account verwijdert, worden al je ontwerpen verwijderd."
+   },
+   {
+    "q": "Kan ik het gebruiken zonder account?",
+    "a": "Ja. Je kunt meteen als gast beginnen; maak later een account met je e-mailadres aan, zodat je je ontwerpen niet kwijtraakt."
+   },
+   {
+    "q": "Hoe nauwkeurig zijn de budgetschattingen?",
+    "a": "De prijzen zijn door AI geschatte bandbreedtes voor de Turkse markt. Controleer de winkelprijzen voordat je iets koopt."
+   },
+   {
+    "q": "Veranderen de muren en ramen van mijn kamer?",
+    "a": "Nee. Casalume behoudt de vorm van de kamer, de ramen en de camerahoek en verandert alleen de decoratie, meubels en oppervlakken."
+   },
+   {
+    "q": "Hoe zeg ik mijn PRO-abonnement op?",
+    "a": "Op je telefoon via de abonnementsinstellingen in de App Store / Google Play, op het web via je accountpagina – wanneer je maar wilt."
+   }
+  ]
+ },
+ "ja": {
+  "badge": "トルコ生まれのAIインテリアデザイナー",
+  "heroTitle": "お部屋を数秒でリデザイン。",
+  "heroText": "写真をアップロードしてスタイルを選ぶだけ。Casalumeが家具を入れ替え、壁を塗り替え、床を変えます。さらに、気に入ったデザインの買い物リストとTLでの予算も作成します。",
+  "ctaPrimary": "今すぐデザイン",
+  "ctaSecondary": "使い方",
+  "galleryTitle": "実際の写真、実際の仕上がり",
+  "galleryText": "左が元の写真、右がCasalumeが生成したデザインです。中央のハンドルをドラッグしてください。",
+  "toolsTitle": "室内から屋外まで、あらゆる空間に",
+  "toolsText": "空き部屋からお庭のテラスまで。ツールを選べば、あとはCasalumeにお任せください。",
+  "moreTools": "その他：壁の塗装、床の変更、オブジェクト削除、置き換え、参考スタイル、オリジナルレシピ。",
+  "featuresTitle": "インテリアデザイナーの仕事を、すべてポケットに",
+  "featuresText": "世界中の優れた事例を研究し、トルコで暮らす人に足りなかった機能を加えました。",
+  "proBadge": "プロフェッショナル向け",
+  "proTitle": "建築家・インテリアデザイナーの方にも",
+  "proText": "初回の打ち合わせで、いくつかのスタイル案を数分でお客様にご提示できます。資材リストとTL予算で、話をより具体的に進められます。",
+  "howTitle": "3ステップで新しいお住まいへ",
+  "stylesTitle": "ぴったりのスタイルを見つけましょう",
+  "stylesText": "スタイルをタップすると、そのスタイルでスタジオが開きます。",
+  "pricingTitle": "柔軟なプラン",
+  "pricingText": "まずは無料で。もっと使いたいときは週額・月額・年額のPROへ。",
+  "faqTitle": "よくある質問",
+  "finalTitle": "理想のお部屋まで、写真1枚。",
+  "finalCta": "無料でデザインする",
+  "trust": [
+   "登録不要",
+   "1日3回まで無料",
+   "KVKK準拠"
+  ],
+  "proPoints": [
+   "1枚の写真から4つのバリエーション（PRO）",
+   "資材リストとTL予算の見積もり",
+   "透かしなしの高解像度（PRO）",
+   "近日公開：プロジェクトフォルダとお客様への共有"
+  ],
+  "faq": [
+   {
+    "q": "写真は安全に扱われますか？",
+    "a": "アップロードされた写真は再エンコードされ、位置情報（GPS）を含むすべてのEXIF情報が削除されます。画像は有効期限付きの署名済みリンクからのみ閲覧でき、アカウントを削除するとすべてのデザインも削除されます。"
+   },
+   {
+    "q": "登録せずに使えますか？",
+    "a": "はい。ゲストとしてすぐに始められます。デザインを失わないよう、後からメールアドレスでアカウントを作成するだけで大丈夫です。"
+   },
+   {
+    "q": "予算の見積もりはどのくらい正確ですか？",
+    "a": "価格はトルコ市場をもとにAIが算出した概算の範囲です。ご購入前に店舗の価格をご確認ください。"
+   },
+   {
+    "q": "部屋の壁や窓は変わりますか？",
+    "a": "いいえ。Casalumeはお部屋の形状、窓、カメラアングルをそのまま保ち、インテリア、家具、表面だけを変更します。"
+   },
+   {
+    "q": "PROはどうやって解約できますか？",
+    "a": "モバイルではApp Store / Google Playのサブスクリプション設定から、Webではアカウントページからいつでも解約できます。"
+   }
+  ]
+ },
+ "ko": {
+  "badge": "튀르키예의 AI 인테리어 디자이너",
+  "heroTitle": "몇 초 만에 방을 새롭게 디자인해 보세요.",
+  "heroText": "사진을 올리고 스타일을 고르세요. Casalume가 가구를 새로 배치하고, 벽을 칠하고, 바닥을 바꿔 드려요. 마음에 드는 디자인의 쇼핑 목록과 TL 예산까지 뽑아 드려요.",
+  "ctaPrimary": "지금 디자인하기",
+  "ctaSecondary": "이용 방법",
+  "galleryTitle": "실제 사진, 실제 결과",
+  "galleryText": "왼쪽은 원본 사진, 오른쪽은 Casalume가 만든 디자인이에요. 가운데 핸들을 드래그해 보세요.",
+  "toolsTitle": "실내부터 실외까지, 모든 공간",
+  "toolsText": "빈 방부터 정원 테라스까지, 도구만 고르면 나머지는 Casalume가 해 드려요.",
+  "moreTools": "그 밖에도: 벽 페인트, 바닥 변경, 사물 지우기, 바꾸기, 참고 스타일, 나만의 레시피.",
+  "featuresTitle": "인테리어 디자이너의 모든 것을 손안에",
+  "featuresText": "전 세계 최고의 사례를 살펴보고, 튀르키예에 사는 분들에게 부족했던 기능을 더했어요.",
+  "proBadge": "전문가용",
+  "proTitle": "건축가와 인테리어 디자이너에게도",
+  "proText": "첫 미팅에서 몇 분 만에 고객에게 여러 스타일 안을 보여 주고, 자재 목록과 TL 예산으로 대화를 구체화하세요.",
+  "howTitle": "세 단계로 만나는 새집",
+  "stylesTitle": "나에게 맞는 스타일 찾기",
+  "stylesText": "스타일을 탭하면 해당 스타일로 스튜디오가 열려요.",
+  "pricingTitle": "유연한 요금제",
+  "pricingText": "무료로 시작하고, 더 필요하면 주간·월간·연간 PRO로 업그레이드하세요.",
+  "faqTitle": "자주 묻는 질문",
+  "finalTitle": "꿈꾸던 방, 사진 한 장이면 충분해요.",
+  "finalCta": "무료로 디자인하기",
+  "trust": [
+   "가입 필요 없음",
+   "하루 3회 무료 디자인",
+   "KVKK 준수"
+  ],
+  "proPoints": [
+   "사진 한 장으로 4가지 버전 (PRO)",
+   "자재 목록 및 TL 예산 견적",
+   "워터마크 없는 고해상도 (PRO)",
+   "출시 예정: 프로젝트 폴더 및 고객 공유"
+  ],
+  "faq": [
+   {
+    "q": "제 사진은 안전한가요?",
+    "a": "업로드한 사진은 다시 인코딩되며 위치(GPS)를 포함한 모든 EXIF 정보가 삭제돼요. 이미지는 유효 기간이 있는 서명된 링크로만 열리고, 계정을 삭제하면 모든 디자인도 삭제돼요."
+   },
+   {
+    "q": "가입하지 않고도 사용할 수 있나요?",
+    "a": "네. 게스트로 바로 시작할 수 있어요. 디자인을 잃지 않으려면 나중에 이메일로 계정을 만들기만 하면 돼요."
+   },
+   {
+    "q": "예산 견적은 얼마나 정확한가요?",
+    "a": "가격은 AI가 튀르키예 시장을 기준으로 추정한 범위예요. 구매 전에 매장 가격을 꼭 확인해 주세요."
+   },
+   {
+    "q": "방의 벽이나 창문도 바뀌나요?",
+    "a": "아니요. Casalume는 방의 구조, 창문, 카메라 각도는 그대로 두고 장식, 가구, 표면만 바꿔요."
+   },
+   {
+    "q": "PRO 구독은 어떻게 해지하나요?",
+    "a": "모바일에서는 App Store / Google Play 구독 설정에서, 웹에서는 계정 페이지에서 언제든지 해지할 수 있어요."
+   }
+  ]
+ },
+ "zh": {
+  "badge": "土耳其的 AI 室内设计师",
+  "heroTitle": "几秒钟，重新设计你的房间。",
+  "heroText": "上传一张照片，选择风格，Casalume 就能为房间重新布置家具、粉刷墙面、更换地板，还会为你喜欢的设计生成购物清单和 TL 预算。",
+  "ctaPrimary": "立即设计",
+  "ctaSecondary": "如何使用？",
+  "galleryTitle": "真实照片，真实效果",
+  "galleryText": "左边是原始照片，右边是 Casalume 生成的设计。拖动中间的滑块即可对比。",
+  "toolsTitle": "由内到外，处处皆可",
+  "toolsText": "从空房间到花园露台：选好工具，剩下的交给 Casalume。",
+  "moreTools": "还有：墙面刷漆、更换地板、物体移除、物体替换、参考风格以及自定义方案。",
+  "featuresTitle": "室内设计师能做的一切，尽在掌中",
+  "featuresText": "我们研究了全球最优秀的案例，并补上了土耳其用户所缺少的功能。",
+  "proBadge": "专业人士之选",
+  "proTitle": "同样适合建筑师和室内设计师",
+  "proText": "初次见面，几分钟内就能向客户展示多种风格方案；配合材料清单和 TL 预算，让沟通更具体。",
+  "howTitle": "三步打造新家",
+  "stylesTitle": "找到适合你的风格",
+  "stylesText": "点选一种风格，即可用它打开工作室。",
+  "pricingTitle": "灵活的方案",
+  "pricingText": "免费开始；需要更多功能时，可按周、按月或按年升级 PRO。",
+  "faqTitle": "常见问题",
+  "finalTitle": "梦想中的房间，只差一张照片。",
+  "finalCta": "免费设计",
+  "trust": [
+   "无需注册",
+   "每天 3 次免费设计",
+   "符合 KVKK"
+  ],
+  "proPoints": [
+   "同一张照片生成四个方案（PRO）",
+   "材料清单及 TL 预算估算",
+   "无水印高分辨率（PRO）",
+   "即将推出：项目文件夹和客户分享"
+  ],
+  "faq": [
+   {
+    "q": "我的照片安全吗？",
+    "a": "你上传的照片会被重新编码，并清除包括位置（GPS）在内的所有 EXIF 信息。图片只能通过有时效的签名链接访问；删除账号后，你的所有设计也会一并删除。"
+   },
+   {
+    "q": "不注册也能用吗？",
+    "a": "可以。你可以以访客身份立即开始；之后用邮箱创建账号，就不会丢失你的设计。"
+   },
+   {
+    "q": "预算估算有多准确？",
+    "a": "价格是 AI 根据土耳其市场估算的价格区间。建议购买前核实商店价格。"
+   },
+   {
+    "q": "房间的墙壁和窗户会改变吗？",
+    "a": "不会。Casalume 会保留房间结构、窗户和拍摄角度，只改变装饰、家具和表面材质。"
+   },
+   {
+    "q": "如何取消 PRO 订阅？",
+    "a": "在手机上可通过 App Store / Google Play 的订阅设置取消，在网页端可在账号页面随时取消。"
+   }
+  ]
+ }
+}
