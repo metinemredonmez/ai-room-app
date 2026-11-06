@@ -45,6 +45,17 @@ bash $S ai GEMINI_API_KEY          # ya da REPLICATE_API_TOKEN / FAL_KEY
 bash $S ai ANTHROPIC_API_KEY
 ```
 
+Yönetici TOTP sırlarının şifreleme anahtarı (API.md §7.39). Değer sunucuda üretilir, ekrana basılmaz:
+
+```bash
+bash $S backend TOTP_ENC_KEY --generate          # bir kez; var olanın üstüne yazmaz
+sudo -iu casalume pm2 reload casalume-api --update-env
+bash $S backend TOTP_ENC_KEY --rotate            # anahtarı değiştirmek için (eskisi _PREVIOUS olur)
+```
+
+Anahtar yalnız sunucudaki `.env`'de durur. Sunucu kaybolursa yöneticiler doğrulayıcıyı yeniden kaydeder (MFA
+sıfırlama); panel girişi kod istemediği için sahibi her durumda girebilir.
+
 ## 3. Derleme (casalume)
 
 uv bir kez kurulur (root): `curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh`.

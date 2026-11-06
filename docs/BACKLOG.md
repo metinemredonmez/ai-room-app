@@ -25,7 +25,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
 3. Hesap ve güvenlik
    - [x] Aktif oturumlar + giriş geçmişi (API.md §7.37): web Hesabım → Oturumlar; kapatılan oturum anında düşer (SES-04); admin kullanıcı ayrıntısında görür ve kapatır.
    - [x] Yaygın parola reddi + admin parola değiştirme (API.md §7.38).
-   - [ ] TOTP şifreli, App Review hesabı.
+   - [x] TOTP sırları şifreli (API.md §7.39): AES-256-GCM, ayrı anahtar, döndürme; sahibi anahtarı `set-secret.sh --generate` ile girer.
+   - [ ] App Review hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
@@ -238,7 +239,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Kredi hareketlerim (API.md §7.24): web Hesabım'da 11 dilde, sayfalı; yönetici gerekçesi gizli (YediOda #57). Mobil (sen): Profil → Kredi hareketlerim
 - [x] Aktif oturumlar + giriş geçmişi, tek tek kapatma; admin'den de (YediOda #5–6, MAEYJA) — API.md §7.37
 - [x] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) — API.md §7.38
-- [ ] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) · kolay
+- [x] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) — API.md §7.39
 - [x] Admin hesabında parola değiştirme (Palemi panel) — API.md §7.38
 - [ ] Mağaza inceleme (App Review) hesabı: süreli, denetimli (Palemi) · kolay
 - [ ] Kurucu uyarıları: satın alma bildirimi, disk/iş hatası/bütçe eşiği (YediOda #71, #90, #92) · orta

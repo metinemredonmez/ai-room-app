@@ -46,6 +46,7 @@ import { AdminPriceScheduleController } from './prices/price-schedule.controller
 import { PriceScheduleService } from './prices/price-schedule.service.js';
 import { AdminSessionsController, SessionsController } from './auth/sessions.controller.js';
 import { SessionsService } from './auth/sessions.service.js';
+import { TotpSecretsService } from './admin/totp-secrets.service.js';
 import { AdminPromoController, PromoController } from './promo/promo.controller.js';
 import { PromoService } from './promo/promo.service.js';
 import { AdminReferralController, ReferralController } from './referral/referral.controller.js';
@@ -121,6 +122,7 @@ import { UsersService } from './users/users.service.js';
     LoyaltyService,
     PriceScheduleService,
     SessionsService,
+    TotpSecretsService,
     PromoService,
     ReferralService,
     GiftService,

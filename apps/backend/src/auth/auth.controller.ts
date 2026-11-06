@@ -16,6 +16,7 @@ import { hashPassword, newTotpSecret, otpauthUri, sha256, verifyPassword, verify
 import { EmailTokensService } from './email-tokens.service.js';
 import { OAuthService } from './oauth.service.js';
 import { WelcomeService, welcomeEmailKey } from '../users/welcome.service.js';
+import { TotpSecretsService } from '../admin/totp-secrets.service.js';
 import { clientInfo } from './client-info.js';
 import { assertPassword, MIN_ADMIN } from './password-policy.js';
 import { SessionsService } from './sessions.service.js';
@@ -280,6 +281,7 @@ export class AdminAuthController {
     private audit: AuditService,
     private security: AdminSecurityService,
     private sessions: SessionsService,
+    private totp: TotpSecretsService,
   ) {}
 
   /**
@@ -342,7 +344,8 @@ export class AdminAuthController {
     const input = parse(AdminEnrollSchema, body);
     const user = await this.enrollable(input.email, input.password, req);
     const secret = newTotpSecret();
-    await this.prisma.user.update({ where: { id: user.id }, data: { totpPendingSecret: secret } });
+    // API.md §7.39: stored sealed; the plain secret is shown once, to the person adding it to their authenticator.
+    await this.prisma.user.update({ where: { id: user.id }, data: { totpPendingSecret: this.totp.seal(secret, user.id) } });
     await this.audit.record(user.id, 'admin.mfa_enroll_started', 'user', user.id, {}, req.clientIp);
     return { secret, otpauth: otpauthUri(secret, user.email!) };
   }
@@ -354,7 +357,8 @@ export class AdminAuthController {
     const input = parse(AdminConfirmSchema, body);
     const user = await this.enrollable(input.email, input.password, req);
     const pending = user.totpPendingSecret;
-    const step = pending ? verifyTotp(pending, input.otp) : null;
+    const pendingPlain = pending ? this.totp.open(pending, user.id) : null;
+    const step = pendingPlain ? verifyTotp(pendingPlain, input.otp) : null;
     const done = step === null ? { count: 0 } : await this.prisma.user.updateMany({
       where: { id: user.id, totpPendingSecret: pending, totpSecret: null },
       data: { totpSecret: pending, totpPendingSecret: null, totpLastStep: BigInt(step), mfaEnrollBefore: null, lastSeenAt: new Date() },

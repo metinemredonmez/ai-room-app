@@ -8,6 +8,7 @@ import { log } from '../common/log.js';
 import { MailerService, renderActionMail } from '../mail/mailer.service.js';
 import { AuditService } from './audit.service.js';
 import { isAdminRole } from './roles.js';
+import { TotpSecretsService } from './totp-secrets.service.js';
 
 /** A promoted or MFA-reset admin must enroll a new authenticator within this window (AUT-04). */
 export const ENROLL_WINDOW_MS = 72 * 60 * 60 * 1000;
@@ -32,6 +33,7 @@ export class AdminSecurityService {
     private audit: AuditService,
     private mailer: MailerService,
     @Inject(CONFIG) private cfg: Config,
+    private totp: TotpSecretsService,
   ) {}
 
   private hash(normalized: string) {
@@ -65,7 +67,10 @@ export class AdminSecurityService {
 
   /** Verifies a TOTP code and claims its time step, so the same code can never be used twice. */
   async claimTotp(user: Pick<User, 'id' | 'totpSecret' | 'totpLastStep'>, otp: string): Promise<boolean> {
-    const step = user.totpSecret ? verifyTotp(user.totpSecret, otp) : null;
+    // API.md §7.39: the stored secret may be sealed; one that cannot be opened fails closed.
+    const secret = user.totpSecret ? this.totp.open(user.totpSecret, user.id) : null;
+    if (user.totpSecret && secret === null) log.error('totp_unreadable', { userId: user.id });
+    const step = secret ? verifyTotp(secret, otp) : null;
     if (step === null) return false;
     const claimed = await this.prisma.user.updateMany({
       where: { id: user.id, totpSecret: user.totpSecret, OR: [{ totpLastStep: null }, { totpLastStep: { lt: BigInt(step) } }] },

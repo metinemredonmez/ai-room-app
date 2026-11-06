@@ -66,6 +66,9 @@ const Env = z.object({
   APPLE_PRIVATE_KEY: z.string().min(100).optional(),
   // KEY-01: AES-256-GCM key (base64, 32 bytes) for provider tokens stored at rest.
   FIELD_ENC_KEY: z.string().optional().refine((v) => v === undefined || Buffer.from(v, 'base64').length === 32, 'FIELD_ENC_KEY must be 32 bytes, base64'),
+  // API.md §7.39: admin TOTP secrets at rest (own key, KEY-01); the previous key only decrypts during a rotation (KEY-03).
+  TOTP_ENC_KEY: z.string().optional().refine((v) => v === undefined || Buffer.from(v, 'base64').length === 32, 'TOTP_ENC_KEY must be 32 bytes (base64)'),
+  TOTP_ENC_KEY_PREVIOUS: z.string().optional().refine((v) => v === undefined || Buffer.from(v, 'base64').length === 32, 'TOTP_ENC_KEY_PREVIOUS must be 32 bytes (base64)'),
   // Run BullMQ workers in this process (set false on API-only replicas when workers run separately).
   WORKER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   // Swagger UI at /docs — on by default only outside production.
@@ -103,6 +106,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const corsOrigins = cfg.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean);
   const appleKey = [cfg.APPLE_TEAM_ID, cfg.APPLE_KEY_ID, cfg.APPLE_PRIVATE_KEY].filter(Boolean).length;
   if (appleKey > 0 && appleKey < 3) throw new Error('Invalid configuration — APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY go together');
+  if (cfg.TOTP_ENC_KEY_PREVIOUS && !cfg.TOTP_ENC_KEY) throw new Error('Invalid configuration — TOTP_ENC_KEY_PREVIOUS needs TOTP_ENC_KEY (rotation)');
   if (cfg.APPLE_PRIVATE_KEY && !cfg.FIELD_ENC_KEY) throw new Error('Invalid configuration — FIELD_ENC_KEY is required to store Apple refresh tokens');
   // AUT-01: admin MFA can be switched off only on a developer machine, never on a shared or public deployment.
   if (cfg.ADMIN_DEV_SKIP_MFA && cfg.NODE_ENV !== 'development') throw new Error('Invalid configuration — ADMIN_DEV_SKIP_MFA is only allowed with NODE_ENV=development');
@@ -120,7 +124,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (cfg.REVENUECAT_API_KEY && !cfg.REVENUECAT_WEBHOOK_SECRET) problems.push('REVENUECAT_WEBHOOK_SECRET (HMAC signing) is required with RevenueCat');
     // Account deletion must revoke Apple tokens (App Store 5.1.1(v)), which needs the Apple key.
     if (cfg.APPLE_CLIENT_IDS.trim() && !cfg.APPLE_PRIVATE_KEY) problems.push('APPLE_TEAM_ID / APPLE_KEY_ID / APPLE_PRIVATE_KEY are required with Sign in with Apple');
-    const secrets = [cfg.JWT_SECRET, cfg.IMAGE_URL_SECRET, cfg.DEVICE_PEPPER, cfg.AI_INTERNAL_TOKEN, ...(cfg.FIELD_ENC_KEY ? [cfg.FIELD_ENC_KEY] : [])];
+    const secrets = [cfg.JWT_SECRET, cfg.IMAGE_URL_SECRET, cfg.DEVICE_PEPPER, cfg.AI_INTERNAL_TOKEN, ...[cfg.FIELD_ENC_KEY, cfg.TOTP_ENC_KEY, cfg.TOTP_ENC_KEY_PREVIOUS].filter((k): k is string => !!k)];
     if (new Set(secrets).size < secrets.length) {
       problems.push('each secret must be distinct');
     }

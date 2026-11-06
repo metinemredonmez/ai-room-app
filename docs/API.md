@@ -1807,3 +1807,22 @@ Parolayı değiştir**.
 - Yeni parola aynıysa 400 `same_password`.
 - Başarılı değişiklikten sonra bütün oturumlar kapanır (SES-04) ve panel yeniden girişe yönlendirir. E-posta
   bildirimi gider; denetim kaydında `admin.password_changed` görünür (başarısızsa `admin.password_change_failed`).
+
+### 7.39 Yönetici TOTP sırları şifreli (KEY-04) — backend
+Yöneticilerin doğrulayıcı sırları (`totpSecret`, kayıt sırasındaki `totpPendingSecret`) veritabanında şifreli durur
+(YediOda #12).
+- **Şifreleme:** AES-256-GCM; her değerin kendi rastgele IV'si var. Sır kullanıcı kimliğine bağlıdır (AAD), başka bir
+  hesabın satırına kopyalanırsa açılmaz. Saklanan biçim `enc:v1.<iv>.<tag>.<şifreli>`.
+- **Anahtar:** `TOTP_ENC_KEY` (32 bayt, base64), yalnız bu iş için kullanılır (KEY-01). Değer sunucuda üretilir ve hiç
+  ekrana basılmaz:
+  `set-secret.sh backend TOTP_ENC_KEY --generate`.
+- **Geçiş:** anahtar yokken sırlar eskisi gibi düz kalır; üretimde açılışta uyarı loglanır (`totp_key_missing`).
+  Anahtar girilip API yeniden başlayınca düz sırlar bir kez şifrelenir (`totp_secrets_sealed`); tekrar çalıştırmak
+  zararsızdır. Yeni kayıtlar baştan şifreli yazılır.
+- **Anahtar değiştirme (KEY-03):** `set-secret.sh backend TOTP_ENC_KEY --rotate` eskisini `TOTP_ENC_KEY_PREVIOUS`'a
+  taşır ve yenisini üretir. API yeniden başlayınca her sır yeni anahtarla yeniden şifrelenir; sonra `_PREVIOUS`
+  satırı `.env`'den silinebilir. `--generate` var olan bir anahtarın üstüne yazmaz.
+- **Kapalı kalma:** açılamayan bir sır (anahtar kayıp ya da yanlış) TOTP doğrulamasını reddeder ve `totp_unreadable`
+  loglanır.
+- **Kurtarma:** SUPER_ADMIN'in MFA sıfırlaması (yeniden kayıt). Panel girişi (ADMIN_PANEL_KEY) kod istemediği için
+  sahibi her durumda panele girebilir.
