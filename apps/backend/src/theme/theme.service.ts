@@ -3,7 +3,7 @@ import { AppError } from '../common/errors.js';
 import { PrismaService } from '../common/infra.js';
 import { log } from '../common/log.js';
 import { Prisma } from '../generated/prisma/client.js';
-import { contrastReport, parseTheme, publicTheme, themeDiff, type Theme, BUILTIN_THEME } from './theme.rules.js';
+import { contrastReport, parseTheme, publicTheme, themeDiff, toStored, type Theme, BUILTIN_THEME } from './theme.rules.js';
 
 // Colour themes (API.md §7.34). One Setting row, kept in memory and refreshed every 15 s like the other admin
 // settings; saves run under an advisory lock with the version the editor loaded (BUS-02).
@@ -67,7 +67,7 @@ export class ThemeService implements OnModuleInit, OnModuleDestroy {
         throw new AppError(409, 'version_conflict', 'Ayar bu arada değişti; sayfayı yenileyip yeniden dene.');
       }
       const prev = parseTheme(row?.value).theme;
-      const value = next as unknown as Prisma.InputJsonValue;
+      const value = toStored(next) as unknown as Prisma.InputJsonValue;
       await tx.setting.upsert({ where: { key: KEY }, create: { key: KEY, value, updatedBy: actorId }, update: { value, updatedBy: actorId } });
       return themeDiff(prev, next);
     });

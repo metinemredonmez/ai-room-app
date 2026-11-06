@@ -17,7 +17,7 @@ export function ThemeOptionsProvider({ options, children }: { options: ThemeOpti
 
 const safe = (c: string) => (/^#[0-9a-f]{6}$/.test(c) ? c : "transparent");
 
-/** Colour-theme menu for the header; the choice is remembered in this browser. */
+/** Colour-theme menu for the header (two columns: there are dozens of themes); the choice is remembered in this browser. */
 export function PalettePicker({ className = "" }: { className?: string }) {
   const { locale } = useApp();
   const options = useContext(ThemeOptionsContext);
@@ -58,7 +58,7 @@ export function PalettePicker({ className = "" }: { className?: string }) {
         <div
           role="radiogroup"
           aria-label={label}
-          className="absolute right-0 top-11 z-50 max-h-[70vh] w-60 overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-card"
+          className="absolute right-0 top-11 z-50 grid max-h-[70vh] w-[min(27rem,calc(100vw-2rem))] grid-cols-2 gap-0.5 overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-card"
         >
           {options.palettes.map((p) => (
             <button
@@ -70,9 +70,9 @@ export function PalettePicker({ className = "" }: { className?: string }) {
                 setPalette(p.id, options.defaultId);
                 setOpen(false);
               }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm hover:bg-surface-2"
+              className="flex w-full min-w-0 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm hover:bg-surface-2"
             >
-              <span className="flex h-4 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10" aria-hidden>
+              <span className="flex h-4 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10" aria-hidden>
                 {p.tones.map((t, i) => (
                   <span key={`${t}-${i}`} className="flex-1" style={{ background: safe(t) }} />
                 ))}

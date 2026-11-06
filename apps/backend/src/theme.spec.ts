@@ -13,7 +13,7 @@ describe('theme rules', () => {
   });
 
   it('every built-in palette passes the blocking checks', () => {
-    expect(BUILTIN_THEME.palettes).toHaveLength(12);
+    expect(BUILTIN_THEME.palettes).toHaveLength(36);
     for (const p of BUILTIN_THEME.palettes) expect({ id: p.id, blocking: contrastReport(p.tokens).blocking }).toEqual({ id: p.id, blocking: [] });
     expect(ThemeSchema.safeParse(BUILTIN_THEME).success).toBe(true);
   });
@@ -58,6 +58,16 @@ describe('theme rules', () => {
     const t = clone(BUILTIN_THEME);
     t.palettes[4].tokens.primary = '#f0f0f0';
     expect(parseTheme(t)).toEqual({ theme: BUILTIN_THEME, ok: false });
+  });
+
+  it('a saved set gets built-ins added later, but a built-in it deleted stays deleted', () => {
+    const saved = { defaultId: 'kil', palettes: BUILTIN_THEME.palettes.filter((p) => !['ocean-ink', 'graphite', 'erik'].includes(p.id)), seen: BUILTIN_THEME.palettes.map((p) => p.id).filter((id) => !['ocean-ink', 'graphite'].includes(id)) };
+    const ids = parseTheme(saved).theme.palettes.map((p) => p.id);
+    expect(ids).toContain('ocean-ink'); // new since that save
+    expect(ids).toContain('graphite');
+    expect(ids).not.toContain('erik'); // deleted on purpose
+    // A set saved before `seen` existed gets every built-in it lacks.
+    expect(parseTheme({ defaultId: 'kil', palettes: [BUILTIN_THEME.palettes[0]] }).theme.palettes).toHaveLength(36);
   });
 
   it('clients get enabled palettes only, default first; the audit gets a readable diff', () => {

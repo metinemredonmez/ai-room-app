@@ -37,7 +37,7 @@ export function cleanTheme(raw: unknown): ThemeData | null {
   const r = raw as { defaultId?: unknown; palettes?: unknown };
   if (typeof r.defaultId !== "string" || !Array.isArray(r.palettes)) return null;
   const palettes: ThemePalette[] = [];
-  for (const p of r.palettes.slice(0, 24) as Array<Record<string, unknown>>) {
+  for (const p of r.palettes.slice(0, 48) as Array<Record<string, unknown>>) {
     const id = typeof p?.id === "string" && PALETTE_ID_RE.test(p.id) ? p.id : null;
     const name = p?.name as { tr?: unknown; en?: unknown } | undefined;
     const tr = str(name?.tr, 30);

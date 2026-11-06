@@ -16,7 +16,7 @@ export type Tokens = Record<TokenKey, string>;
 
 export const HEX = /^#[0-9a-f]{6}$/;
 export const PALETTE_ID = /^[a-z][a-z0-9-]{1,23}$/;
-export const MAX_PALETTES = 24;
+export const MAX_PALETTES = 48;
 
 const Hex = z.string().trim().toLowerCase().regex(HEX);
 export const TonesSchema = z.array(Hex).length(6);
@@ -34,7 +34,12 @@ export const PaletteSchema = z
 export type Palette = z.infer<typeof PaletteSchema>;
 
 export const ThemeSchema = z
-  .object({ defaultId: z.string().regex(PALETTE_ID), palettes: z.array(PaletteSchema).min(1).max(MAX_PALETTES) })
+  .object({
+    defaultId: z.string().regex(PALETTE_ID),
+    palettes: z.array(PaletteSchema).min(1).max(MAX_PALETTES),
+    /** Built-in ids this saved set already knew: a built-in added later is offered once, a deleted one stays deleted. */
+    seen: z.array(z.string().regex(PALETTE_ID)).max(100).optional(),
+  })
   .strict()
   .superRefine((v, ctx) => {
     const ids = v.palettes.map((p) => p.id);
@@ -136,7 +141,11 @@ const fromTones = (id: string, tr: string, en: string, tones: string[]): Palette
   return { id, name: { tr, en }, tones: t, tokens: deriveTokens(t), enabled: true };
 };
 
-/** The default theme set: the four original themes (Kil is the brand default) and eight six-tone palettes. */
+/**
+ * The default theme set: the four original themes (Kil is the brand default), the eight reference palettes and the
+ * owner's palette library (~/Desktop/renk-paletlerim/palet-kutuphanesi, 6 Nov 2026: 24 palettes built with the same
+ * OKLCH formula). Ids of palettes already shipped never change, so a visitor's saved choice keeps working.
+ */
 export const BUILTIN_THEME: Theme = {
   defaultId: 'kil',
   palettes: [
@@ -145,14 +154,39 @@ export const BUILTIN_THEME: Theme = {
     handTuned('pirinc', 'Pirinç', 'Brass', { primary: '#8a6a2f', primaryStrong: '#725724', primarySoft: '#f8f4eb', accent: '#c8a46a', accentSoft: '#f2e8d4', bg: '#f7f4ee', surface: '#ffffff', surface2: '#eee8db', text: '#161513', muted: '#6b655b', border: '#e6dfd1' }),
     handTuned('murekkep', 'Mürekkep', 'Ink', { primary: '#24406e', primaryStrong: '#1a3157', primarySoft: '#e6edf7', accent: '#e08a3c', accentSoft: '#fbeadb', bg: '#f4f6f9', surface: '#ffffff', surface2: '#e8edf3', text: '#141a26', muted: '#5f6878', border: '#dde3ec' }),
     handTuned('erik', 'Erik', 'Plum', { primary: '#7a3e63', primaryStrong: '#63304f', primarySoft: '#f5e9ef', accent: '#c27c8a', accentSoft: '#f6e6ea', bg: '#f8f3f4', surface: '#ffffff', surface2: '#efe5e8', text: '#22171d', muted: '#6c5f66', border: '#eadde2' }),
-    fromTones('kahve', 'Kahve', 'Coffee', ['#211713', '#493126', '#78533B', '#B18A62', '#E0C58E', '#F6EEDB']),
-    fromTones('tarcin', 'Tarçın', 'Cinnamon', ['#211713', '#493027', '#76503B', '#A87557', '#D0A98B', '#F0DFCE']),
-    fromTones('gul-kurusu', 'Gül Kurusu', 'Dusty Rose', ['#3E3239', '#6B5560', '#9E8189', '#C7A9A3', '#E8D2C4', '#F7EFE7']),
-    fromTones('visne', 'Vişne', 'Cherry', ['#1D1015', '#421B29', '#702B40', '#A64C61', '#D28B96', '#F1DDE0']),
-    fromTones('lavanta', 'Lavanta', 'Lavender', ['#17121D', '#302538', '#51405F', '#796487', '#B09BB8', '#E8DDEB']),
-    fromTones('orman', 'Orman', 'Forest', ['#051F20', '#0B2B26', '#163832', '#235347', '#8EB69B', '#DAF1DE']),
-    fromTones('petrol', 'Petrol', 'Teal', ['#071C27', '#123747', '#245568', '#477C8B', '#91B3B9', '#DCE9E8']),
-    fromTones('arduvaz', 'Arduvaz', 'Slate', ['#06141B', '#11212D', '#253745', '#4A5C6A', '#9BA8AB', '#CCD0CF']),
+    fromTones('kahve', 'Karamel Krem', 'Toffee Cream', ['#211713', '#493126', '#78533B', '#B18A62', '#E0C58E', '#F6EEDB']),
+    fromTones('tarcin', 'Kakao Latte', 'Cocoa Latte', ['#211713', '#493027', '#76503B', '#A87557', '#D0A98B', '#F0DFCE']),
+    fromTones('gul-kurusu', 'Leylak Alacakaranlık', 'Mauve Dusk', ['#3E3239', '#6B5560', '#9E8189', '#C7A9A3', '#E8D2C4', '#F7EFE7']),
+    fromTones('visne', 'Kara Kiraz', 'Cherry Noir', ['#1D1015', '#421B29', '#702B40', '#A64C61', '#D28B96', '#F1DDE0']),
+    fromTones('lavanta', 'Mürdüm Kadife', 'Plum Velvet', ['#17121D', '#302538', '#51405F', '#796487', '#B09BB8', '#E8DDEB']),
+    fromTones('orman', 'Orman Sisi', 'Forest Mist', ['#051F20', '#0B2B26', '#163832', '#235347', '#8EB69B', '#DAF1DE']),
+    fromTones('petrol', 'Derin Petrol', 'Deep Teal', ['#071C27', '#123747', '#245568', '#477C8B', '#91B3B9', '#DCE9E8']),
+    fromTones('arduvaz', 'Gece Arduvazı', 'Slate Midnight', ['#06141B', '#11212D', '#253745', '#4A5C6A', '#9BA8AB', '#CCD0CF']),
+    // The owner's palette library.
+    fromTones('ocean-ink', 'Okyanus Mürekkebi', 'Ocean Ink', ['#0D1722', '#1A2D41', '#2B4A69', '#4D759B', '#8CAFCF', '#D9E7F2']),
+    fromTones('indigo-night', 'Çivit Gece', 'Indigo Night', ['#121524', '#242945', '#3D446E', '#656DA3', '#A1A7D6', '#E1E3F5']),
+    fromTones('navy-steel', 'Lacivert Çelik', 'Navy Steel', ['#10171E', '#1F2D3A', '#344A5D', '#58768D', '#94AFC2', '#DCE6ED']),
+    fromTones('arctic-frost', 'Kutup Ayazı', 'Arctic Frost', ['#10171A', '#1F2E32', '#354C52', '#5A777D', '#97B0B3', '#DDE7E7']),
+    fromTones('peacock', 'Tavus', 'Peacock', ['#041A1E', '#023239', '#03515C', '#227F8C', '#76B7C1', '#D3E9EC']),
+    fromTones('lagoon', 'Lagün', 'Lagoon', ['#071A19', '#0C3231', '#165250', '#397F7B', '#82B7B2', '#D7E9E7']),
+    fromTones('emerald-depth', 'Zümrüt Derinlik', 'Emerald Depth', ['#081A13', '#103325', '#1E533D', '#428063', '#88B89D', '#D9E9DF']),
+    fromTones('moss-stone', 'Yosun Taşı', 'Moss Stone', ['#12180F', '#232F1D', '#3B4E33', '#607A58', '#9BB396', '#DFE8DD']),
+    fromTones('sage-linen', 'Adaçayı Keten', 'Sage Linen', ['#131813', '#252E25', '#3D4C3F', '#647867', '#9FB0A2', '#E0E7E1']),
+    fromTones('olive-grove', 'Zeytinlik', 'Olive Grove', ['#16170B', '#2B2D16', '#474B27', '#707649', '#A8B08A', '#E3E6D9']),
+    fromTones('saffron', 'Safran', 'Saffron', ['#1D1503', '#382901', '#5B4401', '#8A6E1F', '#BFA96F', '#EBE4D0']),
+    fromTones('amber-glow', 'Kehribar', 'Amber Glow', ['#211203', '#3F2500', '#643F01', '#96671D', '#C8A46D', '#EFE3CF']),
+    fromTones('rust-copper', 'Bakır Pas', 'Rust Copper', ['#241007', '#451F0A', '#6F3611', '#A35D2E', '#D69D74', '#F5E0D1']),
+    fromTones('terracotta', 'Terakota', 'Terracotta', ['#23100B', '#432015', '#6C3724', '#9F5E42', '#D39D81', '#F4E0D5']),
+    fromTones('ember', 'Kor', 'Ember', ['#270D09', '#4B1911', '#782C1C', '#B05138', '#E39479', '#FBDDD2']),
+    fromTones('burgundy', 'Bordo', 'Burgundy', ['#250E0F', '#471C1E', '#723032', '#A85555', '#DD9591', '#F9DDDB']),
+    fromTones('rose-quartz', 'Pembe Kuvars', 'Rose Quartz', ['#201114', '#3D2226', '#643A3E', '#966163', '#CC9D9B', '#F2E0DE']),
+    fromTones('orchid-bloom', 'Orkide', 'Orchid Bloom', ['#1E111C', '#3A2137', '#5E3859', '#905E86', '#C79BBB', '#F0DFEA']),
+    fromTones('lavender-haze', 'Lavanta Pusu', 'Lavender Haze', ['#17141F', '#2D283B', '#4B4260', '#776A90', '#B1A4C4', '#E7E2EE']),
+    fromTones('ink-violet', 'Mor Mürekkep', 'Ink Violet', ['#15151E', '#2A293A', '#46445E', '#6F6D8E', '#A9A7C3', '#E4E3EE']),
+    fromTones('espresso', 'Espresso', 'Espresso', ['#1B1410', '#352820', '#564336', '#846C5B', '#BAA797', '#EAE3DD']),
+    fromTones('sand-dune', 'Kum Tepesi', 'Sand Dune', ['#1A150D', '#332A1A', '#53462D', '#806F50', '#B7A98F', '#E9E4DA']),
+    fromTones('warm-stone', 'Sıcak Taş', 'Warm Stone', ['#171614', '#2E2B27', '#4C4741', '#777069', '#AFAAA3', '#E6E4E2']),
+    fromTones('graphite', 'Grafit', 'Graphite', ['#151618', '#2A2B2E', '#45484C', '#6E7278', '#A8ABB0', '#E3E4E6']),
   ],
 };
 
@@ -162,7 +196,20 @@ export function parseTheme(value: unknown): { theme: Theme; ok: boolean } {
   const r = ThemeSchema.safeParse(value);
   if (!r.success) return { theme: BUILTIN_THEME, ok: false };
   if (r.data.palettes.some((p) => p.enabled && contrastReport(p.tokens).blocking.length)) return { theme: BUILTIN_THEME, ok: false };
-  return { theme: r.data, ok: true };
+  return { theme: withNewBuiltins(r.data), ok: true };
+}
+
+/** A saved set gets the built-ins added since it was saved (switched on); built-ins it already knew stay as saved. */
+export function withNewBuiltins(theme: Theme): Theme {
+  const known = new Set([...(theme.seen ?? []), ...theme.palettes.map((p) => p.id)]);
+  const added = BUILTIN_THEME.palettes.filter((p) => !known.has(p.id));
+  if (!added.length) return theme;
+  return { ...theme, palettes: [...theme.palettes, ...added].slice(0, MAX_PALETTES) };
+}
+
+/** What a save stores: the set plus the built-in ids it now knows. */
+export function toStored(theme: Theme): Theme {
+  return { defaultId: theme.defaultId, palettes: theme.palettes, seen: BUILTIN_THEME.palettes.map((p) => p.id) };
 }
 
 /** What the clients get: enabled palettes only, default first. */
