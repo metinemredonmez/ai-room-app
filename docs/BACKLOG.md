@@ -99,8 +99,8 @@ Dünyada benzerleri (4 Kasım 2026 taraması; kaynakların çoğu satıcı blogu
 - [x] Renk temaları: 12 palet panelden (API.md §7.34); web başlıktaki seçici. Panelin kendi renk menüsü hâlâ 4 sabit tema.
 - [x] Web ana sayfası: gerçek fotoğraflar (Nano Banana 2 önce/sonra), Casalume logosu, ince serif başlıklar.
 - [x] Stil kartları: 15 stilin gerçek önizlemesi Nano Banana 2 ile (`apps/backend/assets/styles/`).
-- [ ] Web fiyatlar: “Seç” → “Uygulamadan abone ol” (App Store / Google Play); canlıda demo PRO düğmesi gizli.
-- [ ] Admin “Planlar”: web’de görünen plan fiyatları ve rozetler koddan değil ayarlardan (gerçek ücret mağazalarda).
+- [x] Web fiyatlar: “Seç” → “Uygulamadan abone ol” (App Store / Google Play); canlıda demo PRO düğmesi gizli — API.md §7.50.
+- [x] Admin “Planlar”: web’de görünen plan fiyatları ve rozetler koddan değil panelden (gerçek ücret mağazalarda) — API.md §7.50.
 
 ## Ürün — gerçek kullanıcılardan önce (P0)
 - [ ] **Yayından hemen önce demo veriyi sil** (5 Kasım'da canlıya yüklendi; yalnız işaretli kayıtları siler, gerçek veriye dokunmaz):

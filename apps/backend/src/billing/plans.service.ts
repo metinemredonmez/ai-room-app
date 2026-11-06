@@ -5,7 +5,8 @@ import { CONFIG, type Config } from '../config.js';
 import { Prisma } from '../generated/prisma/client.js';
 import type { SetPriceResult } from '../catalog/product.service.js';
 import { SettingsService } from '../settings/settings.service.js';
-import { catalogDiff, creditsFor, defaultCatalog, nextCatalog, parseStored, publicCatalog, type CatalogInput, type StoredCatalog } from './plans.rules.js';
+import type { Locale } from '../catalog/catalog.data.js';
+import { catalogDiff, catalogPlans, creditsFor, defaultCatalog, nextCatalog, parseStored, publicCatalog, webPricing, type CatalogInput, type StoredCatalog } from './plans.rules.js';
 
 // Plans and credit packs (API.md §7.21). Kept as one row of the Setting table (key `billing.catalog`), outside the
 // runtime-settings form; until someone saves it the catalog is built from `CREDIT_PACKS`, so behaviour is unchanged.
@@ -47,6 +48,12 @@ export class PlansService {
       free: { dailyGenerations: s.freeDailyGenerations, maxVariants: s.maxVariantsFree },
       pro: { dailyGenerations: s.proDailyGenerations, maxVariants: s.maxVariantsPro },
     };
+  }
+
+  /** `GET /v1/catalog`: the plan cards (`plans`) and the web pricing page's Pro card, packs and limits (`pricing`). */
+  async forCatalog(locale: Locale) {
+    const { catalog } = await this.state();
+    return { plans: catalogPlans(catalog, locale), pricing: { ...webPricing(catalog, locale), limits: this.limits() } };
   }
 
   async forPaywall(lang: 'tr' | 'en') {

@@ -14,7 +14,7 @@ import { CONFIG, type Config } from '../config.js';
 import { cursorArgs } from '../designs/designs.service.js';
 import type { Prisma, Subscription } from '../generated/prisma/client.js';
 import { BillingService } from './billing.service.js';
-import { CatalogInputSchema } from './plans.rules.js';
+import { CatalogInputSchema, CatalogSaveSchema } from './plans.rules.js';
 import { PlansService } from './plans.service.js';
 
 // Plans, packs and subscribers in the admin (API.md §7.21). Reading is for SUPPORT and up (answering users);
@@ -24,6 +24,7 @@ const SaveBody = z.object({ catalog: z.unknown(), reason: z.string().trim().min(
 const ISSUE_TEXT: Record<string, string> = {
   duplicate_product: 'aynı ürün kimliği iki yerde kullanılamaz',
   active_needs_product: 'satıştaki dönem ya da paket en az bir ürün kimliği ister',
+  active_needs_price: 'satıştaki dönemin web fiyatı olmalı',
   duplicate_cycle: 'her dönem bir kez eklenebilir',
   duplicate_key: 'paket anahtarları benzersiz olmalı',
   one_highlight: 'yalnız bir tanesi öne çıkarılabilir',
@@ -62,7 +63,7 @@ export class AdminPlansController {
   })
   async save(@Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
     const input = parse(SaveBody, body);
-    const catalog = CatalogInputSchema.safeParse(input.catalog);
+    const catalog = CatalogSaveSchema.safeParse(input.catalog);
     if (!catalog.success) {
       const issues = catalog.error.issues.slice(0, 3).map((i) => `${i.path.join('.') || 'katalog'}: ${ISSUE_TEXT[i.message] ?? 'geçersiz değer'}`);
       throw new AppError(400, 'validation_failed', `Katalog kaydedilemedi — ${issues.join('; ')}`, {}, { fields: catalog.error.issues.map((i) => i.path.join('.')) });

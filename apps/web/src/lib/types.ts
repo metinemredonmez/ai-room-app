@@ -129,7 +129,16 @@ export type CatalogTool = {
 };
 
 export type CatalogStyle = { id: string; name: string; description: string; palette: string[]; isPro: boolean; previewUrl?: string };
-export type Plan = { id: string; name: string; period: "week" | "month" | "year"; priceTRY: number; badge: string | null };
+export type Plan = { id: string; name: string; period: "week" | "month" | "year"; priceTRY: number; badge: string | null; highlight?: boolean };
+type Limits = { dailyGenerations: number; maxVariants: number };
+/** The Pro card's texts and the credit packs from the admin's plans catalog (API.md §7.50); the store charges. */
+export type WebPricing = {
+  name: string;
+  tagline: string;
+  features: string[];
+  packs: { key: string; name: string; credits: number; highlight: boolean; priceTRY: number | null }[];
+  limits: { free: Limits; pro: Limits };
+};
 
 export type Catalog = {
   tools: CatalogTool[];
@@ -138,6 +147,7 @@ export type Catalog = {
   floors: { id: string; name: string }[];
   colors: { id: string; name: string; hex: string }[];
   plans: Plan[];
+  pricing?: WebPricing;
   /** Feature flags (API.md §7.28); a flag that is missing counts as off. */
   features?: Partial<Record<FeatureKey, boolean>>;
 };

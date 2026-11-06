@@ -9,8 +9,9 @@ import { api, ApiError, useApi } from "@/lib/api";
 import { fmtDateTime, fmtInt } from "@/lib/format";
 import type { AdminMe, PlanCatalog, PlanCatalogState, PlanCycleId } from "@/lib/types";
 
-// Planlar ve paketler (API.md §7.21): ödeme ekranında ne görüneceği ve kredi paketinin kaç hak verdiği.
-// Fiyat burada tutulmaz; uygulama mağazanın yerel fiyatını gösterir. Değişiklik gerekçe ister ve denetlenir.
+// Planlar ve paketler (API.md §7.21, §7.50): ödeme ekranında ve web'in Fiyatlar sayfasında ne görüneceği, kredi
+// paketinin kaç hak verdiği. Ücreti mağaza alır ve uygulama mağazanın yerel fiyatını gösterir; buradaki web fiyatı
+// yalnız sitede bilgi olarak görünür. Değişiklik gerekçe ister ve denetlenir.
 
 const CYCLES: { id: PlanCycleId; label: string }[] = [
   { id: "weekly", label: "Haftalık" },
@@ -20,8 +21,9 @@ const CYCLES: { id: PlanCycleId; label: string }[] = [
 const MAX_PACKS = 6;
 const MAX_FEATURES = 8;
 
-type DraftCycle = { cycle: PlanCycleId; active: boolean; highlight: boolean; ios: string; android: string };
-type DraftPack = { uid: string; saved: boolean; key: string; nameTr: string; nameEn: string; credits: string; ios: string; android: string; highlight: boolean; active: boolean };
+type DraftCycle = { cycle: PlanCycleId; active: boolean; highlight: boolean; ios: string; android: string; price: string; badgeTr: string; badgeEn: string };
+type DraftPack = { uid: string; saved: boolean; key: string; nameTr: string; nameEn: string; credits: string; ios: string; android: string; highlight: boolean; active: boolean; price: string };
+const WEB = (process.env.NEXT_PUBLIC_WEB_URL ?? "https://casalume.app").replace(/\/$/, "");
 type Draft = { nameTr: string; nameEn: string; taglineTr: string; taglineEn: string; featuresTr: string; featuresEn: string; cycles: DraftCycle[]; packs: DraftPack[] };
 
 let uidSeq = 0;
@@ -37,13 +39,24 @@ function toDraft(c: PlanCatalog): Draft {
     featuresEn: c.plan.featuresEn.join("\n"),
     cycles: CYCLES.map(({ id }) => {
       const cy = c.plan.cycles.find((x) => x.cycle === id);
-      return { cycle: id, active: cy?.active ?? false, highlight: cy?.highlight ?? false, ios: cy?.iosProductId ?? "", android: cy?.androidProductId ?? "" };
+      return {
+        cycle: id,
+        active: cy?.active ?? false,
+        highlight: cy?.highlight ?? false,
+        ios: cy?.iosProductId ?? "",
+        android: cy?.androidProductId ?? "",
+        price: cy?.webPriceTRY != null ? String(cy.webPriceTRY) : "",
+        badgeTr: cy?.badgeTr ?? "",
+        badgeEn: cy?.badgeEn ?? "",
+      };
     }),
-    packs: c.packs.map((p) => ({ uid: uid(), saved: true, key: p.key, nameTr: p.nameTr, nameEn: p.nameEn, credits: String(p.credits), ios: p.iosProductId ?? "", android: p.androidProductId ?? "", highlight: p.highlight, active: p.active })),
+    packs: c.packs.map((p) => ({ uid: uid(), saved: true, key: p.key, nameTr: p.nameTr, nameEn: p.nameEn, credits: String(p.credits), ios: p.iosProductId ?? "", android: p.androidProductId ?? "", highlight: p.highlight, active: p.active, price: p.webPriceTRY != null ? String(p.webPriceTRY) : "" })),
   };
 }
 
 const orNull = (v: string) => v.trim() || null;
+/** "349,99" or "349.99" → 349.99; empty → null (a bad number is left for the server to refuse). */
+const price = (v: string) => (v.trim() ? Number(v.trim().replace(",", ".")) : null);
 const lines = (v: string) => v.split("\n").map((l) => l.trim()).filter(Boolean);
 
 function fromDraft(d: Draft): PlanCatalog {
@@ -55,10 +68,17 @@ function fromDraft(d: Draft): PlanCatalog {
       taglineEn: d.taglineEn.trim(),
       featuresTr: lines(d.featuresTr),
       featuresEn: lines(d.featuresEn),
-      // An empty, inactive period is simply not offered.
-      cycles: d.cycles
-        .filter((c) => c.active || c.ios.trim() || c.android.trim())
-        .map((c) => ({ cycle: c.cycle, active: c.active, highlight: c.highlight, iosProductId: orNull(c.ios), androidProductId: orNull(c.android) })),
+      // All three periods are always sent: a period off sale is kept as inactive (an empty list means "never set up").
+      cycles: d.cycles.map((c) => ({
+        cycle: c.cycle,
+        active: c.active,
+        highlight: c.highlight,
+        iosProductId: orNull(c.ios),
+        androidProductId: orNull(c.android),
+        webPriceTRY: price(c.price),
+        badgeTr: c.badgeTr.trim(),
+        badgeEn: c.badgeEn.trim(),
+      })),
     },
     packs: d.packs.map((p) => ({
       key: p.key.trim(),
@@ -69,6 +89,7 @@ function fromDraft(d: Draft): PlanCatalog {
       androidProductId: orNull(p.android),
       highlight: p.highlight,
       active: p.active,
+      webPriceTRY: price(p.price),
     })),
   };
 }
@@ -81,7 +102,12 @@ export default function PlansPage() {
     <>
       <PageHeader
         title="Planlar ve paketler"
-        description="Ödeme ekranında görünen Pro planı, abonelik dönemleri ve kredi paketleri. Fiyatı mağaza belirler; burada fiyat tutulmaz."
+        description="Uygulamanın ödeme ekranında ve web'in Fiyatlar sayfasında görünen Pro planı, abonelik dönemleri ve kredi paketleri. Ücreti mağaza alır; web fiyatı yalnız sitede bilgi olarak görünür."
+        actions={
+          <a href={`${WEB}/tr/fiyatlar`} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+            Sitedeki Fiyatlar sayfası ↗
+          </a>
+        }
       />
       {state.error && !s ? (
         <ErrorState message={state.error.message} onRetry={state.reload} />
@@ -100,7 +126,9 @@ function Editor({ state, canEdit, onSaved, onReload }: { state: PlanCatalogState
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const next = useMemo(() => fromDraft(draft), [draft]);
-  const dirty = JSON.stringify(next) !== JSON.stringify(state.catalog);
+  // Compared in the editor's own form, so a stored catalog with fewer periods does not count as changed.
+  const baseline = useMemo(() => JSON.stringify(fromDraft(toDraft(state.catalog))), [state.catalog]);
+  const dirty = JSON.stringify(next) !== baseline;
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const setCycle = (i: number, patch: Partial<DraftCycle>) =>
     setDraft((d) => ({ ...d, cycles: d.cycles.map((c, j) => (j === i ? { ...c, ...patch } : patch.highlight ? { ...c, highlight: false } : c)) }));
@@ -110,10 +138,15 @@ function Editor({ state, canEdit, onSaved, onReload }: { state: PlanCatalogState
     setDraft((d) => {
       let n = d.packs.length + 1;
       while (d.packs.some((p) => p.key === `pack_${n}`)) n++;
-      return { ...d, packs: [...d.packs, { uid: uid(), saved: false, key: `pack_${n}`, nameTr: "", nameEn: "", credits: "10", ios: "", android: "", highlight: false, active: false }] };
+      return { ...d, packs: [...d.packs, { uid: uid(), saved: false, key: `pack_${n}`, nameTr: "", nameEn: "", credits: "10", ios: "", android: "", highlight: false, active: false, price: "" }] };
     });
 
   async function save() {
+    const bad = [...draft.cycles.map((c) => c.price), ...draft.packs.map((p) => p.price)].find((v) => v.trim() && !(Number(v.trim().replace(",", ".")) > 0));
+    if (bad !== undefined) {
+      toast("error", `“${bad}” geçerli bir fiyat değil; 349,99 gibi yaz.`);
+      return;
+    }
     const removed = state.catalog.packs.filter((p) => !next.packs.some((x) => x.key === p.key));
     const changedCredits = next.packs.filter((p) => state.catalog.packs.some((x) => x.key === p.key && x.credits !== p.credits));
     if (removed.length || changedCredits.length) {
@@ -144,7 +177,7 @@ function Editor({ state, canEdit, onSaved, onReload }: { state: PlanCatalogState
     <div className="flex flex-col gap-4">
       {!state.saved && (
         <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
-          Katalog henüz kaydedilmedi: kredi paketleri sunucudaki varsayılandan geliyor. İlk kayıttan sonra buradan yönetilir.
+          Katalog henüz kaydedilmedi: dönemler, web fiyatları ve kredi paketleri sunucudaki varsayılandan geliyor. İlk kayıttan sonra buradan yönetilir.
         </p>
       )}
       {ro && <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted-foreground">Görüntüleme yetkin var; değiştirmek için yönetici rolü gerekir.</p>}
@@ -175,27 +208,52 @@ function Editor({ state, canEdit, onSaved, onReload }: { state: PlanCatalogState
       <Card title="Abonelik dönemleri">
         <fieldset disabled={ro} className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">
-            Ürün kimliği App Store Connect ve Google Play Console&apos;daki kimliktir. Satışta olmayan dönem ödeme ekranında görünmez. Pro erişimi her dönemde aynıdır.
+            Ürün kimliği App Store Connect ve Google Play Console&apos;daki kimliktir. Satışta olmayan dönem ne ödeme ekranında ne sitede görünür. Pro erişimi her dönemde aynıdır.
+            Web fiyatı sitedeki plan kartında yazar; mağazadaki fiyatla aynı tut (satıştaki dönem için zorunlu). Rozet boş kalabilir; varsayılan rozetler diğer dillere çevrilmiş görünür, yazdığın rozet diğer dillerde İngilizcesiyle çıkar.
           </p>
           {draft.cycles.map((c, i) => {
             const label = CYCLES.find((x) => x.id === c.cycle)!.label;
+            const missingPrice = c.active && price(c.price) === null;
             return (
-              <div key={c.cycle} className="grid items-end gap-3 rounded-lg border border-line p-3 md:grid-cols-[8rem_1fr_1fr_auto]">
-                <div>
-                  <p className="text-sm font-medium text-fg">{label}</p>
-                  <label className="mt-1 flex items-center gap-2 text-xs">
-                    <input type="checkbox" checked={c.active} onChange={(e) => setCycle(i, { active: e.target.checked })} className="h-4 w-4 accent-[var(--primary)]" /> Satışta
+              <div key={c.cycle} className="grid gap-3 rounded-lg border border-line p-3">
+                <div className="grid items-end gap-3 md:grid-cols-[8rem_1fr_1fr_9rem]">
+                  <div>
+                    <p className="text-sm font-medium text-fg">{label}</p>
+                    <label className="mt-1 flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={c.active} onChange={(e) => setCycle(i, { active: e.target.checked })} className="h-4 w-4 accent-[var(--primary)]" /> Satışta
+                    </label>
+                  </div>
+                  <Field label="iOS ürün kimliği" htmlFor={`c-ios-${c.cycle}`}>
+                    <Input id={`c-ios-${c.cycle}`} value={c.ios} maxLength={128} placeholder="casalume_pro_monthly" className="font-mono text-xs" onChange={(e) => setCycle(i, { ios: e.target.value })} />
+                  </Field>
+                  <Field label="Android ürün kimliği" htmlFor={`c-and-${c.cycle}`}>
+                    <Input id={`c-and-${c.cycle}`} value={c.android} maxLength={128} className="font-mono text-xs" onChange={(e) => setCycle(i, { android: e.target.value })} />
+                  </Field>
+                  <Field label="Web fiyatı (TL)" htmlFor={`c-price-${c.cycle}`}>
+                    <Input
+                      id={`c-price-${c.cycle}`}
+                      value={c.price}
+                      inputMode="decimal"
+                      placeholder="349,99"
+                      aria-invalid={missingPrice}
+                      className={missingPrice ? "border-danger" : undefined}
+                      onChange={(e) => setCycle(i, { price: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <div className="grid items-end gap-3 md:grid-cols-[8rem_1fr_1fr_9rem]">
+                  <span className="hidden md:block" />
+                  <Field label="Rozet (Türkçe)" htmlFor={`c-btr-${c.cycle}`}>
+                    <Input id={`c-btr-${c.cycle}`} value={c.badgeTr} maxLength={20} placeholder="POPÜLER" onChange={(e) => setCycle(i, { badgeTr: e.target.value })} />
+                  </Field>
+                  <Field label="Rozet (İngilizce)" htmlFor={`c-ben-${c.cycle}`}>
+                    <Input id={`c-ben-${c.cycle}`} value={c.badgeEn} maxLength={20} placeholder="POPULAR" onChange={(e) => setCycle(i, { badgeEn: e.target.value })} />
+                  </Field>
+                  <label className="flex h-9 items-center gap-2 text-xs">
+                    <input type="radio" name="cycle-highlight" checked={c.highlight} onChange={() => setCycle(i, { highlight: true })} className="h-4 w-4 accent-[var(--primary)]" /> Öne çıkan
                   </label>
                 </div>
-                <Field label="iOS ürün kimliği" htmlFor={`c-ios-${c.cycle}`}>
-                  <Input id={`c-ios-${c.cycle}`} value={c.ios} maxLength={128} placeholder="casalume_pro_monthly" className="font-mono text-xs" onChange={(e) => setCycle(i, { ios: e.target.value })} />
-                </Field>
-                <Field label="Android ürün kimliği" htmlFor={`c-and-${c.cycle}`}>
-                  <Input id={`c-and-${c.cycle}`} value={c.android} maxLength={128} className="font-mono text-xs" onChange={(e) => setCycle(i, { android: e.target.value })} />
-                </Field>
-                <label className="flex h-9 items-center gap-2 text-xs">
-                  <input type="radio" name="cycle-highlight" checked={c.highlight} onChange={() => setCycle(i, { highlight: true })} className="h-4 w-4 accent-[var(--primary)]" /> Öne çıkan
-                </label>
+                {missingPrice && <p className="text-xs text-danger">Satıştaki dönem için web fiyatı gerekli.</p>}
               </div>
             );
           })}
@@ -219,7 +277,7 @@ function Editor({ state, canEdit, onSaved, onReload }: { state: PlanCatalogState
           </p>
           {draft.packs.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Kredi paketi yok.</p>}
           {draft.packs.map((p) => (
-            <div key={p.uid} className="grid gap-3 rounded-lg border border-line p-3 md:grid-cols-6">
+            <div key={p.uid} className="grid gap-3 rounded-lg border border-line p-3 md:grid-cols-4">
               <Field label="Anahtar" htmlFor={`k-${p.uid}`} hint={p.saved ? "Kaydedildikten sonra değişmez" : "küçük harf, rakam, _"}>
                 <Input id={`k-${p.uid}`} value={p.key} maxLength={32} readOnly={p.saved} className="font-mono text-xs" onChange={(e) => setPack(p.uid, { key: e.target.value })} />
               </Field>
@@ -238,7 +296,11 @@ function Editor({ state, canEdit, onSaved, onReload }: { state: PlanCatalogState
               <Field label="Android ürün kimliği" htmlFor={`pa-${p.uid}`}>
                 <Input id={`pa-${p.uid}`} value={p.android} maxLength={128} className="font-mono text-xs" onChange={(e) => setPack(p.uid, { android: e.target.value })} />
               </Field>
-              <div className="flex flex-wrap items-center gap-4 text-xs md:col-span-6">
+              <Field label="Web fiyatı (TL)" htmlFor={`pp-${p.uid}`} hint="İsteğe bağlı; boşsa sitede “uygulamada” yazar">
+                <Input id={`pp-${p.uid}`} value={p.price} inputMode="decimal" placeholder="99,99" onChange={(e) => setPack(p.uid, { price: e.target.value })} />
+              </Field>
+              <span className="hidden md:block" />
+              <div className="flex flex-wrap items-center gap-4 text-xs md:col-span-4">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={p.active} onChange={(e) => setPack(p.uid, { active: e.target.checked })} className="h-4 w-4 accent-[var(--primary)]" /> Satışta
                 </label>

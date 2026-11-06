@@ -39,10 +39,16 @@ const paintDe = catDe.json?.tools?.find((t) => t.id === 'paint')?.name;
 ok(catDe.status === 200 && catDe.json.tools.length === 10 && paintDe && paintDe !== paintTr, 'catalog in German (Accept-Language q-values)', paintDe);
 const catBad = await call('GET', '/designs?locale=pt', { token });
 ok(catBad.status === 400, 'unsupported locale rejected', `status ${catBad.status}`);
-// API.md §7.21: the paywall catalog — active packs and the plan limits, never a price.
+// API.md §7.21 / §7.50: the paywall catalog — active packs, periods (each with its informational web price), limits.
 const billingCat = await call('GET', '/billing/catalog?locale=en');
-ok(billingCat.status === 200 && Array.isArray(billingCat.json?.packs) && billingCat.json.packs.every((p) => p.credits > 0) && billingCat.json.limits?.pro?.dailyGenerations > 0 && !/price/i.test(JSON.stringify(billingCat.json)),
-  'paywall catalog: active packs and limits, no prices', `${billingCat.json?.packs?.length} packs`);
+ok(billingCat.status === 200 && Array.isArray(billingCat.json?.packs) && billingCat.json.packs.every((p) => p.credits > 0) && billingCat.json.limits?.pro?.dailyGenerations > 0
+  && billingCat.json.plan?.cycles?.length >= 1 && billingCat.json.plan.cycles.every((c) => c.webPriceTRY > 0),
+  'paywall catalog: active packs, priced periods and limits', `${billingCat.json?.packs?.length} packs, ${billingCat.json?.plan?.cycles?.length} periods`);
+// §7.50: the web's plan cards and pricing block come from the same catalog, in the visitor's language.
+const webCat = (await call('GET', '/catalog?locale=tr')).json;
+ok(webCat?.plans?.length === billingCat.json?.plan?.cycles?.length && webCat.plans.every((p) => p.priceTRY > 0 && ['week', 'month', 'year'].includes(p.period))
+  && webCat.pricing?.features?.length >= 1 && webCat.pricing.limits?.free?.dailyGenerations >= 0 && Array.isArray(webCat.pricing.packs),
+  'catalog plans and web pricing follow the plans catalog', `${webCat?.plans?.map((p) => p.id)}`);
 const badCatLocale = await call('GET', '/billing/catalog?locale=xx');
 ok(badCatLocale.status === 400, 'paywall catalog rejects an unknown locale (INP-01)');
 
@@ -753,6 +759,9 @@ if (benv.REVENUECAT_WEBHOOK_SECRET) {
     const noReason = await call('PATCH', '/admin/billing/catalog', { token: adminToken, body: { catalog: withSeven.json.catalog, version: withSeven.json.version } });
     ok(staleCat.status === 409 && dupeCat.status === 400 && /aynı ürün kimliği/.test(dupeCat.json?.error?.message ?? '') && noReason.status === 400,
       'catalog: stale version 409, one product cannot be two packs, a reason is required', `${staleCat.status}/${dupeCat.status}/${noReason.status}`);
+    const cyc = withSeven.json.catalog.plan.cycles;
+    const noPrice = await putCat({ ...withSeven.json.catalog, plan: { ...withSeven.json.catalog.plan, cycles: cyc.map((c, i) => (i === 0 ? { ...c, active: true, iosProductId: c.iosProductId ?? 'smoke_cycle', webPriceTRY: null } : c)) } }, withSeven.json.version);
+    ok(noPrice.status === 400 && /web fiyatı/.test(noPrice.json?.error?.message ?? ''), 'a period on sale needs a web price (§7.50)', `${noPrice.status} ${noPrice.json?.error?.message}`);
     const packBuy = async () => {
       const before = (await call('GET', '/me', { token: vt })).json.credits;
       await rc({ id: `smoke_${crypto.randomUUID()}`, type: 'NON_RENEWING_PURCHASE', app_user_id: rcUser.id, product_id: 'smoke_credits_7', transaction_id: `txn7_${crypto.randomUUID()}`, store: 'APP_STORE', environment: 'SANDBOX' });

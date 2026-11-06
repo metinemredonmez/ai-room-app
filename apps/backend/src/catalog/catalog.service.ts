@@ -11,7 +11,7 @@ import { SAMPLES_VERSION, loadSample } from '../images/samples.js';
 import { LegalService } from '../kvkk/legal.service.js';
 import { SettingsService } from '../settings/settings.service.js';
 import { PlansService } from '../billing/plans.service.js';
-import { PLANS, type Locale } from './catalog.data.js';
+import type { Locale } from './catalog.data.js';
 import { localize } from './catalog.i18n.js';
 import { ProductCatalogService } from './product.service.js';
 import { FeaturesService } from '../features/features.service.js';
@@ -81,7 +81,8 @@ export class CatalogService {
       rooms: product.rooms,
       floors: product.floors,
       colors: product.colors,
-      plans: PLANS.map((p) => ({ id: p.id, name: localize(locale, `plans.${p.id}.name`, p.name), period: p.period, priceTRY: p.priceTRY, badge: p.badge ? localize(locale, `plans.${p.id}.badge`, p.badge) : null, storeProductId: p.storeProductId })),
+      // Plan cards and the web pricing page from the admin's plans catalog (API.md §7.21, §7.50).
+      ...(await this.plans.forCatalog(locale)),
       // Packs on sale from the plans catalog (API.md §7.21), one row per store product id.
       creditPacks: (await this.plans.forPaywall('en')).packs.flatMap((p) =>
         [...new Set([p.productIds.ios, p.productIds.android])].filter((id): id is string => !!id).map((productId) => ({ productId, credits: p.credits })),

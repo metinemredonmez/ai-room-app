@@ -1,5 +1,5 @@
 import { BillingService } from './billing/billing.service.js';
-import { CatalogInputSchema, catalogDiff, creditsFor, defaultCatalog, nextCatalog, parseStored, publicCatalog, type CatalogInput } from './billing/plans.rules.js';
+import { CatalogInputSchema, CatalogSaveSchema, catalogDiff, catalogPlans, creditsFor, DEFAULT_CYCLES, defaultCatalog, nextCatalog, parseStored, publicCatalog, webPricing, type CatalogInput } from './billing/plans.rules.js';
 import { PlansService } from './billing/plans.service.js';
 
 // API.md §7.21: plans and credit packs. The catalog decides how many credits a store product grants (BUS: money
@@ -8,7 +8,7 @@ import { PlansService } from './billing/plans.service.js';
 const base = (): CatalogInput => {
   const { plan, packs } = defaultCatalog('casalume_credits_10:10,casalume_credits_50:50');
   return {
-    plan: { ...plan, cycles: [{ cycle: 'monthly', active: true, highlight: true, iosProductId: 'pro_monthly', androidProductId: 'pro_monthly' }] },
+    plan: { ...plan, cycles: [{ cycle: 'monthly', active: true, highlight: true, iosProductId: 'pro_monthly', androidProductId: 'pro_monthly', webPriceTRY: 349.99, badgeTr: 'POPÜLER', badgeEn: 'POPULAR' }] },
     packs,
   };
 };
@@ -62,15 +62,56 @@ describe('plans catalog rules', () => {
     expect(catalogDiff(start, { ...start, packs: [] })).toEqual(['pack.removed:pack_1', 'pack.removed:pack_2']);
   });
 
-  it('the paywall sees active entries only, in Turkish or English, never a price', () => {
+  it('the paywall sees active entries only, in Turkish or English; the web price is information only', () => {
     const c = base();
     const stored = { ...c, packs: [c.packs[0], { ...c.packs[1], active: false }], retired: [] };
     const tr = publicCatalog(stored, 'tr', limits);
     const en = publicCatalog(stored, 'en', limits);
-    expect(tr.packs).toEqual([{ key: 'pack_1', name: '10 tasarım hakkı', credits: 10, highlight: false, productIds: { ios: 'casalume_credits_10', android: 'casalume_credits_10' } }]);
+    expect(tr.packs).toEqual([{ key: 'pack_1', name: '10 tasarım hakkı', credits: 10, highlight: false, webPriceTRY: null, productIds: { ios: 'casalume_credits_10', android: 'casalume_credits_10' } }]);
     expect(en.plan.features[0]).toBe('Many more designs a day');
-    expect(tr.plan.cycles).toEqual([{ cycle: 'monthly', highlight: true, productIds: { ios: 'pro_monthly', android: 'pro_monthly' } }]);
-    expect(JSON.stringify(tr)).not.toMatch(/price/i);
+    expect(tr.plan.cycles).toEqual([{ cycle: 'monthly', highlight: true, badge: 'POPÜLER', webPriceTRY: 349.99, productIds: { ios: 'pro_monthly', android: 'pro_monthly' } }]);
+    expect(en.plan.cycles[0].badge).toBe('POPULAR');
+  });
+
+  it('a period on sale needs a web price when saved; an older save without prices still loads (INP-01)', () => {
+    const ok = base();
+    const codes = (c: unknown) => (CatalogSaveSchema.safeParse(c).error?.issues ?? []).map((i) => i.message);
+    expect(codes(ok)).toEqual([]);
+    expect(codes({ ...ok, plan: { ...ok.plan, cycles: [{ ...ok.plan.cycles[0], webPriceTRY: null }] } })).toContain('active_needs_price');
+    expect(codes({ ...ok, plan: { ...ok.plan, cycles: [{ ...ok.plan.cycles[0], webPriceTRY: null, active: false }] } })).toEqual([]);
+    expect(CatalogInputSchema.safeParse({ ...ok, plan: { ...ok.plan, cycles: [{ ...ok.plan.cycles[0], webPriceTRY: 0 }] } }).success).toBe(false);
+    expect(CatalogInputSchema.safeParse({ ...ok, plan: { ...ok.plan, cycles: [{ ...ok.plan.cycles[0], badgeTr: 'x'.repeat(21) }] } }).success).toBe(false);
+    // Saved before prices existed: the fields default, the save keeps loading (it does not fall back).
+    const d = { ...base(), retired: [] };
+    const legacy = { plan: { ...ok.plan, cycles: [{ cycle: 'monthly', active: true, highlight: true, iosProductId: 'old_m', androidProductId: null }] }, packs: [{ ...ok.packs[0], webPriceTRY: undefined }] };
+    const loaded = parseStored(legacy, d);
+    // …and keeps the price and badge the web showed for that period until then; an explicit null stays null.
+    expect(loaded.plan.cycles[0]).toMatchObject({ iosProductId: 'old_m', webPriceTRY: 349.99, badgeTr: 'POPÜLER' });
+    const explicit = parseStored({ ...legacy, plan: { ...legacy.plan, cycles: [{ ...legacy.plan.cycles[0], webPriceTRY: null, active: false }] } }, d);
+    expect(explicit.plan.cycles[0].webPriceTRY).toBeNull();
+    expect(loaded.packs[0].webPriceTRY).toBeNull();
+    // No period at all = never set up: the three default periods.
+    expect(parseStored({ ...legacy, plan: { ...legacy.plan, cycles: [] } }, defaultCatalog('')).plan.cycles).toEqual(DEFAULT_CYCLES);
+  });
+
+  it('the catalog plan cards come from the periods on sale with a web price, in the visitor language', () => {
+    const c = { ...defaultCatalog(''), retired: [] };
+    expect(catalogPlans(c, 'tr').map((p) => [p.id, p.name, p.period, p.priceTRY, p.badge, p.storeProductId])).toEqual([
+      ['pro_weekly', 'Haftalık', 'week', 149.99, null, 'casalume_pro_weekly'],
+      ['pro_monthly', 'Aylık', 'month', 349.99, 'POPÜLER', 'casalume_pro_monthly'],
+      ['pro_yearly', 'Yıllık', 'year', 1299.99, 'EN AVANTAJLI', 'casalume_pro_yearly'],
+    ]);
+    // An unchanged default badge keeps its translation; a badge the admin wrote shows in English elsewhere.
+    const de = catalogPlans(c, 'de');
+    expect(de[1].badge).not.toBe('POPULAR');
+    const custom = { ...c, plan: { ...c.plan, cycles: c.plan.cycles.map((cy) => (cy.cycle === 'yearly' ? { ...cy, badgeTr: '%40 İNDİRİM', badgeEn: '40% OFF' } : cy)) } };
+    expect(catalogPlans(custom, 'de')[2].badge).toBe('40% OFF');
+    expect(catalogPlans(custom, 'tr')[2].badge).toBe('%40 İNDİRİM');
+    // Off sale or without a price: not on the cards.
+    const off = { ...c, plan: { ...c.plan, cycles: c.plan.cycles.map((cy) => (cy.cycle === 'weekly' ? { ...cy, active: false } : cy)) } };
+    expect(catalogPlans(off, 'tr').map((p) => p.id)).toEqual(['pro_monthly', 'pro_yearly']);
+    expect(webPricing(c, 'tr').features[0]).toBe('Günde çok daha fazla tasarım');
+    expect(webPricing(c, 'de').name).toBe(c.plan.nameEn);
   });
 
   it('a stored value that no longer validates falls back to the default', () => {

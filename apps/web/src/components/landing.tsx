@@ -19,24 +19,38 @@ import {
 import { formatTRY } from "@/lib/format";
 import type { SiteContent } from "@/lib/site-content";
 import type { WaitlistStatus } from "@/lib/waitlist";
-import type { Plan } from "@/lib/types";
+import type { Plan, WebPricing } from "@/lib/types";
 import { useApp } from "./app-provider";
 import { BeforeAfter } from "./before-after";
+import { StoreLinks } from "./store-links";
 import { WaitlistForm } from "./waitlist-form";
 import { btn, card } from "./ui";
 import { fmt } from "@/lib/i18n";
 
 const FEATURE_ICONS = [Sparkles, Palette, Calculator, ShoppingBag, MessageCircleMore, House, ShieldCheck, Layers];
 
-export function PlanCards({ plans, footer }: { plans: Plan[]; footer?: (p: Plan) => React.ReactNode }) {
-  const { t, locale, user } = useApp();
+/**
+ * Free card plus one card per Pro period on sale (API.md §7.50): periods, web prices, badges, the Pro features and
+ * the free limits all come from the admin (Planlar ve paketler, Ayarlar). The store charges; prices are information.
+ */
+export function PlanCards({ plans, pricing, footer }: { plans: Plan[]; pricing?: WebPricing; footer?: (p: Plan) => React.ReactNode }) {
+  const { t, locale, user, catalog } = useApp();
+  const free = pricing?.limits.free;
+  const freeFeatures = [
+    free && fmt(t.pricing.freeDaily, { n: free.dailyGenerations }),
+    free && fmt(t.pricing.freeVariants, { n: free.maxVariants }),
+    t.pricing.freeTools,
+    t.pricing.freeCompare,
+    catalog?.features?.assistant_chat ? t.pricing.freeChat : null,
+  ].filter((f): f is string => Boolean(f));
+  const cols = plans.length + 1 >= 4 ? "lg:grid-cols-4" : plans.length + 1 === 3 ? "lg:grid-cols-3" : "";
   return (
-    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+    <div className={`grid gap-5 md:grid-cols-2 ${cols}`}>
       <div className={`${card} flex flex-col p-6`}>
         <h3 className="text-lg font-medium">{t.pricing.free}</h3>
         <p className="mt-3 text-4xl font-display font-light">{t.pricing.freePrice}</p>
         <ul className="mt-5 flex-1 space-y-2.5 text-sm">
-          {t.pricing.freeFeatures.map((f) => (
+          {freeFeatures.map((f) => (
             <li key={f} className="flex gap-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden /> {f}
             </li>
@@ -44,28 +58,30 @@ export function PlanCards({ plans, footer }: { plans: Plan[]; footer?: (p: Plan)
         </ul>
         {user && user.plan === "FREE" && <p className="mt-5 text-sm font-medium text-primary">{t.pricing.current}</p>}
       </div>
-      {plans.map((p) => (
-        <div key={p.id} className={`${card} relative flex flex-col p-6 ${p.badge ? "ring-2 ring-primary" : ""}`}>
-          {p.badge && (
-            <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">{p.badge}</span>
-          )}
-          <h3 className="flex items-center gap-2 text-lg font-medium">
-            <Crown className="h-4 w-4 text-accent" aria-hidden /> {p.name}
-          </h3>
-          <p className="mt-3 text-4xl font-display font-light">
-            {formatTRY(p.priceTRY, locale)}
-            <span className="ml-1 text-sm font-medium text-muted">{fmt(t.pricing.perPeriod, { p: t.pricing.period[p.period] })}</span>
-          </p>
-          <ul className="mt-5 flex-1 space-y-2.5 text-sm">
-            {t.pricing.proFeatures.map((f) => (
-              <li key={f} className="flex gap-2">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden /> {f}
-              </li>
-            ))}
-          </ul>
-          {footer?.(p)}
-        </div>
-      ))}
+      {plans.map((p) => {
+        const featured = p.highlight ?? Boolean(p.badge);
+        return (
+          <div key={p.id} className={`${card} relative flex flex-col p-6 ${featured ? "ring-2 ring-primary" : ""}`}>
+            {p.badge && <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">{p.badge}</span>}
+            {pricing?.name && <p className="text-xs font-medium uppercase tracking-wide text-muted">{pricing.name}</p>}
+            <h3 className="flex items-center gap-2 text-lg font-medium">
+              <Crown className="h-4 w-4 text-accent" aria-hidden /> {p.name}
+            </h3>
+            <p className="mt-3 text-4xl font-display font-light">
+              {formatTRY(p.priceTRY, locale)}
+              <span className="ml-1 text-sm font-medium text-muted">{fmt(t.pricing.perPeriod, { p: t.pricing.period[p.period] })}</span>
+            </p>
+            <ul className="mt-5 flex-1 space-y-2.5 text-sm">
+              {(pricing?.features ?? []).map((f) => (
+                <li key={f} className="flex gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden /> {f}
+                </li>
+              ))}
+            </ul>
+            {footer?.(p)}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -293,9 +309,10 @@ export function Landing({ content, waitlist }: { content: SiteContent; waitlist:
             {catalog ? (
               <PlanCards
                 plans={catalog.plans}
+                pricing={catalog.pricing}
                 footer={() => (
-                  <Link href="/fiyatlar" className={`${btn.base} ${btn.primary} ${btn.md} mt-6`}>
-                    {t.pricing.choose}
+                  <Link href="/fiyatlar#abonelik" className={`${btn.base} ${btn.primary} ${btn.md} mt-6`}>
+                    {t.pricing.subscribe}
                   </Link>
                 )}
               />
@@ -320,18 +337,8 @@ export function Landing({ content, waitlist }: { content: SiteContent; waitlist:
               </span>
               <h2 className="mt-4 text-4xl font-display font-light">{W.title}</h2>
               <p className="mt-3 leading-relaxed text-muted">{live ? W.textLive : W.textSoon}</p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {([["ios", "App Store"], ["android", "Google Play"]] as const).map(([k, label]) =>
-                  waitlist.stores[k] ? (
-                    <a key={k} href={waitlist.stores[k]!} target="_blank" rel="noopener noreferrer" className={`${btn.base} ${btn.ghost} ${btn.md}`}>
-                      {label} <ArrowRight className="h-4 w-4" aria-hidden />
-                    </a>
-                  ) : (
-                    <span key={k} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted">
-                      {label} <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{W.soon}</span>
-                    </span>
-                  ),
-                )}
+              <div className="mt-6">
+                <StoreLinks stores={waitlist.stores} />
               </div>
             </div>
             {waitlist.enabled && <WaitlistForm source="home" />}

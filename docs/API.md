@@ -2102,3 +2102,34 @@ rolü yetmeyen kişiye değiştirme düğmesi göstermiyor; karar yine sunucuda.
 | GET | `/admin/users` | SUPPORT | `kind=guest\|registered`, `plan=FREE\|PRO`, `status=ACTIVE\|BANNED` (geçersiz değer 400) |
 | GET | `/admin/audit` | ADMIN | `area` (`^[a-z_]{2,30}$`, işlem ön eki), `actor` (2–100, e-posta parçası) |
 | GET | `/admin/billing/events` | SUPPORT | İlk sayfada `counts: { <durum>: sayı }`; sonraki sayfalarda `null` |
+
+### 7.50 Web fiyatları panelden
+
+Web'in **Fiyatlar** sayfası ve ana sayfadaki plan kartları artık Admin → Gelir ve maliyet → **Planlar ve paketler**
+ekranından gelir; kodda sabit plan listesi (`PLANS`) kalmadı.
+
+- **Dönem başına web fiyatı ve rozet:** her abonelik dönemine (haftalık, aylık, yıllık) web fiyatı (TL, 0,01–100.000)
+  ve Türkçe / İngilizce rozet (en çok 20 karakter, boş olabilir) eklendi. Satıştaki dönemin web fiyatı zorunludur
+  (`active_needs_price`, 400).
+  - Ücreti yine mağaza alır; uygulama mağazanın yerel fiyatını gösterir. Web fiyatı yalnız sitede bilgi olarak yazar
+    ve mağazadaki fiyatla aynı tutulmalıdır.
+  - Kredi paketlerine isteğe bağlı web fiyatı eklendi. Boşsa sitede "Fiyat uygulamada" yazar.
+- **Varsayılan:** katalog hiç kaydedilmediyse ya da hiç dönem içermiyorsa, sitenin bugüne kadar gösterdiği üç dönem
+  kullanılır: 149,99 / 349,99 / 1.299,99 TL; aylık öne çıkan, POPÜLER ve EN AVANTAJLI rozetleri. Fiyat alanı olmadan
+  kaydedilmiş eski bir dönem, o dönemin varsayılan fiyatını ve rozetini alır. Panel artık her zaman üç dönemi
+  gönderir; satıştan kalkan dönem "satışta değil" olarak saklanır.
+- **Dil:** varsayılan rozetler 11 dilde çevirisiyle görünür. Yöneticinin yazdığı rozet Türkçe ziyaretçiye Türkçe,
+  ötekilere İngilizce görünür. Pro adı, kısa açıklaması ve özellikleri de aynı kurala uyar; bu kural uygulamanın ödeme
+  ekranında ve e-postalarda da geçerli.
+- **Ücretsiz plan:** sitedeki "Günde N tasarım" ve "Tek seferde N seçenek" satırları Ayarlar'daki sınırlardan gelir;
+  önceden "3" sabit yazıyordu. "AI sohbet" satırı yalnız sohbet özelliği açıkken görünür.
+- **Satın alma:** sitedeki "Seç" düğmesi "Uygulamadan abone ol" oldu ve sayfadaki **Abonelik uygulamadan**
+  bölümüne gider. Bölümde Ayarlar → Zorunlu güncelleme'deki mağaza bağlantıları var. Bağlantı yoksa "yakında" yazar
+  ve bekleme listesi açıksa ona bağlantı verir. Ardından kredi paketleri gelir.
+- **Deneme düğmesi:** "Demo: 7 gün PRO" düğmesi yalnız geliştirme ortamında görünür (`NODE_ENV=development`).
+
+| Yöntem | Yol | Değişen |
+|---|---|---|
+| GET | `/catalog` | `plans`: satıştaki ve web fiyatı olan dönemler (`id: pro_<dönem>`, `priceTRY`, `badge`, yeni `highlight`). Yeni `pricing: { name, tagline, features, packs: [{ key, name, credits, highlight, priceTRY }], limits }` |
+| GET | `/billing/catalog` | Dönemlerde `badge` ve `webPriceTRY`, paketlerde `webPriceTRY` (bilgi amaçlı) |
+| PATCH | `/admin/billing/catalog` | Dönemde `webPriceTRY`, `badgeTr`, `badgeEn`; pakette `webPriceTRY`. Eski istemcinin göndermediği alanlar boş sayılır |

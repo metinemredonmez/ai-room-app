@@ -421,7 +421,17 @@ export type AdminSubscription = {
   access: boolean;
 };
 export type PlanCycleId = "weekly" | "monthly" | "yearly";
-export type PlanCycle = { cycle: PlanCycleId; active: boolean; highlight: boolean; iosProductId: string | null; androidProductId: string | null };
+export type PlanCycle = {
+  cycle: PlanCycleId;
+  active: boolean;
+  highlight: boolean;
+  iosProductId: string | null;
+  androidProductId: string | null;
+  /** Price shown on the web (TRY, information only; the store charges its own). Required for a period on sale. */
+  webPriceTRY: number | null;
+  badgeTr: string;
+  badgeEn: string;
+};
 export type CreditPack = {
   key: string;
   nameTr: string;
@@ -431,6 +441,7 @@ export type CreditPack = {
   androidProductId: string | null;
   highlight: boolean;
   active: boolean;
+  webPriceTRY: number | null;
 };
 export type PlanCatalog = {
   plan: { nameTr: string; nameEn: string; taglineTr: string; taglineEn: string; featuresTr: string[]; featuresEn: string[]; cycles: PlanCycle[] };
