@@ -512,6 +512,21 @@ export type EngineState = {
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
 
+// Mağaza inceleme hesabı (API.md §7.40).
+export type ReviewAccountStatus =
+  | { email: string; exists: false }
+  | {
+      email: string;
+      exists: true;
+      id: string;
+      active: boolean;
+      reviewUntil: string | null;
+      credits: number;
+      designs: number;
+      openSessions: number;
+      lastLogin: { ok: boolean; at: string; device: string; ipPrefix: string } | null;
+    };
+
 // Oturumlar ve giriş geçmişi (API.md §7.37).
 export type AdminUserSessions = {
   sessions: Array<{ id: string; device: string; ipPrefix: string; method: string; createdAt: string; lastUsedAt: string; current: boolean }>;

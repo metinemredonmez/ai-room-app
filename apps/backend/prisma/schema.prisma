@@ -121,6 +121,7 @@ model User {
   lastSeenAt        DateTime?
   streakDays        Int        @default(0) // consecutive Istanbul days with activity (API.md §7.35)
   streakDay         String?    @db.VarChar(10) // last active day, YYYY-MM-DD Europe/Istanbul
+  reviewUntil       DateTime? // App Store / Play review account (API.md §7.40): signs in only until then
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 

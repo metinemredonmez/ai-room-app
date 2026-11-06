@@ -1826,3 +1826,30 @@ Yöneticilerin doğrulayıcı sırları (`totpSecret`, kayıt sırasındaki `tot
   loglanır.
 - **Kurtarma:** SUPER_ADMIN'in MFA sıfırlaması (yeniden kayıt). Panel girişi (ADMIN_PANEL_KEY) kod istemediği için
   sahibi her durumda panele girebilir.
+
+### 7.40 Mağaza inceleme hesabı — backend + admin
+App Store ve Google Play incelemecilerinin uygulamaya girebilmesi için süreli bir hesap (**Admin → Sistem → İnceleme
+hesabı**; Palemi S9).
+- **Hesap:** `appreview@casalume.app` adresiyle normal bir USER hesabıdır, e-posta ve parola ile `POST /auth/login`
+  üzerinden girer. Adresin posta kutusu yoktur: hesap doğrulanmış açılır ve şifre sıfırlama bağlantısı hiç almaz.
+- **Parola:** panelde "Hesabı oluştur / Yeni parola üret" ile sunucuda üretilir (4×5 karakter, karışmayan harf ve
+  rakamlar). Yanıtta yalnız bir kez gösterilir (`Cache-Control: no-store`); düz hâli saklanmaz, loglanmaz ve denetim
+  kaydına yazılmaz.
+- **Süre:** 1–30 gün (`User.reviewUntil`). Bu süre boyunca PRO ve belirlenen kredi (0–200) tanımlanır. Süre dolunca
+  giriş 403 `review_expired` alır, token yenileme ve her istek 401 döner.
+- **Yeni dönem:** yeni parola demektir; eski parola ve açık oturumlar geçersiz olur. "Şimdi bitir" dönemi hemen
+  kapatır.
+- Girişleri oturum ve giriş geçmişinde `review` yöntemiyle görünür.
+- Bu adres bir yönetici hesabına aitse işlem reddedilir (409).
+- Gerçek bir müşteri değildir: toplu gönderim, toplu hediye ve sadakat kurallarının hiçbirine girmez.
+
+**Uçlar** (hepsi ADMIN)
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| GET | `/admin/review-account` | `{ email, exists, active, reviewUntil, credits, designs, openSessions, lastLogin }` |
+| POST | `/admin/review-account` | `{ days, credits, reason }` → 201 `{ email, password, reviewUntil }` (parola bir kez). Denetim: `review_account.issue` |
+| POST | `/admin/review-account/close` | `{ reason }` → `{ closed }`. Denetim: `review_account.close` |
+
+**Mağazalara yazılacak bilgi:**
+- App Store Connect → App Review Information → Sign-in required;
+- Play Console → Uygulama içeriği → Uygulama erişimi.

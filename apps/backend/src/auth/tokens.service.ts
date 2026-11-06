@@ -116,6 +116,8 @@ export class TokensService {
       throw unauthorized('Oturum yeniden kullanım nedeniyle kapatıldı');
     }
     if (row.expiresAt < new Date() || row.user.status !== 'ACTIVE') throw unauthorized();
+    // API.md §7.40: a store review account stops at the end of its review period.
+    if (row.user.reviewUntil && row.user.reviewUntil <= new Date()) throw unauthorized('İnceleme süresi doldu');
     const claimed = await this.prisma.refreshToken.updateMany({
       where: { id: row.id, usedAt: null, revokedAt: null },
       data: { usedAt: new Date() },
@@ -190,7 +192,7 @@ export class UserGuard implements CanActivate {
     const user = await this.prisma.user.findUnique({
       where: { id: claims.sub },
       select: {
-        id: true, role: true, isGuest: true, status: true, tokenVersion: true, lastSeenAt: true, streakDay: true,
+        id: true, role: true, isGuest: true, status: true, tokenVersion: true, lastSeenAt: true, streakDay: true, reviewUntil: true,
         ...(claims.sid ? { authSessions: { where: { id: claims.sid }, select: { revokedAt: true } } } : {}),
       },
     });
@@ -201,6 +203,7 @@ export class UserGuard implements CanActivate {
       if (!session || session.revokedAt) throw unauthorized('Bu oturum kapatıldı');
     }
     if (user.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
+    if (user.reviewUntil && user.reviewUntil <= new Date()) throw unauthorized('İnceleme süresi doldu');
     req.auth = { userId: user.id, role: user.role, isGuest: user.isGuest, admin: false, sessionId: claims.sid ?? null };
     if (!user.lastSeenAt || Date.now() - user.lastSeenAt.getTime() > 5 * 60_000) {
       void this.prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined);

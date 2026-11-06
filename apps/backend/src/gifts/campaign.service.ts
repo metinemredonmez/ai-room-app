@@ -37,7 +37,8 @@ export const SendSchema = z
 
 /** WHERE for a segment; every segment starts from real, reachable people. */
 export function segmentWhere(segment: Segment, days: number | null, now = new Date()): Prisma.Sql {
-  const people = Prisma.sql`u.role = 'USER' AND u.status = 'ACTIVE' AND u."isGuest" = false AND u."emailVerifiedAt" IS NOT NULL`;
+  // The store review account (API.md §7.40) is not a customer: never in a segment.
+  const people = Prisma.sql`u.role = 'USER' AND u.status = 'ACTIVE' AND u."isGuest" = false AND u."emailVerifiedAt" IS NOT NULL AND u."reviewUntil" IS NULL`;
   const ago = new Date(now.getTime() - (days ?? 0) * 24 * 3600 * 1000);
   switch (segment) {
     case 'inactive':

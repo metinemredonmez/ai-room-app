@@ -77,7 +77,8 @@ export class BroadcastsService {
       OR: [{ plan: 'PRO', OR: [{ planExpiresAt: null }, { planExpiresAt: { gt: now } }] }, { storeProUntil: { gt: now } }],
     };
     const and: Prisma.UserWhereInput[] = [
-      { status: 'ACTIVE', role: 'USER' },
+      // API.md §7.40: never the store review account (its address has no mailbox; it is not a customer).
+      { status: 'ACTIVE', role: 'USER', reviewUntil: null },
       channel === 'EMAIL'
         ? { isGuest: false, email: { not: null }, emailVerifiedAt: { not: null } }
         : { pushTokens: { some: a.platform ? { platform: a.platform } : {} } },

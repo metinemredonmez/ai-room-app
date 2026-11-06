@@ -26,7 +26,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Aktif oturumlar + giriş geçmişi (API.md §7.37): web Hesabım → Oturumlar; kapatılan oturum anında düşer (SES-04); admin kullanıcı ayrıntısında görür ve kapatır.
    - [x] Yaygın parola reddi + admin parola değiştirme (API.md §7.38).
    - [x] TOTP sırları şifreli (API.md §7.39): AES-256-GCM, ayrı anahtar, döndürme; sahibi anahtarı `set-secret.sh --generate` ile girer.
-   - [ ] App Review hesabı.
+   - [x] Mağaza inceleme hesabı (API.md §7.40): panelden süreli, parola bir kez gösterilir, PRO + kredi, süre dolunca giriş kapanır. Admin → Sistem → İnceleme hesabı.
 4. İşletim: kurucu uyarıları (disk, hata, bütçe, satın alma), zamanlı işi elle tetikleme, istemci hata ucu, CSV, komut paleti.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
@@ -241,7 +241,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Yaygın parola listesiyle red (MAEYJA, Palemi; PWD) — API.md §7.38
 - [x] TOTP sırrını AES-256-GCM ile şifreli saklama (YediOda #12, MAEYJA; KEY) — API.md §7.39
 - [x] Admin hesabında parola değiştirme (Palemi panel) — API.md §7.38
-- [ ] Mağaza inceleme (App Review) hesabı: süreli, denetimli (Palemi) · kolay
+- [x] Mağaza inceleme (App Review) hesabı: süreli, denetimli (Palemi) — API.md §7.40
 - [ ] Kurucu uyarıları: satın alma bildirimi, disk/iş hatası/bütçe eşiği (YediOda #71, #90, #92) · orta
 - [ ] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) · kolay
 - [x] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) — API.md §7.28

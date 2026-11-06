@@ -17,6 +17,7 @@ import { EmailTokensService } from './email-tokens.service.js';
 import { OAuthService } from './oauth.service.js';
 import { WelcomeService, welcomeEmailKey } from '../users/welcome.service.js';
 import { TotpSecretsService } from '../admin/totp-secrets.service.js';
+import { reviewExpired } from '../admin/review-account.service.js';
 import { clientInfo } from './client-info.js';
 import { assertPassword, MIN_ADMIN } from './password-policy.js';
 import { SessionsService } from './sessions.service.js';
@@ -148,9 +149,14 @@ export class AuthController {
       this.sessions.recordLogin(user.id, false, 'password', clientInfo(req), 'suspended');
       throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
     }
+    // API.md §7.40: the store review account signs in only during its review period.
+    if (user.reviewUntil && reviewExpired(user)) {
+      this.sessions.recordLogin(user.id, false, 'review', clientInfo(req), 'review_expired');
+      throw new AppError(403, 'review_expired', 'Bu inceleme hesabının süresi doldu.');
+    }
     await this.limiter.reset(LIMITS.loginAccount, sha256(input.email));
     log.info('login_succeeded', { userId: user.id, ip: req.clientIp });
-    return this.respond(user.id, 'password', req);
+    return this.respond(user.id, user.reviewUntil ? 'review' : 'password', req);
   }
 
   /** TOK-03: step 1 of Apple / Google sign-in — a single-use nonce for this attempt (10 minutes). */
@@ -208,7 +214,8 @@ export class AuthController {
     await this.limiter.hit(LIMITS.forgotIp, req.clientIp);
     const withinBudget = await this.limiter.allow(LIMITS.forgotAccount, sha256(address));
     const user = withinBudget ? await this.prisma.user.findUnique({ where: { email: address } }) : null;
-    if (user && !user.isGuest && user.passwordHash && user.status === 'ACTIVE') {
+    // The review account's address has no mailbox (API.md §7.40): it never gets a reset link.
+    if (user && !user.isGuest && user.passwordHash && user.status === 'ACTIVE' && !user.reviewUntil) {
       void this.emailTokens.sendPasswordReset(user).catch((e: Error) => log.error('mail_failed', { kind: 'reset', error: e.name }));
     }
     log.info('password_reset_requested', { ip: req.clientIp, delivered: Boolean(user), throttled: !withinBudget });

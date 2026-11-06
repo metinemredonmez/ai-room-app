@@ -9,7 +9,7 @@ import type { ClientInfo } from './client-info.js';
 
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export type LoginMethod = 'password' | 'register' | 'guest' | 'google' | 'apple' | 'admin' | 'review';
-export type LoginReason = 'bad_password' | 'bad_second_factor' | 'suspended';
+export type LoginReason = 'bad_password' | 'bad_second_factor' | 'suspended' | 'review_expired';
 
 @Injectable()
 export class SessionsService {

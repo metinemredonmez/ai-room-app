@@ -16,8 +16,8 @@ const KEY = 'loyalty.rules';
 const REFRESH_MS = 15_000;
 const CHUNK = 500;
 const DAY = 86_400_000;
-/** Real, reachable people only: the same base as the group gifts (API.md §7.32). */
-const PEOPLE = Prisma.sql`u.role = 'USER' AND u.status = 'ACTIVE' AND u."isGuest" = false AND u."emailVerifiedAt" IS NOT NULL`;
+/** Real, reachable people only: the same base as the group gifts (API.md §7.32); never the store review account (§7.40). */
+const PEOPLE = Prisma.sql`u.role = 'USER' AND u.status = 'ACTIVE' AND u."isGuest" = false AND u."emailVerifiedAt" IS NOT NULL AND u."reviewUntil" IS NULL`;
 
 @Injectable()
 export class LoyaltyService implements OnModuleInit, OnModuleDestroy {
