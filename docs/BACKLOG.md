@@ -31,7 +31,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Kurucu uyarıları + kendi hata alarmımız (API.md §7.41): hata grupları, satın alma, disk, AI bütçesi, iş hataları; panelden ayarlanır. Admin → Sistem → Uyarılar ve hatalar.
    - [x] Zamanlı işi panelden çalıştırma + gecikme tespiti (API.md §7.42).
    - [x] İstemci hata ucu (API.md §7.43): web bağlı; mobil aynı ucu kullanacak (sen).
-   - [ ] CSV, komut paleti.
+   - [x] CSV dışa aktarma (API.md §7.44): ödeme olayları, abonelikler, AI maliyeti, ortaklar, denetim kaydı (SUPER_ADMIN); formül enjeksiyonuna karşı korumalı.
+   - [ ] Komut paleti.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
@@ -256,7 +257,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta
 - [ ] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) · kolay
 - [ ] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) · kolay
-- [ ] Mağaza olayları CSV dışa aktarımı (Palemi) · kolay
+- [x] Mağaza olayları CSV dışa aktarımı (Palemi) — API.md §7.44
 - [x] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) — API.md §7.31, §7.32 (kendiliğinden kurallar açık: üstte Büyüme)
 - [ ] A/B deney altyapısı (YediOda #74) · kolay, düşük öncelik
 Uymayanlar (alınmayacak): fal/astroloji/tarot içerikleri, ses (TTS/STT), kriz süzgeci, RAG, e-ticaret sepet/kargo/iade,

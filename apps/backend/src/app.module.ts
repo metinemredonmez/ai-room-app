@@ -51,6 +51,8 @@ import { AdminReviewAccountController } from './admin/review-account.controller.
 import { ReviewAccountService } from './admin/review-account.service.js';
 import { AdminAlertsController, ClientErrorsController } from './alerts/alerts.controller.js';
 import { AlertsService } from './alerts/alerts.service.js';
+import { AdminExportsController } from './exports/exports.controller.js';
+import { ExportsService } from './exports/exports.service.js';
 import { AdminPromoController, PromoController } from './promo/promo.controller.js';
 import { PromoService } from './promo/promo.service.js';
 import { AdminReferralController, ReferralController } from './referral/referral.controller.js';
@@ -81,7 +83,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController, ThemeController, AdminThemeController, AdminLoyaltyController, AdminPriceScheduleController, SessionsController, AdminSessionsController, AdminReviewAccountController, AdminAlertsController, ClientErrorsController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController, ThemeController, AdminThemeController, AdminLoyaltyController, AdminPriceScheduleController, SessionsController, AdminSessionsController, AdminReviewAccountController, AdminAlertsController, ClientErrorsController, AdminExportsController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -129,6 +131,7 @@ import { UsersService } from './users/users.service.js';
     TotpSecretsService,
     ReviewAccountService,
     AlertsService,
+    ExportsService,
     PromoService,
     ReferralService,
     GiftService,

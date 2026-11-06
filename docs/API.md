@@ -1923,3 +1923,24 @@ bildirilir.
 
 **Mobil:** aynı uca `platform: ios|android` ve `appVersion` ile gönderir. Uygulamanın kendi hata sınırı ve
 `ErrorUtils.setGlobalHandler` buradan beslenir (senin tarafın).
+
+### 7.44 CSV dışa aktarma — backend + admin
+**Admin → Sistem → Dışa aktarma (CSV)** (Palemi mağaza olayları dışa aktarımı).
+
+`GET /admin/exports/:kind?from=YYYY-AA-GG&to=YYYY-AA-GG` (ADMIN) → `text/csv`. Aralık İstanbul günleriyle verilir
+(`to` dahil); verilmezse son 30 gün, en çok 366 gün.
+
+| kind | İçerik |
+|---|---|
+| `billing-events` | RevenueCat olayları: tarih, tür, ürün, tutar, para birimi, mağaza, ortam, durum, kullanıcı kimliği |
+| `subscriptions` | Aralıkta güncellenen abonelikler |
+| `ai-costs` | Gün × sağlayıcı × iş türü: çağrı, görsel, USD |
+| `partners` | Ortaklar raporu (tüm zamanlar; aralık kullanılmaz) |
+| `audit` | Denetim kaydı: tarih, kim, ne, gerekçe, IP'nin yalnız /24'ü. **Yalnız SUPER_ADMIN** |
+
+- Kullanıcılar e-postayla değil kimlikle yer alır; personel yalnız denetim kaydında e-postasıyla görünür.
+- **CSV enjeksiyonuna karşı (OWASP):** `= + - @`, sekme ya da satır başıyla başlayan hücrenin başına `'` eklenir;
+  tablo programı onu formül olarak çalıştırmaz.
+- RFC 4180 tırnaklama ve UTF-8 BOM vardır, Excel'de Türkçe karakterler doğru görünür.
+- En çok 50 000 satır döner; kesilirse `X-Export-Truncated: true` başlığı gelir.
+- Hız sınırı: yönetici başına saatte 30. Her dışa aktarma denetlenir (`export.csv`: tür, aralık, satır sayısı).

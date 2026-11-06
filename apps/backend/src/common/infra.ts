@@ -93,6 +93,8 @@ export const LIMITS = {
   partnerVisit: { name: 'partner-visit', max: 20, windowSec: 3600 },
   // API.md §7.43: web / app error reports, per IP.
   clientErrors: { name: 'client-errors', max: 20, windowSec: 600 },
+  // API.md §7.44: CSV exports, per admin.
+  exports: { name: 'exports', max: 30, windowSec: 3600 },
   forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },
   forgotAccount: { name: 'forgot-acct', max: 3, windowSec: 3600 },
   tokenIp: { name: 'email-token-ip', max: 30, windowSec: 3600 },
