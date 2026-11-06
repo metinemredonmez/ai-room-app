@@ -1039,3 +1039,30 @@ model AlertLog {
   @@index([createdAt])
   @@index([dedupeKey, createdAt])
 }
+
+enum WaitlistStatus {
+  PENDING // signed up, e-mail not confirmed yet (deleted after 7 days)
+  CONFIRMED // double opt-in done: may receive the launch / news e-mails
+  UNSUBSCRIBED // left the list (deleted after 30 days)
+}
+
+/// Waiting list and newsletter (API.md §7.47): web visitors who want an e-mail when the mobile apps launch and when
+/// there is news. Double opt-in; consent text version kept; not tied to a user account.
+model WaitlistEntry {
+  id             String         @id @default(uuid()) @db.Uuid
+  email          String         @unique @db.VarChar(254) // lower-cased
+  locale         String         @default("tr") @db.VarChar(5)
+  platforms      String[]       @default([]) // ios | android; empty = either
+  source         String         @default("home") @db.VarChar(12) // home | footer
+  status         WaitlistStatus @default(PENDING)
+  consentVersion String         @db.VarChar(20) // marketing text version the visitor accepted
+  confirmHash    String?        @unique @db.VarChar(64) // SHA-256 of the confirmation token; cleared on use
+  confirmSentAt  DateTime?
+  confirmMails   Int            @default(0)
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status, createdAt])
+}

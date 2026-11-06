@@ -48,6 +48,7 @@ const SECTION_LABELS: Record<SiteSection, string> = {
   how: "Nasıl çalışır",
   styles: "Stiller",
   pricing: "Fiyatlar",
+  app: "Mobil uygulama ve bekleme listesi",
   faq: "Sık sorulan sorular",
 };
 

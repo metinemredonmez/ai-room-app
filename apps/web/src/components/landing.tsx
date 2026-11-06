@@ -13,13 +13,16 @@ import {
   Ruler,
   ShieldCheck,
   ShoppingBag,
+  Smartphone,
   Sparkles,
 } from "lucide-react";
 import { formatTRY } from "@/lib/format";
 import type { SiteContent } from "@/lib/site-content";
+import type { WaitlistStatus } from "@/lib/waitlist";
 import type { Plan } from "@/lib/types";
 import { useApp } from "./app-provider";
 import { BeforeAfter } from "./before-after";
+import { WaitlistForm } from "./waitlist-form";
 import { btn, card } from "./ui";
 import { fmt } from "@/lib/i18n";
 
@@ -70,12 +73,15 @@ export function PlanCards({ plans, footer }: { plans: Plan[]; footer?: (p: Plan)
 /** A real before/after pair from public/landing (Pexels photo → Casalume result). */
 const pair = (key: string) => ({ before: `/landing/${key}-once.webp`, after: `/landing/${key}-sonra.webp` });
 
-export function Landing({ content }: { content: SiteContent }) {
+export function Landing({ content, waitlist }: { content: SiteContent; waitlist: WaitlistStatus }) {
   const { t, catalog } = useApp();
   // Texts changed in the admin replace the built-in translation; hidden sections are left out (API.md §7.46).
   const L = { ...t.landing, ...content.texts };
   const show = content.sections;
   const secondaryHref = show.gallery ? "#ornekler" : show.how ? "#nasil" : null;
+  const W = t.waitlist;
+  const live = Boolean(waitlist.stores.ios || waitlist.stores.android);
+  const showApp = show.app && (waitlist.enabled || live);
   const hero = pair("hero");
 
   return (
@@ -300,6 +306,35 @@ export function Landing({ content }: { content: SiteContent }) {
                 ))}
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* Mobile app: store links once they exist, the waiting list until then (API.md §7.47) */}
+      {showApp && (
+        <section id="uygulama" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-4 pt-16 sm:px-6">
+          <div className={`${card} grid gap-8 p-8 sm:p-12 lg:grid-cols-[1fr_1.1fr] lg:items-center`}>
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
+                <Smartphone className="h-3.5 w-3.5" aria-hidden /> {W.badge}
+              </span>
+              <h2 className="mt-4 text-4xl font-display font-light">{W.title}</h2>
+              <p className="mt-3 leading-relaxed text-muted">{live ? W.textLive : W.textSoon}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {([["ios", "App Store"], ["android", "Google Play"]] as const).map(([k, label]) =>
+                  waitlist.stores[k] ? (
+                    <a key={k} href={waitlist.stores[k]!} target="_blank" rel="noopener noreferrer" className={`${btn.base} ${btn.ghost} ${btn.md}`}>
+                      {label} <ArrowRight className="h-4 w-4" aria-hidden />
+                    </a>
+                  ) : (
+                    <span key={k} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted">
+                      {label} <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{W.soon}</span>
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+            {waitlist.enabled && <WaitlistForm source="home" />}
           </div>
         </section>
       )}

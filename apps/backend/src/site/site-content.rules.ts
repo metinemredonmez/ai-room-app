@@ -12,7 +12,7 @@ import { LOCALES } from '../catalog/catalog.data.js';
 export type Locale = (typeof LOCALES)[number];
 
 /** Home-page sections the admin can hide. Hero and the final call to action always show. */
-export const SECTIONS = ['gallery', 'tools', 'features', 'pro', 'how', 'styles', 'pricing', 'faq'] as const;
+export const SECTIONS = ['gallery', 'tools', 'features', 'pro', 'how', 'styles', 'pricing', 'app', 'faq'] as const;
 export type Section = (typeof SECTIONS)[number];
 
 /** Single-line texts and their limits (about twice the longest of the 11 built-in translations). */
@@ -103,7 +103,8 @@ export type Announcement = z.infer<typeof AnnouncementSchema>;
 
 export const SiteContentSchema = z
   .object({
-    sections: z.object(Object.fromEntries(SECTIONS.map((s) => [s, z.boolean()])) as Record<Section, z.ZodBoolean>).strict(),
+    // A section added later (e.g. `app`, §7.47) is missing from older saves: it starts switched on.
+    sections: z.object(Object.fromEntries(SECTIONS.map((s) => [s, z.boolean().default(true)])) as Record<Section, z.ZodDefault<z.ZodBoolean>>).strict(),
     announcement: AnnouncementSchema,
     texts: z.partialRecord(localeEnum, LocaleTextsSchema),
   })

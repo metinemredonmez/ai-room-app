@@ -8,8 +8,10 @@ import { toCsv } from './csv.js';
 // Admin CSV exports (API.md §7.44; Palemi store-events export). Pseudonymous where possible: users appear by id, not
 // by e-mail; staff in the audit export by e-mail (SUPER_ADMIN only) and their IP only as a /24 prefix.
 
-export const EXPORT_KINDS = ['billing-events', 'subscriptions', 'ai-costs', 'partners', 'audit'] as const;
 export type ExportKind = (typeof EXPORT_KINDS)[number];
+export const EXPORT_KINDS = ['billing-events', 'subscriptions', 'ai-costs', 'partners', 'audit', 'waitlist'] as const;
+/** Kinds with e-mail addresses or staff activity: SUPER_ADMIN only (AZ-01). */
+export const SUPER_ADMIN_EXPORTS: readonly ExportKind[] = ['audit', 'waitlist'];
 export const isExportKind = (v: string): v is ExportKind => (EXPORT_KINDS as readonly string[]).includes(v);
 
 export const MAX_ROWS = 50_000;
@@ -71,6 +73,14 @@ export class ExportsService {
         return {
           header: ['slug', 'name', 'active', 'visits', 'visits_30d', 'signups', 'verified', 'designers', 'payers', 'revenue_usd', 'commission_pct', 'commission_usd', 'created_at'],
           rows: items.map((p) => [p.slug, p.name, p.active, p.visits, p.visits30, p.signups, p.verified, p.designers, p.payers, p.revenueUsd, p.commissionPct, p.commissionUsd, p.createdAt]),
+        };
+      }
+      case 'waitlist': {
+        // API.md §7.47: confirmed addresses only (double opt-in), with the consent text version, by confirmation date.
+        const rows = await this.prisma.waitlistEntry.findMany({ where: { status: 'CONFIRMED', confirmedAt: range }, orderBy: { confirmedAt: 'asc' }, take });
+        return {
+          header: ['confirmed_at', 'email', 'locale', 'platforms', 'source', 'consent_version'],
+          rows: rows.map((r) => [r.confirmedAt, r.email, r.locale, r.platforms.join(' '), r.source, r.consentVersion]),
         };
       }
       case 'audit': {

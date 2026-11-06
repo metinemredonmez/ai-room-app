@@ -3,8 +3,10 @@
 import Link from "@/components/locale-link";
 import { useApp, useFeature } from "./app-provider";
 import { Logo } from "./logo";
+import { WaitlistForm } from "./waitlist-form";
 
-export function SiteFooter() {
+/** `newsletter`: the waiting list is open (API.md §7.47), so the footer offers the e-mail sign-up too. */
+export function SiteFooter({ newsletter = false }: { newsletter?: boolean }) {
   const { t } = useApp();
   const feature = useFeature();
   const cols = [
@@ -42,6 +44,13 @@ export function SiteFooter() {
           <Logo />
           <p className="mt-3 max-w-xs text-sm text-muted">{t.brandTagline}</p>
           <p className="mt-4 max-w-xs text-xs text-muted">{t.footer.note}</p>
+          {newsletter && (
+            <div className="mt-6 max-w-xs">
+              <h3 className="text-sm font-medium text-text">{t.waitlist.footerTitle}</h3>
+              <p className="mb-3 mt-1 text-xs text-muted">{t.waitlist.footerText}</p>
+              <WaitlistForm source="footer" compact />
+            </div>
+          )}
         </div>
         {cols.map((c) => (
           <div key={c.title}>

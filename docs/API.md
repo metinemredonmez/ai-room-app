@@ -1987,3 +1987,48 @@ Admin → İçerik → **Ana sayfa ve SSS** (MAEYJA "İçerik → Ana sayfa / SS
 | GET | `/v1/site/content?locale=` | herkese açık | `{ sections, announcement, texts }`; `texts` yalnız değiştirilen metinlerdir; `max-age=60` |
 | GET | `/admin/site-content` | SUPPORT | `{ content, defaults (11 dil), version, updatedAt, updatedBy }` |
 | PATCH | `/admin/site-content` | EDITOR | `{ content, reason, version }`; eski sürüm 409; denetim `site_content.update` |
+
+### 7.47 Bekleme listesi ve bülten — backend + web + admin
+Mağazalar açılmadan önce web ziyaretçisi, mobil uygulama çıktığında ve yenilik olduğunda haber almak için e-posta
+bırakır (fal-app, maeyja, Yedi Oda #67). Hesaptan bağımsızdır (`WaitlistEntry`).
+
+- **Form:** ana sayfadaki "Mobil uygulama" bölümünde ve alt bilgide ("Bülten").
+  - Alanlar: e-posta, telefon (iPhone / Android, isteğe bağlı) ve ayrı, işaretsiz izin kutusu.
+  - İzin kutusu "Ticari ileti onayı" metnine (`/yasal/pazarlama`) bağlanır. Kabul edilen metnin sürümü kayda yazılır.
+  - Bölüm Ana sayfa ve SSS ekranından gizlenebilir (`app`). Form Admin → Pazarlama → Bekleme listesi'nden kapatılabilir.
+  - Mağaza bağlantısı Ayarlar → uygulama sürümlerinde girilince bölümde indirme düğmesi çıkar.
+- **Çift onay:** yalnız e-postadaki bağlantıyla onaylanan adres listededir.
+  - Onay bağlantısı 7 gün geçerli ve tek kullanımlıktır. Jeton URL'nin `#` kısmındadır, sunucu kayıtlarına düşmez.
+    Veritabanında yalnız SHA-256 özeti tutulur.
+  - Onay tıklamayla yapılır. Bağlantıyı açan e-posta tarayıcıları kimseyi kaydedemez.
+  - Onay e-postası Türkçe, diğer dillerde İngilizcedir.
+- **Kimin listede olduğu sızmaz:** kayıt isteği her adres için aynı yanıtı verir (202).
+  - Onaylı adrese yeni e-posta gitmez.
+  - Bekleyen adrese en erken 2 dakikada bir, toplam en çok 5 onay e-postası gider.
+  - Adres başına günde 3 deneme hakkı vardır; aşılınca yanıt yine aynıdır.
+  - IP başına saatte 10 kayıt (RES). Gizli "website" alanı bot tuzağıdır; doluysa hiçbir şey kaydedilmez.
+- **Listeden çıkma:** bağlantı kayıt kimliği ve onun HMAC imzasından oluşur; adreste e-posta geçmez.
+  - İmza anahtarı yalnız bu işe ayrılmıştır; Toplu Gönderim bağlantısıyla yer değiştiremez.
+  - Teşekkür sayfasında hemen sunulur. Gelecekteki e-postalarda hem sayfa hem RFC 8058 tek tık olarak bulunur.
+- **Saklama (KVKK):** onaylanmayan adres son e-postadan 7 gün sonra, çıkan adres 30 gün sonra silinir
+  (`retention` işi).
+- **Admin:**
+  - Sayılar: onaylı, bekleyen, çıkan, son 7 / 30 gün; telefon ve dil dağılımı.
+  - SUPPORT ve EDITOR adresleri maskeli görür (`a***@ornek.com`).
+  - ADMIN adresleri görür, formu açıp kapatır (gerekçe, sürüm; denetim `waitlist.settings`) ve adresi kalıcı siler
+    (gerekçe; denetim `waitlist.delete`, adres maskeli).
+  - Onaylı adreslerin CSV'si yalnız SUPER_ADMIN içindir (Dışa aktarma → Bekleme listesi).
+- **Listeye e-posta göndermek** (lansman duyurusu, bülten) ayrı bir adımdır. Tasarım kararı: Toplu Gönderim'in günlük
+  sınırını paylaşacak.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/v1/waitlist/status` | herkese açık | `{ enabled, stores: { ios, android } }`; `max-age=60` |
+| POST | `/v1/waitlist` | herkese açık | `{ email, locale, platforms[], source, consent: true }` → 202; kapalıysa 403 `waitlist_closed` |
+| POST | `/v1/waitlist/confirm` | herkese açık | `{ token }` → `{ ok, leave: { i, t } }`; geçersizse 400 |
+| POST | `/v1/waitlist/leave` | herkese açık | `{ i, t }`; tek tık: `POST /v1/waitlist/leave/one-click?i=&t=` |
+| GET | `/admin/waitlist?status=&q=&cursor=` | SUPPORT | sayfalı; adres ADMIN altında maskeli |
+| GET | `/admin/waitlist/overview` | SUPPORT | sayılar, dağılımlar, son 30 gün, ayar |
+| PATCH | `/admin/waitlist/settings` | ADMIN | `{ settings: { enabled }, reason, version }` |
+| POST | `/admin/waitlist/:id/delete` | ADMIN | `{ reason }` |
+| GET | `/admin/exports/waitlist?from=&to=` | SUPER_ADMIN | onaylı adresler (CSV) |

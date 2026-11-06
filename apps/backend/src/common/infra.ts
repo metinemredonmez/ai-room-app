@@ -95,6 +95,9 @@ export const LIMITS = {
   clientErrors: { name: 'client-errors', max: 20, windowSec: 600 },
   // API.md §7.44: CSV exports, per admin.
   exports: { name: 'exports', max: 30, windowSec: 3600 },
+  // API.md §7.47: waiting-list signups, per IP and (silently) per address.
+  waitlistIp: { name: 'waitlist-ip', max: 10, windowSec: 3600 },
+  waitlistEmail: { name: 'waitlist-email', max: 3, windowSec: 86400 },
   // API.md §7.45: the admin command palette's search, per admin.
   adminSearch: { name: 'admin-search', max: 120, windowSec: 60 },
   forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },

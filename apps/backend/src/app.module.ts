@@ -53,6 +53,8 @@ import { AdminAlertsController, ClientErrorsController } from './alerts/alerts.c
 import { AlertsService } from './alerts/alerts.service.js';
 import { AdminSiteContentController, SiteContentController } from './site/site-content.controller.js';
 import { SiteContentService } from './site/site-content.service.js';
+import { AdminWaitlistController, WaitlistController } from './waitlist/waitlist.controller.js';
+import { WaitlistService } from './waitlist/waitlist.service.js';
 import { AdminExportsController } from './exports/exports.controller.js';
 import { AdminSearchController } from './admin/search.controller.js';
 import { ExportsService } from './exports/exports.service.js';
@@ -86,7 +88,7 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController, ThemeController, AdminThemeController, AdminLoyaltyController, AdminPriceScheduleController, SessionsController, AdminSessionsController, AdminReviewAccountController, AdminAlertsController, ClientErrorsController, AdminExportsController, AdminSearchController, SiteContentController, AdminSiteContentController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController, ThemeController, AdminThemeController, AdminLoyaltyController, AdminPriceScheduleController, SessionsController, AdminSessionsController, AdminReviewAccountController, AdminAlertsController, ClientErrorsController, AdminExportsController, AdminSearchController, SiteContentController, AdminSiteContentController, WaitlistController, AdminWaitlistController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
@@ -135,6 +137,7 @@ import { UsersService } from './users/users.service.js';
     ReviewAccountService,
     AlertsService,
     SiteContentService,
+    WaitlistService,
     ExportsService,
     PromoService,
     ReferralService,

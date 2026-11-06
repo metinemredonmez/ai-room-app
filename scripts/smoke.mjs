@@ -1021,7 +1021,7 @@ if (adminToken) {
   const A = { token: adminToken };
   const c0 = (await call('GET', '/admin/site-content', A)).json;
   const pub0 = await call('GET', '/site/content?locale=tr');
-  ok(pub0.status === 200 && Object.values(pub0.json?.sections ?? {}).length === 8 && /max-age=60/.test(pub0.headers.get('cache-control') ?? '')
+  ok(pub0.status === 200 && Object.values(pub0.json?.sections ?? {}).length === 9 && /max-age=60/.test(pub0.headers.get('cache-control') ?? '')
     && c0?.defaults?.tr?.faq?.length >= 1 && Object.keys(c0?.defaults ?? {}).length === 11,
     'site content: public read is cached briefly; the admin gets the site\'s own texts in 11 languages', `${pub0.status} ${Object.keys(c0?.defaults ?? {}).length}`);
   const save = (content, version, reason = 'smoke site content test') => call('PATCH', '/admin/site-content', { ...A, body: { content, reason, version } });
@@ -1044,6 +1044,55 @@ if (adminToken) {
     && !!entry && !JSON.stringify(entry.meta).includes('gizli') && audit.some((x) => x.action === 'site_content.update' && x.meta?.reason === 'smoke site content restore'),
     'site content: saved and public per language (English fallback for the announcement), foreign link and bidi refused, stale 409, restored; audit has no texts',
     `${moved.status}/${evilLink.status}/${bidi.status}/${stale.status}/${back.status} audit=${!!entry}`);
+}
+// API.md §7.47: waiting list — consent required, double opt-in by the mailed link (single use), the same answer for
+// every address, a signed leave link, the honeypot, closing the form, KVKK removal and the SUPER_ADMIN export.
+if (adminToken) {
+  const A = { token: adminToken };
+  const letters = () => Array.from({ length: 10 }, () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]).join('');
+  const wlEmail = `smoke-wl-${letters()}@example.com`;
+  const st = await call('GET', '/waitlist/status');
+  const noConsent = await call('POST', '/waitlist', { body: { email: wlEmail } });
+  const join = await call('POST', '/waitlist', { body: { email: wlEmail.toUpperCase(), locale: 'en', platforms: ['ios'], consent: true } });
+  const wlMail = await lastMailTo(wlEmail, 'Confirm your place');
+  const wlToken = wlMail?.text.match(/#token=([A-Za-z0-9_-]{43})/)?.[1];
+  const again = await call('POST', '/waitlist', { body: { email: wlEmail, consent: true } });
+  const listed = (await call('GET', `/admin/waitlist?q=${encodeURIComponent(wlEmail)}`, A)).json?.items?.[0];
+  const badConfirm = await call('POST', '/waitlist/confirm', { body: { token: 'x'.repeat(43) } });
+  const confirmed = await call('POST', '/waitlist/confirm', { body: { token: wlToken } });
+  const reused = await call('POST', '/waitlist/confirm', { body: { token: wlToken } });
+  const afterConfirm = (await call('GET', `/admin/waitlist?q=${encodeURIComponent(wlEmail)}`, A)).json?.items?.[0];
+  ok(st.status === 200 && typeof st.json?.enabled === 'boolean' && 'ios' in (st.json?.stores ?? {}) && noConsent.status === 400 && join.status === 202 && again.status === 202
+    && !!wlToken && wlMail?.html?.includes('/en/bekleme-listesi/onay#token=') && listed?.status === 'PENDING' && listed?.email === wlEmail && listed?.locale === 'en'
+    && badConfirm.status === 400 && confirmed.status === 200 && !!confirmed.json?.leave?.t && reused.status === 400 && afterConfirm?.status === 'CONFIRMED',
+    'waitlist: consent required, one row per mailbox, confirmed once by the mailed link (fragment token), same answer for a repeat',
+    `${noConsent.status}/${join.status}/${again.status}/${badConfirm.status}/${confirmed.status}/${reused.status} ${listed?.status}→${afterConfirm?.status}`);
+  const leave = confirmed.json?.leave ?? { i: '', t: '' };
+  const forged = await call('POST', '/waitlist/leave', { body: { i: leave.i, t: `${leave.t.slice(0, -2)}xx` } });
+  const left = await call('POST', `/waitlist/leave/one-click?i=${encodeURIComponent(leave.i)}&t=${encodeURIComponent(leave.t)}`);
+  const afterLeave = (await call('GET', `/admin/waitlist?q=${encodeURIComponent(wlEmail)}`, A)).json?.items?.[0];
+  const botEmail = `smoke-wl-${letters()}@example.com`;
+  const bot = await call('POST', '/waitlist', { body: { email: botEmail, consent: true, website: 'http://spam.example' } });
+  const botRow = (await call('GET', `/admin/waitlist?q=${encodeURIComponent(botEmail)}`, A)).json?.items ?? [];
+  ok(forged.status === 400 && left.status === 200 && afterLeave?.status === 'UNSUBSCRIBED' && bot.status === 202 && botRow.length === 0,
+    'waitlist: forged leave link refused, one-click leave works (RFC 8058), the honeypot stores nothing', `${forged.status}/${left.status}/${afterLeave?.status}/${bot.status}/${botRow.length}`);
+  const o0 = (await call('GET', '/admin/waitlist/overview', A)).json;
+  const saveWl = (enabled, version, reason = 'smoke waitlist test') => call('PATCH', '/admin/waitlist/settings', { ...A, body: { settings: { enabled }, reason, version } });
+  const closed = await saveWl(!o0.settings.enabled, o0.version);
+  const whileClosed = await call('POST', '/waitlist', { body: { email: `smoke-wl-${letters()}@example.com`, consent: true } });
+  const stale = await saveWl(o0.settings.enabled, o0.version);
+  const reopened = await saveWl(o0.settings.enabled, closed.json?.version ?? null, 'smoke waitlist restore');
+  const today = new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+  const csv = await fetch(`${API}/admin/exports/waitlist?from=${today}&to=${today}`, { headers: { authorization: `Bearer ${adminToken}` } });
+  const del = await call('POST', `/admin/waitlist/${leave.i}/delete`, { ...A, body: { reason: 'smoke KVKK removal' } });
+  const delAgain = await call('POST', `/admin/waitlist/${leave.i}/delete`, { ...A, body: { reason: 'smoke KVKK removal' } });
+  const audit = (await call('GET', '/admin/audit?limit=20', A)).json?.items ?? [];
+  const delAudit = audit.find((x) => x.action === 'waitlist.delete' && x.targetId === leave.i);
+  ok(typeof o0?.counts?.confirmed === 'number' && o0.daily?.length === 30 && closed.status === 200 && (o0.settings.enabled ? whileClosed.status === 403 && whileClosed.json?.error?.code === 'waitlist_closed' : whileClosed.status === 202)
+    && stale.status === 409 && reopened.status === 200 && reopened.json?.settings?.enabled === o0.settings.enabled && csv.status === 200 && /^text\/csv/.test(csv.headers.get('content-type') ?? '')
+    && del.status === 200 && delAgain.status === 404 && delAudit?.meta?.email?.startsWith('s***@') && !JSON.stringify(delAudit?.meta).includes(wlEmail),
+    'waitlist admin: overview, form closed and reopened (stale 409), CSV for SUPER_ADMIN, KVKK removal audited with a masked address',
+    `${closed.status}/${whileClosed.status}/${stale.status}/${reopened.status}/${csv.status}/${del.status}/${delAgain.status}`);
 }
 // API.md §7.42: scheduled jobs — next run and lateness per scheduler; a listed job runs from the panel once per minute.
 if (adminToken) {
@@ -1519,7 +1568,7 @@ if (adminToken) {
 const docs = await fetch(API.replace(/\/v1$/, '') + '/docs/openapi.json');
 const spec = docs.ok ? await docs.json() : null;
 ok(spec && Object.keys(spec.paths).length >= 40, 'Swagger/OpenAPI document served in development', spec ? `${Object.keys(spec.paths).length} paths` : `status ${docs.status}`);
-const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject', '/v1/admin/users/{id}/gift', '/v1/admin/gifts', '/v1/admin/gifts/preview', '/v1/partners/{slug}/visit', '/v1/me/attribution', '/v1/admin/partners', '/v1/admin/partners/{id}', '/v1/theme', '/v1/admin/theme', '/v1/admin/theme/derive', '/v1/admin/loyalty', '/v1/admin/loyalty/run', '/v1/admin/price-schedules', '/v1/admin/price-schedules/{id}/cancel', '/v1/me/sessions', '/v1/me/sessions/{id}', '/v1/me/sessions/revoke-others', '/v1/me/logins', '/v1/admin/users/{id}/sessions', '/v1/admin/users/{id}/sessions/{sid}/revoke', '/v1/admin/users/{id}/sessions/revoke-all', '/v1/admin/me/password', '/v1/admin/review-account', '/v1/admin/review-account/close', '/v1/admin/alerts', '/v1/admin/alerts/test', '/v1/admin/alerts/errors/{id}/resolve', '/v1/admin/jobs/{name}/run', '/v1/client-errors', '/v1/admin/exports/{kind}', '/v1/admin/search', '/v1/site/content', '/v1/admin/site-content'];
+const mustHave = ['/v1/admin/jobs', '/v1/admin/billing/events', '/v1/webhooks/revenuecat', '/v1/billing/sync', '/v1/designs', '/v1/me/push-tokens', '/v1/admin/me', '/v1/admin/admins', '/v1/auth/oauth/nonce', '/v1/auth/oauth/google', '/v1/auth/oauth/apple', '/v1/webhooks/apple', '/v1/me/identities', '/v1/me/identities/{provider}', '/v1/app/version', '/v1/legal', '/v1/legal/{kind}', '/v1/me/data-requests', '/v1/admin/legal', '/v1/admin/legal/{id}', '/v1/admin/legal/publish', '/v1/admin/data-requests', '/v1/admin/data-requests/{id}', '/v1/admin/marketing/aso', '/v1/admin/marketing/aso/export', '/v1/admin/marketing/drafts/{id}/approve', '/v1/admin/marketing/drafts', '/v1/admin/marketing/social', '/v1/admin/marketing/campaign', '/v1/admin/marketing/report', '/v1/admin/marketing/drafts/{id}/image', '/v1/admin/marketing/drafts/{id}/broadcast', '/v1/blog', '/v1/blog/{slug}', '/v1/blog/sitemap', '/v1/seo/meta', '/v1/admin/blog', '/v1/admin/marketing/blog', '/v1/admin/marketing/blog/translate', '/v1/admin/marketing/seo', '/v1/me/support', '/v1/me/support/{id}', '/v1/me/support/{id}/messages', '/v1/admin/support', '/v1/admin/support/{id}/reply', '/v1/admin/support/{id}/close', '/v1/admin/analytics/revenue', '/v1/admin/analytics/engagement', '/v1/admin/analytics/cohorts', '/v1/billing/catalog', '/v1/admin/billing/catalog', '/v1/admin/subscriptions', '/v1/admin/subscriptions/{userId}/sync', '/v1/admin/orgs', '/v1/admin/orgs/{id}', '/v1/admin/orgs/{id}/credits', '/v1/admin/orgs/{id}/members', '/v1/admin/orgs/{id}/members/{userId}', '/v1/admin/orgs/{id}/members/{userId}/remove', '/v1/admin/orgs/{id}/invites', '/v1/admin/orgs/{id}/invites/{inviteId}/revoke', '/v1/me/orgs', '/v1/orgs/invites/lookup', '/v1/orgs/invites/accept', '/v1/orgs/{orgId}', '/v1/orgs/{orgId}/invites', '/v1/orgs/{orgId}/invites/{inviteId}/revoke', '/v1/orgs/{orgId}/members/{userId}', '/v1/orgs/{orgId}/members/{userId}/remove', '/v1/orgs/{orgId}/leave', '/v1/orgs/{orgId}/projects', '/v1/orgs/{orgId}/projects/{projectId}', '/v1/orgs/{orgId}/projects/{projectId}/delete', '/v1/me/credits', '/v1/admin/product', '/v1/admin/prompts', '/v1/admin/prompts/preview', '/v1/admin/prompts/{key}/publish', '/v1/admin/prompts/{key}/activate', '/v1/admin/ai-engine', '/v1/features', '/v1/admin/features', '/v1/me/promo', '/v1/admin/promo', '/v1/admin/promo/batch', '/v1/admin/promo/{id}', '/v1/admin/promo/{id}/redemptions', '/v1/me/referral', '/v1/me/referral/claim', '/v1/admin/referrals', '/v1/admin/referrals/settings', '/v1/admin/referrals/{id}/reject', '/v1/admin/users/{id}/gift', '/v1/admin/gifts', '/v1/admin/gifts/preview', '/v1/partners/{slug}/visit', '/v1/me/attribution', '/v1/admin/partners', '/v1/admin/partners/{id}', '/v1/theme', '/v1/admin/theme', '/v1/admin/theme/derive', '/v1/admin/loyalty', '/v1/admin/loyalty/run', '/v1/admin/price-schedules', '/v1/admin/price-schedules/{id}/cancel', '/v1/me/sessions', '/v1/me/sessions/{id}', '/v1/me/sessions/revoke-others', '/v1/me/logins', '/v1/admin/users/{id}/sessions', '/v1/admin/users/{id}/sessions/{sid}/revoke', '/v1/admin/users/{id}/sessions/revoke-all', '/v1/admin/me/password', '/v1/admin/review-account', '/v1/admin/review-account/close', '/v1/admin/alerts', '/v1/admin/alerts/test', '/v1/admin/alerts/errors/{id}/resolve', '/v1/admin/jobs/{name}/run', '/v1/client-errors', '/v1/admin/exports/{kind}', '/v1/admin/search', '/v1/site/content', '/v1/admin/site-content', '/v1/waitlist', '/v1/waitlist/status', '/v1/waitlist/confirm', '/v1/waitlist/leave', '/v1/waitlist/leave/one-click', '/v1/admin/waitlist', '/v1/admin/waitlist/overview', '/v1/admin/waitlist/settings', '/v1/admin/waitlist/{id}/delete'];
 ok(spec && mustHave.every((p) => spec.paths[p]), 'every expected route is registered once (no decorator collisions)', mustHave.filter((p) => !spec?.paths?.[p]).join(', ') || 'all present');
 
 const del = await call('DELETE', `/designs/${design.json.id}`, { token });

@@ -694,7 +694,7 @@ export type PartnerRow = {
 };
 
 // Ana sayfa ve SSS (API.md §7.46)
-export const SITE_SECTIONS = ["gallery", "tools", "features", "pro", "how", "styles", "pricing", "faq"] as const;
+export const SITE_SECTIONS = ["gallery", "tools", "features", "pro", "how", "styles", "pricing", "app", "faq"] as const;
 export type SiteSection = (typeof SITE_SECTIONS)[number];
 export const SITE_TEXT_LIMITS = {
   badge: 60, heroTitle: 80, heroText: 320, ctaPrimary: 30, ctaSecondary: 30, galleryTitle: 60, galleryText: 180, toolsTitle: 70,
@@ -724,4 +724,30 @@ export type SiteContentState = {
   updatedAt: string | null;
   updatedBy: string | null;
   changes?: string[];
+};
+
+// Bekleme listesi ve bülten (API.md §7.47)
+export type WaitlistStatusName = "PENDING" | "CONFIRMED" | "UNSUBSCRIBED";
+export type WaitlistRow = {
+  id: string;
+  email: string;
+  locale: string;
+  platforms: Array<"ios" | "android">;
+  source: "home" | "footer";
+  status: WaitlistStatusName;
+  consentVersion: string;
+  createdAt: string;
+  confirmedAt: string | null;
+  unsubscribedAt: string | null;
+};
+export type WaitlistOverview = {
+  settings: { enabled: boolean };
+  status: { enabled: boolean; stores: { ios: string | null; android: string | null } };
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  counts: { pending: number; confirmed: number; unsubscribed: number };
+  byLocale: Record<string, number>;
+  byPlatform: { ios: number; android: number; any: number };
+  daily: Array<{ day: string; signups: number; confirmed: number }>;
 };

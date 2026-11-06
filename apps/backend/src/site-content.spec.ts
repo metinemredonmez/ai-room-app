@@ -79,3 +79,12 @@ describe('site content rules', () => {
     expect(diff.join(' ')).not.toContain('Gizli');
   });
 });
+
+describe('site content sections added later', () => {
+  it('an older save without the `app` section still parses, with the new section switched on', () => {
+    const old = { ...DEFAULT_CONTENT, sections: { gallery: true, tools: true, features: true, pro: true, how: true, styles: true, pricing: false, faq: true } };
+    const r = parseContent(old);
+    expect(r.ok).toBe(true);
+    expect(r.content.sections).toMatchObject({ app: true, pricing: false });
+  });
+});

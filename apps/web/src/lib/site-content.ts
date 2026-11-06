@@ -10,7 +10,7 @@ import type { Locale } from "./i18n";
 
 const API = (process.env.API_BASE_URL ?? "http://localhost:4000/v1").replace(/\/+$/, "");
 
-export const SECTIONS = ["gallery", "tools", "features", "pro", "how", "styles", "pricing", "faq"] as const;
+export const SECTIONS = ["gallery", "tools", "features", "pro", "how", "styles", "pricing", "app", "faq"] as const;
 export type Section = (typeof SECTIONS)[number];
 
 const TEXT_KEYS = [

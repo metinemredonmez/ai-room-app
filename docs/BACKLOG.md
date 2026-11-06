@@ -35,7 +35,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Komut paleti (API.md §7.45): ⌘K; sayfalar, kullanıcılar, tasarımlar, destek, firmalar.
 5. İçerik
    - [x] Ana sayfa ve SSS panelden (API.md §7.46): metinler 11 dilde, SSS, bölümleri gizleme, duyuru çubuğu. Admin → İçerik → Ana sayfa ve SSS.
-   - [ ] Bekleme listesi + bülten.
+   - [x] Bekleme listesi + bülten (API.md §7.47): çift onay, listeden çıkma, KVKK saklama, admin ekranı, CSV. Admin → Pazarlama → Bekleme listesi.
+   - [ ] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır.
    - [ ] Yaşam döngüsü e-postaları.
    - [ ] Eski görünümdeki 8 admin ekranı.
 
@@ -226,7 +227,8 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
-- [ ] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi) (fal-app, maeyja).
+- [x] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi) (fal-app, maeyja) — API.md §7.47.
+- [ ] Ticari ileti onayı metnine (Yasal metinler → pazarlama) bekleme listesini ekle (sen).
 - [x] Admin CMS: SSS, ana sayfa metinleri, bölümler, duyuru çubuğu (maeyja) — API.md §7.46.
 - [ ] Admin’de `support@casalume.app` gelen kutusu (maeyja `mailbox`, IMAP): kullanıcı e-postalarını panelden okuyup yanıtlamak.
 - [x] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — API.md §7.29.

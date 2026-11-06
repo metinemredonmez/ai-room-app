@@ -13,6 +13,7 @@ import { LOCALES, LOCALE_TAGS, isLocale } from "@/lib/i18n";
 import { loadMessages } from "@/lib/messages";
 import { PALETTE_BOOT_SCRIPT } from "@/lib/palette";
 import { siteContent } from "@/lib/site-content";
+import { waitlistStatus } from "@/lib/waitlist";
 import { getTheme, themeCss, themeOptions } from "@/lib/theme";
 import "../globals.css";
 
@@ -57,7 +58,7 @@ export const viewport: Viewport = {
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const [messages, theme, site] = await Promise.all([loadMessages(locale), getTheme(), siteContent(locale)]);
+  const [messages, theme, site, waitlist] = await Promise.all([loadMessages(locale), getTheme(), siteContent(locale), waitlistStatus()]);
   return (
     // The boot script may set data-palette before React hydrates, hence suppressHydrationWarning on <html> only.
     <html lang={LOCALE_TAGS[locale]} className={`${jakarta.variable} ${cormorant.variable} h-full antialiased`} suppressHydrationWarning>
@@ -77,7 +78,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           </ThemeOptionsProvider>
           <VerifyBanner />
           <main className="flex-1">{children}</main>
-          <SiteFooter />
+          <SiteFooter newsletter={waitlist.enabled} />
         </AppProvider>
       </body>
     </html>

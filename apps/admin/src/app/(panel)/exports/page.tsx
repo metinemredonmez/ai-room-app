@@ -16,6 +16,7 @@ const KINDS = [
   { id: "ai-costs", label: "AI maliyeti (günlük)", hint: "Gün × sağlayıcı × iş türü: çağrı, görsel, USD." },
   { id: "partners", label: "Ortaklar raporu", hint: "Tüm zamanlar: ziyaret, kayıt, ödeyen, net gelir, komisyon (aralık kullanılmaz)." },
   { id: "audit", label: "Denetim kaydı (yalnız SUPER_ADMIN)", hint: "Kim, ne zaman, ne yaptı, gerekçe; IP yalnız ilk kısmıyla." },
+  { id: "waitlist", label: "Bekleme listesi (yalnız SUPER_ADMIN)", hint: "Onaylı adresler, onay tarihine göre: e-posta, dil, telefon, izin metni sürümü." },
 ] as const;
 
 const day = (d: Date) => new Date(d.getTime() + 3 * 3600_000).toISOString().slice(0, 10);
@@ -67,7 +68,7 @@ export default function ExportsPage() {
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Ne" htmlFor="ex-kind" hint={k.hint}>
             <Select id="ex-kind" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-              {KINDS.filter((x) => x.id !== "audit" || isSuper).map((x) => (
+              {KINDS.filter((x) => (x.id !== "audit" && x.id !== "waitlist") || isSuper).map((x) => (
                 <option key={x.id} value={x.id}>{x.label}</option>
               ))}
             </Select>

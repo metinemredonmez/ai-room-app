@@ -20,6 +20,7 @@ import { SupportService } from '../support/support.service.js';
 import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
+import { WaitlistService } from '../waitlist/waitlist.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
 import { isManualJob, scheduleStatus } from './schedules.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
@@ -51,6 +52,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private orgs: OrgsService,
     private loyalty: LoyaltyService,
     private prices: PriceScheduleService,
+    private waitlist: WaitlistService,
   ) {}
 
   async onModuleInit() {
@@ -244,9 +246,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const supportTickets = await this.support.purgeClosed();
     const welcomeGrants = await this.welcome.purgeOld(now);
     const orgInvites = await this.orgs.purgeInvites(now);
+    // API.md §7.47: unconfirmed waiting-list addresses after 7 days, left ones after 30.
+    const waitlist = await this.waitlist.purge(now);
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, loginEvents: logins.count, authSessions: sessions.count, alertLogs: alertLogs.count, errorGroups: errorGroups.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist,
     };
   }
 
