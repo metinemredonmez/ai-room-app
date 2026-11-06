@@ -6,9 +6,10 @@ import { MinRole } from '../admin/roles.js';
 import { AdminGuard } from '../auth/tokens.service.js';
 import { AppError, notFound, parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
+import { LIMITS, RateLimiter } from '../common/infra.js';
 import { Doc } from '../common/openapi.js';
 import { isUuid } from '../images/images.service.js';
-import { AlertSettingsSchema } from './alerts.rules.js';
+import { AlertSettingsSchema, ClientErrorSchema } from './alerts.rules.js';
 import { AlertsService } from './alerts.service.js';
 
 // API.md §7.41: founder alerts and our own error list. SUPPORT reads; ADMIN changes the settings, sends a test mail and
@@ -66,5 +67,21 @@ export class AdminAlertsController {
     await this.alerts.resolve(id);
     await this.audit.record(auth.userId, 'alerts.error_resolved', 'error_group', id, {}, req.clientIp);
     return { ok: true };
+  }
+}
+
+/** API.md §7.43: the web and the app report their own crashes; no sign-in needed, strictly validated, rate-limited. */
+@ApiTags('public')
+@Controller('v1/client-errors')
+export class ClientErrorsController {
+  constructor(private alerts: AlertsService, private limiter: RateLimiter) {}
+
+  @Post()
+  @HttpCode(202)
+  @Doc('İstemci hatası bildir (web / uygulama; kişisel veri maskelenir)', { body: ClientErrorSchema, status: 202, errors: [400, 429] })
+  async report(@Body() body: unknown, @Req() req: AppRequest) {
+    await this.limiter.hit(LIMITS.clientErrors, req.clientIp);
+    const input = parse(ClientErrorSchema, body);
+    return this.alerts.recordClientError(input);
   }
 }

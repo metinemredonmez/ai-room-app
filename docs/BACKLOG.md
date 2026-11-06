@@ -30,7 +30,8 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
 4. İşletim
    - [x] Kurucu uyarıları + kendi hata alarmımız (API.md §7.41): hata grupları, satın alma, disk, AI bütçesi, iş hataları; panelden ayarlanır. Admin → Sistem → Uyarılar ve hatalar.
    - [x] Zamanlı işi panelden çalıştırma + gecikme tespiti (API.md §7.42).
-   - [ ] İstemci hata ucu, CSV, komut paleti.
+   - [x] İstemci hata ucu (API.md §7.43): web bağlı; mobil aynı ucu kullanacak (sen).
+   - [ ] CSV, komut paleti.
 5. İçerik: web SSS ve ana sayfa yönetimi, bekleme listesi, yaşam döngüsü e-postaları; eski görünümdeki 8 admin ekranı.
 
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
@@ -248,7 +249,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Kurucu uyarıları: satın alma bildirimi, disk/iş hatası/bütçe eşiği (YediOda #71, #90, #92) — API.md §7.41
 - [x] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) — API.md §7.42
 - [x] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) — API.md §7.28
-- [ ] İstemci hata ucu (mobil/web hataları) (YediOda #106) · kolay
+- [x] İstemci hata ucu (mobil/web hataları) (YediOda #106) — API.md §7.43 (mobil bağlantısı: sen)
 - [ ] Hesap silmede 30 gün geri alma penceresi (YediOda #18) · orta
 - [x] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) — API.md §7.26, §7.27
 - [ ] llms.txt (MAEYJA, YediOda #94) · kolay

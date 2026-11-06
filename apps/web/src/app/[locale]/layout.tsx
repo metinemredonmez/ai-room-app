@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProvider } from "@/components/app-provider";
+import { ErrorReporter } from "@/components/error-reporter";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeOptionsProvider } from "@/components/palette-picker";
 import { HeaderFallback, SiteHeader } from "@/components/site-header";
@@ -65,6 +66,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
       </head>
       <body className="flex min-h-full flex-col">
         <AppProvider locale={locale} messages={messages}>
+          <ErrorReporter />
           <ThemeOptionsProvider options={theme ? themeOptions(theme) : null}>
             <Suspense fallback={<HeaderFallback />}>
               <SiteHeader />

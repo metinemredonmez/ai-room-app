@@ -1013,7 +1013,7 @@ model LoginEvent {
 model ErrorGroup {
   id            String    @id @default(uuid()) @db.Uuid
   fingerprint   String    @unique @db.VarChar(64)
-  kind          String    @db.VarChar(10) // http | job | other
+  kind          String    @db.VarChar(10) // http | job | other | client (web / app, API.md §7.43)
   name          String    @db.VarChar(80)
   message       String    @db.VarChar(300)
   location      String    @db.VarChar(200)

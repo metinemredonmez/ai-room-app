@@ -519,11 +519,12 @@ export type AlertSettings = {
   extraRecipients: string[];
   errors: { enabled: boolean; repeatMinutes: number };
   jobs: { enabled: boolean };
+  clients: { enabled: boolean };
   purchases: { enabled: boolean };
   disk: { enabled: boolean; thresholdPct: number };
   budget: { enabled: boolean };
 };
-export type ErrorGroupRow = { id: string; kind: "http" | "job" | "other"; name: string; message: string; location: string; count: number; firstSeen: string; lastSeen: string; lastRequestId: string | null; resolvedAt: string | null };
+export type ErrorGroupRow = { id: string; kind: "http" | "job" | "other" | "client"; name: string; message: string; location: string; count: number; firstSeen: string; lastSeen: string; lastRequestId: string | null; resolvedAt: string | null };
 export type AlertsState = {
   settings: AlertSettings;
   recipients: string[];

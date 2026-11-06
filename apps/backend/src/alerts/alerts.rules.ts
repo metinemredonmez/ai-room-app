@@ -14,6 +14,7 @@ export const AlertSettingsSchema = z
     extraRecipients: z.array(z.string().trim().toLowerCase().email().max(120)).max(5),
     errors: z.object({ enabled: z.boolean(), repeatMinutes: z.number().int().min(15).max(1440) }).strict(),
     jobs: z.object({ enabled: z.boolean() }).strict(),
+    clients: z.object({ enabled: z.boolean() }).strict(), // web / app errors (API.md §7.43)
     purchases: z.object({ enabled: z.boolean() }).strict(),
     disk: z.object({ enabled: z.boolean(), thresholdPct: z.number().int().min(50).max(99) }).strict(),
     budget: z.object({ enabled: z.boolean() }).strict(),
@@ -26,6 +27,7 @@ export const DEFAULT_ALERTS: AlertSettings = {
   extraRecipients: [],
   errors: { enabled: true, repeatMinutes: 60 },
   jobs: { enabled: true },
+  clients: { enabled: true },
   purchases: { enabled: true },
   disk: { enabled: true, thresholdPct: 85 },
   budget: { enabled: true },
@@ -80,4 +82,43 @@ export function alertsDiff(prev: AlertSettings, next: AlertSettings): string[] {
     if (JSON.stringify(prev[k]) !== JSON.stringify(next[k])) out.push(k === 'extraRecipients' ? `alıcılar: ${prev.extraRecipients.length} → ${next.extraRecipients.length}` : `${k}: ${JSON.stringify(prev[k])} → ${JSON.stringify(next[k])}`);
   }
   return out;
+}
+
+// ---- client errors (API.md §7.43) ----
+
+export const ClientErrorSchema = z
+  .object({
+    platform: z.enum(['web', 'ios', 'android']),
+    appVersion: z.string().trim().max(32).regex(/^[\w.+-]*$/).optional(),
+    name: z.string().trim().max(80).optional(),
+    message: z.string().trim().min(1).max(1000),
+    stack: z.string().max(4000).optional(),
+    route: z.string().trim().max(200).optional(),
+    requestId: z.string().trim().max(64).regex(/^[\w-]*$/).optional(),
+  })
+  .strict();
+export type ClientError = z.infer<typeof ClientErrorSchema>;
+
+/** At most this many new client error groups an hour: a flood of made-up errors cannot fill the table (RES). */
+export const CLIENT_NEW_GROUPS_PER_HOUR = 50;
+
+/** The first stack line, without origin, query, line and column numbers ("…/chunks/abc.js" or "Studio@…"). */
+export function clientFrame(stack: string | undefined): string {
+  // Chrome: "at fn (url:1:2)"; Firefox / Safari: "fn@url:1:2". An e-mail address in the message is not a frame.
+  const line = (stack ?? '').split('\n').map((l) => l.trim()).find((l) => /^at |@(https?:|\/|webpack|file:|capacitor:|app:)/.test(l)) ?? '';
+  return maskText(line.replace(/https?:\/\/[^/\s)]+/g, '').replace(/[?#][^\s):]*/g, '').replace(/:\d+(:\d+)?/g, ''))
+    .replace(/\s+/g, ' ')
+    .slice(0, 120);
+}
+
+export function classifyClient(e: ClientError) {
+  const name = (e.name || 'Error').slice(0, 80);
+  const message = normalizeMessage(e.message);
+  const frame = clientFrame(e.stack);
+  const route = e.route ? normalizeMessage(e.route.split(/[?#]/)[0] ?? '').slice(0, 120) : '';
+  const where = [e.platform, e.appVersion].filter(Boolean).join(' ') + (route ? ` ${route}` : '');
+  const location = [where, frame].filter(Boolean).join(' · ').slice(0, 200);
+  // The app version stays out of the fingerprint: the same bug in two releases is one group.
+  const fingerprint = createHash('sha256').update(['client', e.platform, name, message, route, frame].join('|')).digest('hex');
+  return { kind: 'client' as const, name, message, location, fingerprint };
 }

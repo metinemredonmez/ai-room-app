@@ -91,6 +91,8 @@ export const LIMITS = {
   promoIp: { name: 'promo-ip', max: 30, windowSec: 3600 },
   // API.md §7.33: partner link visits, per IP and link (a counter, kept honest enough).
   partnerVisit: { name: 'partner-visit', max: 20, windowSec: 3600 },
+  // API.md §7.43: web / app error reports, per IP.
+  clientErrors: { name: 'client-errors', max: 20, windowSec: 600 },
   forgotIp: { name: 'forgot-ip', max: 10, windowSec: 3600 },
   forgotAccount: { name: 'forgot-acct', max: 3, windowSec: 3600 },
   tokenIp: { name: 'email-token-ip', max: 30, windowSec: 3600 },

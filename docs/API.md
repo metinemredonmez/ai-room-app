@@ -1898,3 +1898,28 @@ son görülmeden 90 gün sonra silinir.
   - Mağaza olayları ve Apple token iptali elle çalıştırılamaz (404).
   - Aynı dakikadaki ikinci istek aynı işe denk gelir, yeni iş açmaz.
   - Denetim: `jobs.run`.
+
+### 7.43 İstemci hata ucu — backend + web (mobil sonra)
+Web ve uygulamadaki çökmeler aynı hata listesine düşer (§7.41; YediOda #106). Üçüncü taraf izleyici yoktur.
+
+`POST /client-errors` (oturum gerekmez) → 202 `{ accepted }`. Gövde katı doğrulanır, bilinmeyen alan 400 alır:
+`{ platform: web|ios|android, appVersion?, name?, message (1–1000), stack? (≤4000), route? (≤200), requestId? }`.
+
+- **Hız sınırı:** IP başına 10 dakikada 20 istek (RES).
+- **Yeni grup sınırı:** istemciden gelen yeni hata grupları saatte en çok 50. Sahte hatalar tabloyu şişiremez;
+  bilinen gruplar her zaman sayılır.
+- **Gruplama:** sunucu mesajı ve yolu normalleştirir; kimlik ve sayılar yer tutucuya döner, e-posta, IP ve token
+  maskelenir.
+  - Yığından yalnız ilk satır alınır: kaynak adresi, sorgu, satır ve sütun numaraları atılır.
+  - Uygulama sürümü parmak izine girmez, aynı hata farklı sürümlerde tek gruptur.
+- Uyarılar ayarlarda "İstemci hataları" anahtarıyla açılıp kapanır.
+
+**Web:** yakalanmamış hatalar, yakalanmamış reddedilen promise'ler ve sayfa hata sınırı (`[locale]/error.tsx`)
+bildirilir.
+- Sayfa başına en çok 5 bildirim gider, her farklı hata bir kez.
+- Eyleme dönüştürülemeyen gürültü atılır: tarayıcı eklentileri, köken dışı "Script error.", ResizeObserver,
+  iptal edilmiş ya da çevrimdışı istekler.
+- Çöken sayfa sakin bir mesaj ve "Tekrar dene" gösterir.
+
+**Mobil:** aynı uca `platform: ios|android` ve `appVersion` ile gönderir. Uygulamanın kendi hata sınırı ve
+`ErrorUtils.setGlobalHandler` buradan beslenir (senin tarafın).

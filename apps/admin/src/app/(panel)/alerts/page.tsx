@@ -23,7 +23,7 @@ export default function AlertsPage() {
     <>
       <PageHeader
         title="Uyarılar ve hatalar"
-        description="Beklenmeyen hatalar, zamanlı iş hataları, satın almalar, disk doluluğu ve AI bütçesi için e-posta uyarıları. Hatalar burada gruplanır; kişisel veri (e-posta, IP, token) maskelenir."
+        description="Beklenmeyen hatalar (API, web ve uygulama), zamanlı iş hataları, satın almalar, disk doluluğu ve AI bütçesi için e-posta uyarıları. Hatalar burada gruplanır; kişisel veri (e-posta, IP, token) maskelenir."
       />
       {state.error && !s ? (
         <ErrorState message={state.error.message} onRetry={state.reload} />
@@ -86,7 +86,7 @@ function Errors({ errors, canEdit, onChanged }: { errors: ErrorGroupRow[]; canEd
             <tr key={e.id} className={e.resolvedAt ? "opacity-60" : ""}>
               <td className={`${td} max-w-md`}>
                 <div className="flex items-center gap-1.5">
-                  <Badge tone={e.kind === "job" ? "warn" : "danger"}>{e.kind === "job" ? "İş" : e.kind === "http" ? "API" : "Diğer"}</Badge>
+                  <Badge tone={e.kind === "job" || e.kind === "client" ? "warn" : "danger"}>{e.kind === "job" ? "İş" : e.kind === "http" ? "API" : e.kind === "client" ? "İstemci" : "Diğer"}</Badge>
                   <span className="font-medium text-fg">{e.name}</span>
                   {e.resolvedAt && <Badge tone="neutral">Çözüldü</Badge>}
                 </div>
@@ -177,6 +177,7 @@ function Settings({ state, canEdit, onSaved, onReload }: { state: AlertsState; c
           </label>
         </Toggle>
         <Toggle label="Zamanlı iş hataları" checked={s.jobs.enabled} disabled={!canEdit} onChange={(v) => setS({ ...s, jobs: { enabled: v } })} />
+        <Toggle label="İstemci hataları (web ve uygulama)" checked={s.clients.enabled} disabled={!canEdit} onChange={(v) => setS({ ...s, clients: { enabled: v } })} />
         <Toggle label="Satın almalar (yalnız canlı ortam)" checked={s.purchases.enabled} disabled={!canEdit} onChange={(v) => setS({ ...s, purchases: { enabled: v } })} />
         <Toggle label="Disk doluluğu" checked={s.disk.enabled} disabled={!canEdit} onChange={(v) => setS({ ...s, disk: { ...s.disk, enabled: v } })}>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">

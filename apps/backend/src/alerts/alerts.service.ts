@@ -11,7 +11,7 @@ import { MailerService, renderActionMail } from '../mail/mailer.service.js';
 import { UsageService } from '../usage/usage.service.js';
 import { QueuesService } from '../jobs/queues.service.js';
 import { scheduleStatus } from '../jobs/schedules.js';
-import { alertsDiff, classify, DEFAULT_ALERTS, HOURLY_CAP, parseAlerts, type AlertKind, type AlertSettings, type ErrorContext } from './alerts.rules.js';
+import { alertsDiff, classify, classifyClient, CLIENT_NEW_GROUPS_PER_HOUR, DEFAULT_ALERTS, HOURLY_CAP, parseAlerts, type AlertKind, type AlertSettings, type ClientError, type ErrorContext } from './alerts.rules.js';
 
 // Founder alerts (API.md §7.41). Errors reach us through reportError (setErrorSink): grouped by fingerprint, a new or
 // re-opened group mails at once, a recurring one at most every `repeatMinutes`. Disk and the AI budget are checked
@@ -61,7 +61,26 @@ export class AlertsService implements OnModuleInit, OnModuleDestroy {
   // ---- errors ----
 
   async recordError(error: unknown, ctx: ErrorContext = {}, now = new Date()) {
-    const c = classify(error, ctx);
+    await this.record(classify(error, ctx), ctx.requestId, now);
+  }
+
+  /** API.md §7.43: an error reported by the web or the app. New groups are capped per hour; known ones always count. */
+  async recordClientError(input: ClientError, now = new Date()): Promise<{ accepted: boolean }> {
+    const c = classifyClient(input);
+    const known = await this.prisma.errorGroup.findUnique({ where: { fingerprint: c.fingerprint }, select: { id: true } });
+    if (!known) {
+      const fresh = await this.prisma.errorGroup.count({ where: { kind: 'client', firstSeen: { gte: new Date(now.getTime() - HOUR) } } });
+      if (fresh >= CLIENT_NEW_GROUPS_PER_HOUR) {
+        log.warn('client_error_groups_capped', { platform: input.platform });
+        return { accepted: false };
+      }
+    }
+    await this.record(c, input.requestId, now);
+    return { accepted: true };
+  }
+
+  private async record(c: { kind: 'http' | 'job' | 'other' | 'client'; name: string; message: string; location: string; fingerprint: string }, requestId: string | undefined, now: Date) {
+    const ctx = { requestId };
     const rows = await this.prisma.$queryRaw<Array<{ id: string; count: number; lastAlertedAt: Date | null }>>`
       INSERT INTO "ErrorGroup" (id, fingerprint, kind, name, message, location, "lastRequestId", "firstSeen", "lastSeen")
       VALUES (gen_random_uuid(), ${c.fingerprint}, ${c.kind}, ${c.name}, ${c.message}, ${c.location}, ${ctx.requestId?.slice(0, 64) ?? null}, ${now}, ${now})
@@ -70,7 +89,7 @@ export class AlertsService implements OnModuleInit, OnModuleDestroy {
       RETURNING id, count, "lastAlertedAt"`;
     const g = rows[0];
     if (!g) return;
-    const toggle = c.kind === 'job' ? this.settings.jobs.enabled : this.settings.errors.enabled;
+    const toggle = c.kind === 'job' ? this.settings.jobs.enabled : c.kind === 'client' ? this.settings.clients.enabled : this.settings.errors.enabled;
     if (!toggle) return;
     const repeatMs = this.settings.errors.repeatMinutes * 60_000;
     const due = !g.lastAlertedAt || now.getTime() - g.lastAlertedAt.getTime() >= repeatMs;
@@ -83,7 +102,7 @@ export class AlertsService implements OnModuleInit, OnModuleDestroy {
     if (!claimed.count) return;
     const first = g.count === 1;
     await this.send(c.kind === 'job' ? 'job' : 'error', `err:${c.fingerprint}`, 0, {
-      subject: `${first ? 'Yeni hata' : 'Hata sürüyor'}: ${c.name} — ${c.location}`.slice(0, 180),
+      subject: `${first ? 'Yeni hata' : 'Hata sürüyor'}${c.kind === 'client' ? ' (istemci)' : ''}: ${c.name} — ${c.location}`.slice(0, 180),
       heading: first ? 'Yeni bir hata görüldü' : `Bu hata sürüyor (${g.count} kez)`,
       lines: [`${c.name}: ${c.message}`, `Yer: ${c.location}`, ...(ctx.requestId ? [`İstek: ${ctx.requestId}`] : [])],
       path: '/alerts',

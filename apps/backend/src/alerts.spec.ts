@@ -69,3 +69,21 @@ describe('reportError feeds our alarm', () => {
     expect(seen).toEqual(['boom']);
   });
 });
+
+describe('client errors (API.md §7.43)', () => {
+  it('one group per bug across app versions and ids; origin, query and line numbers stay out', async () => {
+    const { classifyClient, clientFrame, ClientErrorSchema } = await import('./alerts/alerts.rules.js');
+    const stack = (v: string) => `TypeError: x is undefined\n    at Studio (https://casalume.app/_next/static/chunks/app.js?v=${v}:12:345)`;
+    const a = classifyClient({ platform: 'web', appVersion: '1.0.0', message: 'Cannot read 0b8f3a3c-5a3e-4c1b-9b8e-2f1c3d4e5f60 of undefined', stack: stack('1'), route: '/tasarim/0b8f3a3c-5a3e-4c1b-9b8e-2f1c3d4e5f60?ref=x' });
+    const b = classifyClient({ platform: 'web', appVersion: '1.1.0', message: 'Cannot read 11111111-2222-4333-8444-555555555555 of undefined', stack: stack('2'), route: '/tasarim/11111111-2222-4333-8444-555555555555' });
+    expect(a.fingerprint).toBe(b.fingerprint);
+    expect(a.kind).toBe('client');
+    expect(clientFrame(stack('1'))).toBe('at Studio (/_next/static/chunks/app.js)');
+    expect(clientFrame('Error: failed for ayse@example.com\nStudio@https://casalume.app/_next/static/chunks/app.js:3:4')).toBe('Studio@/_next/static/chunks/app.js');
+    expect(classifyClient({ platform: 'ios', message: 'x' }).fingerprint).not.toBe(classifyClient({ platform: 'web', message: 'x' }).fingerprint);
+    expect(ClientErrorSchema.safeParse({ platform: 'web', message: 'x', extra: 1 }).success).toBe(false);
+    expect(ClientErrorSchema.safeParse({ platform: 'desktop', message: 'x' }).success).toBe(false);
+    expect(ClientErrorSchema.safeParse({ platform: 'web', message: '' }).success).toBe(false);
+    expect(ClientErrorSchema.safeParse({ platform: 'web', message: 'x', appVersion: '1.0; drop' }).success).toBe(false);
+  });
+});
