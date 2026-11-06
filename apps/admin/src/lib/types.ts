@@ -512,6 +512,27 @@ export type EngineState = {
 export type FeatureFlag = { key: string; label: string; description: string; where: string[]; enabled: boolean };
 export type FeaturesState = { features: FeatureFlag[]; version: string | null; updatedAt: string | null; updatedBy: string | null };
 
+// Kurucu uyarıları ve hata listesi (API.md §7.41).
+export type AlertSettings = {
+  superAdmins: boolean;
+  extraRecipients: string[];
+  errors: { enabled: boolean; repeatMinutes: number };
+  jobs: { enabled: boolean };
+  purchases: { enabled: boolean };
+  disk: { enabled: boolean; thresholdPct: number };
+  budget: { enabled: boolean };
+};
+export type ErrorGroupRow = { id: string; kind: "http" | "job" | "other"; name: string; message: string; location: string; count: number; firstSeen: string; lastSeen: string; lastRequestId: string | null; resolvedAt: string | null };
+export type AlertsState = {
+  settings: AlertSettings;
+  recipients: string[];
+  errors: ErrorGroupRow[];
+  recent: Array<{ id: string; kind: string; subject: string; sentTo: number; createdAt: string }>;
+  version: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
 // Mağaza inceleme hesabı (API.md §7.40).
 export type ReviewAccountStatus =
   | { email: string; exists: false }

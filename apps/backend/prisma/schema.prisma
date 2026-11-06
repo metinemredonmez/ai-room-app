@@ -1007,3 +1007,35 @@ model LoginEvent {
   @@index([userId, createdAt])
   @@index([createdAt])
 }
+
+/// Our own error alarm (API.md §7.41; instead of Sentry): unexpected failures grouped by a fingerprint. Messages are
+/// masked (no e-mails, IPs, tokens); the request id ties a group to our own logs.
+model ErrorGroup {
+  id            String    @id @default(uuid()) @db.Uuid
+  fingerprint   String    @unique @db.VarChar(64)
+  kind          String    @db.VarChar(10) // http | job | other
+  name          String    @db.VarChar(80)
+  message       String    @db.VarChar(300)
+  location      String    @db.VarChar(200)
+  count         Int       @default(1)
+  firstSeen     DateTime  @default(now())
+  lastSeen      DateTime  @default(now())
+  lastRequestId String?   @db.VarChar(64)
+  lastAlertedAt DateTime?
+  resolvedAt    DateTime?
+
+  @@index([lastSeen])
+}
+
+/// Founder alerts that were sent (API.md §7.41): the panel's history and the hourly cap. Kept 90 days.
+model AlertLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  kind      String   @db.VarChar(12) // error | job | purchase | disk | budget | test
+  subject   String   @db.VarChar(200)
+  dedupeKey String   @db.VarChar(120)
+  sentTo    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([dedupeKey, createdAt])
+}

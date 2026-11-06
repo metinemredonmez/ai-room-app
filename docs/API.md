@@ -1853,3 +1853,34 @@ hesabı**; Palemi S9).
 **Mağazalara yazılacak bilgi:**
 - App Store Connect → App Review Information → Sign-in required;
 - Play Console → Uygulama içeriği → Uygulama erişimi.
+
+### 7.41 Kurucu uyarıları ve kendi hata alarmımız — backend + admin
+Sentry yerine kendi hata alarmımız ve kurucu uyarıları (**Admin → Sistem → Uyarılar ve hatalar**; YediOda #71, #90,
+#92).
+
+**Hatalar**
+- `reportError`'a gelen her beklenmeyen hata (API'deki 5xx, tükenmiş denemesiyle başarısız zamanlı iş, tasarım
+  hatası) parmak iziyle bir `ErrorGroup`'a yazılır. Parmak izi: tür + ad + normalleştirilmiş mesaj + yer + kendi
+  kodumuzdaki ilk satır.
+- Mesajdaki kimlik ve sayılar normalleştirilir (`<id>`, `#`); e-posta, IP ve token maskelenir.
+- Yeni grup hemen e-posta gönderir. Süren grup en çok "tekrar aralığında" (15–1440 dk, varsayılan 60) bir kez
+  gönderir. "Çözüldü" işaretlenen grup yeniden görülürse yeniden açılır ve hemen uyarır.
+- Sentry DSN varsa ona da gider; yoksa yalnız bize.
+
+**Diğer uyarılar**
+- Satın alma: yalnız canlı ortamda; ilk satın alma, paket ve yenileme. Kişisel veri yoktur: ürün, tutar, mağaza.
+- Disk: veri klasörünün diski eşiği (%50–99, varsayılan %85) geçince 12 saatte bir.
+- AI bütçesi: %80 ve aşımda günde bir kez.
+- Disk ve bütçe 15 dakikada bir kontrol edilir.
+
+**Alıcılar ve sınır:** bütün aktif SUPER_ADMIN'ler (kapatılabilir) ve en çok 5 ek adres. Saatte en çok 20 uyarı
+gider; aynı uyarı penceresi içinde bir kez gider. Gönderilen uyarılar `AlertLog`'da 90 gün, çözülmüş hata grupları
+son görülmeden 90 gün sonra silinir.
+
+**Uçlar**
+| Yöntem | Yol | Rol | Açıklama |
+|---|---|---|---|
+| GET | `/admin/alerts` | SUPPORT | `{ settings, recipients, errors[], recent[], version }` |
+| PATCH | `/admin/alerts` | ADMIN | `{ settings, reason, version }`. Denetim: `alerts.update` |
+| POST | `/admin/alerts/test` | ADMIN | Deneme uyarısı → `{ sent, reason }` |
+| POST | `/admin/alerts/errors/:id/resolve` | ADMIN | Çözüldü say. Denetim: `alerts.error_resolved` |

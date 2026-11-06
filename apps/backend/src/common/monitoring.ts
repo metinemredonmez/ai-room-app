@@ -115,8 +115,21 @@ export function initMonitoring(cfg: Pick<Config, 'SENTRY_DSN' | 'SENTRY_ENVIRONM
   return enabled;
 }
 
-/** Unexpected failures only (bugs, outages) — never 4xx or user-caused errors. No-op without a DSN. */
+type ErrorSink = (error: unknown, ctx: { tags?: Record<string, string>; requestId?: string }) => void;
+let sink: ErrorSink | null = null;
+
+/** API.md §7.41: our own error alarm registers here (no Sentry needed). */
+export function setErrorSink(fn: ErrorSink | null) {
+  sink = fn;
+}
+
+/** Unexpected failures only (bugs, outages) — never 4xx or user-caused errors. Sentry only with a DSN. */
 export function reportError(error: unknown, ctx: { tags?: Record<string, string>; requestId?: string } = {}) {
+  try {
+    sink?.(error, ctx);
+  } catch {
+    // the alarm must never break the request that failed
+  }
   if (!enabled) return;
   Sentry.captureException(error, { tags: ctx.tags, extra: ctx.requestId ? { requestId: ctx.requestId } : undefined });
 }

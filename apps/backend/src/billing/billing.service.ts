@@ -8,6 +8,7 @@ import { log } from '../common/log.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { QueuesService } from '../jobs/queues.service.js';
 import { isUuid } from '../images/images.service.js';
+import { AlertsService } from '../alerts/alerts.service.js';
 import { PlansService } from './plans.service.js';
 
 // RevenueCat store billing (palemi billing/revenuecat + yoga revenueCat patterns). Order matters
@@ -48,7 +49,7 @@ interface RcSubscriber {
 
 @Injectable()
 export class BillingService {
-  constructor(private prisma: PrismaService, private queues: QueuesService, @Inject(CONFIG) private cfg: Config, private plans: PlansService) {}
+  constructor(private prisma: PrismaService, private queues: QueuesService, @Inject(CONFIG) private cfg: Config, private plans: PlansService, private alerts?: AlertsService) {}
 
   get enabled() {
     return Boolean(this.cfg.REVENUECAT_WEBHOOK_AUTH || this.cfg.REVENUECAT_WEBHOOK_SECRET);
@@ -121,6 +122,14 @@ export class BillingService {
       else await this.applyEvent(user.id, event);
       await done('processed', { userId: user.id, error: undefined });
       log.info('billing_event_processed', { eventId, type: event.type, userId: user.id });
+      // API.md §7.41: money coming in is a founder alert (production only, no personal data in it).
+      if (['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'RENEWAL'].includes(event.type)) {
+        const p = row.payload as { price?: unknown; currency?: unknown };
+        this.alerts?.purchase({
+          type: event.type, productId: event.product_id ?? null, price: typeof p.price === 'number' ? p.price : null,
+          currency: typeof p.currency === 'string' ? p.currency : null, store: event.store ?? null, environment: event.environment ?? null,
+        });
+      }
     } catch (e) {
       await this.prisma.webhookEvent.update({ where: { id: eventId }, data: { status: 'failed', userId: user.id, error: (e as Error).message.slice(0, 300) } });
       throw e; // queue retries
