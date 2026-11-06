@@ -1,5 +1,7 @@
 export const ADMIN_ROLES = ["SUPPORT", "EDITOR", "ADMIN", "SUPER_ADMIN"] as const;
 export type AdminRole = (typeof ADMIN_ROLES)[number];
+/** True when the role is `min` or higher in the panel hierarchy (the server decides; this only hides controls). */
+export const atLeast = (role: string | undefined, min: AdminRole) => role !== undefined && ADMIN_ROLES.indexOf(role as AdminRole) >= ADMIN_ROLES.indexOf(min);
 
 // Mirrors docs/API.md §2 and §4 (camelCase backend contract).
 
@@ -57,7 +59,18 @@ export type AdminDesign = Design & { userId: string; userEmail: string | null };
 
 export type LedgerEntry = { id: string; delta: number; reason: string; refId: string | null; createdAt: string };
 
-export type AdminUserDetail = AdminUser & { recentDesigns: Design[]; ledger: LedgerEntry[] };
+export type AdminUserSubscription = {
+  entitlement: string;
+  productId: string | null;
+  store: string | null;
+  environment: string | null;
+  status: string;
+  expiresAt: string | null;
+  gracePeriodExpiresAt: string | null;
+  updatedAt: string;
+};
+
+export type AdminUserDetail = AdminUser & { recentDesigns: Design[]; ledger: LedgerEntry[]; subscriptions: AdminUserSubscription[] };
 
 export type Page<T> = { items: T[]; nextCursor: string | null };
 
@@ -126,6 +139,8 @@ export type Settings = {
   /** API.md §7.22: credits a new registered, verified account gets once; 0 = off. */
   welcomeCredits: number;
   appVersions: Record<AppPlatform, AppVersion>;
+  /** Marketing pushes per person per 7 days, the Istanbul quiet window, and e-mails a day across all mailings. */
+  broadcast: { weeklyMarketingCap: number; quietStart: string; quietEnd: string; emailDailyCap: number };
 };
 export type AppPlatform = "ios" | "android";
 export type AppVersion = { min: string; latest: string; storeUrl: string };

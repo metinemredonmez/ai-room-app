@@ -23,7 +23,24 @@ import { SettingsService } from '../settings/settings.service.js';
 import { UsageService } from '../usage/usage.service.js';
 
 const Page = { cursor: z.string().max(64).optional(), limit: z.coerce.number().int().min(1).max(100).default(25) };
-const UsersQuery = z.object({ ...Page, q: z.string().trim().max(100).optional() });
+const UsersQuery = z.object({
+  ...Page,
+  q: z.string().trim().max(100).optional(),
+  kind: z.enum(['guest', 'registered']).optional(),
+  plan: z.enum(['FREE', 'PRO']).optional(),
+  status: z.enum(['ACTIVE', 'BANNED']).optional(),
+});
+/** Same rule as UsersService.isPro: a granted PRO that has not expired, or a store subscription still running. */
+function effectivePlan(plan: 'FREE' | 'PRO', now: Date): Prisma.UserWhereInput {
+  const pro: Prisma.UserWhereInput = {
+    OR: [{ plan: 'PRO', OR: [{ planExpiresAt: null }, { planExpiresAt: { gt: now } }] }, { storeProUntil: { gt: now } }],
+  };
+  // FREE is written out instead of NOT(pro): NOT over a NULL comparison would drop every row without a store date.
+  const free: Prisma.UserWhereInput = {
+    AND: [{ OR: [{ plan: 'FREE' }, { planExpiresAt: { lte: now } }] }, { OR: [{ storeProUntil: null }, { storeProUntil: { lte: now } }] }],
+  };
+  return plan === 'PRO' ? pro : free;
+}
 const DesignsQuery = z.object({
   ...Page,
   status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED']).optional(),
@@ -93,7 +110,7 @@ export class AdminController {
     const [users, guests, pro, designs, designsToday, failedToday, analyses, spentToday] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { isGuest: true } }),
-      this.prisma.user.count({ where: { plan: 'PRO', OR: [{ planExpiresAt: null }, { planExpiresAt: { gt: new Date() } }] } }),
+      this.prisma.user.count({ where: effectivePlan('PRO', new Date()) }),
       this.prisma.design.count(),
       this.prisma.design.count({ where: { createdAt: { gte: startOfToday } } }),
       this.prisma.design.count({ where: { createdAt: { gte: startOfToday }, status: 'FAILED' } }),
@@ -131,12 +148,15 @@ export class AdminController {
 
   @MinRole('SUPPORT')
   @Get('users')
-  @Doc('Kullanıcılar (arama, sayfalı)', { errors: [401, 403] })
+  @Doc('Kullanıcılar (arama; tür, plan ve durum süzgeci; sayfalı)', { errors: [401, 403] })
   async listUsers(@Query() query: unknown) {
     const q = parse(UsersQuery, query);
-    const where: Prisma.UserWhereInput = q.q
-      ? { OR: [{ email: { contains: q.q, mode: 'insensitive' } }, { name: { contains: q.q, mode: 'insensitive' } }, ...(isUuid(q.q) ? [{ id: q.q }] : [])] }
-      : {};
+    const where: Prisma.UserWhereInput = {
+      ...(q.q ? { OR: [{ email: { contains: q.q, mode: 'insensitive' } }, { name: { contains: q.q, mode: 'insensitive' } }, ...(isUuid(q.q) ? [{ id: q.q }] : [])] } : {}),
+      ...(q.kind ? { isGuest: q.kind === 'guest' } : {}),
+      ...(q.plan ? effectivePlan(q.plan, new Date()) : {}),
+      ...(q.status ? { status: q.status } : {}),
+    };
     const rows = await this.prisma.user.findMany({
       where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: q.limit + 1, ...cursorArgs(q.cursor),
     });
@@ -303,10 +323,22 @@ export class AdminController {
 
   @MinRole('ADMIN')
   @Get('audit')
-  @Doc('Denetim kaydı', { errors: [401, 403] })
+  @Doc('Denetim kaydı (alan ve yönetici süzgeci)', { errors: [400, 401, 403] })
   async auditLog(@Query() query: unknown) {
-    const q = parse(z.object(Page), query);
+    const q = parse(
+      z.object({
+        ...Page,
+        // Area = the action's prefix ("user", "billing", …); actor = part of the admin's e-mail.
+        area: z.string().regex(/^[a-z_]{2,30}$/).optional(),
+        actor: z.string().trim().min(2).max(100).optional(),
+      }),
+      query,
+    );
     const rows = await this.prisma.auditLog.findMany({
+      where: {
+        ...(q.area ? { action: { startsWith: `${q.area}.` } } : {}),
+        ...(q.actor ? { actor: { email: { contains: q.actor, mode: 'insensitive' } } } : {}),
+      },
       include: { actor: { select: { email: true } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: q.limit + 1, ...cursorArgs(q.cursor),
     });
@@ -417,7 +449,12 @@ export class AdminController {
       ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
     });
     const page = rows.slice(0, q.limit);
+    // Counts per status for the filter chips, on the first page only.
+    const counts = q.cursor
+      ? null
+      : Object.fromEntries((await this.prisma.webhookEvent.groupBy({ by: ['status'], _count: { _all: true } })).map((r) => [r.status, r._count._all]));
     return {
+      counts,
       items: page.map((e) => {
         const p = e.payload as Record<string, unknown>;
         return {

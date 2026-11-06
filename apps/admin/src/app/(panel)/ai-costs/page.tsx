@@ -1,45 +1,75 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, OctagonAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDollarSign, Images, OctagonAlert, Sigma, Wallet } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { DailyLineChart } from "@/components/charts";
-import { Badge, Button, Card, ErrorState, PageHeader, Spinner, Table, td, th } from "@/components/common";
+import { ErrorState, PageHeader, Spinner } from "@/components/common";
+import { Section } from "@/components/section";
+import { badgeTone, StatCard } from "@/components/stat";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/lib/api";
 import { fmtInt } from "@/lib/format";
 import type { AiUsageStats, BrakeMode, BudgetState } from "@/lib/types";
+
+// AI maliyeti: her AI çağrısının sağlayıcı, model ve tahmini USD maliyeti (AI servisi raporlar, backend kaydeder).
 
 const usd = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: v < 1 ? 3 : 2, maximumFractionDigits: v < 1 ? 4 : 2 })}`;
 const usdAxis = (v: number) => `$${Number(v.toPrecision(3))}`;
 
 const KIND_LABELS: Record<string, string> = { generate: "Görsel üretim", analyze: "Alışveriş/bütçe analizi", chat: "Tasarım sohbeti", describe: "Referans stil" };
 const BRAKE_LABELS: Record<BrakeMode, string> = { off: "Fren kapalı", free_single_variant: "Ücretsize tek varyant", free_paused: "Ücretsiz üretim durur" };
+const RANGES = ["7", "30", "90"] as const;
 
 function BudgetBadge({ state }: { state: BudgetState }) {
-  if (state === "exceeded") return <Badge tone="danger" icon={<OctagonAlert className="h-3.5 w-3.5" />}>Bütçe aşıldı</Badge>;
-  if (state === "warning") return <Badge tone="warn" icon={<AlertTriangle className="h-3.5 w-3.5" />}>%80 üzeri</Badge>;
-  return <Badge tone="good" icon={<CheckCircle2 className="h-3.5 w-3.5" />}>Normal</Badge>;
+  if (state === "exceeded")
+    return (
+      <Badge className={badgeTone.danger}>
+        <OctagonAlert aria-hidden /> Bütçe aşıldı
+      </Badge>
+    );
+  if (state === "warning")
+    return (
+      <Badge className={badgeTone.warn}>
+        <AlertTriangle aria-hidden /> %80 üzeri
+      </Badge>
+    );
+  return (
+    <Badge className={badgeTone.good}>
+      <CheckCircle2 aria-hidden /> Normal
+    </Badge>
+  );
+}
+
+function Empty() {
+  return <p className="px-6 py-8 text-center text-sm text-muted-foreground">Bu aralıkta çağrı yok.</p>;
 }
 
 export default function AiCostsPage() {
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState<(typeof RANGES)[number]>("30");
   const res = useApi<AiUsageStats>("/ai/usage", { days });
   const s = res.data;
   const budget = s?.budget;
   const pct = budget && budget.dailyBudgetUsd > 0 ? Math.min(100, (budget.spentTodayUsd / budget.dailyBudgetUsd) * 100) : null;
+  const periodCost = s ? s.daily.reduce((t, d) => t + d.costUsd, 0) : 0;
+  const periodCalls = s ? s.daily.reduce((t, d) => t + d.calls, 0) : 0;
 
   return (
     <>
       <PageHeader
         title="AI maliyeti"
-        description="Her AI çağrısının sağlayıcı, model ve tahmini USD maliyeti (AI servisi raporlar, backend kaydeder)"
+        description="Her AI çağrısının sağlayıcı, model ve tahmini USD maliyeti. Günlük bütçe ve fren Ayarlar’dan değiştirilir."
         actions={
-          <div className="flex gap-1">
-            {[7, 30, 90].map((d) => (
-              <Button key={d} size="sm" variant={d === days ? "primary" : "secondary"} onClick={() => setDays(d)} aria-pressed={d === days}>
+          <ToggleGroup type="single" variant="outline" size="sm" value={days} onValueChange={(v) => v && setDays(v as typeof days)} aria-label="Dönem">
+            {RANGES.map((d) => (
+              <ToggleGroupItem key={d} value={d} className="px-3">
                 Son {d} gün
-              </Button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         }
       />
       {res.error && !s ? (
@@ -47,36 +77,32 @@ export default function AiCostsPage() {
       ) : !s || !budget ? (
         <Spinner />
       ) : (
-        <div className={`flex flex-col gap-4 ${res.loading ? "opacity-60" : ""}`}>
+        <div className={`flex flex-col gap-5 ${res.loading ? "opacity-60 transition-opacity" : ""}`}>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-line bg-surface px-4 py-3">
-              <p className="text-xs text-muted-foreground">Bugünkü harcama</p>
-              <p className="mt-1 text-2xl font-semibold text-fg tabular">{usd(s.today.costUsd)}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{fmtInt(s.today.calls)} çağrı · {fmtInt(s.today.images)} görsel</p>
-            </div>
-            <div className="rounded-2xl border border-line bg-surface px-4 py-3 xl:col-span-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-muted-foreground">Günlük bütçe</p>
-                <BudgetBadge state={budget.state} />
-              </div>
-              <p className="mt-1 text-2xl font-semibold text-fg tabular">
-                {budget.dailyBudgetUsd > 0 ? `${usd(budget.spentTodayUsd)} / ${usd(budget.dailyBudgetUsd)}` : "Sınırsız"}
-              </p>
-              {pct !== null && (
-                <div className="mt-2 h-2 w-full rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label="Bütçe kullanımı">
-                  <div
-                    className={`h-2 rounded-full ${budget.state === "exceeded" ? "bg-danger" : budget.state === "warning" ? "bg-warn" : "bg-primary"}`}
-                    style={{ width: `${Math.max(2, pct)}%` }}
-                  />
-                </div>
-              )}
-              <p className="mt-1 text-xs text-muted-foreground">Aşılınca: {BRAKE_LABELS[budget.brakeMode]} · Ayarlardan değiştirilir</p>
-            </div>
-            <div className="rounded-2xl border border-line bg-surface px-4 py-3">
-              <p className="text-xs text-muted-foreground">Dönem toplamı</p>
-              <p className="mt-1 text-2xl font-semibold text-fg tabular">{usd(s.daily.reduce((t, d) => t + d.costUsd, 0))}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{fmtInt(s.daily.reduce((t, d) => t + d.calls, 0))} çağrı · son {days} gün</p>
-            </div>
+            <StatCard icon={CircleDollarSign} label="Bugünkü harcama" value={usd(s.today.costUsd)} note={`${fmtInt(s.today.calls)} çağrı · ${fmtInt(s.today.images)} görsel`} />
+            <Card className="gap-3 xl:col-span-2">
+              <CardHeader>
+                <CardDescription>Günlük bütçe</CardDescription>
+                <CardAction>
+                  <BudgetBadge state={budget.state} />
+                </CardAction>
+                <CardTitle className="tabular text-3xl font-semibold">{budget.dailyBudgetUsd > 0 ? `${usd(budget.spentTodayUsd)} / ${usd(budget.dailyBudgetUsd)}` : "Sınırsız"}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                {pct !== null && (
+                  <div className="h-2 w-full rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label="Bütçe kullanımı">
+                    <div className={`h-2 rounded-full ${budget.state === "exceeded" ? "bg-danger" : budget.state === "warning" ? "bg-warn" : "bg-primary"}`} style={{ width: `${Math.max(2, pct)}%` }} />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Aşılınca: {BRAKE_LABELS[budget.brakeMode]} ·{" "}
+                  <Link href="/settings" className="text-primary hover:underline">
+                    Ayarlar
+                  </Link>
+                </p>
+              </CardContent>
+            </Card>
+            <StatCard icon={Sigma} label="Dönem toplamı" value={usd(periodCost)} tone="neutral" note={`${fmtInt(periodCalls)} çağrı · son ${days} gün`} />
           </div>
 
           <DailyLineChart
@@ -91,39 +117,59 @@ export default function AiCostsPage() {
             minStep={0.001}
           />
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <Card title="Sağlayıcı ve modele göre">
+          <div className="grid gap-5 xl:grid-cols-2">
+            <Section title="Sağlayıcı ve modele göre" flush action={<Wallet className="size-4 text-muted-foreground" aria-hidden />}>
               {s.byProvider.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">Bu aralıkta çağrı yok.</p>
+                <Empty />
               ) : (
-                <Table head={<tr><th className={th}>Sağlayıcı</th><th className={th}>Model</th><th className={`${th} text-right`}>Çağrı</th><th className={`${th} text-right`}>Maliyet</th></tr>}>
-                  {s.byProvider.map((p) => (
-                    <tr key={`${p.provider}-${p.model}`}>
-                      <td className={td}>{p.provider}</td>
-                      <td className={`${td} font-mono text-xs`}>{p.model}</td>
-                      <td className={`${td} text-right tabular`}>{fmtInt(p.calls)}</td>
-                      <td className={`${td} text-right tabular`}>{usd(p.costUsd)}</td>
-                    </tr>
-                  ))}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-6">Sağlayıcı</TableHead>
+                      <TableHead>Model</TableHead>
+                      <TableHead className="text-right">Çağrı</TableHead>
+                      <TableHead className="pr-6 text-right">Maliyet</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="tabular">
+                    {s.byProvider.map((p) => (
+                      <TableRow key={`${p.provider}-${p.model}`}>
+                        <TableCell className="pl-6">{p.provider}</TableCell>
+                        <TableCell className="font-mono text-xs">{p.model}</TableCell>
+                        <TableCell className="text-right">{fmtInt(p.calls)}</TableCell>
+                        <TableCell className="pr-6 text-right">{usd(p.costUsd)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
                 </Table>
               )}
-            </Card>
-            <Card title="İşe göre">
+            </Section>
+            <Section title="İşe göre" flush action={<Images className="size-4 text-muted-foreground" aria-hidden />}>
               {s.byKind.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">Bu aralıkta çağrı yok.</p>
+                <Empty />
               ) : (
-                <Table head={<tr><th className={th}>İş</th><th className={`${th} text-right`}>Çağrı</th><th className={`${th} text-right`}>Maliyet</th><th className={`${th} text-right`}>Çağrı başı</th></tr>}>
-                  {s.byKind.map((k) => (
-                    <tr key={k.kind}>
-                      <td className={td}>{KIND_LABELS[k.kind] ?? k.kind}</td>
-                      <td className={`${td} text-right tabular`}>{fmtInt(k.calls)}</td>
-                      <td className={`${td} text-right tabular`}>{usd(k.costUsd)}</td>
-                      <td className={`${td} text-right tabular`}>{k.calls ? usd(k.costUsd / k.calls) : "—"}</td>
-                    </tr>
-                  ))}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-6">İş</TableHead>
+                      <TableHead className="text-right">Çağrı</TableHead>
+                      <TableHead className="text-right">Maliyet</TableHead>
+                      <TableHead className="pr-6 text-right">Çağrı başı</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="tabular">
+                    {s.byKind.map((k) => (
+                      <TableRow key={k.kind}>
+                        <TableCell className="pl-6">{KIND_LABELS[k.kind] ?? k.kind}</TableCell>
+                        <TableCell className="text-right">{fmtInt(k.calls)}</TableCell>
+                        <TableCell className="text-right">{usd(k.costUsd)}</TableCell>
+                        <TableCell className="pr-6 text-right">{k.calls ? usd(k.costUsd / k.calls) : "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
                 </Table>
               )}
-            </Card>
+            </Section>
           </div>
           <p className="text-xs text-muted-foreground">
             Maliyetler tahminidir: görsel başı fiyatlar ve Claude token fiyatları AI servisinin ortam değişkenlerinden okunur (mock ve demo yanıtları $0).

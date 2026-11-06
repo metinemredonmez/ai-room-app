@@ -38,7 +38,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
    - [x] Bekleme listesi + bülten (API.md §7.47): çift onay, listeden çıkma, KVKK saklama, admin ekranı, CSV. Admin → Pazarlama → Bekleme listesi.
    - [ ] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır.
    - [x] Yaşam döngüsü e-postaları (API.md §7.48): ilk tasarım hatırlatması, ikinci adım, geri çağırma; izinli, abonelikten çıkışlı, sessiz saat ve günlük sınırla. Admin → Pazarlama → Yaşam döngüsü e-postaları.
-   - [ ] Eski görünümdeki 8 admin ekranı.
+   - [x] Eski görünümdeki 8 admin ekranı — API.md §7.49
 
 ## Ana fark: seçilen nesneyi değiştirmek (en önemli)
 Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamını değiştirmek kolay ve çoğu uygulamada var,
@@ -271,7 +271,7 @@ Uymayanlar (alınmayacak): fal/astroloji/tarot içerikleri, ses (TTS/STT), kriz 
 makyaj ve renk analizi, astrolog portalı ve akademi, telefonla giriş.
 
 ## Admin
-- [ ] Eski görünümdeki 8 ekranı yeni tasarıma taşı (Kullanıcılar + detay, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim, Sistem, Ayarlar kısmen).
+- [x] Eski görünümdeki 8 ekranı yeni tasarıma taşı (Kullanıcılar + detay, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim, Sistem, Ayarlar) — API.md §7.49.
 - [ ] Admin’e her yerden güvenli erişim: Tailscale (şimdilik yalnız sahibin ev IP’si açık).
 - [x] Panelden kodsuz admin girişi (sahibinin kararı, 4 Kasım; `deploy/hazal/panel-key.sh`): API'ye doğrudan girişte
   kod yine zorunlu. Panel izinli IP dışına açılırsa önce `panel-key.sh off`.

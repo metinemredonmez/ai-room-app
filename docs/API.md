@@ -2074,3 +2074,31 @@ başlar.
 | PATCH | `/admin/lifecycle` | ADMIN | `{ settings, reason, version }` |
 | POST | `/admin/lifecycle/test` | ADMIN | `{ rule, locale: tr\|en, settings }` → `{ sentTo }`; yönetici başına 10 dakikada 20 |
 | POST | `/admin/jobs/lifecycle/run` | ADMIN | `{ reason }` → 202 |
+
+### 7.49 Eski görünümdeki admin ekranları yeni tasarımda
+
+Kullanıcılar ve kullanıcı detayı, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim kaydı, Sistem ve
+Ayarlar, öteki ekranlarla aynı tasarıma (shadcn kartları, sayaçlar, süzgeçler, pencereler) geçti. Ekranlar artık
+rolü yetmeyen kişiye değiştirme düğmesi göstermiyor; karar yine sunucuda. Gerekçe soran işlemler
+(`window.prompt` yerine) gerekçe penceresi açıyor.
+
+- **Kullanıcılar:** toplam, kayıtlı, misafir ve PRO sayaçları (`/admin/stats`); arama yanında hesap türü, plan ve
+  durum süzgeci. Plan süzgeci gerçek durumu kullanır: süresi dolmamış verilen PRO ya da süren mağaza aboneliği PRO
+  sayılır (ana sayfadaki PRO sayısı da artık mağaza aboneliğini sayar).
+- **Kullanıcı detayı:** özet kartları, RevenueCat'ten gelen mağaza abonelikleri (uçta vardı, ekranda yoktu), plan,
+  kredi düzeltme ve hediye yalnız ADMIN'e görünür.
+- **Stiller:** palet şeritli kart ızgarası, Tümü / Aktif / Pasif / PRO süzgeci, düzenleme yan panelde. Ekleme ve
+  düzenleme EDITOR ve üstüne görünür.
+- **Ödeme olayları:** durum sayaçları ve sayılı süzgeç düğmeleri; yeniden işleme yalnız ADMIN'e görünür.
+- **Zamanlı işler:** `lifecycle` işinin adı eklendi; son çalışmalar "Hatalı" süzgeciyle daraltılır.
+- **Denetim kaydı:** alan (işlemin ön eki) ve yönetici e-postası süzgeci; satıra tıklayınca ayrıntı penceresi.
+- **Sistem:** genel durum şeridi; sayfa açıkken 30 saniyede bir yenilenir.
+- **Ayarlar:** **Toplu gönderim ve e-posta** bölümü eklendi. Kişi başı haftalık pazarlama bildirimi (1–14), günlük
+  e-posta sınırı (1–10.000) ve sessiz saatler daha önce yalnız sunucu varsayılanıyla vardı; artık panelden değişir.
+  Değişen bölüm "Değişti" diye işaretlenir; SUPPORT ayarları salt okunur görür.
+
+| Yöntem | Yol | Rol | Yeni |
+|---|---|---|---|
+| GET | `/admin/users` | SUPPORT | `kind=guest\|registered`, `plan=FREE\|PRO`, `status=ACTIVE\|BANNED` (geçersiz değer 400) |
+| GET | `/admin/audit` | ADMIN | `area` (`^[a-z_]{2,30}$`, işlem ön eki), `actor` (2–100, e-posta parçası) |
+| GET | `/admin/billing/events` | SUPPORT | İlk sayfada `counts: { <durum>: sayı }`; sonraki sayfalarda `null` |

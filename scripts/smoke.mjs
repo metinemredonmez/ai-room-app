@@ -177,6 +177,22 @@ if (admin.status === 401 || admin.status === 429) {
   ok(insp.json?.items?.some((i) => i.id === design.json.id), 'featured design appears in inspiration');
   const audit = await call('GET', '/admin/audit?limit=5', { token: admin.json.accessToken });
   ok(audit.json?.items?.some((a) => a.action === 'design.feature'), 'admin action audited (LOG-01)');
+  // Admin list filters (new-design screens): audit by area and actor, users by kind / plan / status, billing counts.
+  const AT = { token: admin.json.accessToken };
+  const byArea = await call('GET', '/admin/audit?limit=20&area=design', AT);
+  const byActor = await call('GET', '/admin/audit?limit=5&actor=nobody-such-admin', AT);
+  const badArea = await call('GET', '/admin/audit?area=Design%27', AT);
+  ok(byArea.status === 200 && byArea.json.items.length >= 1 && byArea.json.items.every((a) => a.action.startsWith('design.')) && byActor.json?.items?.length === 0 && badArea.status === 400,
+    'audit filters by area and actor; a bad area is refused (INP-01)', `${byArea.status}/${byActor.json?.items?.length}/${badArea.status}`);
+  const guests = await call('GET', '/admin/users?kind=guest', AT);
+  const registered = await call('GET', '/admin/users?kind=registered&status=ACTIVE', AT);
+  const pros = await call('GET', '/admin/users?plan=PRO', AT);
+  const frees = await call('GET', '/admin/users?plan=FREE&kind=registered', AT);
+  const badKind = await call('GET', '/admin/users?kind=staff', AT);
+  ok(guests.status === 200 && guests.json.items.every((u) => u.isGuest) && registered.json.items.length >= 1 && registered.json.items.every((u) => !u.isGuest && u.status === 'ACTIVE') && pros.json.items.every((u) => u.plan === 'PRO') && frees.json.items.length >= 1 && frees.json.items.every((u) => u.plan === 'FREE') && badKind.status === 400,
+    'users filter by kind, plan and status', `${guests.status}/${registered.json?.items?.length}/${pros.json?.items?.map((u) => u.plan)}/${frees.json?.items?.length}/${badKind.status}`);
+  const billingFirst = await call('GET', '/admin/billing/events?limit=1', AT);
+  ok(billingFirst.status === 200 && billingFirst.json.counts && typeof billingFirst.json.counts === 'object', 'billing events list carries per-status counts', JSON.stringify(billingFirst.json?.counts));
 }
 
 // AUT-03 / MAIL-01 / SES-04: e-mail verification and password reset (dev outbox transport).

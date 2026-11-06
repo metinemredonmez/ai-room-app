@@ -1,23 +1,34 @@
 "use client";
 
-import { CheckCircle2, Clock, Loader2, Play, RotateCw, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Hourglass, Loader2, Play, RotateCw, Timer, Workflow, XCircle } from "lucide-react";
 import { useState } from "react";
+import { EmptyState, ErrorState, PageHeader, Spinner } from "@/components/common";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Spinner, Table, td, th } from "@/components/common";
-import { StatTile } from "@/components/charts";
+import { ReasonDialog } from "@/components/reason-dialog";
+import { Section } from "@/components/section";
+import { badgeTone, StatCard } from "@/components/stat";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api, ApiError, useApi } from "@/lib/api";
-import { fmtDateTime } from "@/lib/format";
-import type { AdminMe, JobRun, JobSchedule, JobsOverview } from "@/lib/types";
+import { fmtDateTime, fmtInt } from "@/lib/format";
+import { atLeast, type AdminMe, type JobRun, type JobSchedule, type JobsOverview } from "@/lib/types";
+
+// Zamanlı işler (API.md §7.42): tasarım kuyruğu, her zamanlayıcının sonraki ve son çalışması, son çalışmaların
+// sonucu. Listelenen işler (tekrarı zararsız olanlar) ADMIN tarafından gerekçeyle şimdi çalıştırılabilir.
 
 const JOB_LABELS: Record<string, { label: string; schedule: string }> = {
   "reconcile-designs": { label: "Takılan tasarımları toparla", schedule: "Her dakika" },
   "broadcasts-due": { label: "Zamanı gelen toplu gönderimler", schedule: "Her dakika" },
   "price-schedules": { label: "Planlı fiyat değişiklikleri", schedule: "Her dakika" },
+  lifecycle: { label: "Yaşam döngüsü e-postaları", schedule: "Her saat :20" },
   retention: { label: "Saklama süresi temizliği (KVKK)", schedule: "Her gün 03:30" },
   loyalty: { label: "Sadakat: yıldönümü ve geri dönüş", schedule: "Her gün 11:00" },
   "kvkk-deadlines": { label: "KVKK başvuru süreleri özeti", schedule: "Her gün 09:00" },
   "weekly-report": { label: "Haftalık rapor e-postası", schedule: "Pazartesi 09:00" },
 };
+const label = (name: string) => JOB_LABELS[name]?.label ?? name;
 
 function duration(run: JobRun): string {
   if (!run.finishedAt) return "—";
@@ -28,27 +39,47 @@ function duration(run: JobRun): string {
 function details(run: JobRun): string {
   const entries = Object.entries(run.details ?? {});
   if (!entries.length) return "—";
-  return entries.map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`).join(" · ").slice(0, 240);
+  return entries
+    .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+    .join(" · ")
+    .slice(0, 240);
 }
 
-function StatusBadge({ status }: { status: JobRun["status"] }) {
-  if (status === "ok") return <Badge tone="good" icon={<CheckCircle2 className="h-3.5 w-3.5" />}>Başarılı</Badge>;
-  if (status === "error") return <Badge tone="danger" icon={<XCircle className="h-3.5 w-3.5" />}>Hata</Badge>;
-  return <Badge tone="warn" icon={<Loader2 className="h-3.5 w-3.5 animate-spin" />}>Çalışıyor</Badge>;
+function StatusBadge({ status }: { status: string }) {
+  if (status === "ok")
+    return (
+      <Badge className={badgeTone.good}>
+        <CheckCircle2 aria-hidden /> Başarılı
+      </Badge>
+    );
+  if (status === "error")
+    return (
+      <Badge className={badgeTone.danger}>
+        <XCircle aria-hidden /> Hata
+      </Badge>
+    );
+  return (
+    <Badge className={badgeTone.warn}>
+      <Loader2 className="animate-spin" aria-hidden /> Çalışıyor
+    </Badge>
+  );
 }
 
 export default function JobsPage() {
   const res = useApi<JobsOverview>("/jobs", { limit: 100 });
+  const [onlyErrors, setOnlyErrors] = useState(false);
   const s = res.data;
   const lastError = s?.items.find((r) => r.status === "error");
+  const runs = s ? (onlyErrors ? s.items.filter((r) => r.status === "error") : s.items) : [];
+
   return (
     <>
       <PageHeader
         title="Zamanlı işler"
-        description="Tasarım kuyruğu ve bakım işlerinin son çalışmaları (sessiz arızaları görmek için)"
+        description="Tasarım kuyruğu ve bakım işlerinin son çalışmaları; sessiz arızaları görmek için."
         actions={
-          <Button onClick={res.reload} loading={res.loading && Boolean(s)}>
-            <RotateCw className="h-4 w-4" aria-hidden /> Yenile
+          <Button variant="outline" onClick={res.reload} disabled={res.loading && Boolean(s)}>
+            {res.loading && s ? <Loader2 className="animate-spin" aria-hidden /> : <RotateCw aria-hidden />} Yenile
           </Button>
         }
       />
@@ -57,49 +88,72 @@ export default function JobsPage() {
       ) : !s ? (
         <Spinner />
       ) : (
-        <div className={`flex flex-col gap-4 ${res.loading ? "opacity-60" : ""}`}>
+        <div className={`flex flex-col gap-5 ${res.loading ? "opacity-60 transition-opacity" : ""}`}>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatTile label="Kuyrukta bekleyen" value={s.queue.waiting} note="Tasarım işi" />
-            <StatTile label="İşleniyor" value={s.queue.active} />
-            <StatTile label="Yeniden denenecek" value={s.queue.delayed} note="Geçici AI hatası" />
-            <StatTile label="Başarısız (son kayıtlar)" value={s.queue.failed} note="Kredisi iade edildi" />
+            <StatCard icon={Hourglass} label="Kuyrukta bekleyen" value={fmtInt(s.queue.waiting)} note="Tasarım işi" />
+            <StatCard icon={Workflow} label="İşleniyor" value={fmtInt(s.queue.active)} tone="good" note="Şu an AI servisinde" />
+            <StatCard icon={Timer} label="Yeniden denenecek" value={fmtInt(s.queue.delayed)} tone={s.queue.delayed ? "warn" : "neutral"} note="Geçici AI hatası" />
+            <StatCard icon={XCircle} label="Başarısız" value={fmtInt(s.queue.failed)} tone={s.queue.failed ? "danger" : "neutral"} note="Son kayıtlar · kredisi iade edildi" />
           </div>
-          <Schedules schedules={s.schedules ?? []} onRan={res.reload} />
+
           {lastError && (
-            <p className="rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger">
-              Son hata: {JOB_LABELS[lastError.name]?.label ?? lastError.name} — {fmtDateTime(lastError.startedAt)} · {details(lastError)}
-            </p>
+            <div role="alert" className="flex items-start gap-3 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span className="min-w-0 break-words">
+                <span className="font-medium">Son hata: {label(lastError.name)}</span> · {fmtDateTime(lastError.startedAt)} · {details(lastError)}
+              </span>
+            </div>
           )}
-          <Card title="Son çalışmalar">
-            {s.items.length === 0 ? (
-              <EmptyState title="Henüz çalışma yok" description="İşler ilk dakika içinde çalışmaya başlar." />
+
+          <Schedules schedules={s.schedules ?? []} onRan={res.reload} />
+
+          <Section
+            title="Son çalışmalar"
+            description="Her dakikalık işlerin çoğu yalnız bir şey yaptığında buraya yazılır."
+            flush
+            action={
+              <ToggleGroup type="single" variant="outline" size="sm" value={onlyErrors ? "errors" : "all"} onValueChange={(v) => v && setOnlyErrors(v === "errors")} aria-label="Süzgeç">
+                <ToggleGroupItem value="all" className="px-3">
+                  Tümü
+                </ToggleGroupItem>
+                <ToggleGroupItem value="errors" className="px-3">
+                  Hatalı
+                </ToggleGroupItem>
+              </ToggleGroup>
+            }
+          >
+            {runs.length === 0 ? (
+              <EmptyState title={onlyErrors ? "Hatalı çalışma yok" : "Henüz çalışma yok"} description={onlyErrors ? undefined : "İşler ilk dakika içinde çalışmaya başlar."} />
             ) : (
-              <Table
-                head={
-                  <tr>
-                    <th className={th}>İş</th>
-                    <th className={th}>Durum</th>
-                    <th className={th}>Başlangıç</th>
-                    <th className={th}>Süre</th>
-                    <th className={th}>Sonuç</th>
-                  </tr>
-                }
-              >
-                {s.items.map((r) => (
-                  <tr key={r.id}>
-                    <td className={td}>
-                      <span className="text-fg">{JOB_LABELS[r.name]?.label ?? r.name}</span>
-                      <span className="block text-xs text-muted-foreground">{JOB_LABELS[r.name]?.schedule ?? r.name}</span>
-                    </td>
-                    <td className={td}><StatusBadge status={r.status} /></td>
-                    <td className={`${td} whitespace-nowrap text-muted-foreground`}>{fmtDateTime(r.startedAt)}</td>
-                    <td className={`${td} tabular`}>{duration(r)}</td>
-                    <td className={`${td} max-w-md break-all font-mono text-[11px] text-muted-foreground`}>{details(r)}</td>
-                  </tr>
-                ))}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="pl-6">İş</TableHead>
+                    <TableHead>Durum</TableHead>
+                    <TableHead>Başlangıç</TableHead>
+                    <TableHead>Süre</TableHead>
+                    <TableHead className="pr-6">Sonuç</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {runs.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="pl-6">
+                        <span className="block">{label(r.name)}</span>
+                        <span className="block text-xs text-muted-foreground">{JOB_LABELS[r.name]?.schedule ?? r.name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={r.status} />
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{fmtDateTime(r.startedAt)}</TableCell>
+                      <TableCell className="tabular">{duration(r)}</TableCell>
+                      <TableCell className="max-w-md pr-6 font-mono text-[11px] whitespace-normal break-all text-muted-foreground">{details(r)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
               </Table>
             )}
-          </Card>
+          </Section>
         </div>
       )}
     </>
@@ -109,65 +163,93 @@ export default function JobsPage() {
 /** API.md §7.42: every scheduler with its next run, its last result and a late flag; listed jobs run from here. */
 function Schedules({ schedules, onRan }: { schedules: JobSchedule[]; onRan: () => void }) {
   const me = useApi<AdminMe>("/me");
-  const canRun = me.data ? ["ADMIN", "SUPER_ADMIN"].includes(me.data.role) : false;
-  const { toast, confirm } = useFeedback();
-  const [busy, setBusy] = useState<string | null>(null);
+  const canRun = atLeast(me.data?.role, "ADMIN");
+  const { toast } = useFeedback();
+  const [asking, setAsking] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const late = schedules.filter((x) => x.late);
 
-  async function run(name: string) {
-    const label = JOB_LABELS[name]?.label ?? name;
-    const ok = await confirm({ title: `“${label}” şimdi çalışsın mı?`, description: "İş kuyruğa alınır ve birkaç saniye içinde çalışır; tekrarı zararsızdır. Sonucu aşağıdaki listede görürsün.", confirmLabel: "Çalıştır" });
-    if (!ok) return;
-    const reason = window.prompt("Neden? (denetim kaydına yazılır)");
-    if (!reason || reason.trim().length < 3) return;
-    setBusy(name);
+  async function run(name: string, reason: string) {
+    setBusy(true);
     try {
-      await api(`/jobs/${encodeURIComponent(name)}/run`, { method: "POST", body: { reason: reason.trim() } });
-      toast("success", "Kuyruğa alındı.");
+      await api(`/jobs/${encodeURIComponent(name)}/run`, { method: "POST", body: { reason } });
+      toast("success", "Kuyruğa alındı; sonuç birkaç saniye içinde aşağıda görünür.");
+      setAsking(null);
       setTimeout(onRan, 3000);
     } catch (e) {
       toast("error", e instanceof ApiError ? e.message : "Çalıştırılamadı.");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   }
 
   return (
-    <Card title="Zamanlama">
+    <Section title="Zamanlama" description="Her zamanlayıcının sonraki ve son çalışması" flush>
       {late.length > 0 && (
-        <p className="mb-3 rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-sm text-danger">
-          Gecikmiş iş: {late.map((x) => JOB_LABELS[x.name]?.label ?? x.name).join(", ")}. İşçi durmuş ya da takılmış olabilir; kurucuya uyarı gider.
+        <p role="alert" className="mx-6 my-4 rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-sm text-danger">
+          Gecikmiş iş: {late.map((x) => label(x.name)).join(", ")}. İşçi durmuş ya da takılmış olabilir; kurucuya uyarı gider.
         </p>
       )}
       {schedules.length === 0 ? (
         <EmptyState title="Zamanlama bilgisi yok" description="İşçi kapalıysa (WORKER_ENABLED) burada iş görünmez." />
       ) : (
-        <Table head={<tr><th className={th}>İş</th><th className={th}>Sonraki çalışma</th><th className={th}>Son çalışma</th><th className={th} /></tr>}>
-          {schedules.map((x) => (
-            <tr key={x.name}>
-              <td className={td}>
-                <span className="text-fg">{JOB_LABELS[x.name]?.label ?? x.name}</span>
-                <span className="block text-xs text-muted-foreground">{JOB_LABELS[x.name]?.schedule ?? (x.every ? `${Math.round(x.every / 1000)} sn'de bir` : x.pattern)}</span>
-              </td>
-              <td className={`${td} whitespace-nowrap text-xs`}>
-                {x.next ? fmtDateTime(x.next) : "—"}
-                {x.late && <Badge tone="danger" icon={<Clock className="h-3 w-3" />}>Gecikti</Badge>}
-              </td>
-              <td className={`${td} whitespace-nowrap text-xs text-muted-foreground`}>
-                {x.lastRun ? <>{fmtDateTime(x.lastRun.startedAt)} · <StatusBadge status={x.lastRun.status as JobRun["status"]} /></> : "Kayıt yok"}
-              </td>
-              <td className={`${td} text-right`}>
-                {canRun && x.runnable && (
-                  <Button size="sm" variant="ghost" loading={busy === x.name} onClick={() => void run(x.name)}>
-                    <Play className="h-3.5 w-3.5" aria-hidden /> Şimdi çalıştır
-                  </Button>
-                )}
-              </td>
-            </tr>
-          ))}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="pl-6">İş</TableHead>
+              <TableHead>Sonraki çalışma</TableHead>
+              <TableHead>Son çalışma</TableHead>
+              <TableHead className="pr-6" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {schedules.map((x) => (
+              <TableRow key={x.name}>
+                <TableCell className="pl-6">
+                  <span className="block">{label(x.name)}</span>
+                  <span className="block text-xs text-muted-foreground">{JOB_LABELS[x.name]?.schedule ?? (x.every ? `${Math.round(x.every / 1000)} sn'de bir` : x.pattern)}</span>
+                </TableCell>
+                <TableCell className="text-xs">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {x.next ? fmtDateTime(x.next) : "—"}
+                    {x.late && (
+                      <Badge className={badgeTone.danger}>
+                        <Clock aria-hidden /> Gecikti
+                      </Badge>
+                    )}
+                  </span>
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {x.lastRun ? (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      {fmtDateTime(x.lastRun.startedAt)} <StatusBadge status={x.lastRun.status} />
+                    </span>
+                  ) : (
+                    "Kayıt yok"
+                  )}
+                </TableCell>
+                <TableCell className="pr-6 text-right">
+                  {canRun && x.runnable && (
+                    <Button size="sm" variant="outline" onClick={() => setAsking(x.name)}>
+                      <Play aria-hidden /> Şimdi çalıştır
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
         </Table>
       )}
-      <p className="mt-2 text-[11px] text-muted-foreground">Her dakikalık işlerin çoğu yalnız bir şey yaptığında “Son çalışmalar” listesine yazılır.</p>
-    </Card>
+      {asking && (
+        <ReasonDialog
+          title={`“${label(asking)}” şimdi çalışsın mı?`}
+          description="İş kuyruğa alınır ve birkaç saniye içinde çalışır; tekrarı zararsızdır."
+          confirmLabel="Çalıştır"
+          busy={busy}
+          onConfirm={(r) => void run(asking, r)}
+          onClose={() => setAsking(null)}
+        />
+      )}
+    </Section>
   );
 }
