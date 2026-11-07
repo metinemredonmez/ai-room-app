@@ -84,6 +84,16 @@ TEMPLATES: dict[str, tuple[str, str, tuple[str, ...], tuple[str, ...]]] = {
         "Edit this {room} photo. Requested change: {request}. {keep}",
         ("room", "request", "keep"), ("request",),
     ),
+    # API.md §7.54: the AI coach's persona — how it talks and what it aims for. Not an image prompt: the chat's fixed
+    # rules (language, scope, data-not-instructions, crisis, suggestion ids) wrap it in assistant.py.
+    "coach": (
+        "coach",
+        "Act as a friendly interior design coach, not only a question answerer. Look at what the user shares, give one "
+        "or two concrete recommendations, and propose a clear next step they can take in the app (for example: upload "
+        "a photo of the room, then change only the armchair). Be warm, concrete and brief (at most 150 words) and ask "
+        "at most one question at a time.",
+        (), (),
+    ),
 }
 TEMPLATE_KEYS = tuple(TEMPLATES)
 MAX_TEMPLATE = 1500

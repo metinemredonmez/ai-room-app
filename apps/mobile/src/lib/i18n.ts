@@ -146,6 +146,12 @@ const tr = {
   'chat.disclaimer': 'Asistan yapay zekâ kullanır ve hata yapabilir. Önerileri ilham olarak kullan.',
   'chat.suggestionHint': 'Öneriye dokununca tasarım ekranı hazır gelir; üretimi sen başlatırsın.',
   'chat.imageAttached': 'Görsel eklendi',
+  'chat.listen': 'Dinle',
+  'chat.stop': 'Durdur',
+  'chat.resume': 'Devam et',
+  'chat.nowPlaying': 'Koç konuşuyor',
+  'chat.crisisTitle': 'Hemen yardım alabileceğin hatlar',
+  'chat.call': 'Ara',
 
   'paywall.title': 'Casalume PRO',
   'paywall.subtitle': 'Sınırsıza yakın tasarım, tüm stiller ve ürün analizi',
@@ -206,6 +212,9 @@ const tr = {
   'error.rate_limited': 'Çok hızlı gidiyorsun. {s} sn sonra tekrar dene.',
   'error.ai_unavailable': 'Yapay zekâ servisi şu an yanıt vermiyor. Hakkın iade edildi, tekrar dene.',
   'error.busy': 'Şu an yoğunluk var. Birazdan tekrar dene.',
+  'error.voice_unavailable': 'Koçun sesi şu an hazırlanamadı; cevabı okuyabilirsin.',
+  'error.voice_unassigned': 'Koçun sesi şu an hazırlanamadı; cevabı okuyabilirsin.',
+  'error.voice_disabled': 'Koçun sesi şu an kapalı; cevabı okuyabilirsin.',
   'error.internal': 'Beklenmeyen bir hata oluştu.',
 } as const;
 
@@ -357,6 +366,12 @@ const en: Record<MessageKey, string> = {
   'chat.disclaimer': 'The assistant uses AI and can make mistakes. Use its suggestions as inspiration.',
   'chat.suggestionHint': 'Tapping a suggestion pre-fills the design screen; you start the generation.',
   'chat.imageAttached': 'Image attached',
+  'chat.listen': 'Listen',
+  'chat.stop': 'Stop',
+  'chat.resume': 'Resume',
+  'chat.nowPlaying': 'Your coach is speaking',
+  'chat.crisisTitle': 'Lines you can call right now',
+  'chat.call': 'Call',
 
   'paywall.title': 'Casalume PRO',
   'paywall.subtitle': 'Near-unlimited designs, every style and product analysis',
@@ -417,6 +432,9 @@ const en: Record<MessageKey, string> = {
   'error.rate_limited': 'Slow down a little. Try again in {s} s.',
   'error.ai_unavailable': 'The AI service is not responding. Your credit was refunded, please retry.',
   'error.busy': 'We are busy right now. Please try again shortly.',
+  'error.voice_unavailable': "The coach's voice isn't available right now; you can read the reply.",
+  'error.voice_unassigned': "The coach's voice isn't available right now; you can read the reply.",
+  'error.voice_disabled': "The coach's voice is switched off right now; you can read the reply.",
   'error.internal': 'Something went wrong.',
 };
 

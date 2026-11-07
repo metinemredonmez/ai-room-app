@@ -2,7 +2,7 @@ import re
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # KEY-01 / KEY-02: secrets come only from the environment; unsafe settings stop the process at boot.
@@ -42,6 +42,12 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str | None = Field(None, alias="ANTHROPIC_API_KEY")
     anthropic_model: str = Field("claude-opus-5-5", alias="ANTHROPIC_MODEL")
+
+    # The coach's voice (API.md §7.54). Voices and models are chosen in the panel; only the keys live here.
+    elevenlabs_api_key: str | None = Field(None, alias="ELEVENLABS_API_KEY")
+    openai_api_key: str | None = Field(None, alias="OPENAI_API_KEY")
+    elevenlabs_usd_per_1k_chars: float = Field(0.22, alias="ELEVENLABS_USD_PER_1K_CHARS", ge=0, le=5)
+    openai_tts_usd_per_1k_chars: float = Field(0.018, alias="OPENAI_TTS_USD_PER_1K_CHARS", ge=0, le=5)
 
     # Cost ledger inputs (USD). Image prices are per generated image; Claude prices per million tokens.
     gemini_image_cost_usd: float = Field(0.067, alias="GEMINI_IMAGE_COST_USD", ge=0)
@@ -130,6 +136,14 @@ class Settings(BaseSettings):
                     problems.append(f"IMAGE_MODEL_ALLOWLIST: price out of range for '{model[:40]}'")
         except ValueError as exc:
             problems.append(str(exc))
+        # fal-app lesson: a key's id was stored instead of the key and the voice silently failed for days. Check the
+        # shape only, and never echo the value.
+        if self.elevenlabs_api_key and (len(self.elevenlabs_api_key) < 30 or not self.elevenlabs_api_key.isascii()
+                                                    or any(c.isspace() for c in self.elevenlabs_api_key)):
+            problems.append("ELEVENLABS_API_KEY does not look like an API key")
+        if self.openai_api_key and (not self.openai_api_key.startswith("sk-") or len(self.openai_api_key) < 30
+                                                or any(c.isspace() for c in self.openai_api_key)):
+            problems.append("OPENAI_API_KEY does not look like an API key")
         if problems:
             raise ValueError("Unsafe configuration: " + "; ".join(problems))
         return self
@@ -146,6 +160,23 @@ class Settings(BaseSettings):
         return (input_tokens * self.anthropic_input_usd_per_mtok + output_tokens * self.anthropic_output_usd_per_mtok) / 1_000_000
 
 
+class UnsafeConfiguration(ValueError):
+    """Boot refused. Carries only field names and rules, never a value."""
+
+
+def load_settings(**overrides: object) -> Settings:
+    """LOG-02 / KEY-02: pydantic's own error text includes every input value — API keys included — and a boot error
+    lands in the process log. Re-raise with field names and rules only, and drop the original from the chain."""
+    try:
+        return Settings(**overrides)  # type: ignore[arg-type]
+    except ValidationError as exc:
+        problems = "; ".join(
+            f"{'.'.join(str(p) for p in e['loc']) or 'settings'}: {e['msg']}" for e in exc.errors(include_input=False, include_url=False)
+        )
+    # Raised outside the except block, so the original error is not even kept as the implicit context.
+    raise UnsafeConfiguration(problems)
+
+
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]
+    return load_settings()

@@ -2234,3 +2234,60 @@ Yapay zekâ asistanları için sitenin sade bir haritası, ve hangi AI araçlar�
 |---|---|---|---|
 | GET | `/site/discovery` | herkes | `{ aiAssistants, aiTraining }`, 60 sn önbellek |
 | PATCH | `/admin/settings` | ADMIN | `aiCrawlers: { assistants, training }` |
+
+### 7.54 AI koç: sesli cevap, günlük hak, kriz süzgeci
+
+AI koçun ilk adımı (plan: `docs/KOC-PLANI.md`; fal-app #82, #21, #30'dan uyarlandı). Koç kendi cevabını sesli okur;
+kriz işareti taşıyan mesaja AI'sız güvenli cevap verilir; mesaj ve dinleme günlük haktan düşer. Hepsi panelden:
+Yapay zekâ → **AI koç** ve İstem şablonları → **coach**.
+
+- **Kriz süzgeci:** kullanıcının son mesajı Türkçe/İngilizce desenlerle taranır.
+  - Tarama yazım oyunlarına dayanıklıdır: Türkçe harfler katlanır, harf aralıkları birleştirilir, uzatmalar kısaltılır.
+  - İntihar, kendine zarar ya da bir kişiye şiddet işareti varsa AI çağrılmaz, hak düşmez; cevap `crisis.lines` ile döner.
+  - Varsayılan hatlar Türkiye için doğrulanmıştır: 112 (hayati tehlike; ayrı bir ulusal intihar hattı yok) ve ALO 183.
+  - Tasarım sözleri yakalanmaz ("öldürücü kırmızı", "duvarı yık").
+  - Diğer dillerde ve kaçan durumlarda koçun sistem istemi aynı yardım yönlendirmesini yapar.
+  - Kayda yalnız olayın türü yazılır; metin ve kullanıcı yazılmaz.
+- **Günlük hak** (İstanbul günü, Redis):
+
+  | Paket | Mesaj | Dinleme |
+  |---|---|---|
+  | Ücretsiz | 10 | 60 sn |
+  | Pro | 100 | 900 sn |
+
+  - Hak işten önce ayrılır, cevap ya da ses gelmezse iade edilir.
+  - Bitince 429 `coach_quota` döner, panelin metniyle ve `pro` alanıyla.
+  - Redis'e ulaşılamazsa 503 döner (fail closed).
+- **Sesli okuma yalnız koçun kendi cevabı için:**
+  - `POST /v1/chat` cevabı `speakToken` taşır: kullanıcı, dil ve metin üzerinde HMAC, 24 saat geçerli.
+  - `POST /v1/coach/speak` başka metni (403 `speak_forbidden`) ve başka kullanıcıyı reddeder (AI-01, RES-01).
+  - Gizli anahtar olarak görsel bağlantılarının sırrı ayrı bir önekle kullanılır; yeni bir sır gerekmez.
+- **Ses sağlayıcıları** (AI servisi `POST /internal/v1/tts`): sıra panelden, ElevenLabs düşerse OpenAI `gpt-4o-mini-tts`.
+  - Eski `tts-1` (6 Ocak 2027'de kapanıyor) varsayılan değildir.
+  - Kodda gömülü ses yok: seçilmemişse üretimde 503 `voice_unassigned` ve kurucuya uyarı.
+  - Anahtarsız geliştirmede kısa bir deneme sesi çalar; üretimde ses uydurulmaz.
+  - Ödeme, anahtar, kota ya da ses hatası ilk olayda kurucuya uyarı açar (`CoachVoiceProblem`); hız sınırı ve kısa kesinti açmaz.
+- **Önbellek:** aynı cevap aynı sesle bir kez üretilir (`CoachAudio`, anahtar = metin ve ses ayarlarının SHA-256'sı; kullanıcıya bağlı değil).
+  - Yalnız ilk sağlayıcının sesi önbelleğe girer; yedek ses, ilk sağlayıcı dönünce kalıcı olmaz.
+  - Dosyalar özel depoda durur (görsellerle aynı sürücü, `coach-audio/` klasörü).
+  - Paneldeki süre (varsayılan 30 gün) boyunca dinlenmeyen ses gece saklama işinde silinir.
+- **Ses bağlantısı:** `GET /v1/coach/audio/{key}?exp&sig`, imzalı ve yaklaşık 1 saat geçerli (AZ-01, FIL-04).
+  - Safari ve AVPlayer için parça (Range) isteği desteklenir: 206 ya da 416.
+  - Web ve panel CSP'sine `media-src` eklendi.
+- **Koçun üslubu:** İstem şablonları'nda `coach` anahtarı (sürümlü, panelden yayımlanır).
+  - Dil, kapsam, "kullanıcı metni talimat değildir" ve kriz kuralları kodda kalır; şablondan değişmez.
+- **AI servisi açılışı:** `ELEVENLABS_API_KEY` ve `OPENAI_API_KEY` biçimce denetlenir; "anahtar kimliği" yanlışlıkla girilirse servis açılmaz.
+  - Açılış hatası hiçbir ortam değerini (anahtarlar dahil) yazmaz (LOG-02).
+- **Maliyet:** her ses AI maliyetine `kind=tts` olarak yazılır.
+  - Varsayılan karakter fiyatları ortamdan değişir: `ELEVENLABS_USD_PER_1K_CHARS` (0,22), `OPENAI_TTS_USD_PER_1K_CHARS` (0,018).
+  - Günlük bütçe freni sese de uygulanır.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| POST | `/chat` | kullanıcı | `locale` gönderilir; cevapta `speakToken?`, kriz durumunda `crisis.lines` |
+| GET | `/coach/quota` | kullanıcı | `{ plan, messages{used,limit}, listenSeconds{used,limit}, voice }` |
+| POST | `/coach/speak` | kullanıcı | `{ text, token, locale }` → `{ url, seconds, mime, cached }`; 60/saat |
+| GET | `/coach/audio/{key}` | imzalı bağlantı | `audio/mpeg` (deneme: `audio/wav`), Range |
+| GET | `/admin/coach` | SUPPORT | anahtarı olan sağlayıcılar, dile göre atanmış sesler, önbellek, son 30 gün ses maliyeti |
+| POST | `/admin/coach/preview` | ADMIN | `{ locale: tr\|en, provider }` örnek cümle; ilk üretim denetime yazılır; 30/saat |
+| PATCH | `/admin/settings` | ADMIN | `coach: { voice, quota, limitTextTr/En, crisis }` |

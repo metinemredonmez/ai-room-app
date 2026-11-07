@@ -1,24 +1,40 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Bot, ImagePlus, Images, LoaderCircle, Paperclip, SendHorizontal, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight, Bot, ImagePlus, Images, LoaderCircle, Paperclip, Phone, SendHorizontal, Sparkles, X } from "lucide-react";
 import { ApiError, api } from "@/lib/api";
 import { ImageInputError, fileToUpload } from "@/lib/image";
 import { clearChatPrefill, peekChatPrefill, setStudioPrefill } from "@/lib/prefill";
 import type { Design, ImageRef, Page, Suggestion } from "@/lib/types";
 import { useApp, useFeature } from "@/components/app-provider";
 import { ErrorNotice } from "@/components/error-notice";
+import { ListenButton, VoiceBar, useCoachVoice } from "@/components/coach-voice";
 import { ToolIcon } from "@/components/icons";
 import { btn, card } from "@/components/ui";
 
-type Msg = { role: "user" | "assistant"; text: string; image?: ImageRef; suggestions?: Suggestion[] };
+type CrisisLine = { label: string; phone: string };
+type Msg = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  image?: ImageRef;
+  suggestions?: Suggestion[];
+  /** API.md §7.54: lets this reply be read aloud (24 h). */
+  speakToken?: string;
+  /** Help lines shown instead of an AI answer when the message carried crisis signs. */
+  crisis?: { lines: CrisisLine[] };
+};
+type ChatReply = { reply: string; suggestions: Suggestion[]; speakToken?: string; crisis?: { lines: CrisisLine[] } };
+
+let seq = 0;
+const nextId = () => `m${++seq}`;
 
 const MAX_TEXT = 2000;
 const MAX_HISTORY = 20;
 
 export function Chat() {
-  const { t, catalog, ensureSession, href } = useApp();
+  const { t, catalog, ensureSession, href, locale } = useApp();
   const feature = useFeature();
   const router = useRouter();
   const [initialImage] = useState(() => peekChatPrefill()?.image ?? null);
@@ -32,6 +48,8 @@ export function Chat() {
   const [recent, setRecent] = useState<ImageRef[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const onVoiceError = useCallback((e: unknown) => setError(e), []);
+  const voice = useCoachVoice(locale, onVoiceError);
 
   useEffect(() => {
     clearChatPrefill();
@@ -79,7 +97,7 @@ export function Chat() {
   async function send(content?: string) {
     const body = (content ?? text).trim().slice(0, MAX_TEXT);
     if (!body || busy) return;
-    const next: Msg[] = [...messages, { role: "user", text: body, ...(attached ? { image: attached } : {}) }];
+    const next: Msg[] = [...messages, { id: nextId(), role: "user", text: body, ...(attached ? { image: attached } : {}) }];
     setMessages(next);
     setText("");
     setAttached(null);
@@ -90,10 +108,14 @@ export function Chat() {
       await ensureSession();
       let history = next.slice(-MAX_HISTORY);
       while (history.length && history[0].role !== "user") history = history.slice(1);
-      const res = await api.post<{ reply: string; suggestions: Suggestion[] }>("/chat", {
+      const res = await api.post<ChatReply>("/chat", {
         messages: history.map((m) => ({ role: m.role, text: m.text, ...(m.image ? { imageId: m.image.id } : {}) })),
+        locale,
       });
-      setMessages((prev) => [...prev, { role: "assistant", text: res.reply, suggestions: res.suggestions ?? [] }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), role: "assistant", text: res.reply, suggestions: res.suggestions ?? [], speakToken: res.speakToken, crisis: res.crisis },
+      ]);
     } catch (e) {
       setError(e);
     } finally {
@@ -156,16 +178,16 @@ export function Chat() {
             </div>
           )}
 
-          {messages.map((m, i) =>
+          {messages.map((m) =>
             m.role === "user" ? (
-              <div key={i} className="flex flex-col items-end gap-2">
+              <div key={m.id} className="flex flex-col items-end gap-2">
                 {m.image && <img src={m.image.url} alt="" className="h-32 w-44 rounded-2xl object-cover" />}
                 <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-3xl rounded-br-lg bg-primary px-4 py-2.5 text-sm text-white">
                   {m.text}
                 </p>
               </div>
             ) : (
-              <div key={i} className="flex gap-3">
+              <div key={m.id} className="flex gap-3">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
                   <Bot className="h-4 w-4" aria-hidden />
                 </span>
@@ -174,6 +196,28 @@ export function Chat() {
                   <p className="whitespace-pre-wrap break-words rounded-3xl rounded-tl-lg bg-surface-2 px-4 py-3 text-sm leading-relaxed">
                     {m.text}
                   </p>
+                  {m.crisis && (
+                    <div className="rounded-2xl border border-danger/30 bg-danger/5 p-3">
+                      <p className="mb-2 text-sm font-medium">{t.chat.crisisTitle}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {m.crisis.lines.map((l) => (
+                          <a
+                            key={`${l.phone}-${l.label}`}
+                            href={`tel:${l.phone.replace(/\s/g, "")}`}
+                            className="inline-flex items-center gap-2 rounded-full bg-danger px-3.5 py-2 text-sm font-medium text-white"
+                          >
+                            <Phone className="h-4 w-4" aria-hidden />
+                            <span>
+                              {l.label} · {l.phone}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {m.speakToken && (
+                    <ListenButton active={voice.state?.id === m.id ? voice.state : null} onClick={() => voice.toggle(m.id, m.text, m.speakToken!)} />
+                  )}
                   {m.suggestions && m.suggestions.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {m.suggestions.map((s, j) => (
@@ -206,6 +250,14 @@ export function Chat() {
         </div>
 
         <div className="border-t border-border p-3 sm:p-4">
+          <VoiceBar
+            state={voice.state}
+            onToggle={() => {
+              const m = messages.find((x) => x.id === voice.state?.id);
+              if (m?.speakToken) voice.toggle(m.id, m.text, m.speakToken);
+            }}
+            onStop={voice.stop}
+          />
           {pickerOpen && (
             <div className="mb-3 rounded-2xl border border-border p-3">
               <button

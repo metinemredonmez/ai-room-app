@@ -24,6 +24,8 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${imageOrigins().join(" ")}`,
+  // API.md §7.54: the coach's voice, a signed link on the API origin.
+  `media-src 'self' blob: data: ${imageOrigins().join(" ")}`,
   "font-src 'self' data:",
   `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
   "object-src 'none'",

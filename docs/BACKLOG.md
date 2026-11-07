@@ -267,8 +267,20 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Mağaza olayları CSV dışa aktarımı (Palemi) — API.md §7.44
 - [x] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) — API.md §7.31, §7.32 (kendiliğinden kurallar açık: üstte Büyüme)
 - [ ] A/B deney altyapısı (YediOda #74) · kolay, düşük öncelik
-Uymayanlar (alınmayacak): fal/astroloji/tarot içerikleri, ses (TTS/STT), kriz süzgeci, RAG, e-ticaret sepet/kargo/iade,
-makyaj ve renk analizi, astrolog portalı ve akademi, telefonla giriş.
+Uymayanlar (alınmayacak): fal/astroloji/tarot içerikleri, RAG, e-ticaret sepet/kargo/iade, makyaj ve renk analizi,
+astrolog portalı ve akademi, telefonla giriş. (Ses ve kriz süzgeci 7 Kasım'da sahibinin kararıyla alındı: AI koç, aşağıda.)
+
+### AI koç (7 Kasım; plan `docs/KOC-PLANI.md`, kaynak fal-app ve Masaüstü YediOda belgeleri)
+Her adım ayrı dal ve PR; sunucu, panel, web ve mobil birlikte.
+- [x] 1. Koç sesli konuşur: kriz süzgeci, günlük mesaj ve dinleme hakkı, ses önbelleği, panelde AI koç sayfası, web ve mobilde Dinle + oynatıcı — API.md §7.54
+  - [ ] Canlıda ses için anahtarlar (sahibi, `deploy/hazal/set-secret.sh`): `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`; sonra panelde Türkçe ve İngilizce ses seç
+  - [ ] Ek hak krediyle (kota bitince "kredi ile devam")
+- [ ] 2. Sesle soru (yazıya çevirme) ve konuşma alanı (gerçek seviyeli dalga); mikrofon izni metni
+- [ ] 3. Koç seçimi ve kişilik (panelde Koçlar sayfası, seslerle)
+- [ ] 4. Sohbet geçmişi ve rızalı hafıza (saklama süresi panelden, silme ve veri indirme kapsamı)
+- [ ] 5. Proaktif koç: oda planı, hatırlatmalar (sessiz saat, tür bazlı bildirim tercihleri), stüdyoya yönlendirme
+- [ ] 6. (isteğe bağlı) Stil testi
+- [ ] Sohbet için Kaptan yedeği (Claude düşerse)
 
 ## Admin
 - [x] Eski görünümdeki 8 ekranı yeni tasarıma taşı (Kullanıcılar + detay, Stiller, Ödeme olayları, AI maliyeti, Zamanlı işler, Denetim, Sistem, Ayarlar) — API.md §7.49.
@@ -286,6 +298,7 @@ makyaj ve renk analizi, astrolog portalı ve akademi, telefonla giriş.
 ## İşletim
 - [ ] Mağazalar: Apple Developer, Google Play Console, RevenueCat ürünleri (`casalume_*`).
 - [ ] Sunucu dışı yedek (şifreli), uptime izleyici.
+- [ ] Yedekten geri dönüş provası: son yedeği yerelde geri yükle, süre ve satır sayılarını kaydet (fal-app'te hiç denenmemişti).
 - [ ] Kendi hata alarmımız — Sentry yerine (sahibinin kararı, 4 Kasım): backend ve AI servisindeki 5xx / yakalanmamış hata
   → `support@casalume.app` e-postası (aynı hata saatte en çok bir kez) + admin’de “Hatalar” sayfası; fal-app
   `infra-watchdog` deseniyle disk, veritabanı, kota uyarıları. Mobil çökme raporu mağaza öncesi ayrıca düşünülecek.

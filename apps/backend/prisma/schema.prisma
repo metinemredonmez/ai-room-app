@@ -1086,3 +1086,19 @@ model LifecycleSend {
   @@index([createdAt])
   @@index([userId, createdAt])
 }
+
+/// The coach's spoken replies (API.md §7.54), keyed by a hash of the voice settings and the text: the same reply in
+/// the same voice is synthesised once. No user is linked to a row; the audio sits in private storage and is served
+/// only through short-lived signed URLs. Rows unused for the panel's cache period are deleted with their file.
+model CoachAudio {
+  key        String   @id @db.Char(64) // sha256 hex
+  mime       String   @db.VarChar(20) // audio/mpeg | audio/wav (keyless demo)
+  bytes      Int
+  seconds    Int
+  provider   String   @db.VarChar(20)
+  model      String   @db.VarChar(80)
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([lastUsedAt])
+}

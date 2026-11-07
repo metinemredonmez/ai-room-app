@@ -23,6 +23,7 @@ import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { WaitlistService } from '../waitlist/waitlist.service.js';
 import { LifecycleService } from '../lifecycle/lifecycle.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
+import { CoachService } from '../coach/coach.service.js';
 import { isManualJob, scheduleStatus } from './schedules.js';
 import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
 
@@ -55,6 +56,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private prices: PriceScheduleService,
     private waitlist: WaitlistService,
     private lifecycle: LifecycleService,
+    private coach: CoachService,
   ) {}
 
   async onModuleInit() {
@@ -254,9 +256,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     // API.md §7.47: unconfirmed waiting-list addresses after 7 days, left ones after 30.
     const waitlist = await this.waitlist.purge(now);
     const lifecycleSends = await this.lifecycle.purge(now);
+    // API.md §7.54: the coach's spoken replies unused for the panel's cache period (file and row).
+    const coachAudio = await this.coach.purgeAudio(now);
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, loginEvents: logins.count, authSessions: sessions.count, alertLogs: alertLogs.count, errorGroups: errorGroups.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends, coachAudio,
     };
   }
 

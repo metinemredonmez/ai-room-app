@@ -116,6 +116,8 @@ export const COMPONENTS: Record<string, SchemaObject> = Object.fromEntries(
     ChatReply: z.object({
       reply: z.string(),
       suggestions: z.array(z.object({ label: z.string(), tool: z.string(), styleId: z.string().optional(), roomId: z.string().optional(), instructions: z.string().optional() })),
+      speakToken: z.string().optional().describe('POST /v1/coach/speak için; 24 saat, yalnız bu cevap metni'),
+      crisis: z.object({ lines: z.array(z.object({ label: z.string(), phone: z.string() })) }).optional().describe('Kriz işaretinde: aranabilir yardım hatları'),
     }),
     Ok: z.object({ ok: z.literal(true) }),
   }).map(([name, schema]) => [name, jsonSchema(schema, 'output')]),

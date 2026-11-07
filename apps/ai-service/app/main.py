@@ -29,12 +29,13 @@ from .region import (
     masked_mean_abs_diff, region_target, selection_points, usable,
 )
 from .resilience import ChainResult, ProviderChain
+from .voice import Voice, VoiceUnavailable
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, BlogRequest, BlogResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
     EngineCatalogResponse, ErrorResponse, GenerateRequest, GenerateResponse, HealthResponse, PromptCatalogResponse, PromptPreviewRequest,
     PromptPreviewResponse, PromptTemplateInfo, QualityRequest, QualityResponse, RegionInfo,
     ReportRequest, ReportResponse, SegmentRequest, SegmentResponse, SeoRequest, SeoResponse, SocialRequest, SocialResponse,
-    Usage,
+    TtsRequest, TtsResponse, Usage,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -50,6 +51,7 @@ DESCRIPTION = """Internal AI service of Casalume. Only the backend calls it (hea
 * tap selection: the user taps the objects to change; `/segment` previews the mask before anything is generated
 * capture-quality gate, no-change detection
 * Claude design chat and shopping/budget analysis
+* the coach's voice: ElevenLabs then OpenAI, a demo tone without keys outside production
 * marketing drafts for the admin (store listing per language)
 * every AI answer carries a `usage` cost-ledger entry (API.md §7.2)
 
@@ -59,6 +61,7 @@ TAGS = [
     {"name": "generation", "description": "Image editing / restyling"},
     {"name": "quality", "description": "Advisory capture-quality check"},
     {"name": "assistant", "description": "Claude chat and analysis (demo answers without a key)"},
+    {"name": "voice", "description": "The coach's voice (text-to-speech of its own replies)"},
     {"name": "marketing", "description": "Marketing drafts for the admin (store listing); never published from here"},
     {"name": "health", "description": "Liveness and provider state"},
 ]
@@ -95,7 +98,8 @@ def error(status: int, code: str, message: str, retryable: bool = False, usage: 
 
 
 def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
-               assistant: Assistant | None = None, segmenter: Segmenter | None = None) -> FastAPI:
+               assistant: Assistant | None = None, segmenter: Segmenter | None = None,
+               voice: Voice | None = None) -> FastAPI:
     chain = ProviderChain(
         providers or create_providers(settings),
         threshold=settings.breaker_failure_threshold,
@@ -104,6 +108,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
     )
     engines = EngineRegistry(settings, chain.providers)
     assistant = assistant or Assistant(settings)
+    voice = voice or Voice(settings)
     segmenter = segmenter or create_segmenter(settings.fal_key, settings.falai_seg_model, settings.falai_seg_cost_usd,
                                               settings.image_provider)
     generation_slots = asyncio.Semaphore(settings.max_concurrent_generations)
@@ -181,6 +186,13 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         log.warning('{"event":"assistant_error","reason":"%s"}', exc.reason)
         return error(502, "ai_unavailable", "Assistant unavailable", retryable=exc.retryable)
 
+    @app.exception_handler(VoiceUnavailable)
+    async def voice_error(_: Request, exc: VoiceUnavailable):
+        log.warning('{"event":"voice_unavailable","failures":"%s"}', ",".join(f"{f.provider}:{f.reason}" for f in exc.failures))
+        content = {"error": {"code": "voice_unavailable", "message": "No voice provider answered", "retryable": True},
+                   "failures": [f.model_dump() for f in exc.failures]}
+        return JSONResponse(status_code=502, content=content)
+
     @app.get("/healthz", tags=["health"], summary="Liveness (no auth)")
     async def healthz():
         return {"status": "ok"}
@@ -190,7 +202,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
              summary="Provider chain and circuit-breaker state")
     async def health() -> HealthResponse:
         return HealthResponse(
-            status="ok", provider=settings.image_provider, chat_enabled=settings.chat_enabled,
+            status="ok", provider=settings.image_provider, chat_enabled=settings.chat_enabled, voice_providers=voice.configured,
             fallbacks=settings.fallback_list, providers=chain.snapshot(),  # type: ignore[arg-type]
         )
 
@@ -410,6 +422,13 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             if m.image_b64:
                 m.image_b64 = to_b64(decode_image(m.image_b64, settings.max_image_bytes, 1568))
         return await assistant.chat(req)
+
+    @app.post("/internal/v1/tts", tags=["voice"], response_model=TtsResponse,
+              dependencies=[Depends(require_internal)],
+              responses={**ERRORS, 502: {"model": ErrorResponse, "description": "No voice provider answered (`failures` per step)"}},
+              summary="The coach's reply as speech; steps tried in order")
+    async def tts(req: TtsRequest) -> TtsResponse:
+        return await voice.speak(req)
 
     @app.post("/internal/v1/marketing/aso", tags=["marketing"], response_model=AsoResponse,
               dependencies=[Depends(require_internal)],

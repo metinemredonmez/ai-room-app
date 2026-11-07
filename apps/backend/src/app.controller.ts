@@ -30,6 +30,9 @@ import { clientVersion, compareVersions } from './common/semver.js';
 import { SettingsService } from './settings/settings.service.js';
 import { OrgsService } from './orgs/orgs.service.js';
 import { publicLedgerEntry } from './users/ledger.js';
+import { CoachService } from './coach/coach.service.js';
+import { crisisReply, detectCrisis } from './coach/coach.rules.js';
+import { PromptTemplatesService } from './prompts/prompts.service.js';
 
 /** ?locale= first, then the best supported Accept-Language entry (q-values respected), then the fallback. */
 export function localeOf(req: AppRequest, fallback?: string): Locale {
@@ -228,6 +231,8 @@ export class UserController {
     @Inject(CONFIG) private cfg: Config,
     private orgs: OrgsService,
     private features: FeaturesService,
+    private coach: CoachService,
+    private prompts: PromptTemplatesService,
   ) {}
 
   @Get('me')
@@ -502,54 +507,84 @@ export class UserController {
     return this.designs.analysis(auth.userId, id, imageId, localeOf(req), req.id, () => this.features.assert('cost_analysis'));
   }
 
-  /** AI-01: the assistant only advises; suggestions come back as data the user must tap to run. */
+  /**
+   * AI-01: the coach only advises; suggestions come back as data the user must tap to run.
+   * API.md §7.54: a message with crisis signs gets verified help lines at once — no AI call, no allowance used. Otherwise
+   * one message from the day's allowance (given back if no answer comes), and the reply carries a `speakToken` so the
+   * client may ask for this exact text to be read aloud.
+   */
   @Post('chat')
-  @Doc('AI tasarım sohbeti (öneriler yalnız veri; istemci kullanıcı onayı olmadan üretim başlatmaz, AI-01)', { body: ChatSchema, status: 201, response: 'ChatReply', errors: [400, 401, 404, 429, 502] })
+  @Doc('AI koç sohbeti (öneriler yalnız veri; istemci kullanıcı onayı olmadan üretim başlatmaz, AI-01)', {
+    body: ChatSchema,
+    status: 201,
+    response: 'ChatReply',
+    description: 'Kriz işareti taşıyan mesaja AI çağrılmadan ve hak düşmeden `crisis.lines` ile güvenli cevap döner. Günlük mesaj hakkı bitince 429 `coach_quota` (panel metni).',
+    errors: [400, 401, 404, 429, 502, 503],
+  })
   async chat(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
     const input = parse(ChatSchema, body);
     this.features.assert('assistant_chat');
     await this.limiter.hit(LIMITS.chatUser, auth.userId);
     await this.limiter.hit(LIMITS.chatIp, req.clientIp);
     const locale = input.locale ?? localeOf(req);
+    const last = input.messages[input.messages.length - 1]!;
+    if (last.role === 'user') {
+      const kind = detectCrisis(last.text);
+      if (kind) {
+        log.warn('coach_crisis', { kind, locale }); // no text, no user id: only that it happened
+        const { reply, lines } = crisisReply(locale, this.coach.current);
+        return { reply, suggestions: [], crisis: { lines } };
+      }
+    }
     const withImages = input.messages.filter((m) => m.imageId);
     if (withImages.length > 3) throw new AppError(400, 'validation_failed', 'En fazla 3 görsel eklenebilir');
     // Photos go to the AI provider: the same AI-processing consent as a generation (KVKK).
     if (withImages.length) await this.designs.assertAiConsent(auth.userId);
     await this.designs.assertBudgetFor(auth.userId);
-    const messages = await Promise.all(
-      input.messages.map(async (m) => ({
-        role: m.role,
-        text: m.text,
-        image_b64:
-          m.imageId && m.role === 'user'
-            ? (await this.images.read((await this.images.owned(m.imageId, auth.userId)).id)).toString('base64')
-            : undefined,
-      })),
-    );
-    const cat = await this.catalog.catalog(locale);
-    const out = await this.ai.chat(
-      {
-        locale,
-        messages,
-        catalog: {
-          tools: cat.tools.map((t) => ({ id: t.id, name: t.name })),
-          styles: cat.styles.map((s) => ({ id: s.id, name: s.name })),
-          rooms: cat.rooms.map((r) => ({ id: r.id, name: r.name })),
+    const user = await this.users.get(auth.userId);
+    const release = await this.coach.reserve('messages', auth.userId, 1, this.users.isPro(user), locale);
+    try {
+      const messages = await Promise.all(
+        input.messages.map(async (m) => ({
+          role: m.role,
+          text: m.text,
+          image_b64:
+            m.imageId && m.role === 'user'
+              ? (await this.images.read((await this.images.owned(m.imageId, auth.userId)).id)).toString('base64')
+              : undefined,
+        })),
+      );
+      const cat = await this.catalog.catalog(locale);
+      const out = await this.ai.chat(
+        {
+          locale,
+          messages,
+          catalog: {
+            tools: cat.tools.map((t) => ({ id: t.id, name: t.name })),
+            styles: cat.styles.map((s) => ({ id: s.id, name: s.name })),
+            rooms: cat.rooms.map((r) => ({ id: r.id, name: r.name })),
+          },
+          // The panel's coach persona (API.md §7.26); the safety rules around it stay in the AI service's code.
+          persona: this.prompts.forTool('coach').templates?.coach,
         },
-      },
-      req.id,
-    );
-    await this.usage.record(out.usage, { userId: auth.userId });
-    return {
-      reply: out.reply,
-      suggestions: out.suggestions.map((s) => ({
-        label: s.label,
-        tool: s.tool,
-        ...(s.style_id ? { styleId: s.style_id } : {}),
-        ...(s.room_id ? { roomId: s.room_id } : {}),
-        ...(s.instructions ? { instructions: s.instructions } : {}),
-      })),
-    };
+        req.id,
+      );
+      await this.usage.record(out.usage, { userId: auth.userId });
+      return {
+        reply: out.reply,
+        suggestions: out.suggestions.map((s) => ({
+          label: s.label,
+          tool: s.tool,
+          ...(s.style_id ? { styleId: s.style_id } : {}),
+          ...(s.room_id ? { roomId: s.room_id } : {}),
+          ...(s.instructions ? { instructions: s.instructions } : {}),
+        })),
+        ...(this.coach.current.voice.enabled ? { speakToken: this.coach.signReply(auth.userId, locale, out.reply) } : {}),
+      };
+    } catch (e) {
+      await release();
+      throw e;
+    }
   }
 
   /** Demo-only upgrade until store billing (RevenueCat / iyzico) is wired in. */

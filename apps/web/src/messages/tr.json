@@ -118,7 +118,8 @@
     "selection_failed": "Dokunduğun yerde nesne bulunamadı; nesnenin ortasına dokun.",
     "selection_unavailable": "Dokunarak seçim şu an kapalı; nesnenin adını yazarak seçebilirsin.",
     "unsupportedFile": "Bu dosya türü desteklenmiyor. JPEG, PNG, WEBP veya HEIC yükle.",
-    "tooLarge": "Fotoğraf çok büyük (en fazla 10 MB)."
+    "tooLarge": "Fotoğraf çok büyük (en fazla 10 MB).",
+    "voice_unavailable": "Koçun sesi şu an hazırlanamadı; cevabı okuyabilirsin."
   },
   "landing": {
     "badge": "Türkiye'nin yapay zekâ destekli iç mimarı",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "AI hata yapabilir; önerileri ilham olarak kullan, önemli kararları uzmanına danış.",
     "empty": "Merhaba! Odanın fotoğrafını ekleyip bir soru sorarak başlayabilirsin.",
-    "limit": "Sohbet en fazla 20 mesaj tutar; eski mesajlar özetlenmeden gönderilmez."
+    "limit": "Sohbet en fazla 20 mesaj tutar; eski mesajlar özetlenmeden gönderilmez.",
+    "listen": "Dinle",
+    "stopListening": "Durdur",
+    "resume": "Devam et",
+    "nowPlaying": "Koç konuşuyor",
+    "tapToPlay": "Dinlemek için yeniden dokun",
+    "crisisTitle": "Hemen yardım alabileceğin hatlar",
+    "call": "Ara"
   },
   "pricing": {
     "title": "Planlar ve fiyatlar",

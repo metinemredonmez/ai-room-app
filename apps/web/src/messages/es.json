@@ -118,7 +118,8 @@
     "selection_failed": "No encontramos ningún objeto donde tocaste; toca el centro del objeto.",
     "selection_unavailable": "La selección táctil no está disponible ahora; puedes escribir el nombre del objeto.",
     "unsupportedFile": "Tipo de archivo no compatible. Sube un JPEG, PNG, WEBP o HEIC.",
-    "tooLarge": "La foto es demasiado grande (máx. 10 MB)."
+    "tooLarge": "La foto es demasiado grande (máx. 10 MB).",
+    "voice_unavailable": "La voz del coach no está disponible ahora; puedes leer la respuesta."
   },
   "landing": {
     "badge": "El interiorista con IA de Türkiye",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "La IA puede equivocarse; usa las sugerencias como inspiración y consulta a un profesional para las decisiones importantes.",
     "empty": "¡Hola! Para empezar, añade una foto de tu espacio y haz una pregunta.",
-    "limit": "El chat guarda como máximo 20 mensajes; los mensajes antiguos no se envían."
+    "limit": "El chat guarda como máximo 20 mensajes; los mensajes antiguos no se envían.",
+    "listen": "Escuchar",
+    "stopListening": "Detener",
+    "resume": "Reanudar",
+    "nowPlaying": "Tu coach está hablando",
+    "tapToPlay": "Toca de nuevo para escuchar",
+    "crisisTitle": "Líneas a las que puedes llamar ahora",
+    "call": "Llamar"
   },
   "pricing": {
     "title": "Planes y precios",

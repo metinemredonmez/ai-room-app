@@ -118,7 +118,8 @@
     "selection_failed": "Aucun objet trouvé à cet endroit ; touchez le centre de l'objet.",
     "selection_unavailable": "La sélection par toucher est désactivée pour le moment ; saisissez plutôt le nom de l'objet.",
     "unsupportedFile": "Type de fichier non pris en charge. Importez un fichier JPEG, PNG, WEBP ou HEIC.",
-    "tooLarge": "La photo est trop volumineuse (10 Mo maximum)."
+    "tooLarge": "La photo est trop volumineuse (10 Mo maximum).",
+    "voice_unavailable": "La voix du coach n'est pas disponible pour le moment ; tu peux lire la réponse."
   },
   "landing": {
     "badge": "L'architecte d'intérieur IA de la Turquie",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "L'IA peut se tromper : utilisez les suggestions comme source d'inspiration et consultez un professionnel pour les décisions importantes.",
     "empty": "Bonjour ! Pour commencer, ajoutez une photo de votre pièce et posez une question.",
-    "limit": "Le chat conserve au maximum 20 messages ; les messages plus anciens ne sont pas envoyés sans être résumés."
+    "limit": "Le chat conserve au maximum 20 messages ; les messages plus anciens ne sont pas envoyés sans être résumés.",
+    "listen": "Écouter",
+    "stopListening": "Arrêter",
+    "resume": "Reprendre",
+    "nowPlaying": "Ton coach parle",
+    "tapToPlay": "Touche à nouveau pour écouter",
+    "crisisTitle": "Numéros à appeler maintenant",
+    "call": "Appeler"
   },
   "pricing": {
     "title": "Offres et tarifs",

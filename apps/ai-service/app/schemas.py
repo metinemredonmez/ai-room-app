@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -8,7 +8,7 @@ ToolId = Literal[
 ]
 # The web and app languages (API.md §7.17); the assistant answers in the user's language.
 Locale = Literal["tr", "en", "de", "es", "fr", "it", "ru", "nl", "ja", "ko", "zh"]
-UsageKind = Literal["generate", "analyze", "chat", "describe", "segment", "marketing"]
+UsageKind = Literal["generate", "analyze", "chat", "describe", "segment", "marketing", "tts"]
 QualityIssue = Literal["too_dark", "too_bright", "blurry", "low_res", "low_contrast"]
 
 B64 = Field(..., min_length=100, max_length=17_000_000, description="Base64-encoded JPEG/PNG/WEBP image")
@@ -253,6 +253,8 @@ class ChatRequest(Strict):
     locale: Locale = "tr"
     messages: list[ChatMessage] = Field(..., min_length=1, max_length=20)
     catalog: ChatCatalog = Field(default_factory=ChatCatalog)
+    # The panel's coach persona (API.md §7.26, key `coach`); the safety rules around it stay in code.
+    persona: str | None = Field(None, max_length=1500)
 
 
 class Suggestion(BaseModel):
@@ -433,8 +435,53 @@ class HealthResponse(BaseModel):
     status: Literal["ok"]
     provider: str = Field(description="Primary image provider")
     chat_enabled: bool
+    voice_providers: list[str] = Field(default_factory=list, description="Voice providers with a key (API.md §7.54)")
     fallbacks: list[str]
     providers: list[ProviderState]
+
+
+# ------------------------------------------------------------------------------------------- voice (API.md §7.54)
+
+VoiceReason = Literal["billing", "auth", "quota", "rate_limited", "bad_voice", "unavailable", "not_configured"]
+_MODEL = r"^[A-Za-z0-9._:-]{1,80}$"
+
+
+class ElevenLabsStep(Strict):
+    provider: Literal["elevenlabs"]
+    model: str = Field(..., pattern=_MODEL)
+    voice: str = Field(..., pattern=r"^[A-Za-z0-9]{10,40}$")
+    stability: float = Field(0.5, ge=0, le=1)
+    speed: float = Field(1.0, ge=0.7, le=1.2)
+
+
+class OpenAiStep(Strict):
+    provider: Literal["openai"]
+    model: str = Field(..., pattern=_MODEL)
+    voice: str = Field(..., pattern=r"^[a-z]{2,20}$")
+    instructions: str | None = Field(None, max_length=300)
+
+
+VoiceStep = Annotated[ElevenLabsStep | OpenAiStep, Field(discriminator="provider")]
+
+
+class TtsRequest(Strict):
+    text: str = Field(..., min_length=1, max_length=3000, description="Only the coach's own reply; the backend checks it")
+    lang: Literal["tr", "en"] = "tr"
+    chain: list[VoiceStep] = Field(default_factory=list, max_length=2)
+
+
+class VoiceFailure(BaseModel):
+    provider: str
+    reason: VoiceReason
+
+
+class TtsResponse(BaseModel):
+    audio_b64: str
+    mime: Literal["audio/mpeg", "audio/wav"]
+    provider: str
+    model: str
+    failures: list[VoiceFailure] = Field(default_factory=list)
+    usage: Usage
 
 
 GenerateRequest.model_rebuild()

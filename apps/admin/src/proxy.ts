@@ -24,6 +24,8 @@ function contentSecurityPolicy(nonce: string): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' blob: data: ${imageOrigins()}`,
+    // API.md §7.54: the coach's voice preview, a signed link on the API origin.
+    `media-src 'self' blob: data: ${imageOrigins()}`,
     "font-src 'self'",
     `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
     "object-src 'none'",

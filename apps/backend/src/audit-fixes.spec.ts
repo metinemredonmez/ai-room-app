@@ -101,10 +101,13 @@ describe('1. AI-processing consent on every path that sends a photo', () => {
     const ai = { chat: async () => ({ reply: 'ok', suggestions: [] }) };
     const catalog = { catalog: async () => ({ tools: [], styles: [], rooms: [] }) };
     const usage = { record: async () => undefined };
+    const users = { get: async () => ({}), isPro: () => false };
+    const coach = { current: { voice: { enabled: false } }, reserve: async () => async () => undefined };
+    const prompts = { forTool: () => ({ versions: {} }) };
     const ctrl = new UserController(
-      {} as never, {} as never, images as never, ds as never, catalog as never, ai as never, {} as never, limiter as never,
+      users as never, {} as never, images as never, ds as never, catalog as never, ai as never, {} as never, limiter as never,
       {} as never, usage as never, {} as never, {} as never, {} as never, {} as never, {} as never,
-      { assert: () => undefined } as never,
+      { assert: () => undefined } as never, coach as never, prompts as never,
     );
     const req = { query: {}, headers: {}, clientIp: '1', id: 'rid' } as never;
     const withPhoto = { messages: [{ role: 'user', text: 'Bu oda?', imageId: randomUUID() }] };
