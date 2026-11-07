@@ -118,7 +118,8 @@
     "selection_failed": "点击处未识别到物体，请点击物体中央。",
     "selection_unavailable": "点击选择暂不可用，你可以输入物体名称来选择。",
     "unsupportedFile": "不支持此文件类型。请上传 JPEG、PNG、WEBP 或 HEIC。",
-    "tooLarge": "照片过大（最大 10 MB）。"
+    "tooLarge": "照片过大（最大 10 MB）。",
+    "voice_unavailable": "教练的语音暂时不可用；你可以阅读回复。"
   },
   "landing": {
     "badge": "土耳其的 AI 室内设计师",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "AI 可能会出错；请将建议作为灵感参考，重要决定请咨询专业人士。",
     "empty": "你好！添加一张房间照片并提个问题，就可以开始了。",
-    "limit": "聊天最多保留 20 条消息；较早的消息不会被发送。"
+    "limit": "聊天最多保留 20 条消息；较早的消息不会被发送。",
+    "listen": "收听",
+    "stopListening": "停止",
+    "resume": "继续",
+    "nowPlaying": "教练正在说话",
+    "tapToPlay": "再次点按即可收听",
+    "crisisTitle": "现在可以拨打的求助电话",
+    "call": "拨打"
   },
   "pricing": {
     "title": "套餐与价格",

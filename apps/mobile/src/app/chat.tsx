@@ -2,10 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -16,15 +17,27 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ListenButton, VoiceBar, useCoachVoice } from '@/components/coach-voice';
 import { AppText, Chip, ErrorBanner, IconButton } from '@/components/ui';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { api, ApiError, type ChatMessage, type Suggestion } from '@/lib/api';
+import { api, ApiError, type ChatMessage, type CrisisLine, type Suggestion } from '@/lib/api';
 import { pickAndUpload } from '@/lib/pick-image';
 import { useSession } from '@/lib/session';
 
 type Attached = { id: string; url: string };
-type UiMessage = { role: 'user' | 'assistant'; text: string; image?: Attached };
+type UiMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  image?: Attached;
+  /** API.md §7.54: lets this reply be read aloud. */
+  speakToken?: string;
+  crisis?: { lines: CrisisLine[] };
+};
+
+let seq = 0;
+const nextId = () => `m${++seq}`;
 
 export default function ChatScreen() {
   const c = useTheme();
@@ -41,6 +54,8 @@ export default function ChatScreen() {
   const [attaching, setAttaching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<ScrollViewInstance>(null);
+  const onVoiceError = useCallback((e: unknown) => setError(errorMessage(e)), [errorMessage]);
+  const voice = useCoachVoice(locale, onVoiceError);
 
   const lastImage = [...messages].reverse().find((m) => m.image)?.image ?? pending ?? null;
 
@@ -49,7 +64,7 @@ export default function ChatScreen() {
       raw.trim() ||
       (pending ? (locale === 'tr' ? 'Bu oda için ne önerirsin?' : 'What would you suggest for this room?') : '');
     if (!text || sending) return;
-    const next: UiMessage[] = [...messages, { role: 'user', text: text.slice(0, 2000), image: pending ?? undefined }];
+    const next: UiMessage[] = [...messages, { id: nextId(), role: 'user', text: text.slice(0, 2000), image: pending ?? undefined }];
     setMessages(next);
     setInput('');
     setPending(null);
@@ -58,8 +73,11 @@ export default function ChatScreen() {
     setSending(true);
     try {
       const payload: ChatMessage[] = next.map((m) => ({ role: m.role, text: m.text, ...(m.image ? { imageId: m.image.id } : {}) }));
-      const res = await api.chat(payload);
-      setMessages((prev) => [...prev, { role: 'assistant', text: res.reply }]);
+      const res = await api.chat(payload, locale);
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), role: 'assistant', text: res.reply, speakToken: res.speakToken, crisis: res.crisis },
+      ]);
       setSuggestions(res.suggestions);
     } catch (e) {
       if (e instanceof ApiError && e.code === 'insufficient_credits') router.push('/paywall');
@@ -135,9 +153,9 @@ export default function ChatScreen() {
             </View>
           ) : null}
 
-          {messages.map((m, i) => (
+          {messages.map((m) => (
+            <View key={m.id} style={{ gap: Spacing.one, alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '86%' }}>
             <View
-              key={i}
               style={[
                 styles.bubble,
                 m.role === 'user'
@@ -149,6 +167,32 @@ export default function ChatScreen() {
               <AppText selectable color={m.role === 'user' ? c.onPrimary : c.text}>
                 {m.text}
               </AppText>
+            </View>
+            {m.crisis ? (
+              <View style={[styles.crisis, { borderColor: c.danger }]}>
+                <AppText variant="bodyBold">{t('chat.crisisTitle')}</AppText>
+                {m.crisis.lines.map((l) => (
+                  <Pressable
+                    key={`${l.phone}-${l.label}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('chat.call')}: ${l.label} ${l.phone}`}
+                    onPress={() => void Linking.openURL(`tel:${l.phone.replace(/\s/g, '')}`)}
+                    style={({ pressed }) => [styles.callButton, { backgroundColor: c.danger, opacity: pressed ? 0.8 : 1 }]}>
+                    <Ionicons name="call" size={16} color="#fff" />
+                    <AppText color="#fff" style={{ fontWeight: '600', flexShrink: 1 }}>
+                      {l.label} · {l.phone}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            {m.speakToken ? (
+              <ListenButton
+                state={voice.state?.id === m.id ? voice.state : null}
+                label={{ listen: t('chat.listen'), stop: t('chat.stop'), resume: t('chat.resume') }}
+                onPress={() => void voice.toggle(m.id, m.text, m.speakToken!)}
+              />
+            ) : null}
             </View>
           ))}
 
@@ -173,6 +217,17 @@ export default function ChatScreen() {
 
       <View style={[styles.composer, { borderTopColor: c.border, backgroundColor: c.background, paddingBottom: insets.bottom + Spacing.two }]}>
         <View style={styles.inner}>
+          <VoiceBar
+            state={voice.state}
+            progress={voice.progress}
+            title={t('chat.nowPlaying')}
+            labels={{ stop: t('chat.stop'), resume: t('chat.resume'), close: t('common.close') }}
+            onToggle={() => {
+              const m = messages.find((x) => x.id === voice.state?.id);
+              if (m?.speakToken) void voice.toggle(m.id, m.text, m.speakToken);
+            }}
+            onStop={voice.stop}
+          />
           {pending ? (
             <View style={styles.pending}>
               <Image source={{ uri: pending.url }} style={styles.pendingImage} contentFit="cover" />
@@ -225,7 +280,9 @@ const styles = StyleSheet.create({
   orb: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   introRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, justifyContent: 'center' },
-  bubble: { maxWidth: '86%', borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.two },
+  bubble: { borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.two },
+  crisis: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.three, gap: Spacing.two },
+  callButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, borderRadius: Radius.pill, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   bubbleImage: { width: 200, height: 150, borderRadius: Radius.md },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: Spacing.three, paddingTop: Spacing.two, alignItems: 'center' },
   pending: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

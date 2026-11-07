@@ -9,7 +9,7 @@ import { SettingsService } from '../settings/settings.service.js';
 export interface AiUsageReport {
   provider: string;
   model: string;
-  kind: 'generate' | 'analyze' | 'chat' | 'describe' | 'segment' | 'marketing';
+  kind: 'generate' | 'analyze' | 'chat' | 'describe' | 'segment' | 'marketing' | 'tts';
   images?: number;
   input_tokens?: number;
   output_tokens?: number;

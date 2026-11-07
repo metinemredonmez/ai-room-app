@@ -146,7 +146,32 @@ export type Settings = {
   appVersions: Record<AppPlatform, AppVersion>;
   /** Marketing pushes per person per 7 days, the Istanbul quiet window, and e-mails a day across all mailings. */
   broadcast: { weeklyMarketingCap: number; quietStart: string; quietEnd: string; emailDailyCap: number };
+  /** API.md §7.54: the AI coach. */
+  coach: CoachSettings;
 };
+export type VoiceProvider = "elevenlabs" | "openai";
+export type CoachQuotaTier = { messages: number; listenSeconds: number };
+export type CrisisLine = { label: string; phone: string };
+export type CoachSettings = {
+  voice: {
+    enabled: boolean;
+    chain: VoiceProvider[];
+    elevenlabs: { model: string; voiceTr: string; voiceEn: string; stability: number; speed: number };
+    openai: { model: string; voiceTr: string; voiceEn: string };
+    cacheDays: number;
+  };
+  quota: { free: CoachQuotaTier; pro: CoachQuotaTier };
+  limitTextTr: string;
+  limitTextEn: string;
+  crisis: { linesTr: CrisisLine[]; linesEn: CrisisLine[] };
+};
+export type CoachStatus = {
+  configuredProviders: string[];
+  assigned: { tr: VoiceProvider[]; en: VoiceProvider[] };
+  cache: { files: number; bytes: number };
+  last30Days: { provider: string; calls: number; costUsd: number }[];
+};
+export type SpokenReply = { url: string; seconds: number; mime: string; cached: boolean };
 export type AppPlatform = "ios" | "android";
 export type AppVersion = { min: string; latest: string; storeUrl: string };
 export type SettingsResponse = { values: Settings; defaults: Settings };

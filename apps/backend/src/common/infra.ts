@@ -120,6 +120,9 @@ export const LIMITS = {
   analysis: { name: 'analysis', max: 30, windowSec: 3600 },
   chatUser: { name: 'chat-user', max: 40, windowSec: 3600 },
   chatIp: { name: 'chat-ip', max: 150, windowSec: 3600 },
+  // API.md §7.54: read-aloud requests (the day's listening allowance is the real limit) and the admin's voice preview.
+  coachSpeak: { name: 'coach-speak', max: 60, windowSec: 3600 },
+  coachPreview: { name: 'coach-preview', max: 30, windowSec: 3600 },
   reports: { name: 'reports', max: 20, windowSec: 3600 },
   export: { name: 'export', max: 3, windowSec: 3600 },
   webhooks: { name: 'webhooks-ip', max: 600, windowSec: 60 },

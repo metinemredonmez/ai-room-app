@@ -118,7 +118,8 @@
     "selection_failed": "Nessun oggetto trovato dove hai toccato; tocca il centro dell'oggetto.",
     "selection_unavailable": "La selezione al tocco non è disponibile al momento; puoi selezionare l'oggetto scrivendone il nome.",
     "unsupportedFile": "Tipo di file non supportato. Carica un JPEG, PNG, WEBP o HEIC.",
-    "tooLarge": "La foto è troppo grande (max 10 MB)."
+    "tooLarge": "La foto è troppo grande (max 10 MB).",
+    "voice_unavailable": "La voce del coach non è disponibile ora; puoi leggere la risposta."
   },
   "landing": {
     "badge": "L'interior designer con AI nato in Turchia",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "L'AI può sbagliare: usa i suggerimenti come ispirazione e per le decisioni importanti rivolgiti a un professionista.",
     "empty": "Ciao! Inizia aggiungendo una foto della tua stanza e facendo una domanda.",
-    "limit": "La chat conserva al massimo 20 messaggi; quelli più vecchi non vengono inviati né riassunti."
+    "limit": "La chat conserva al massimo 20 messaggi; quelli più vecchi non vengono inviati né riassunti.",
+    "listen": "Ascolta",
+    "stopListening": "Ferma",
+    "resume": "Riprendi",
+    "nowPlaying": "Il tuo coach sta parlando",
+    "tapToPlay": "Tocca di nuovo per ascoltare",
+    "crisisTitle": "Numeri da chiamare subito",
+    "call": "Chiama"
   },
   "pricing": {
     "title": "Piani e prezzi",

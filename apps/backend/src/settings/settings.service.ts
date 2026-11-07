@@ -7,6 +7,7 @@ import { log } from '../common/log.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { SEMVER_RE, compareVersions } from '../common/semver.js';
 import { HHMM_RE } from '../broadcasts/broadcast.rules.js';
+import { CoachSettingsSchema, DEFAULT_COACH } from '../coach/coach.rules.js';
 
 // Runtime settings (pattern from maeyja settings.defaults.ts + palemi runtime_settings): typed defaults
 // in code, overrides in the Setting table, editable from the admin API without a deploy.
@@ -52,6 +53,8 @@ export const SettingsSchema = z
         emailDailyCap: z.number().int().min(1).max(10_000),
       })
       .strict(),
+    /** API.md §7.54: the AI coach (voice, daily allowance, crisis lines). */
+    coach: CoachSettingsSchema,
   })
   .strict();
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -88,6 +91,7 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
         android: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
       },
       broadcast: { weeklyMarketingCap: 2, quietStart: '21:00', quietEnd: '09:00', emailDailyCap: 300 },
+      coach: DEFAULT_COACH,
     };
     this.values = this.defaults;
   }

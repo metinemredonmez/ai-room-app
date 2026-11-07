@@ -6,9 +6,29 @@ import type { AiUsageReport } from '../usage/usage.service.js';
 
 /** AI failure with the AI service's retry hint (docs/API.md §7.4); the queue retries only retryable ones. */
 export class AiError extends AppError {
-  constructor(status: number, code: string, message: string, public retryable: boolean, public usage?: AiUsageReport) {
+  constructor(status: number, code: string, message: string, public retryable: boolean, public usage?: AiUsageReport, public failures?: VoiceFailure[]) {
     super(status, code, message);
   }
+}
+
+/** Why one voice provider did not answer (API.md §7.54); `billing` and `auth` need the founder, the rest pass. */
+export interface VoiceFailure {
+  provider: string;
+  reason: 'billing' | 'auth' | 'quota' | 'rate_limited' | 'bad_voice' | 'unavailable' | 'not_configured';
+}
+
+export type VoiceStep =
+  | { provider: 'elevenlabs'; model: string; voice: string; stability: number; speed: number }
+  | { provider: 'openai'; model: string; voice: string; instructions: string };
+
+export interface TtsOutput {
+  audio_b64: string;
+  mime: 'audio/mpeg' | 'audio/wav';
+  provider: string;
+  model: string;
+  /** Providers tried before the one that answered. */
+  failures: VoiceFailure[];
+  usage?: AiUsageReport;
 }
 
 export interface QualityReport {
@@ -152,9 +172,12 @@ export class AiClient {
       throw new AiError(502, 'ai_unavailable', 'Yapay zekâ servisine ulaşılamadı', true);
     }
     if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { error?: { code?: string; retryable?: boolean }; usage?: AiUsageReport } | null;
+      const err = (await res.json().catch(() => null)) as { error?: { code?: string; retryable?: boolean }; usage?: AiUsageReport; failures?: VoiceFailure[] } | null;
       const code = err?.error?.code ?? 'unknown';
       log.warn('ai_error', { path, status: res.status, code });
+      if (code === 'voice_unavailable') {
+        throw new AiError(502, 'voice_unavailable', 'Koçun sesi şu an hazırlanamadı; cevabı okuyabilirsin', true, undefined, err?.failures ?? []);
+      }
       if (res.status === 422 && code === 'no_change') {
         throw new AiError(422, 'no_change', 'Yapay zekâ görselde değişiklik üretemedi; hakkın iade edildi', false, err?.usage);
       }
@@ -200,6 +223,11 @@ export class AiClient {
     return this.call<ChatOutput>('POST', '/internal/v1/chat', input, 90_000, requestId);
   }
 
+  /** The coach's reply as speech (API.md §7.54): the steps are tried in order; keyless development gets a demo tone. */
+  tts(input: { text: string; lang: 'tr' | 'en'; chain: VoiceStep[] }, requestId?: string) {
+    return this.call<TtsOutput>('POST', '/internal/v1/tts', input, 60_000, requestId);
+  }
+
   /** Store listing draft for one language (API.md §7.18); up to two Claude calls, hence the long timeout. */
   marketingAso(input: { locale: string; facts: string; brief?: string; whats_new?: string }) {
     return this.call<AsoOutput>('POST', '/internal/v1/marketing/aso', input, 300_000);
@@ -238,13 +266,13 @@ export class AiClient {
     }
   }
 
-  async health(): Promise<{ status: 'ok' | 'down'; provider: string; chatEnabled: boolean; latencyMs: number | null }> {
+  async health(): Promise<{ status: 'ok' | 'down'; provider: string; chatEnabled: boolean; voiceProviders: string[]; latencyMs: number | null }> {
     const started = Date.now();
     try {
-      const h = await this.call<{ provider: string; chat_enabled: boolean }>('GET', '/internal/v1/health', undefined, 5_000);
-      return { status: 'ok', provider: h.provider, chatEnabled: h.chat_enabled, latencyMs: Date.now() - started };
+      const h = await this.call<{ provider: string; chat_enabled: boolean; voice_providers?: string[] }>('GET', '/internal/v1/health', undefined, 5_000);
+      return { status: 'ok', provider: h.provider, chatEnabled: h.chat_enabled, voiceProviders: h.voice_providers ?? [], latencyMs: Date.now() - started };
     } catch {
-      return { status: 'down', provider: 'unknown', chatEnabled: false, latencyMs: null };
+      return { status: 'down', provider: 'unknown', chatEnabled: false, voiceProviders: [] as string[], latencyMs: null };
     }
   }
 }

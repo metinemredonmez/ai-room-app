@@ -118,7 +118,8 @@
     "selection_failed": "Nothing found where you tapped; tap the middle of the object.",
     "selection_unavailable": "Tap selection is off right now; type the object's name instead.",
     "unsupportedFile": "Unsupported file type. Upload JPEG, PNG, WEBP or HEIC.",
-    "tooLarge": "The photo is too large (max 10 MB)."
+    "tooLarge": "The photo is too large (max 10 MB).",
+    "voice_unavailable": "The coach's voice isn't available right now; you can read the reply."
   },
   "landing": {
     "badge": "AI interior designer, built for Türkiye",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "AI can make mistakes; use suggestions as inspiration and consult a professional for important decisions.",
     "empty": "Hi! Attach a photo of your room and ask a question to get started.",
-    "limit": "The chat keeps at most 20 messages."
+    "limit": "The chat keeps at most 20 messages.",
+    "listen": "Listen",
+    "stopListening": "Stop",
+    "resume": "Resume",
+    "nowPlaying": "Your coach is speaking",
+    "tapToPlay": "Tap again to listen",
+    "crisisTitle": "Lines you can call right now",
+    "call": "Call"
   },
   "pricing": {
     "title": "Plans & pricing",

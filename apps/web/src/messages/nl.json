@@ -118,7 +118,8 @@
     "selection_failed": "Op die plek is niets gevonden; tik op het midden van het object.",
     "selection_unavailable": "Selecteren door te tikken is nu uit; typ de naam van het object om het te selecteren.",
     "unsupportedFile": "Dit bestandstype wordt niet ondersteund. Upload JPEG, PNG, WEBP of HEIC.",
-    "tooLarge": "De foto is te groot (max. 10 MB)."
+    "tooLarge": "De foto is te groot (max. 10 MB).",
+    "voice_unavailable": "De stem van de coach is nu niet beschikbaar; je kunt het antwoord lezen."
   },
   "landing": {
     "badge": "De AI-interieurarchitect van Turkije",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "AI kan fouten maken; gebruik suggesties als inspiratie en vraag een vakman om advies bij belangrijke beslissingen.",
     "empty": "Hoi! Voeg een foto van je kamer toe en stel een vraag om te beginnen.",
-    "limit": "De chat bewaart maximaal 20 berichten; oudere berichten worden niet meegestuurd."
+    "limit": "De chat bewaart maximaal 20 berichten; oudere berichten worden niet meegestuurd.",
+    "listen": "Luisteren",
+    "stopListening": "Stoppen",
+    "resume": "Hervatten",
+    "nowPlaying": "Je coach spreekt",
+    "tapToPlay": "Tik nogmaals om te luisteren",
+    "crisisTitle": "Nummers die je nu kunt bellen",
+    "call": "Bellen"
   },
   "pricing": {
     "title": "Abonnementen en prijzen",

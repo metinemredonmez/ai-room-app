@@ -118,7 +118,8 @@
     "selection_failed": "An dieser Stelle wurde kein Objekt gefunden – tippe auf die Mitte des Objekts.",
     "selection_unavailable": "Auswahl per Tippen ist gerade deaktiviert – gib stattdessen den Namen des Objekts ein.",
     "unsupportedFile": "Dieser Dateityp wird nicht unterstützt. Lade JPEG, PNG, WEBP oder HEIC hoch.",
-    "tooLarge": "Das Foto ist zu groß (max. 10 MB)."
+    "tooLarge": "Das Foto ist zu groß (max. 10 MB).",
+    "voice_unavailable": "Die Stimme des Coaches ist gerade nicht verfügbar; du kannst die Antwort lesen."
   },
   "landing": {
     "badge": "Die KI-Innenarchitektin aus der Türkei",
@@ -460,7 +461,14 @@
     ],
     "disclaimer": "AI kann Fehler machen. Nutze die Vorschläge als Inspiration und frag bei wichtigen Entscheidungen eine Fachperson.",
     "empty": "Hallo! Füge ein Foto deines Raums hinzu und stell eine Frage, um loszulegen.",
-    "limit": "Der Chat speichert maximal 20 Nachrichten; ältere Nachrichten werden nicht ohne Zusammenfassung mitgesendet."
+    "limit": "Der Chat speichert maximal 20 Nachrichten; ältere Nachrichten werden nicht ohne Zusammenfassung mitgesendet.",
+    "listen": "Anhören",
+    "stopListening": "Stopp",
+    "resume": "Weiter",
+    "nowPlaying": "Dein Coach spricht",
+    "tapToPlay": "Zum Anhören erneut tippen",
+    "crisisTitle": "Nummern, die du jetzt anrufen kannst",
+    "call": "Anrufen"
   },
   "pricing": {
     "title": "Pläne & Preise",

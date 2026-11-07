@@ -53,6 +53,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 140
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "enableBackgroundPlayback": false
+        }
       ]
     ],
     "experiments": {

@@ -12,6 +12,8 @@ export class ApiError extends Error {
     public retryAfter?: number,
     /** The backend's X-Request-Id: attached to a support ticket from the error screen. */
     public requestId?: string,
+    /** Extra fields of the error body (e.g. `pro` on `coach_quota`). */
+    public details?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -33,10 +35,10 @@ async function request<T>(url: string, method: string, body?: unknown): Promise<
   if (res.status === 204) return undefined as T;
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
+    const err = (data as { error?: { code?: string; message?: string } & Record<string, unknown> } | null)?.error;
     const retry = Number(res.headers.get("retry-after"));
     const rid = res.headers.get("x-request-id");
-    throw new ApiError(res.status, err?.code ?? "internal", err?.message ?? "Beklenmeyen bir hata oluştu.", retry || undefined, rid && /^[A-Za-z0-9-]{8,64}$/.test(rid) ? rid : undefined);
+    throw new ApiError(res.status, err?.code ?? "internal", err?.message ?? "Beklenmeyen bir hata oluştu.", retry || undefined, rid && /^[A-Za-z0-9-]{8,64}$/.test(rid) ? rid : undefined, err ?? undefined);
   }
   return data as T;
 }

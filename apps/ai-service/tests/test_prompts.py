@@ -112,7 +112,7 @@ def test_endpoints_need_the_internal_token_and_list_every_template():
     assert client.get("/internal/v1/prompts").status_code == 401
     body = client.get("/internal/v1/prompts", headers=AUTH).json()
     keys = {t["key"]: t for t in body["templates"]}
-    assert set(keys) == set(TEMPLATES) and len(keys) == 12
+    assert set(keys) == set(TEMPLATES) and len(keys) == 13
     assert keys["replace"]["required"] == ["thing", "replacement"] and keys["keep"]["tool"] == ""
     assert "room" in body["placeholders"]
     res = client.post("/internal/v1/prompts/preview", headers=AUTH, json={"key": "custom", "template": "Edit this {room} photo: {request}. {keep}"})
@@ -131,3 +131,13 @@ def test_generate_uses_the_templates_it_is_sent():
         "tool": "flooring", "image_b64": room_b64(), "variants": 1, "prompt_templates": {"flooring": "x" * 1501},
     })
     assert too_long.status_code == 400
+
+
+def test_coach_persona_from_panel_or_default():
+    from app.assistant import coach_persona
+    from app.prompts import TEMPLATES as T
+
+    assert coach_persona(None) == T["coach"][1] and coach_persona("   ") == T["coach"][1]
+    assert coach_persona("Be a calm architect.\n\nShort answers.") == "Be a calm architect. Short answers."
+    assert len(coach_persona("x " * 2000)) <= 1500
+    assert template_errors("coach", "Speak like {style}") == ["unknown_placeholder:style"]

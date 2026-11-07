@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   WandSparkles,
   Cpu,
+  AudioLines,
   ToggleRight,
   Ticket,
   UserPlus,
@@ -110,6 +111,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Yapay zekâ",
     items: [
+      { href: "/coach", label: "AI koç", icon: AudioLines },
       { href: "/prompts", label: "İstem şablonları", icon: WandSparkles },
       { href: "/ai-engine", label: "Model ve sağlayıcı", icon: Cpu },
     ],

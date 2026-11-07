@@ -25,6 +25,7 @@ const LABELS: Record<string, string> = {
   garden: "Bahçe & Teras",
   reference: "Referans Stil",
   custom: "Kendi Tarifin",
+  coach: "AI koç: üslup",
 };
 const PLACEHOLDER_TR: Record<string, string> = {
   room: "oda tipi (katalogdaki istem)",
@@ -168,7 +169,11 @@ function Editor({ t, onSaved, onReload }: { t: PromptTemplate; onSaved: (s: Prom
             {active
               ? `Yayında: ${fmtDateTime(active.createdAt)}${active.createdBy ? ` · ${active.createdBy}` : ""} · “${active.note}”.`
               : "Yayında: koddaki varsayılan istem."}{" "}
-            {t.key === "keep" ? "Bu cümle diğer şablonlarda {keep} yazan yere girer." : "Değişiklik yalnız bu aracın yeni tasarımlarını etkiler; eski sonuçlar değişmez."}
+            {t.key === "keep"
+              ? "Bu cümle diğer şablonlarda {keep} yazan yere girer."
+              : t.key === "coach"
+                ? "Koçun nasıl konuştuğu (İngilizce yazılır, koç kullanıcının dilinde cevap verir). Güvenlik kuralları kodda kalır. Değişiklik yeni mesajlarda geçerli olur."
+                : "Değişiklik yalnız bu aracın yeni tasarımlarını etkiler; eski sonuçlar değişmez."}
           </p>
 
           {t.placeholders.length > 0 && (

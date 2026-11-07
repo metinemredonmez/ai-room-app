@@ -37,6 +37,13 @@ export function useErrorText() {
         return t.errors.selection_failed;
       case "selection_unavailable":
         return t.errors.selection_unavailable;
+      // API.md §7.54: the panel's own "allowance used up" text, already in the user's language.
+      case "coach_quota":
+        return err.message || t.errors.generic;
+      case "voice_unavailable":
+      case "voice_unassigned":
+      case "voice_disabled":
+        return t.errors.voice_unavailable;
       case "validation_failed":
       case "bad_request":
       case "conflict":
@@ -52,7 +59,7 @@ export function useErrorText() {
 export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const { t } = useApp();
   const text = useErrorText()(error);
-  const needsPlan = error instanceof ApiError && (error.code === "insufficient_credits" || error.status === 402);
+  const needsPlan = error instanceof ApiError && (error.code === "insufficient_credits" || error.status === 402 || (error.code === "coach_quota" && error.details?.pro === false));
   // A failure on our side: offer support, with the request id so the team can find it in the logs.
   const ours = error instanceof ApiError && (error.status >= 500 || error.code === "internal");
   const supportHref = `/destek${error instanceof ApiError && error.requestId ? `?rid=${encodeURIComponent(error.requestId)}` : ""}`;

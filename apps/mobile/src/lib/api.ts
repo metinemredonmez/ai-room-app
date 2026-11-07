@@ -134,6 +134,16 @@ export type CreateDesign = {
 
 export type Suggestion = { label: string; tool: ToolId; styleId?: string; roomId?: string; instructions?: string };
 export type ChatMessage = { role: 'user' | 'assistant'; text: string; imageId?: string };
+/** API.md §7.54: help lines shown instead of an AI answer when a message carries crisis signs. */
+export type CrisisLine = { label: string; phone: string };
+export type ChatReply = {
+  reply: string;
+  suggestions: Suggestion[];
+  /** Lets this reply be read aloud for 24 hours (POST /coach/speak). */
+  speakToken?: string;
+  crisis?: { lines: CrisisLine[] };
+};
+export type SpokenReply = { url: string; seconds: number; mime: string; cached: boolean };
 export type InspirationItem = { id: string; title: string; styleId: string; roomId: string; imageUrl: string; palette: string[] };
 export type Page<T> = { items: T[]; nextCursor: string | null };
 export type SampleId = 'living_room' | 'empty_room' | 'bedroom' | 'exterior' | 'garden';
@@ -323,12 +333,15 @@ export const api = {
       timeoutMs: 120_000,
     }),
 
-  chat: (messages: ChatMessage[]) =>
-    request<{ reply: string; suggestions: Suggestion[] }>('/chat', {
+  chat: (messages: ChatMessage[], locale: Locale) =>
+    request<ChatReply>('/chat', {
       method: 'POST',
-      body: { messages: messages.slice(-20) },
+      body: { messages: messages.slice(-20), locale },
       timeoutMs: 120_000,
     }),
+  /** The coach reads its own reply aloud: a signed, short-lived audio link (API.md §7.54). */
+  speak: (text: string, token: string, locale: Locale) =>
+    request<SpokenReply>('/coach/speak', { method: 'POST', body: { text, token, locale }, timeoutMs: 70_000 }),
 
   devUpgrade: () => request<User>('/billing/dev-upgrade', { method: 'POST', body: {} }),
   /** After a store purchase/restore: the backend re-reads RevenueCat and returns the updated user. */
