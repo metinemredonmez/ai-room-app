@@ -2204,3 +2204,33 @@ bağlantıyla siteyi normal görür (MAEYJA deseni).
 | POST | `/admin/site-preview` | ADMIN | `{ reason }` → `{ url, info }`; eskisi geçersiz olur |
 | POST | `/admin/site-preview/revoke` | ADMIN | `{ reason }`; bağlantı yoksa 404 |
 | PATCH | `/admin/settings` | ADMIN | `maintenance.site` (varsayılan `false`) |
+
+### 7.53 llms.txt ve AI tarayıcıları
+
+Yapay zekâ asistanları için sitenin sade bir haritası, ve hangi AI araçlarının siteyi okuyabileceği panelden
+(MAEYJA, YediOda #94).
+
+- **`/llms.txt`:** kısa özet (llmstxt.org biçimi, İngilizce): ne olduğu, ana sayfalar, Türkçe sayfalar, yasal metinler.
+- **`/llms-full.txt`:** özete ek olarak araçlar, stiller, odalar, SSS ve makaleler (İngilizce ve Türkçe).
+- **İçerik nereden gelir:** elle yazılmış dosya yok. Her yenilemede şunlardan üretilir:
+  - sitenin kendi çevirileri;
+  - katalog;
+  - panelden değiştirilen ana sayfa metinleri ve SSS (SSS bölümü kapalıysa çıkmaz);
+  - blog.
+- **Ne yer almaz:** fiyat (panelden değişir; sayfaya bağlantı verilir), kişisel veri, sitenin kendisinin söylemediği iddialar.
+- **Bayraklar:** AI sohbet ve blog satırları yalnız özellik bayrakları açıkken çıkar.
+- **Önbellek:** iki sayfa ve robots.txt dakikalık önbellekle yenilenir.
+- **Ayar:** Ayarlar → AI asistanları ve tarayıcılar (`aiCrawlers`, ikisi de varsayılan açık).
+  - `assistants` kapalıyken:
+    - kullanıcı adına sayfa açan asistanlar robots.txt ile engellenir (OAI-SearchBot, ChatGPT-User, Claude-SearchBot,
+      Claude-User, PerplexityBot, Perplexity-User, DuckAssistBot, MistralAI-User);
+    - iki llms sayfası 404 döner.
+  - `training` kapalıyken model eğitimi için toplayan tarayıcılar engellenir (GPTBot, ClaudeBot, anthropic-ai,
+    Google-Extended, Applebot-Extended, CCBot, Bytespider, meta-externalagent, cohere-training-data-crawler).
+  - Arama motorları iki listede de yok; kapatmak siteyi aramadan çıkarmaz.
+  - API'ye ulaşılamazsa iki ayar da kapalı sayılır; sahibinin "hayır" kararı o an da geçerli kalır.
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/site/discovery` | herkes | `{ aiAssistants, aiTraining }`, 60 sn önbellek |
+| PATCH | `/admin/settings` | ADMIN | `aiCrawlers: { assistants, training }` |

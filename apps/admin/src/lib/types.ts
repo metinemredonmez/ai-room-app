@@ -137,6 +137,8 @@ export type Settings = {
   budgetBrakeMode: BrakeMode;
   /** `enabled` stops new generations; `site` closes the web site behind a 503 page (API.md §7.52). */
   maintenance: { enabled: boolean; site: boolean; messageTr: string; messageEn: string };
+  /** API.md §7.53: AI assistants (and /llms.txt) and AI training crawlers on the web site. */
+  aiCrawlers: { assistants: boolean; training: boolean };
   announcement: { enabled: boolean; textTr: string; textEn: string };
   requireAiConsent: boolean;
   /** API.md §7.22: credits a new registered, verified account gets once; 0 = off. */

@@ -35,6 +35,12 @@ export class SitePreviewService {
     return { maintenance: m.site, messageTr: m.site ? m.messageTr : '', messageEn: m.site ? m.messageEn : '' };
   }
 
+  /** API.md §7.53: whether AI assistants (and /llms.txt) and AI training crawlers may read the site. */
+  get discovery() {
+    const a = this.settings.current.aiCrawlers;
+    return { aiAssistants: a.assistants, aiTraining: a.training };
+  }
+
   async verify(token: string): Promise<boolean> {
     if (!TOKEN_RE.test(token)) return false;
     const row = await this.prisma.setting.findUnique({ where: { key: KEY } });

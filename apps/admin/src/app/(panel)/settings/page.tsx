@@ -19,6 +19,7 @@ import { atLeast, type AdminMe, type AppPlatform, type AppVersion, type BrakeMod
 // Ayarlar: çalışma zamanı ayarları. Yayın gerekmeden değişir, bütün sunuculara 15 saniye içinde yayılır.
 // SUPPORT okur; ADMIN gerekçeyle değiştirir (denetim kaydına yazılır).
 
+const WEB = (process.env.NEXT_PUBLIC_WEB_URL ?? "https://casalume.app").replace(/\/$/, "");
 const SEMVER = /^\d+\.\d+\.\d+$/;
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const STORE_HOST: Record<AppPlatform, string> = { ios: "apps.apple.com", android: "play.google.com" };
@@ -225,6 +226,40 @@ function SettingsForm({ initial, defaults, writable, onSaved }: { initial: Setti
         <Group title="KVKK" description="Açıkken üretimden önce kullanıcının güncel “yapay zekâ ile işleme” onayı aranır." changed={changed("requireAiConsent")}>
           <div className="md:col-span-2">
             <Toggle id="consent" checked={draft.requireAiConsent} onChange={(v) => set("requireAiConsent", v)} label="AI işleme onayı zorunlu" hint="Onayı olmayan kullanıcı üretimde 403 consent_required alır ve uygulama onay ekranını açar." />
+          </div>
+        </Group>
+
+        <Group
+          title="AI asistanları ve tarayıcılar"
+          description="Web sitesini hangi yapay zekâ araçlarının okuyabileceği; robots.txt ve llms.txt’e birkaç dakika içinde yansır. Yalnız herkese açık sayfalar okunur, hesaplar ve tasarımlar okunamaz."
+          changed={changed("aiCrawlers")}
+        >
+          <div className="grid gap-3 md:col-span-2">
+            <Toggle
+              id="aiAssist"
+              checked={draft.aiCrawlers.assistants}
+              onChange={(v) => set("aiCrawlers", { ...draft.aiCrawlers, assistants: v })}
+              label="AI asistanları siteyi okuyabilir"
+              hint="ChatGPT, Claude, Perplexity gibi asistanlar kullanıcının sorusu için sayfayı açabilir ve /llms.txt özetini okuyabilir. Kapalıyken bu botlar robots.txt ile engellenir ve /llms.txt 404 döner."
+            />
+            <Toggle
+              id="aiTrain"
+              checked={draft.aiCrawlers.training}
+              onChange={(v) => set("aiCrawlers", { ...draft.aiCrawlers, training: v })}
+              label="AI eğitim tarayıcıları siteyi toplayabilir"
+              hint="GPTBot, ClaudeBot, Google-Extended, CCBot gibi model eğitimi için sayfa toplayan botlar. Kapatmak Google aramasını etkilemez."
+            />
+            <p className="text-xs text-muted-foreground">
+              Özet sayfaları:{" "}
+              <a href={`${WEB}/llms.txt`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                llms.txt
+              </a>{" "}
+              ·{" "}
+              <a href={`${WEB}/llms-full.txt`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                llms-full.txt
+              </a>{" "}
+              (sitenin kendi metinlerinden, katalogdan, SSS’ten ve blogdan otomatik üretilir; fiyat ve kişisel veri içermez).
+            </p>
           </div>
         </Group>
 

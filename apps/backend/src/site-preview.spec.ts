@@ -23,9 +23,9 @@ function fakePrisma() {
 }
 
 const maintenance = { enabled: false, site: true, messageTr: 'Bakımdayız.', messageEn: 'Down for maintenance.' };
-const make = (prisma = fakePrisma(), m: Record<string, unknown> = maintenance) => ({
+const make = (prisma = fakePrisma(), m: Record<string, unknown> = maintenance, aiCrawlers = { assistants: true, training: false }) => ({
   prisma,
-  svc: new SitePreviewService(prisma as unknown as PrismaService, { current: { maintenance: m } } as unknown as SettingsService, { WEB_APP_URL: 'https://casalume.app' } as Config),
+  svc: new SitePreviewService(prisma as unknown as PrismaService, { current: { maintenance: m, aiCrawlers } } as unknown as SettingsService, { WEB_APP_URL: 'https://casalume.app' } as Config),
 });
 const tokenOf = (url: string) => new URL(url).hash.replace('#onizleme=', '');
 
@@ -39,6 +39,16 @@ describe('site maintenance switch', () => {
   it('public status carries the message only while the site is closed', () => {
     expect(make().svc.status).toEqual({ maintenance: true, messageTr: 'Bakımdayız.', messageEn: 'Down for maintenance.' });
     expect(make(fakePrisma(), { ...maintenance, site: false }).svc.status).toEqual({ maintenance: false, messageTr: '', messageEn: '' });
+  });
+});
+
+describe('AI crawler switches (API.md §7.53)', () => {
+  it('public answer mirrors the setting; only booleans are accepted', () => {
+    expect(make().svc.discovery).toEqual({ aiAssistants: true, aiTraining: false });
+    const shape = SettingsSchema.shape.aiCrawlers;
+    expect(shape.safeParse({ assistants: true, training: true }).success).toBe(true);
+    expect(shape.safeParse({ assistants: 'yes', training: true }).success).toBe(false);
+    expect(shape.safeParse({ assistants: true, training: true, extra: 1 }).success).toBe(false);
   });
 });
 

@@ -28,6 +28,13 @@ export class SiteStatusController {
     return this.preview.status;
   }
 
+  @Get('discovery')
+  @Header('Cache-Control', 'public, max-age=60')
+  @Doc('AI asistanları ve eğitim tarayıcıları siteyi okuyabilir mi', { description: '`{ aiAssistants, aiTraining }`; web robots.txt ve /llms.txt bunu okur. Ayar: Ayarlar → AI tarayıcıları.' })
+  discovery() {
+    return this.preview.discovery;
+  }
+
   @Post('preview')
   @HttpCode(204)
   @Doc('Personel önizleme anahtarını doğrula', { body: PreviewBody, description: 'Web sunucusu çağırır: geçerliyse 204, değilse 403 `preview_invalid`.', errors: [400, 403, 429] })

@@ -260,7 +260,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] İstemci hata ucu (mobil/web hataları) (YediOda #106) — API.md §7.43 (mobil bağlantısı: sen)
 - [ ] Hesap silmede 30 gün geri alma penceresi (YediOda #18) · orta
 - [x] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) — API.md §7.26, §7.27
-- [ ] llms.txt (MAEYJA, YediOda #94) · kolay
+- [x] llms.txt + AI tarayıcı izinleri panelden (MAEYJA, YediOda #94) — API.md §7.53
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta
 - [x] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) — API.md §7.52
 - [x] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) — API.md §7.45

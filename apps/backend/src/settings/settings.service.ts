@@ -36,6 +36,9 @@ export const SettingsSchema = z
     maintenance: z.object({ enabled: z.boolean(), site: z.boolean().default(false), messageTr: text(300), messageEn: text(300) }).strict(),
     announcement: z.object({ enabled: z.boolean(), textTr: text(300), textEn: text(300) }).strict(),
     requireAiConsent: z.boolean(),
+    // API.md §7.53: what AI tools may read on the web site. `assistants` (answer engines that fetch a page for a user,
+    // and /llms.txt); `training` (crawlers that collect pages for model training). Both reach robots.txt.
+    aiCrawlers: z.object({ assistants: z.boolean(), training: z.boolean() }).strict(),
     /** Credits a newly registered, verified account gets once (API.md §7.22); 0 = off. */
     welcomeCredits: z.number().int().min(0).max(50),
     appVersions: z.object({ ios: appVersion('apps.apple.com'), android: appVersion('play.google.com') }).strict(),
@@ -78,6 +81,7 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
       },
       announcement: { enabled: false, textTr: '', textEn: '' },
       requireAiConsent: false,
+      aiCrawlers: { assistants: true, training: true },
       welcomeCredits: 0,
       appVersions: {
         ios: { min: '0.0.0', latest: '0.0.0', storeUrl: '' },
