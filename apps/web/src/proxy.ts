@@ -1,8 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, negotiateLocale } from "@/lib/i18n";
 import { DEFAULT_LOCALE_HEADER } from "@/lib/locale-header";
+import { PREVIEW_FLAG, siteGate } from "@/lib/site-gate";
 
 const BOT_RE = /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview/i;
+
+export async function proxy(request: NextRequest) {
+  // API.md §7.52: a closed site answers every page with the maintenance page, except for a staff preview browser.
+  const gate = await siteGate(request);
+  if (gate.page) return gate.page;
+  const res = route(request);
+  if (gate.preview) res.cookies.set(PREVIEW_FLAG, "1", { path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+  else if (request.cookies.has(PREVIEW_FLAG)) res.cookies.delete(PREVIEW_FLAG);
+  return res;
+}
 
 /**
  * Language routing (maeyja pattern, Turkish unprefixed):
@@ -12,7 +23,7 @@ const BOT_RE = /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview/i;
  *   (Accept-Language): then they are sent to that language's URL. Crawlers are never redirected, so search engines
  *   index each language at its own address (sitemap.xml lists the alternates).
  */
-export function proxy(request: NextRequest) {
+function route(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const first = pathname.split("/")[1];
 

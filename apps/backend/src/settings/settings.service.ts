@@ -31,7 +31,9 @@ export const SettingsSchema = z
     maxVariantsPro: variants,
     dailyBudgetUsd: z.number().min(0).max(100_000),
     budgetBrakeMode: z.enum(['off', 'free_single_variant', 'free_paused']),
-    maintenance: z.object({ enabled: z.boolean(), messageTr: text(300), messageEn: text(300) }).strict(),
+    // `enabled` stops new generations (503); `site` closes the web site behind a 503 page (API.md §7.52). Same message.
+    // `site` has a default so a row saved before it existed still parses (a failed parse falls back to all defaults).
+    maintenance: z.object({ enabled: z.boolean(), site: z.boolean().default(false), messageTr: text(300), messageEn: text(300) }).strict(),
     announcement: z.object({ enabled: z.boolean(), textTr: text(300), textEn: text(300) }).strict(),
     requireAiConsent: z.boolean(),
     /** Credits a newly registered, verified account gets once (API.md §7.22); 0 = off. */
@@ -70,6 +72,7 @@ export class SettingsService implements OnModuleInit, OnModuleDestroy {
       budgetBrakeMode: 'free_single_variant',
       maintenance: {
         enabled: false,
+        site: false,
         messageTr: 'Kısa bir bakım yapıyoruz, birazdan tekrar dene.',
         messageEn: 'We are doing short maintenance, please try again shortly.',
       },

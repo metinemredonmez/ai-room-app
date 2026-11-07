@@ -7,6 +7,7 @@ import { AppProvider } from "@/components/app-provider";
 import { ErrorReporter } from "@/components/error-reporter";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeOptionsProvider } from "@/components/palette-picker";
+import { PreviewBadge } from "@/components/preview-badge";
 import { HeaderFallback, SiteHeader } from "@/components/site-header";
 import { VerifyBanner } from "@/components/verify-banner";
 import { LOCALES, LOCALE_TAGS, isLocale } from "@/lib/i18n";
@@ -79,6 +80,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           <VerifyBanner />
           <main className="flex-1">{children}</main>
           <SiteFooter newsletter={waitlist.enabled} />
+          <PreviewBadge />
         </AppProvider>
       </body>
     </html>

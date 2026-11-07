@@ -2165,3 +2165,42 @@ açık izin ister).
 | PATCH | `/admin/designs/:id` | EDITOR | `{ featured: true }` izin yoksa 409 `no_share_consent` |
 
 Mobil (sen): sonuç ekranına aynı kutu ve açıklama; `PATCH /v1/designs/:id { shareable }`.
+
+### 7.52 Web bakım sayfası ve personel önizleme bağlantısı
+
+Web sitesi panelden tek tıkla kapatılabilir; kapalıyken her sayfa 503 bakım sayfası döner. Ekip, panelden üretilen gizli
+bağlantıyla siteyi normal görür (MAEYJA deseni).
+
+- **Ayar:** Ayarlar → Bakım modu artık iki ayrı anahtar.
+  - `maintenance.enabled`: yeni üretimi durdurur (eskisi gibi).
+  - `maintenance.site`: web sitesini kapatır.
+  - İkisi aynı TR/EN mesajı kullanır. Uygulamalar `site` anahtarından etkilenmez.
+  - Anahtar 15 saniye içinde bütün sunuculara, web'e en geç 10 saniye sonra yayılır.
+- **Bakım sayfası:** web'in proxy'si sayfa isteklerinde `GET /v1/site/status` sorar.
+  - Kapalıysa 503 döner, `Retry-After: 300` ile; arama motorları siteyi silmez, sonra yeniden gelir.
+  - Sayfa uygulama kodu ve dış istek içermez; sıkı bir CSP ile gelir (nonce, `frame-ancestors 'none'`).
+  - Türkçe ziyaretçi TR mesajı, diğerleri EN mesajı görür.
+  - `/api`, `/_next`, `robots.txt`, `sitemap.xml` ve görseller etkilenmez.
+  - API'ye ulaşılamazsa son bilinen durum geçerli kalır; hiç bilinmiyorsa site açık kalır. Bakım bir güvenlik sınırı
+    değildir; API kesintisi siteyi kapatmamalı.
+- **Önizleme bağlantısı:** `https://casalume.app/#onizleme=<token>`.
+  - Token 32 rastgele bayttır ve URL'nin `#` kısmında durur. Böylece sunucu günlüğüne ve Referer başlığına düşmez
+    (AUT-03, sıfırlama bağlantısı gibi). Veritabanında yalnız SHA-256 özeti tutulur.
+  - Bakım sayfasının betiği token'ı `POST /api/preview`'a gönderir (yalnız aynı origin'den, WEB-03).
+  - Web API'ye sorar (`POST /v1/site/preview`). Geçerliyse tarayıcı 7 günlük httpOnly `air_preview` çerezi alır.
+  - Proxy bu çerezi her sayfada API'ye yeniden doğrulatır; cevap bir dakika önbellekte kalır. Bu yüzden iptal edilen ya
+    da yenilenen bağlantı en geç bir dakikada kapanır.
+  - Önizlemedeki tarayıcı sol altta "Site bakımda · önizleme görüyorsun · Çık" rozetini görür.
+    `air_pv` çerezi yalnız bu rozet içindir; içeri almaz.
+  - Bağlantı yalnız oluşturulduğu yanıtta gösterilir. Yenisi eskisini hemen geçersiz kılar. Oluşturma ve iptal gerekçe
+    ister ve denetim kaydına yazılır (`site_preview.rotate`, `site_preview.revoke`; LOG-01).
+  - Doğrulama ziyaretçi IP'si başına 10 dakikada 30 denemeyle sınırlıdır (`site-preview`).
+
+| Yöntem | Yol | Rol | Not |
+|---|---|---|---|
+| GET | `/site/status` | herkes | `{ maintenance, messageTr, messageEn }`; site açıkken mesajlar boş |
+| POST | `/site/preview` | herkes | `{ token }` → 204 geçerli, 403 `preview_invalid`, 429 |
+| GET | `/admin/site-preview` | SUPPORT | `{ active, createdAt, createdBy }`; bağlantının kendisi yok |
+| POST | `/admin/site-preview` | ADMIN | `{ reason }` → `{ url, info }`; eskisi geçersiz olur |
+| POST | `/admin/site-preview/revoke` | ADMIN | `{ reason }`; bağlantı yoksa 404 |
+| PATCH | `/admin/settings` | ADMIN | `maintenance.site` (varsayılan `false`) |

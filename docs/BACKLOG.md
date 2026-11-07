@@ -262,7 +262,7 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) — API.md §7.26, §7.27
 - [ ] llms.txt (MAEYJA, YediOda #94) · kolay
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta
-- [ ] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) · kolay
+- [x] Web bakım sayfası (503) + personel önizleme bağlantısı (MAEYJA) — API.md §7.52
 - [x] Admin komut paleti (kullanıcı, tasarım, talep araması) (MAEYJA) — API.md §7.45
 - [x] Mağaza olayları CSV dışa aktarımı (Palemi) — API.md §7.44
 - [x] Sadakat: geri dönüş hediyesi, panelden hediye + bildirim (YediOda #63) — API.md §7.31, §7.32 (kendiliğinden kurallar açık: üstte Büyüme)

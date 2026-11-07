@@ -37,6 +37,7 @@ const AREAS: Record<string, string> = {
   marketing: "Pazarlama",
   blog: "Blog",
   site_content: "Ana sayfa ve SSS",
+  site_preview: "Web önizleme bağlantısı",
   waitlist: "Bekleme listesi",
   theme: "Tema",
   legal: "Yasal metin",

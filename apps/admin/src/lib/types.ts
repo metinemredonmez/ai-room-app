@@ -135,7 +135,8 @@ export type Settings = {
   maxVariantsPro: 1 | 2 | 3 | 4;
   dailyBudgetUsd: number;
   budgetBrakeMode: BrakeMode;
-  maintenance: { enabled: boolean; messageTr: string; messageEn: string };
+  /** `enabled` stops new generations; `site` closes the web site behind a 503 page (API.md §7.52). */
+  maintenance: { enabled: boolean; site: boolean; messageTr: string; messageEn: string };
   announcement: { enabled: boolean; textTr: string; textEn: string };
   requireAiConsent: boolean;
   /** API.md §7.22: credits a new registered, verified account gets once; 0 = off. */
@@ -800,3 +801,10 @@ export type LifecycleState = {
   email: { sentToday: number; dailyCap: number; quietStart: string; quietEnd: string; quietNow: boolean };
   changes?: string[];
 };
+
+/** API.md §7.52: whether a staff preview link exists (the link itself is shown only when made). */
+export interface SitePreviewInfo {
+  active: boolean;
+  createdAt: string | null;
+  createdBy: { id: string; email: string | null; name: string | null } | null;
+}

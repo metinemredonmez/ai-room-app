@@ -93,6 +93,8 @@ export const LIMITS = {
   partnerVisit: { name: 'partner-visit', max: 20, windowSec: 3600 },
   // API.md §7.43: web / app error reports, per IP.
   clientErrors: { name: 'client-errors', max: 20, windowSec: 600 },
+  // API.md §7.52: staff preview link checks, per visitor IP (the web caches a good answer for a minute).
+  sitePreview: { name: 'site-preview', max: 30, windowSec: 600 },
   // API.md §7.44: CSV exports, per admin.
   exports: { name: 'exports', max: 30, windowSec: 3600 },
   // API.md §7.47: waiting-list signups, per IP and (silently) per address.

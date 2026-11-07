@@ -4,6 +4,7 @@ import { Loader2, RotateCw, Save, Undo2 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { ErrorState, PageHeader, Spinner } from "@/components/common";
 import { useFeedback } from "@/components/feedback";
+import { SitePreviewLink } from "@/components/site-preview-link";
 import { badgeTone } from "@/components/stat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -227,9 +228,22 @@ function SettingsForm({ initial, defaults, writable, onSaved }: { initial: Setti
           </div>
         </Group>
 
-        <Group title="Bakım modu" description="Açıkken yeni üretim 503 ile reddedilir; mesaj uygulamalarda gösterilir." changed={changed("maintenance")}>
-          <div className="md:col-span-2">
-            <Toggle id="maint" checked={draft.maintenance.enabled} onChange={(v) => set("maintenance", { ...draft.maintenance, enabled: v })} label="Bakım modu açık" />
+        <Group title="Bakım modu" description="İki ayrı anahtar; aşağıdaki mesaj ikisinde de gösterilir." changed={changed("maintenance")}>
+          <div className="grid gap-3 md:col-span-2">
+            <Toggle
+              id="maint"
+              checked={draft.maintenance.enabled}
+              onChange={(v) => set("maintenance", { ...draft.maintenance, enabled: v })}
+              label="Yeni üretimi durdur"
+              hint="Uygulamalarda ve web’de yeni tasarım 503 ile reddedilir; mesaj uygulamalarda gösterilir."
+            />
+            <Toggle
+              id="maintSite"
+              checked={draft.maintenance.site}
+              onChange={(v) => set("maintenance", { ...draft.maintenance, site: v })}
+              label="Web sitesini kapat (bakım sayfası)"
+              hint="casalume.app’in bütün sayfaları 503 ve bu mesajla bakım sayfası gösterir (Türkçe ziyaretçiye TR, diğerlerine EN). Uygulamalar etkilenmez. 15 saniye içinde yayılır."
+            />
           </div>
           <F label="Mesaj (TR)" htmlFor="mtr" hint={`${draft.maintenance.messageTr.length}/300`}>
             <Textarea id="mtr" rows={2} maxLength={300} value={draft.maintenance.messageTr} onChange={(e) => set("maintenance", { ...draft.maintenance, messageTr: e.target.value })} />
@@ -237,6 +251,7 @@ function SettingsForm({ initial, defaults, writable, onSaved }: { initial: Setti
           <F label="Mesaj (EN)" htmlFor="men" hint={`${draft.maintenance.messageEn.length}/300`}>
             <Textarea id="men" rows={2} maxLength={300} value={draft.maintenance.messageEn} onChange={(e) => set("maintenance", { ...draft.maintenance, messageEn: e.target.value })} />
           </F>
+          <SitePreviewLink writable={writable} />
         </Group>
 
         <Group title="Uygulama duyurusu" description="Katalog yanıtıyla bütün uygulamalara gider (ör. yeni stil duyurusu). Web sitesinin duyuru şeridi Ana sayfa ve SSS’ten yönetilir." changed={changed("announcement")}>
