@@ -140,7 +140,7 @@ jobs:
         run: tail -n 150 "$RUNNER_TEMP/backend.log" "$RUNNER_TEMP/ai.log" || true
 
   frontend:
-    name: web + admin + mobile (lint, typecheck, build)
+    name: web + admin + mobile (lint, build, typecheck)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,20 +149,21 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22 # apps/mobile engines require >=22.13
-      - name: Web (install, lint, typecheck, build)
+      # `next build` generates .next/types (PageProps/LayoutProps/RouteContext), so typecheck runs after it.
+      - name: Web (install, lint, build, typecheck)
         working-directory: apps/web
         run: |
           npm ci
           npm run lint
-          npx tsc --noEmit
           npm run build
-      - name: Admin (install, lint, typecheck, build)
+          npx tsc --noEmit
+      - name: Admin (install, lint, build, typecheck)
         working-directory: apps/admin
         run: |
           npm ci
           npm run lint
-          npm run typecheck
           npm run build
+          npm run typecheck
       - name: Mobile (install, lint, typecheck)
         working-directory: apps/mobile
         run: |
