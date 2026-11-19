@@ -8,8 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # KEY-01 / KEY-02: secrets come only from the environment; unsafe settings stop the process at boot.
 
 WEAK_TOKENS = {"change-me", "changeme", "secret", "internal", "dev"}
-IMAGE_PROVIDERS = ("mock", "gemini", "replicate", "falai")
-ProviderName = Literal["mock", "gemini", "replicate", "falai"]
+IMAGE_PROVIDERS = ("mock", "gemini", "replicate", "falai", "runware")
+ProviderName = Literal["mock", "gemini", "replicate", "falai", "runware"]
 MODEL_ID = re.compile(r"^[A-Za-z0-9._/:-]{1,120}$")
 
 
@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     image_fallbacks: str = Field("", alias="IMAGE_FALLBACKS")
     gemini_api_key: str | None = Field(None, alias="GEMINI_API_KEY")
     gemini_image_model: str = Field("gemini-3.1-flash-image", alias="GEMINI_IMAGE_MODEL")
+    # API.md §7.24.2: PRO "yüksek kalite" — Nano Banana Pro. Price set by the panel once the current list is checked.
+    gemini_pro_image_model: str = Field("gemini-3-pro-image", alias="GEMINI_PRO_IMAGE_MODEL")
+    gemini_pro_image_cost_usd: float = Field(0.12, alias="GEMINI_PRO_IMAGE_COST_USD", ge=0)
     replicate_api_token: str | None = Field(None, alias="REPLICATE_API_TOKEN")
     replicate_model: str = Field("black-forest-labs/flux-kontext-pro", alias="REPLICATE_MODEL")
 
@@ -39,7 +42,14 @@ class Settings(BaseSettings):
     image_model_allowlist: str = Field("", alias="IMAGE_MODEL_ALLOWLIST")
     # Region lock for local edits (paint, flooring, replace, targeted declutter): auto | off.
     region_lock: Literal["auto", "off"] = Field("auto", alias="REGION_LOCK")
+    # §7.8.1 "odan bozulmaz": mean gray diff OUTSIDE the mask above this (0..255) re-renders the variant once
+    # with a stricter instruction, then keeps the result and reports the measured drift.
+    region_drift_max: float = Field(14.0, alias="REGION_DRIFT_MAX", ge=0, le=128)
 
+    # Runware (API.md §7.27 fallback chain; anahtar sahibinde, IMAGE_FALLBACKS ile zincire eklenir).
+    runware_api_key: str | None = Field(None, alias="RUNWARE_API_KEY")
+    runware_model: str = Field("runware:101@1", alias="RUNWARE_MODEL")  # FLUX.1 [dev] edit; panel checks licence + price
+    runware_image_cost_usd: float = Field(0.03, alias="RUNWARE_IMAGE_COST_USD", ge=0)
     anthropic_api_key: str | None = Field(None, alias="ANTHROPIC_API_KEY")
     anthropic_model: str = Field("claude-opus-5-5", alias="ANTHROPIC_MODEL")
 
@@ -71,7 +81,7 @@ class Settings(BaseSettings):
     sentry_traces_sample_rate: float = Field(0.0, alias="SENTRY_TRACES_SAMPLE_RATE", ge=0, le=1)
 
     def default_model(self, provider: str) -> str:
-        return {"gemini": self.gemini_image_model, "replicate": self.replicate_model, "falai": self.falai_edit_model}.get(provider, "mock-tint")
+        return {"gemini": self.gemini_image_model, "replicate": self.replicate_model, "falai": self.falai_edit_model, "runware": self.runware_model}.get(provider, "mock-tint")
 
     @property
     def extra_models(self) -> list[tuple[str, str, float, str]]:
@@ -90,6 +100,8 @@ class Settings(BaseSettings):
         for p, m, cost, _ in self.extra_models:
             if p == provider and m == model:
                 return cost
+        if provider == "gemini" and model == self.gemini_pro_image_model:
+            return self.gemini_pro_image_cost_usd
         return self.image_cost_usd(provider)
 
     @property
@@ -105,6 +117,8 @@ class Settings(BaseSettings):
         return self.env != "production"
 
     def _has_key(self, provider: str) -> bool:
+        if provider == "runware":
+            return bool(self.runware_api_key)
         return {"mock": True, "gemini": bool(self.gemini_api_key), "replicate": bool(self.replicate_api_token),
                 "falai": bool(self.fal_key)}[provider]
 
@@ -153,6 +167,8 @@ class Settings(BaseSettings):
         return bool(self.anthropic_api_key)
 
     def image_cost_usd(self, provider: str) -> float:
+        if provider == "runware":
+            return self.runware_image_cost_usd
         return {"gemini": self.gemini_image_cost_usd, "replicate": self.replicate_image_cost_usd,
                 "falai": self.falai_image_cost_usd}.get(provider, 0.0)
 

@@ -32,6 +32,9 @@ def usable(settings: Settings, provider: str) -> bool:
 def models(settings: Settings, provider: str) -> list[dict]:
     default = settings.default_model(provider)
     out = [{"id": default, "label": LABELS.get(default, default), "cost_usd": settings.model_cost_usd(provider, default)}]
+    if provider == "gemini":
+        out.append({"id": settings.gemini_pro_image_model, "label": "Nano Banana Pro (yüksek kalite)",
+                    "cost_usd": settings.gemini_pro_image_cost_usd})
     for p, model, cost, label in settings.extra_models:
         if p == provider and model != default:
             out.append({"id": model, "label": label, "cost_usd": cost})

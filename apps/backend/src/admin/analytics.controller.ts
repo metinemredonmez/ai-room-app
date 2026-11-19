@@ -6,6 +6,7 @@ import { parse } from '../common/errors.js';
 import { Doc } from '../common/openapi.js';
 import { BILLING_ENVS } from './analytics.rules.js';
 import { AnalyticsService } from './analytics.service.js';
+import { FunnelQuery } from '../app-events/app-events.schema.js';
 import { MinRole } from './roles.js';
 
 const RevenueQuery = z.object({
@@ -56,5 +57,15 @@ export class AdminAnalyticsController {
   cohorts(@Query() query: unknown) {
     const q = parse(CohortQuery, query);
     return this.analytics.cohorts(q.weeks, q.segment);
+  }
+
+  @MinRole('SUPPORT')
+  @Get('events/funnel')
+  @Doc('Uygulama içi olay hunisi', {
+    description: '`days` 1–90 (30). Beyaz listedeki olayların adım adım dönüşümü.',
+    errors: [400, 401, 403],
+  })
+  eventFunnel(@Query() query: unknown) {
+    return this.analytics.eventFunnel(parse(FunnelQuery, query).days);
   }
 }

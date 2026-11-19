@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Download, Heart, Images, Link2, LoaderCircle, MessageCircle, Receipt, RefreshCw, Share2, ThumbsDown, ThumbsUp, Trash2, TriangleAlert } from "lucide-react";
-import { api, downloadUrl } from "@/lib/api";
+import { api, downloadUrl, trackEvent } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { setChatPrefill, setStudioPrefill } from "@/lib/prefill";
 import type { Analysis, Design } from "@/lib/types";
@@ -25,6 +25,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
   const [error, setError] = useState<unknown>(null);
   const [favBusy, setFavBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [showcaseBusy, setShowcaseBusy] = useState(false);
   const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [feedbackEdit, setFeedbackEdit] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
@@ -57,6 +58,19 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
       setError(e);
     } finally {
       setShareBusy(false);
+    }
+  }
+
+  /** API.md §7.51: the owner's permission to use the design in social-media / showcase posts. */
+  async function toggleShowcase() {
+    setShowcaseBusy(true);
+    try {
+      const updated = await api.patch<Design>(`/designs/${design.id}`, { showcase: !design.showcaseConsentAt });
+      onChange?.(updated);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShowcaseBusy(false);
     }
   }
 
@@ -100,6 +114,7 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
       const url = `${window.location.origin}${locale === "tr" ? "" : `/${locale}`}/paylas/${out.token}`;
       setShareLink(url);
       setCopied(false);
+      trackEvent("share_link_created", { designId: design.id, tool: design.tool });
     } catch (e) {
       setError(e);
     } finally {
@@ -340,6 +355,25 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
             {shareBusy && <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted" aria-hidden />}
           </label>
           {design.featured && design.shareable && <p className="mt-2 text-xs text-primary">{t.result.shareLive}</p>}
+
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="flex items-center gap-2 font-medium">
+              <Share2 className="h-4 w-4 text-primary" aria-hidden /> {t.result.showcaseTitle}
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.result.showcaseText}</p>
+            <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={Boolean(design.showcaseConsentAt)}
+                onChange={toggleShowcase}
+                disabled={showcaseBusy}
+                className="h-4 w-4 accent-[var(--primary)]"
+              />
+              {t.result.showcaseLabel}
+              {showcaseBusy && <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted" aria-hidden />}
+            </label>
+            {design.showcaseConsentAt && <p className="mt-2 text-xs text-primary">{t.result.showcaseLive}</p>}
+          </div>
         </div>
       )}
     </div>

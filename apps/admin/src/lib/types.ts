@@ -54,6 +54,8 @@ export type Design = {
   featured: boolean;
   /** API.md §7.51: the owner allows the public inspiration gallery. */
   shareable?: boolean;
+  /** API.md §7.51: the owner allows social-media / showcase use. */
+  showcaseConsentAt?: string | null;
   createdAt: string;
 };
 
@@ -440,6 +442,11 @@ export type CohortAnalytics = {
   weeks: number;
   rows: { week: string; size: number; active: (number | null)[]; retention: (number | null)[] }[];
   average: (number | null)[];
+};
+export type EventFunnelAnalytics = {
+  days: number;
+  today: string;
+  steps: { name: string; total: number; users: number; conversionFromPrevious: number | null; conversionFromFirst: number | null }[];
 };
 
 // API.md §7.21 plans, packs and subscribers

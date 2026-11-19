@@ -208,6 +208,13 @@ def composite(original: bytes, generated: bytes, mask: Image.Image, feather: int
     return out.getvalue()
 
 
+def outside_mean_abs_diff(a: bytes, b: bytes, mask: Image.Image, side: int = 256) -> float:
+    """Mean absolute grayscale difference OUTSIDE the mask — the 'odan bozulmaz' metric (API.md §7.8.1):
+    a local edit must leave the rest of the photo pixel-identical (up to JPEG re-encoding)."""
+    outside = mask.point(lambda p: 255 - p)
+    return masked_mean_abs_diff(a, b, outside, side)
+
+
 def masked_mean_abs_diff(a: bytes, b: bytes, mask: Image.Image, side: int = 256) -> float:
     """Mean absolute grayscale difference inside the mask only (so small local edits aren't 'no change')."""
     with Image.open(io.BytesIO(a)) as ia, Image.open(io.BytesIO(b)) as ib:

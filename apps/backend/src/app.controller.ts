@@ -233,9 +233,11 @@ const FavoriteSchema = z
     projectId: z.uuid().nullable().optional(),
     /** API.md §7.51: allow (or withdraw) showing this design in the public inspiration gallery. */
     shareable: z.boolean().optional(),
+    /** API.md §7.51: allow (or withdraw) using this design in social-media / showcase posts. */
+    showcase: z.boolean().optional(),
   })
   .strict()
-  .refine((v) => v.favorite !== undefined || v.projectId !== undefined || v.shareable !== undefined, { message: 'nothing_to_change' });
+  .refine((v) => v.favorite !== undefined || v.projectId !== undefined || v.shareable !== undefined || v.showcase !== undefined, { message: 'nothing_to_change' });
 const AnalysisSchema = z.object({ imageId: z.uuid().optional() }).strict();
 const ShareSchema = z.object({ days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30) }).strict();
 
@@ -638,6 +640,7 @@ export class UserController {
     let out = input.projectId !== undefined ? await this.designs.setProject(auth.userId, id, input.projectId, localeOf(req)) : null;
     if (input.favorite !== undefined) out = await this.designs.setFavorite(auth.userId, id, input.favorite, localeOf(req));
     if (input.shareable !== undefined) out = await this.designs.setShareable(auth.userId, id, input.shareable, localeOf(req));
+    if (input.showcase !== undefined) out = await this.designs.setShowcaseConsent(auth.userId, id, input.showcase, localeOf(req));
     return out;
   }
 

@@ -7,16 +7,17 @@ import { Card, ErrorState, PageHeader, Spinner, Table, td, th } from "@/componen
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApi } from "@/lib/api";
 import { fmtDay, fmtInt, toolLabel } from "@/lib/format";
-import type { AdminMe, BillingEnv, CohortAnalytics, EngagementAnalytics, RevenueAnalytics } from "@/lib/types";
+import type { AdminMe, BillingEnv, CohortAnalytics, EngagementAnalytics, EventFunnelAnalytics, RevenueAnalytics } from "@/lib/types";
 
 // Analiz (API.md §7.20): gelir (RevenueCat olayları), etkileşim ve haftalık kohort tutma. Gelir yalnız ADMIN ve üstüne
 // açık; SUPPORT/EDITOR etkileşim ve kohortu görür.
 
-type Tab = "revenue" | "engagement" | "cohorts";
+type Tab = "revenue" | "engagement" | "cohorts" | "events";
 const TABS: { id: Tab; label: string; adminOnly?: boolean }[] = [
   { id: "revenue", label: "Gelir", adminOnly: true },
   { id: "engagement", label: "Etkileşim" },
   { id: "cohorts", label: "Kohortlar" },
+  { id: "events", label: "Olay hunisi" },
 ];
 const ADMIN_ROLES = new Set(["ADMIN", "SUPER_ADMIN"]);
 
@@ -107,6 +108,8 @@ export default function AnalyticsPage() {
         <RevenueSection />
       ) : tab === "engagement" ? (
         <EngagementSection />
+      ) : tab === "events" ? (
+        <EventsSection />
       ) : (
         <CohortSection />
       )}
@@ -398,5 +401,75 @@ function HeatCell({ value, title, strong }: { value: number | null; title?: stri
     >
       {pct(value)}
     </td>
+  );
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  studio_open: "Stüdyoyu açtı",
+  upload_photo: "Fotoğraf yükledi",
+  select_style: "Stil / oda seçti",
+  generate_start: "Üretimi başlattı",
+  generate_success: "Başarılı sonuç aldı",
+  generate_fail: "Üretim başarısız",
+  result_view: "Sonucu görüntüledi",
+  result_share: "Sonucu paylaştı",
+  share_link_created: "Paylaşım linki oluşturdu",
+  favorite_toggle: "Favoriye ekledi / çıkardı",
+  download_result: "Sonucu indirdi",
+  pro_preview_open: "PRO önizlemesini açtı",
+  coach_open: "Koçu açtı",
+  feedback_given: "Geri bildirim verdi",
+  login: "Giriş yaptı",
+  register: "Kayıt oldu",
+  guest_start: "Misafir olarak başladı",
+};
+
+function EventsSection() {
+  const [days, setDays] = useState(30);
+  const res = useApi<EventFunnelAnalytics>("/analytics/events/funnel", { days });
+  const e = res.data;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Range label="Tarih aralığı" value={days} onChange={setDays} options={[7, 30, 90].map((d) => ({ value: d, label: `${d} gün` }))} />
+      {res.error && !e ? (
+        <ErrorState message={res.error.message} onRetry={res.reload} />
+      ) : !e ? (
+        <Spinner />
+      ) : (
+        <div className={`flex flex-col gap-4 transition-opacity ${res.loading ? "opacity-60" : ""}`}>
+          <Card title={`Uygulama içi olay hunisi · son ${days} gün · ${e.today}`}>
+            {e.steps.length === 0 || e.steps[0].users === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Bu aralıkta olay kaydı yok.</p>
+            ) : (
+              <Table
+                head={
+                  <tr>
+                    <th className={th}>Olay</th>
+                    <th className={`${th} text-right`}>Toplam</th>
+                    <th className={`${th} text-right`}>Benzersiz</th>
+                    <th className={`${th} text-right`}>Öncekine göre</th>
+                    <th className={`${th} text-right`}>İlk adıma göre</th>
+                  </tr>
+                }
+              >
+                {e.steps.map((s) => (
+                  <tr key={s.name}>
+                    <td className={td}>{EVENT_LABELS[s.name] ?? s.name}</td>
+                    <td className={`${td} text-right tabular`}>{fmtInt(s.total)}</td>
+                    <td className={`${td} text-right tabular`}>{fmtInt(s.users)}</td>
+                    <td className={`${td} text-right tabular`}>{pct(s.conversionFromPrevious)}</td>
+                    <td className={`${td} text-right tabular`}>{pct(s.conversionFromFirst)}</td>
+                  </tr>
+                ))}
+              </Table>
+            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              Beyaz listedeki olay adlarıyla kaydedilir; benzersiz kişi sayısı giriş yapmış kullanıcı kimliği ya da anonim oturum kimliğiyle hesaplanır.
+            </p>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }

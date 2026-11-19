@@ -89,6 +89,8 @@ export const CreateDesignSchema = z
     removeAll: z.boolean().optional(),
     referenceImageId: z.uuid().optional(),
     points: PointsSchema.optional(),
+    /** API.md §7.24.2: PRO high quality (the Gemini leg renders with the pro image model, priced separately). */
+    quality: z.enum(['standard', 'high']).default('standard'),
     /** API.md §7.23: create in this firm's workspace (charged to its pool, PRO features). */
     orgId: z.uuid().optional(),
     /** API.md §7.23 step 4: put it in this firm project (shared with the team); needs `orgId`. */
@@ -157,6 +159,8 @@ export class DesignsService {
       featured: d.featured,
       /** API.md §7.51: the owner allows it in the public inspiration gallery. */
       shareable: d.shareConsentAt !== null,
+      /** API.md §7.51: the owner allows this design in social-media / showcase posts. */
+      showcaseConsentAt: d.showcaseConsentAt?.toISOString() ?? null,
       orgId: d.orgId,
       projectId: d.projectId,
       mine: viewerId ? d.userId === viewerId : true,
@@ -208,6 +212,7 @@ export class DesignsService {
     const tool = this.product.offeredTool(body.tool);
     this.product.assertOffered(body.roomId, body.floorId);
     if (tool.isPro && !pro) throw new AppError(402, 'pro_required', 'Bu araç PRO üyelere özel');
+    if (body.quality === 'high' && !pro) throw new AppError(402, 'pro_required', 'Yüksek kalite PRO üyelere özel');
     await this.assertAiConsent(userId);
 
     // Budget brake (fal-app butce-freni / yoga brakeFreeUsers): only FREE users are affected.
@@ -232,7 +237,7 @@ export class DesignsService {
     if (body.referenceImageId) await this.images.owned(body.referenceImageId, userId);
 
     const params: Record<string, unknown> = {};
-    for (const k of ['floorId', 'colorHex', 'colorName', 'target', 'replacement', 'instructions', 'removeAll', 'referenceImageId', 'points'] as const) {
+    for (const k of ['floorId', 'colorHex', 'colorName', 'target', 'replacement', 'instructions', 'removeAll', 'referenceImageId', 'points', 'quality'] as const) {
       if (body[k] !== undefined) params[k] = body[k];
     }
     params.variants = variants;
@@ -345,6 +350,7 @@ export class DesignsService {
             ? (await this.images.read(str(params.referenceImageId)!)).toString('base64')
             : undefined,
           points: points.success ? points.data : undefined,
+          quality: (d.params as { quality?: unknown } | null)?.quality === 'high' ? 'high' : 'standard',
           prompt_templates: prompts.templates,
           // The panel's provider chain and models (API.md §7.27); undefined = the AI service's own chain.
           engine: this.engine.current,
@@ -611,6 +617,21 @@ export class DesignsService {
       include: this.include,
     });
     if (!shareable && owned.featured) log.info('design_share_withdrawn', { designId: id });
+    return this.toDto(d, locale);
+  }
+
+  /**
+   * API.md §7.51: the owner allows (or withdraws) using this design in social-media / showcase posts. A firm design
+   * belongs to the firm and its client, so it is never showcase-allowed.
+   */
+  async setShowcaseConsent(userId: string, id: string, showcase: boolean, locale: Locale) {
+    const owned = await this.getOwned(userId, id);
+    if (showcase && owned.orgId) throw new AppError(409, 'org_design', 'Firma tasarımları vitrinde kullanılamaz.');
+    const d = await this.prisma.design.update({
+      where: { id },
+      data: showcase ? { showcaseConsentAt: owned.showcaseConsentAt ?? new Date() } : { showcaseConsentAt: null },
+      include: this.include,
+    });
     return this.toDto(d, locale);
   }
 

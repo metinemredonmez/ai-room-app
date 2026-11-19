@@ -192,8 +192,9 @@ def test_paint_is_region_locked_in_mock_mode():
                       json={"tool": "paint", "image_b64": b64(original), "color_hex": "#3A6B4F", "variants": 1})
     assert res.status_code == 200, res.text
     body = res.json()
-    assert body["region"] == {"applied": True, "target": "wall", "method": "heuristic",
-                              "coverage": pytest.approx(0.252, abs=0.01), "reason": None}
+    assert body["region"]["applied"] is True and body["region"]["target"] == "wall" and body["region"]["method"] == "heuristic"
+    assert body["region"]["coverage"] == pytest.approx(0.252, abs=0.01) and body["region"]["reason"] is None
+    assert body["region"]["drift"] is not None and body["region"]["drift"] < 14.0  # §7.8.1: the room stays intact
     out = base64.b64decode(body["images_b64"][0])
     assert region_diff(original, out, (0, 340, 640, 480)) < 3  # floor untouched (outside the wall mask)
     assert region_diff(original, out, (170, 100, 470, 300)) > 10  # wall repainted
@@ -230,8 +231,8 @@ def test_segmenter_cost_is_billed_and_failures_do_not_fail_the_design():
     broken = TestClient(create_app(settings(), segmenter=FixedSegmenter(error=ProviderError("falai_http_503", True))))
     res = broken.post("/internal/v1/generate", headers=AUTH, json={"tool": "flooring", "image_b64": original})
     assert res.status_code == 200
-    assert res.json()["region"] == {"applied": False, "target": "floor", "method": "none", "coverage": 0.0,
-                                    "reason": "segmentation_failed"}
+    assert res.json()["region"]["applied"] is False and res.json()["region"]["reason"] == "segmentation_failed"
+    assert res.json()["region"]["drift"] is None
     assert res.json()["usage"]["cost_usd"] == 0
 
     empty = TestClient(create_app(settings(), segmenter=FixedSegmenter(Image.new("L", (640, 480), 0))))
@@ -352,3 +353,27 @@ def test_a_locked_segmenter_account_turns_tap_selection_off():
     down = TestClient(create_app(settings(), segmenter=FixedSegmenter(error=ProviderError("falai_http_503", True))))
     res = down.post("/internal/v1/segment", headers=AUTH, json={"points": TAP, "image_b64": b64(room())})
     assert res.status_code == 502 and res.json()["error"]["retryable"] is True  # an outage stays a retryable error
+
+
+def test_outside_mean_abs_diff_measures_only_outside_the_mask():
+    from app.region import outside_mean_abs_diff
+    import base64, io
+    base = Image.new("RGB", (64, 64), (200, 200, 200))
+    changed_inside = base.copy()
+    draw = ImageDraw.Draw(changed_inside)
+    draw.rectangle((16, 16, 48, 48), fill=(0, 0, 0))  # a dark square in the middle
+    changed_outside = base.copy()
+    draw2 = ImageDraw.Draw(changed_outside)
+    draw2.rectangle((0, 0, 10, 10), fill=(0, 0, 0))  # a dark square in the corner
+
+    def b64(img: Image.Image) -> bytes:
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        return buf.getvalue()
+
+    mask = Image.new("L", (64, 64), 0)
+    ImageDraw.Draw(mask).rectangle((12, 12, 52, 52), fill=255)  # covers the middle square
+    inside = outside_mean_abs_diff(b64(base), b64(changed_inside), mask)
+    outside = outside_mean_abs_diff(b64(base), b64(changed_outside), mask)
+    assert inside < 1.0  # the changed square sits INSIDE the mask: outside only carries JPEG noise
+    assert outside > 10  # the changed corner is OUTSIDE the mask: that is the drift we reject

@@ -54,6 +54,8 @@ export interface GenerateInput {
   reference_image_b64?: string;
   /** Tap selection, 0..1 from the top-left; one object per point (API.md §7.15). */
   points?: Array<{ x: number; y: number }>;
+  /** API.md §7.24.2: PRO high quality — the AI service renders the Gemini leg with the pro image model. */
+  quality?: 'standard' | 'high';
   /** The panel's active prompt templates, key → text (API.md §7.26); absent keys use the service's defaults. */
   prompt_templates?: Record<string, string>;
   /** The panel's provider chain and models (API.md §7.27); absent = the server's own chain. */

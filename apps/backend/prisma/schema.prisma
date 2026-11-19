@@ -159,6 +159,7 @@ model User {
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
   waitlistCampaigns   WaitlistCampaign[]
   designShares        DesignShare[]
+  appEvents           AppEvent[]
 
   @@index([createdAt])
 }
@@ -212,48 +213,50 @@ model Image {
 }
 
 model Design {
-  id             String          @id @default(uuid()) @db.Uuid
-  userId         String          @db.Uuid
-  tool           String
-  styleId        String?
-  roomId         String?
-  params         Json            @default("{}")
-  prompt         String?
-  provider       String?
-  status         DesignStatus    @default(PENDING)
-  error          String?
-  inputImageId   String          @db.Uuid
-  creditsUsed    Int             @default(0)
-  freeUsed       Int             @default(0)
-  chargeDay      String?
-  chargeState    ChargeState?
-  queuedAt       DateTime?
-  startedAt      DateTime?
-  favorite       Boolean         @default(false)
-  featured       Boolean         @default(false)
+  id                String          @id @default(uuid()) @db.Uuid
+  userId            String          @db.Uuid
+  tool              String
+  styleId           String?
+  roomId            String?
+  params            Json            @default("{}")
+  prompt            String?
+  provider          String?
+  status            DesignStatus    @default(PENDING)
+  error             String?
+  inputImageId      String          @db.Uuid
+  creditsUsed       Int             @default(0)
+  freeUsed          Int             @default(0)
+  chargeDay         String?
+  chargeState       ChargeState?
+  queuedAt          DateTime?
+  startedAt         DateTime?
+  favorite          Boolean         @default(false)
+  featured          Boolean         @default(false)
   /// When the owner allowed this design in the public inspiration gallery (API.md §7.51); null = not allowed. Only an
   /// allowed design can be featured (CHECK in the migration); withdrawing also unfeatures it.
-  shareConsentAt DateTime?
+  shareConsentAt    DateTime?
+  /// When the owner allowed this design to be used in social-media / showcase posts (API.md §7.51). Null = not allowed.
+  showcaseConsentAt DateTime?
   /// Made in a firm's workspace (API.md §7.23): charged to the firm's pool, visible only while the maker is a member.
-  orgId          String?         @db.Uuid
+  orgId             String?         @db.Uuid
   /// In a firm project (step 4): the whole team sees it. The composite key (projectId, orgId) means a design can
   /// only sit in a project of its own firm, enforced by the database too (AZ-02).
-  projectId      String?         @db.Uuid
+  projectId         String?         @db.Uuid
   /// Owner's verdict on the result (API.md §7.24.1 feedback): thumbs + an optional reason; feeds the admin red rate.
-  feedbackRating String?         @db.VarChar(8) // liked | disliked
-  feedbackReason String?         @db.VarChar(300)
-  feedbackAt     DateTime?
-  createdAt      DateTime        @default(now())
-  finishedAt     DateTime?
-  shares         DesignShare[]
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org            Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  project        Project?        @relation(fields: [projectId, orgId], references: [id, orgId], onDelete: Restrict)
-  inputImage     Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
-  results        Image[]         @relation("results")
-  analyses       Analysis[]
-  reports        ContentReport[]
-  usages         AiUsage[]
+  feedbackRating    String?         @db.VarChar(8) // liked | disliked
+  feedbackReason    String?         @db.VarChar(300)
+  feedbackAt        DateTime?
+  createdAt         DateTime        @default(now())
+  finishedAt        DateTime?
+  shares            DesignShare[]
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org               Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  project           Project?        @relation(fields: [projectId, orgId], references: [id, orgId], onDelete: Restrict)
+  inputImage        Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
+  results           Image[]         @relation("results")
+  analyses          Analysis[]
+  reports           ContentReport[]
+  usages            AiUsage[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -1131,6 +1134,23 @@ model DesignShare {
   createdAt   DateTime @default(now())
 
   @@index([expiresAt])
+}
+
+/// In-app event telemetry (white-listed names only). Anonymous events (userId null) are kept for funnel counting;
+/// signed-in events are linked to the user for retention / cohort queries. Purged after 90 days.
+model AppEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  name      String   @db.VarChar(40)
+  platform  String?  @db.VarChar(12)
+  version   String?  @db.VarChar(20)
+  sessionId String?  @db.VarChar(64)
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
 }
 
 /// Lifecycle e-mails (API.md §7.48): one row per mail a rule sent to a user. The unique (user, rule, period) stops a

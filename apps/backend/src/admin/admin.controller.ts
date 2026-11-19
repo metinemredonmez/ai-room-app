@@ -50,6 +50,8 @@ const DesignsQuery = z.object({
   featured: z.enum(['true', 'false']).optional(),
   /** API.md §7.51: the owner allows the gallery. */
   shareable: z.enum(['true', 'false']).optional(),
+  /** API.md §7.51: the owner allows social-media / showcase use. */
+  showcase: z.enum(['true', 'false']).optional(),
 });
 const PatchUser = z
   .object({ status: z.enum(['ACTIVE', 'BANNED']).optional(), plan: z.enum(['FREE', 'PRO']).optional(), planExpiresAt: z.iso.datetime().nullable().optional() })
@@ -244,6 +246,7 @@ export class AdminController {
       ...(q.userId ? { userId: q.userId } : {}),
       ...(q.featured ? { featured: q.featured === 'true' } : {}),
       ...(q.shareable ? { shareConsentAt: q.shareable === 'true' ? { not: null } : null } : {}),
+      ...(q.showcase ? { showcaseConsentAt: q.showcase === 'true' ? { not: null } : null } : {}),
     };
     const rows = await this.prisma.design.findMany({
       where, include: { inputImage: true, results: true, user: { select: { email: true } } },

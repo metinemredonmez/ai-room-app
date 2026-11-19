@@ -7,6 +7,8 @@ import { AuditService } from './admin/audit.service.js';
 import { AdminSecurityService } from './admin/admin-security.service.js';
 import { AdminSelfController, AdminsController } from './admin/admins.controller.js';
 import { AiClient } from './ai/ai.client.js';
+import { AppEventsController } from './app-events/app-events.controller.js';
+import { AppEventsService } from './app-events/app-events.service.js';
 import { PublicController, UserController } from './app.controller.js';
 import { AdminAuthController, AppleWebhookController, AuthController } from './auth/auth.controller.js';
 import { AppleService } from './auth/apple.service.js';
@@ -97,13 +99,14 @@ import { UsageService } from './usage/usage.service.js';
 import { UsersService } from './users/users.service.js';
 
 @Module({
-  controllers: [PublicController, AuthController, AdminAuthController, UserController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController, ThemeController, AdminThemeController, AdminLoyaltyController, AdminPriceScheduleController, SessionsController, AdminSessionsController, AdminReviewAccountController, AdminAlertsController, ClientErrorsController, AdminExportsController, AdminSearchController, SiteContentController, AdminSiteContentController, WaitlistController, AdminWaitlistController, AdminLifecycleController, SiteStatusController, AdminSitePreviewController, CoachController, CoachAudioController, AdminCoachController],
+  controllers: [PublicController, AuthController, AdminAuthController, UserController, AppEventsController, AdminController, AdminSelfController, AdminsController, BillingController, AppleWebhookController, LegalController, DataRequestsController, AdminLegalController, AdminDataRequestsController, AdminBroadcastsController, BroadcastsController, UnsubscribeController, AdminMarketingController, BlogController, AdminBlogController, SupportController, AdminSupportController, AdminAnalyticsController, AdminPlansController, AdminSubscriptionsController, AdminOrgsController, OrgsController, AdminProductController, AdminPromptsController, AdminEngineController, FeaturesController, AdminFeaturesController, PromoController, AdminPromoController, ReferralController, AdminReferralController, AdminGiftController, AdminGiftCampaignController, PartnersPublicController, AttributionController, AdminPartnersController, ThemeController, AdminThemeController, AdminLoyaltyController, AdminPriceScheduleController, SessionsController, AdminSessionsController, AdminReviewAccountController, AdminAlertsController, ClientErrorsController, AdminExportsController, AdminSearchController, SiteContentController, AdminSiteContentController, WaitlistController, AdminWaitlistController, AdminLifecycleController, SiteStatusController, AdminSitePreviewController, CoachController, CoachAudioController, AdminCoachController],
   providers: [
     { provide: CONFIG, useFactory: () => loadConfig() },
     { provide: APP_FILTER, useClass: ErrorFilter },
     { provide: APP_GUARD, useClass: VersionGate },
     PrismaService,
     RedisService,
+    AppEventsService,
     SettingsService,
     UsageService,
     QueuesService,

@@ -403,7 +403,9 @@
     "needReference": "Bir referans görsel yükle.",
     "proHint": "PRO özellik — sunucu planını kontrol eder.",
     "newDesign": "Yeni tasarım",
-    "prefilled": "Sohbetteki öneri stüdyoya aktarıldı. Kontrol edip “Tasarla”ya bas."
+    "prefilled": "Sohbetteki öneri stüdyoya aktarıldı. Kontrol edip “Tasarla”ya bas.",
+    "highQuality": "Yüksek kalite (PRO)",
+    "highQualityHint": "Nano Banana Pro ile üretim: daha keskin detay, başına ayrı fiyat."
   },
   "result": {
     "before": "Önce",
@@ -433,7 +435,11 @@
     "share": "Paylaş",
     "shareCopy": "Kopyala",
     "shareCopied": "Kopyalandı",
-    "shareRemove": "Kaldır"
+    "shareRemove": "Kaldır",
+    "showcaseTitle": "Sosyal medya vitrininde kullan",
+    "showcaseText": "Açarsan Casalume bu tasarımın sonuç görselini sosyal medya, reklam ve vitrin paylaşımlarında kullanabilir. Önceki fotoğrafın ve adın görünmez; sadece sonuç görseli ve stil bilgisi paylaşılır. İstediğin zaman kapatabilirsin.",
+    "showcaseLabel": "Vitrinde kullanılabilir",
+    "showcaseLive": "Bu tasarım vitrin kullanımına açık."
   },
   "analysis": {
     "title": "Alışveriş listesi ve bütçe",

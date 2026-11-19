@@ -403,7 +403,9 @@
     "needReference": "Upload a reference image.",
     "proHint": "PRO feature — the server checks your plan.",
     "newDesign": "New design",
-    "prefilled": "The chat suggestion was loaded into the studio. Review it and press “Design”."
+    "prefilled": "The chat suggestion was loaded into the studio. Review it and press “Design”.",
+    "highQuality": "High quality (PRO)",
+    "highQualityHint": "Rendered with Nano Banana Pro: sharper detail, priced per image."
   },
   "result": {
     "before": "Before",
@@ -433,7 +435,11 @@
     "share": "Share",
     "shareCopy": "Copy",
     "shareCopied": "Copied",
-    "shareRemove": "Revoke"
+    "shareRemove": "Revoke",
+    "showcaseTitle": "Use in social-media showcase",
+    "showcaseText": "If enabled, Casalume may use this design's result image in social media, ads, and showcase posts. Your original photo and name stay hidden; only the result image and style info are shared. You can turn this off anytime.",
+    "showcaseLabel": "Allow showcase use",
+    "showcaseLive": "This design is open for showcase use."
   },
   "analysis": {
     "title": "Shopping list & budget",

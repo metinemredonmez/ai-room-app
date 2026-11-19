@@ -81,6 +81,34 @@ export function downloadUrl(imageUrl: string) {
   return `/api/download?src=${encodeURIComponent(imageUrl)}`;
 }
 
+let sessionId: string | undefined;
+function getSessionId() {
+  if (typeof window === "undefined") return undefined;
+  if (!sessionId) {
+    try {
+      sessionId = localStorage.getItem("casalume:sessionId") || undefined;
+      if (!sessionId) {
+        sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem("casalume:sessionId", sessionId);
+      }
+    } catch {
+      sessionId = "unknown";
+    }
+  }
+  return sessionId;
+}
+
+/** Fire-and-forget app event to the backend analytics funnel. */
+export function trackEvent(name: string, meta?: Record<string, unknown>) {
+  const body = {
+    name,
+    platform: "web",
+    sessionId: getSessionId(),
+    meta: meta ?? {},
+  };
+  api.post("/events", body).catch(() => undefined);
+}
+
 /** Only http(s) links from AI output are ever rendered as hrefs (WEB-01). */
 export function safeHref(url: string): string | null {
   try {
