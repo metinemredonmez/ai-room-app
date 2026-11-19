@@ -24,6 +24,10 @@
     }
   },
   "brandTagline": "Riprogetta la tua stanza in pochi secondi",
+  "cookieBanner": {
+    "text": "Utilizziamo cookie essenziali per lingua, tema e sessione. Vedi le nostre pagine Privacy e Cookie per maggiori informazioni.",
+    "accept": "Ho capito"
+  },
   "nav": {
     "studio": "Studio",
     "designs": "I miei progetti",

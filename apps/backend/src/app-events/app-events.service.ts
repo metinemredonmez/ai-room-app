@@ -4,7 +4,6 @@ import { PrismaService } from '../common/infra.js';
 import { todayInIstanbul } from '../common/http.js';
 import { APP_EVENT_NAMES, type AppEventName } from './app-events.schema.js';
 
-const ist = (col: string) => Prisma.raw(`((${col} AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Istanbul')`);
 const today = Prisma.sql`(now() AT TIME ZONE 'Europe/Istanbul')::date`;
 const sinceDays = (n: number) => Prisma.sql`(((${today} - ${n - 1}::int)::timestamp AT TIME ZONE 'Europe/Istanbul') AT TIME ZONE 'UTC')`;
 

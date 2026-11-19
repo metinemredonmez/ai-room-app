@@ -25,6 +25,10 @@
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
+  "cookieBanner": {
+    "text": "Sitemizde dil, tema ve oturum için gerekli çerezleri kullanıyoruz. Daha fazla bilgi için Gizlilik ve Çerez sayfalarımıza bakabilirsin.",
+    "accept": "Anladım"
+  },
   "nav": {
     "studio": "Stüdyo",
     "designs": "Tasarımlarım",

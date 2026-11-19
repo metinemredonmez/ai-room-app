@@ -24,6 +24,10 @@
     }
   },
   "brandTagline": "Réinventez votre pièce en quelques secondes",
+  "cookieBanner": {
+    "text": "Nous utilisons des cookies essentiels pour la langue, le thème et la session. Voir nos pages Confidentialité et Cookies pour plus d'informations.",
+    "accept": "J'ai compris"
+  },
   "nav": {
     "studio": "Studio",
     "designs": "Mes designs",

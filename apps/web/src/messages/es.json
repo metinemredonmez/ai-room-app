@@ -24,6 +24,10 @@
     }
   },
   "brandTagline": "Rediseña tu habitación en segundos",
+  "cookieBanner": {
+    "text": "Usamos cookies esenciales para idioma, tema y sesión. Consulta nuestras páginas de Privacidad y Cookies para más información.",
+    "accept": "Entendido"
+  },
   "nav": {
     "studio": "Estudio",
     "designs": "Mis diseños",

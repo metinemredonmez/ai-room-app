@@ -25,6 +25,10 @@
     }
   },
   "brandTagline": "Redesign your room in seconds",
+  "cookieBanner": {
+    "text": "We use essential cookies for language, theme, and session. See our Privacy and Cookie pages for more.",
+    "accept": "Got it"
+  },
   "nav": {
     "studio": "Studio",
     "designs": "My designs",

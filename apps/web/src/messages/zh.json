@@ -24,6 +24,10 @@
     }
   },
   "brandTagline": "几秒钟，重新设计你的房间",
+  "cookieBanner": {
+    "text": "我们使用必要的 Cookie 来支持语言、主题和会话。详情请参阅我们的隐私和 Cookie 页面。",
+    "accept": "知道了"
+  },
   "nav": {
     "studio": "工作室",
     "designs": "我的设计",

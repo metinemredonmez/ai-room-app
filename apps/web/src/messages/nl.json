@@ -24,6 +24,10 @@
     }
   },
   "brandTagline": "Ontwerp je kamer in een paar seconden opnieuw",
+  "cookieBanner": {
+    "text": "We gebruiken essentiële cookies voor taal, thema en sessie. Zie onze Privacy- en Cookiepagina's voor meer informatie.",
+    "accept": "Begrepen"
+  },
   "nav": {
     "studio": "Studio",
     "designs": "Mijn ontwerpen",
