@@ -22,6 +22,7 @@ import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { WaitlistService } from '../waitlist/waitlist.service.js';
 import { WaitlistCampaignsService } from '../waitlist/waitlist-campaigns.service.js';
+import { AccountDeletionService } from '../users/account-deletion.service.js';
 import { LifecycleService } from '../lifecycle/lifecycle.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
 import { CoachService } from '../coach/coach.service.js';
@@ -57,6 +58,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private prices: PriceScheduleService,
     private waitlist: WaitlistService,
     private waitlistCampaigns: WaitlistCampaignsService,
+    private deletion: AccountDeletionService,
     private lifecycle: LifecycleService,
     private coach: CoachService,
   ) {}
@@ -233,6 +235,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       await this.prisma.image.deleteMany({ where: { id: { in: orphans.map((o) => o.id) } } });
       await this.images.remove(orphans.map((o) => o.id));
     }
+    const deletedUsers = await this.deletion.purgeDue();
     const tokens = await this.prisma.emailToken.deleteMany({
       where: { OR: [{ expiresAt: { lt: new Date(now - DAY) } }, { usedAt: { lt: new Date(now - 7 * DAY) } }] },
     });
@@ -245,6 +248,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const sessions = await this.prisma.authSession.deleteMany({ where: { lastUsedAt: { lt: new Date(now - 90 * DAY) } } });
     // API.md §7.41: alert history 90 days; resolved error groups 90 days after they were last seen.
     const alertLogs = await this.prisma.alertLog.deleteMany({ where: { createdAt: { lt: new Date(now - 90 * DAY) } } });
+    void deletedUsers;
     const errorGroups = await this.prisma.errorGroup.deleteMany({ where: { resolvedAt: { not: null }, lastSeen: { lt: new Date(now - 90 * DAY) } } });
     let mails = 0;
     for (const dir of ['outbox', 'push-outbox']) {

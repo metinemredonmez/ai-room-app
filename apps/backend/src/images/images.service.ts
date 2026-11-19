@@ -95,6 +95,12 @@ export class ImagesService implements OnModuleInit {
     return img;
   }
 
+  /** Raw bytes for server-side rendering (share OG images); null when the object is gone. */
+  async bytes(id: string): Promise<Buffer | null> {
+    if (!isUuid(id)) return null;
+    return this.store.get(this.key(id));
+  }
+
   async remove(ids: string[]) {
     await this.store.delete(ids.filter(isUuid).map((id) => this.key(id)));
   }

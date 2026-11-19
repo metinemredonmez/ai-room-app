@@ -134,6 +134,8 @@ export function AccountView() {
       <ConsentsSection onError={setError} onSaved={() => setNotice(p.consentSaved)} />
       <DataSection onError={setError} />
       <RequestsSection onError={setError} onSent={(ref) => setNotice(fmt(p.kvkkSent, { ref }))} />
+      {!user.isGuest && <SecuritySection onError={setError} onNotice={setNotice} />}
+
       <DeleteSection
         onError={setError}
         onDeleted={async () => {
@@ -716,6 +718,81 @@ function RequestsSection({ onError, onSent }: { onError: (e: unknown) => void; o
           ))}
         </ul>
       )}
+    </Section>
+  );
+}
+
+function SecuritySection({ onError, onNotice }: { onError: (e: unknown) => void; onNotice: (m: string) => void }) {
+  const { t } = useApp();
+  const p = t.profile;
+  const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
+  const [email, setEmail] = useState({ next: "", password: "" });
+  const [busy, setBusy] = useState<"pwd" | "email" | null>(null);
+
+  async function changePassword() {
+    setBusy("pwd");
+    try {
+      const out = await api.post<{ revoked: number }>("/me/password", { current: pwd.current, next: pwd.next });
+      setPwd({ current: "", next: "", confirm: "" });
+      onNotice(fmt(p.pwdDone, { n: out.revoked }));
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function changeEmail() {
+    setBusy("email");
+    try {
+      const out = await api.post<{ sentTo: string }>("/me/email", { next: email.next, password: email.password });
+      setEmail({ next: "", password: "" });
+      onNotice(fmt(p.emailSent, { email: out.sentTo }));
+    } catch (e) {
+      onError(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const pwdOk = pwd.current.length > 0 && pwd.next.length >= 10 && pwd.next === pwd.confirm;
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.next) && email.password.length > 0;
+
+  return (
+    <Section title={p.securityTitle}>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void changePassword();
+          }}
+        >
+          <p className="text-sm font-medium">{p.pwdTitle}</p>
+          <input className={input} type="password" autoComplete="current-password" placeholder={p.pwdCurrent} value={pwd.current} onChange={(e) => setPwd((v) => ({ ...v, current: e.target.value }))} />
+          <input className={input} type="password" autoComplete="new-password" placeholder={p.pwdNext} value={pwd.next} onChange={(e) => setPwd((v) => ({ ...v, next: e.target.value }))} />
+          <input className={input} type="password" autoComplete="new-password" placeholder={p.pwdConfirm} value={pwd.confirm} onChange={(e) => setPwd((v) => ({ ...v, confirm: e.target.value }))} />
+          {pwd.next !== pwd.confirm && pwd.confirm.length > 0 && <p className="text-xs text-danger">{p.mismatch}</p>}
+          <button type="submit" className={`${btn.base} ${btn.primary} ${btn.md} self-start`} disabled={!pwdOk || busy !== null}>
+            {busy === "pwd" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : null} {p.save}
+          </button>
+        </form>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void changeEmail();
+          }}
+        >
+          <p className="text-sm font-medium">{p.emailTitle}</p>
+          <input className={input} type="email" autoComplete="email" placeholder={p.emailNew} value={email.next} onChange={(e) => setEmail((v) => ({ ...v, next: e.target.value }))} />
+          <input className={input} type="password" autoComplete="current-password" placeholder={p.emailPassword} value={email.password} onChange={(e) => setEmail((v) => ({ ...v, password: e.target.value }))} />
+          <p className="text-xs text-muted">{p.emailHint}</p>
+          <button type="submit" className={`${btn.base} ${btn.primary} ${btn.md} self-start`} disabled={!emailOk || busy !== null}>
+            {busy === "email" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : null} {p.emailSend}
+          </button>
+        </form>
+      </div>
     </Section>
   );
 }

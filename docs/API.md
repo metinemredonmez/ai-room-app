@@ -103,7 +103,10 @@ Kredi kuralı: her varyant 1 hak. Önce `dailyFreeRemaining`, sonra `credits` d�
 | POST | `/auth/email/resend` | — (Bearer, kayıtlı kullanıcı) | 202 `{ ok: true, alreadyVerified }` |
 | GET | `/me` | — | `User` |
 | PATCH | `/me` | `{ name?, locale? }` | `User` |
-| DELETE | `/me` | — | 204 (KVKK: hesap, tasarım ve görseller silinir) |
+| POST | `/me/password` | `{ current, next }` | `{ ok, revoked }` — mevcut şifre doğrulanır, yaygın şifre reddedilir, **diğer oturumlar kapanır** (bu cihaz kalır), sahibine e-posta gider (palemi/yoga). |
+| POST | `/me/email` | `{ next, password }` | `{ ok, sentTo }` — yeni adrese onay postası gider (1 saat, tek kullanımlık, AUT-03). |
+| POST | `/me/email/confirm` | `{ token }` | `User` — adres değişir, oturumların hepsi kapanır. |
+| DELETE | `/me` | — | 204 (KVKK). Silme **30 gün sonraya planlanır** (YediOda #18): oturumlar anında kapanır, pencere içinde giriş silmeyi iptal eder, süre dolunca `retention` işi hesabı, tasarımları ve görselleri siler. |
 | GET | `/catalog` | — | `Catalog` (aşağıda) |
 | POST | `/uploads` | `{ data: base64, mimeType: 'image/jpeg'|'image/png'|'image/webp'|'image/heic' }` (≤10 MB) | `{ image: ImageRef }` |
 | POST | `/uploads/sample` | `{ sample: 'living_room'|'empty_room'|'bedroom'|'exterior'|'garden' }` | `{ image: ImageRef }` |
@@ -113,6 +116,10 @@ Kredi kuralı: her varyant 1 hak. Önce `dailyFreeRemaining`, sonra `credits` d�
 | PATCH | `/designs/:id` | `{ favorite: boolean }` | `Design` |
 | DELETE | `/designs/:id` | — | 204 |
 | POST | `/designs/:id/analysis` | `{ imageId?: string }` (varsayılan ilk sonuç) | `Analysis` (aynı görsel için önbellekli) |
+| POST | `/designs/:id/share` | `{ days: 7\|30\|90 = 30 }` | `{ token, url, expiresAt }` — herkese açık önce/sonra sayfası (hesap gerekmez). Yeni jeton üretimi eskisini iptal eder; firma tasarımları yakında. |
+| DELETE | `/designs/:id/share` | — | 204 — erişim anında kesilir. |
+| GET | `/shared/:token` | — | `{ title, tool, before, after, views, expiresAt }` — her çağrı sayacı bir artırır; süresi dolmuş/kaldırılmış 404. |
+| GET | `/shared/:token/og.jpg` | — | 1200×630 önce/sonra JPEG (og:image; sayaç artmaz, `max-age=86400`). |
 | POST | `/chat` | `{ messages: { role: 'user'|'assistant'; text: string (≤2000); imageId?: string }[] (≤20) }` | `{ reply: string, suggestions: Suggestion[] }` |
 | GET | `/inspiration` | — | `{ items: { id, title, styleId, roomId, imageUrl, palette: string[] }[] }` |
 | POST | `/billing/dev-upgrade` | — (yalnız NODE_ENV≠production) | `User` (7 gün PRO) |
@@ -1767,6 +1774,10 @@ ayrıntısında görür (**Admin → Kullanıcılar → kullanıcı → Açık o
 - açılış ve son etkinlik.
 
 Web BFF ziyaretçinin tarayıcısını (`user-agent`) API'ye iletir; uygulama `X-App-Platform` ve `X-App-Version` gönderir.
+
+**Yeni cihaz uyarısı:** kayıtlı bir hesaba bir cihaz etiketiyle ilk başarılı giriş (30 gün içinde o etiketten giriş
+olmamışsa) sahibine bilgi e-postası gönderir (yoga/palemi deseni). Şifre değiştirme de e-posta bildirimli yapılır
+(`POST /me/password`) ve diğer oturumları kapatır.
 
 **Anında kapatma (SES-04):** uygulama erişim token'ı oturumu `sid` olarak taşır ve `UserGuard` her istekte oturumun
 açık olduğunu kontrol eder. Kapatılan oturumun erişim token'ı bir sonraki istekte 401 alır, refresh token'ı da

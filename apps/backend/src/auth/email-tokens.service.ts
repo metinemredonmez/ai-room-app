@@ -9,11 +9,13 @@ import { randomToken, sha256 } from './crypto.js';
 const TTL_MS: Record<EmailTokenPurpose, number> = {
   RESET_PASSWORD: 30 * 60 * 1000,
   VERIFY_EMAIL: 48 * 60 * 60 * 1000,
+  EMAIL_CHANGE: 60 * 60 * 1000, // one hour is plenty to click a mail received on the new address
 };
 
 const PATHS: Record<EmailTokenPurpose, string> = {
   RESET_PASSWORD: '/sifre-sifirla',
   VERIFY_EMAIL: '/eposta-dogrula',
+  EMAIL_CHANGE: '/hesap/eposta',
 };
 
 export const invalidToken = () => new AppError(400, 'invalid_token', 'Bağlantı geçersiz veya süresi dolmuş');
@@ -33,15 +35,17 @@ export class EmailTokensService {
     return url.toString();
   }
 
-  /** Issues a fresh token; any older unused token for the same purpose stops working. */
-  async issue(user: Pick<User, 'id' | 'email'>, purpose: EmailTokenPurpose): Promise<string> {
+  /** Issues a fresh token; any older unused token for the same purpose stops working. `targetEmail` overrides the
+   *  address the row binds to (EMAIL_CHANGE: the NEW address, which is not the account's yet). */
+  async issue(user: Pick<User, 'id' | 'email'>, purpose: EmailTokenPurpose, targetEmail?: string): Promise<string> {
     if (!user.email) throw new AppError(400, 'bad_request', 'Hesapta e-posta yok');
+    const email = (targetEmail ?? user.email).toLowerCase();
     const token = randomToken(32);
     const now = new Date();
     await this.prisma.$transaction([
       this.prisma.emailToken.updateMany({ where: { userId: user.id, purpose, usedAt: null }, data: { usedAt: now } }),
       this.prisma.emailToken.create({
-        data: { userId: user.id, purpose, email: user.email, tokenHash: sha256(token), expiresAt: new Date(now.getTime() + TTL_MS[purpose]) },
+        data: { userId: user.id, purpose, email, tokenHash: sha256(token), expiresAt: new Date(now.getTime() + TTL_MS[purpose]) },
       }),
     ]);
     return token;
@@ -49,6 +53,19 @@ export class EmailTokensService {
 
   /** Atomically claims the token (parallel requests: only one wins), then checks it still fits the account. */
   async consume(token: string, purpose: EmailTokenPurpose): Promise<User> {
+    const row = await this.claim(token, purpose);
+    if (row.user.email !== row.email || row.user.status !== 'ACTIVE') throw invalidToken();
+    return row.user;
+  }
+
+  /** EMAIL_CHANGE: the row's address is the NEW one — return both so the caller can swap. */
+  async consumeEmailChange(token: string): Promise<{ user: User; email: string }> {
+    const row = await this.claim(token, 'EMAIL_CHANGE');
+    if (row.user.status !== 'ACTIVE') throw invalidToken();
+    return { user: row.user, email: row.email };
+  }
+
+  private async claim(token: string, purpose: EmailTokenPurpose) {
     const tokenHash = sha256(token);
     const claimed = await this.prisma.emailToken.updateMany({
       where: { tokenHash, purpose, usedAt: null, expiresAt: { gt: new Date() } },
@@ -56,8 +73,8 @@ export class EmailTokensService {
     });
     if (claimed.count !== 1) throw invalidToken();
     const row = await this.prisma.emailToken.findUnique({ where: { tokenHash }, include: { user: true } });
-    if (!row || row.user.email !== row.email || row.user.status !== 'ACTIVE') throw invalidToken();
-    return row.user;
+    if (!row) throw invalidToken();
+    return row;
   }
 
   async sendVerification(user: Pick<User, 'id' | 'email' | 'locale'>) {

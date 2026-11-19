@@ -20,7 +20,8 @@
       "invite": "Team invitation",
       "team": "Team",
       "waitlistConfirm": "Confirm sign-up",
-      "waitlistLeave": "Leave the list"
+      "waitlistLeave": "Leave the list",
+      "emailChange": "E-mail address changed"
     }
   },
   "brandTagline": "Redesign your room in seconds",
@@ -428,7 +429,11 @@
     "feedbackDisliked": "Not for me",
     "feedbackWhy": "Why didn't it work? (optional)",
     "feedbackSend": "Send",
-    "feedbackChange": "You can change your feedback."
+    "feedbackChange": "You can change your feedback.",
+    "share": "Share",
+    "shareCopy": "Copy",
+    "shareCopied": "Copied",
+    "shareRemove": "Revoke"
   },
   "analysis": {
     "title": "Shopping list & budget",
@@ -656,11 +661,24 @@
       "REJECTED": "Rejected"
     },
     "deleteTitle": "Delete account",
-    "deleteBody": "Your account, designs and photos are deleted for good; this can't be undone. If you have a subscription, cancel it in the App Store or Google Play first.",
+    "deleteBody": "Your account is erased 30 days from now. Signing back in within that window cancels the deletion and everything stays as it was; sessions close immediately.",
     "deleteConfirm": "Type {word} to confirm",
     "deleteWord": "DELETE",
     "deleteButton": "Delete my account for good",
-    "deleted": "Your account was deleted."
+    "deleted": "Your account is scheduled for deletion. Signing in within 30 days cancels it.",
+    "securityTitle": "Security",
+    "pwdTitle": "Change password",
+    "pwdCurrent": "Current password",
+    "pwdNext": "New password (10+ characters)",
+    "pwdConfirm": "New password (again)",
+    "pwdDone": "Password changed; {n} other sessions were closed.",
+    "emailTitle": "Change e-mail",
+    "emailNew": "New e-mail address",
+    "emailPassword": "Your password",
+    "emailHint": "A confirmation link is sent to the new address; the change completes when you click it.",
+    "emailSent": "A confirmation link was sent to {email}.",
+    "mismatch": "Passwords do not match.",
+    "emailSend": "Send confirmation link"
   },
   "legal": {
     "title": "Legal",
@@ -677,7 +695,7 @@
   },
   "deletion": {
     "title": "How to delete your account",
-    "intro": "You can delete your Casalume account and all your data at any time.",
+    "intro": "You can delete your Casalume account and all of your data at any time. Deletion comes with a 30-day undo window: sign back in during that time and everything stays as it was.",
     "inApp": "In the app: Profile → Delete account.",
     "onWeb": "On the web: sign in, then My account → Delete account.",
     "byMail": "If you can't reach your account, write “Please delete my account” to {email} from your account's e-mail address; we delete it within 30 days.",
@@ -686,7 +704,9 @@
     "keepTitle": "What is kept?",
     "keep": "Only records the law requires are kept for the required period (e.g. data-protection request records for 2 years after closing). Payment records are held by the App Store and Google Play.",
     "subscription": "If you have an active subscription, cancel it in the App Store or Google Play first; deleting the account doesn't stop it.",
-    "cta": "Go to my account"
+    "cta": "Go to my account",
+    "whenTitle": "When is it erased?",
+    "when": "Sessions close the moment you ask; the data itself is erased 30 days later. Signing in before the deadline cancels the deletion automatically."
   },
   "support": {
     "title": "Support",
@@ -809,5 +829,20 @@
     "emptyProject": "No designs in this project yet.",
     "designsCount": "{n} designs",
     "teamOnly": "A teammate's design: you can view and download it."
+  },
+  "share": {
+    "expiredTitle": "This link is no longer valid",
+    "expiredText": "This share has expired or was revoked. Ask the design's owner for a new link.",
+    "cta": "Discover Casalume",
+    "subtitle": "An AI-redesigned room — before and after.",
+    "footer": "Want to redesign your own room? Upload a photo, pick a style, see the result in seconds.",
+    "views": "{n} views"
+  },
+  "emailChange": {
+    "title": "Your e-mail address changed",
+    "working": "Updating your address…",
+    "done": "Your new e-mail address is confirmed and saved to your account.",
+    "invalid": "The link is invalid, already used or expired. You can request a new one from the account page.",
+    "toAccount": "Back to my account"
   }
 }

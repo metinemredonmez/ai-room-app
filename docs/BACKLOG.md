@@ -204,8 +204,10 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Destek talebi (API.md §7.19): web `/destek` (hata ekranından istek kimliğiyle), admin **Destek** kutusu (açık sayısı
   rozetle), yanıt e-posta + push ile; veri indirmede, hesapla birlikte silinir. Kaynak: palemi, fal-app.
   - [ ] Mobil (sen): Profil → Destek ekranı, `casalume://support/<id>` derin bağlantısı, Android `support` kanalı.
-- [ ] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
-  da temeli (fal-app `share/`); mobilde story kartı 1080×1920 (sen, palemi).
+- [x] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
+  da temeli (fal-app `share/`). (19 Kasım: `DesignShare` + `POST /designs/:id/share`, `/shared/:token`, `og.jpg`;
+  web `/paylas/[token]`. Story kartı 1080×1920 mobilde, sen.)
+  - [ ] Logolu PDF sunum: önce/sonra, malzeme listesi, bütçe. (Profesyonel katmanın parçası olarak açık.)
 - [x] Admin **Analiz** (API.md §7.20): gelir (brüt, iade, net, ele geçen, MRR, ürün/mağaza/para birimi; canlı ve
   sandbox ayrı), etkileşim (günlük/7/30 gün aktif, yapışkanlık, yeni kullanıcı hunisi, özelliklere ulaşan kişi), haftalık
   kohort tutma tablosu. Etkinlik, tasarım ve AI kayıtlarından ölçülür; uygulamaya ölçüm kodu gerekmedi.
@@ -233,7 +235,9 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Admin CMS: SSS, ana sayfa metinleri, bölümler, duyuru çubuğu (maeyja) — API.md §7.46.
 - [ ] Admin’de `support@casalume.app` gelen kutusu (maeyja `mailbox`, IMAP): kullanıcı e-postalarını panelden okuyup yanıtlamak.
 - [x] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — API.md §7.29.
-- [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).
+- [x] Giriş yapmışken şifre/e-posta değiştirme, yeni giriş uyarısı (palemi, yoga). (19 Kasım: `POST /me/password`,
+  `/me/email` + `/me/email/confirm` (yeni adresten onay), 30 günde bir cihaz başına yeni giriş e-postası;
+  aktif oturumlar zaten vardı §7.37.)
 - [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
   Keychain temizliği, uygulama içi değerlendirme istemi.
 
@@ -259,7 +263,8 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) — API.md §7.42
 - [x] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) — API.md §7.28
 - [x] İstemci hata ucu (mobil/web hataları) (YediOda #106) — API.md §7.43 (mobil bağlantısı: sen)
-- [ ] Hesap silmede 30 gün geri alma penceresi (YediOda #18) · orta
+- [x] Hesap silmede 30 gün geri alma penceresi (YediOda #18). (19 Kasım: `PENDING_DELETION` + `AccountDeletionService`;
+  giriş pencere içinde iptal eder, `retention` işi süre dolunca gerçek silmeyi yapar.)
 - [x] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) — API.md §7.26, §7.27
 - [x] llms.txt + AI tarayıcı izinleri panelden (MAEYJA, YediOda #94) — API.md §7.53
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta

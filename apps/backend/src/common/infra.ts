@@ -125,6 +125,7 @@ export const LIMITS = {
   coachPreview: { name: 'coach-preview', max: 30, windowSec: 3600 },
   reports: { name: 'reports', max: 20, windowSec: 3600 },
   feedback: { name: 'feedback', max: 30, windowSec: 3600 },
+  passwordChange: { name: 'password-change', max: 5, windowSec: 3600 },
   export: { name: 'export', max: 3, windowSec: 3600 },
   webhooks: { name: 'webhooks-ip', max: 600, windowSec: 60 },
   billingSync: { name: 'billing-sync', max: 20, windowSec: 600 },

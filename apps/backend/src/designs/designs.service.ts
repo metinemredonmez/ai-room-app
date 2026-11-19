@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import sharp from 'sharp';
 import { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';
 import { AiClient, AiError } from '../ai/ai.client.js';
@@ -12,6 +13,7 @@ import { ProductCatalogService } from '../catalog/product.service.js';
 import { PromptTemplatesService } from '../prompts/prompts.service.js';
 import { EngineService } from '../ai/engine.service.js';
 import { ReferralService } from '../referral/referral.service.js';
+import { randomToken } from '../auth/crypto.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -22,6 +24,38 @@ import { OrgsService } from '../orgs/orgs.service.js';
 import { ProjectsService } from '../orgs/projects.service.js';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
+
+/**
+ * The share page's og:image: before/after side by side under a small brand bar, JPEG for every crawler.
+ * Both photos are centre-cropped to the same square so the framing always matches.
+ */
+export async function shareOg(before: Buffer, after: Buffer, title: string): Promise<Buffer> {
+  const W = 1200;
+  const H = 630;
+  const BAR = 84;
+  const panel = Math.floor((H - BAR) / 2) - 12;
+  const crop = (buf: Buffer) =>
+    sharp(buf).rotate().resize(panel, panel, { fit: 'cover', position: 'centre' }).jpeg({ quality: 88 }).toBuffer();
+  const [b, a] = await Promise.all([crop(before), crop(after)]);
+  const label = (title.length > 60 ? `${title.slice(0, 57)}…` : title).replace(/[<>&]/g, '');
+  const bar = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${BAR}">
+      <rect width="100%" height="100%" fill="#1C1714"/>
+      <text x="36" y="54" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#F6F1EA">Casa<tspan fill="#A9532E">lume</tspan></text>
+      <text x="${W - 36}" y="54" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="24" fill="#B7ACA2">${label}</text>
+    </svg>`,
+  );
+  return sharp({
+    create: { width: W, height: H, channels: 3, background: '#F6F1EA' },
+  })
+    .composite([
+      { input: b, top: 12, left: Math.floor((W - panel * 2 - 12) / 2) },
+      { input: a, top: 12, left: Math.floor((W - panel * 2 - 12) / 2) + panel + 12 },
+      { input: bar, top: H - BAR, left: 0 },
+    ])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+}
 
 /** Tap selection (API.md §7.15): 0..1 from the top-left of the input photo, one object per point. */
 export const PointsSchema = z.array(z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).strict()).min(1).max(8);
@@ -489,6 +523,64 @@ export class DesignsService {
       where: { id: d.id },
       data: { feedbackRating: input.rating, feedbackReason: input.reason?.slice(0, 300) ?? null, feedbackAt: new Date() },
     });
+  }
+
+  // ---- public before/after share links (API.md §7.23 client sharing; fal-app share pattern) ----
+
+  /** One active link per design: minting a new one rotates the token and resets the counter. */
+  async share(userId: string, id: string, days: number) {
+    const d = await this.getOwned(userId, id);
+    if (d.status !== 'SUCCEEDED') throw new AppError(409, 'conflict', 'Yalnız bitmiş bir tasarım paylaşılabilir.');
+    if (d.orgId) throw new AppError(409, 'conflict', 'Firma çalışma alanındaki tasarımların paylaşımı yakında; şimdilik kişisel tasarımlar paylaşılabilir.');
+    const token = randomToken(24);
+    const share = await this.prisma.$transaction(async (tx) => {
+      await tx.designShare.deleteMany({ where: { designId: d.id } });
+      await tx.designShare.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+      return tx.designShare.create({ data: { designId: d.id, createdById: userId, token, expiresAt: new Date(Date.now() + days * 86_400_000) } });
+    });
+    return { token: share.token, expiresAt: share.expiresAt.toISOString() };
+  }
+
+  async unshare(userId: string, id: string) {
+    const d = await this.getOwned(userId, id);
+    await this.prisma.designShare.deleteMany({ where: { designId: d.id } });
+  }
+
+  /** The shared payload: no account needed, the view counter ticks once per fetch. */
+  async shared(token: string) {
+    const share = await this.activeShare(token);
+    const [updated, title] = await Promise.all([
+      this.prisma.designShare.update({ where: { id: share.id }, data: { views: { increment: 1 } } }),
+      this.titleOf(share.design, 'tr'),
+    ]);
+    return { ...this.shareDto(share.design, title, updated.views), expiresAt: share.expiresAt.toISOString() };
+  }
+
+  /** Crawler image (og:image): same payload without counting the fetch as a view. */
+  async sharedOg(token: string) {
+    const share = await this.activeShare(token);
+    const title = await this.titleOf(share.design, 'tr');
+    const [before, after] = await Promise.all([
+      this.images.bytes(share.design.inputImageId),
+      this.images.bytes(share.design.results[0]?.id ?? ''),
+    ]);
+    if (!before || !after) throw notFound();
+    return { jpeg: await shareOg(before, after, title), title };
+  }
+
+  private async activeShare(token: string) {
+    if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{20,48}$/.test(token)) throw notFound();
+    const share = await this.prisma.designShare.findUnique({
+      where: { token },
+      include: { design: { include: { inputImage: true, results: true } } },
+    });
+    if (!share || share.expiresAt.getTime() < Date.now()) throw notFound();
+    return share;
+  }
+
+  private shareDto(d: DesignWithImages, title: string, views: number) {
+    const after = [...d.results].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+    return { title, tool: d.tool, before: this.images.ref(d.inputImage), after: after ? this.images.ref(after) : null, views };
   }
 
   async getOwned(userId: string, id: string) {

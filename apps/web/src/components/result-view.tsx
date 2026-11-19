@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Heart, Images, LoaderCircle, MessageCircle, Receipt, RefreshCw, ThumbsDown, ThumbsUp, TriangleAlert } from "lucide-react";
+import { Download, Heart, Images, Link2, LoaderCircle, MessageCircle, Receipt, RefreshCw, Share2, ThumbsDown, ThumbsUp, Trash2, TriangleAlert } from "lucide-react";
 import { api, downloadUrl } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { setChatPrefill, setStudioPrefill } from "@/lib/prefill";
@@ -27,6 +27,9 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
   const [shareBusy, setShareBusy] = useState(false);
   const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [feedbackEdit, setFeedbackEdit] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareLinkBusy, setShareLinkBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const result = design.results[Math.min(selected, design.results.length - 1)];
   const analysis = result ? analyses[result.id] : undefined;
@@ -88,6 +91,45 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
     router.push(href("/sohbet"));
   }
 
+  /** API.md §7.23 client sharing: a time-boxed public link; revoked from here too. */
+  async function makeShare() {
+    setShareLinkBusy(true);
+    setError(null);
+    try {
+      const out = await api.post<{ token: string }>(`/designs/${design.id}/share`, { days: 30 });
+      const url = `${window.location.origin}${locale === "tr" ? "" : `/${locale}`}/paylas/${out.token}`;
+      setShareLink(url);
+      setCopied(false);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShareLinkBusy(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  async function removeShare() {
+    setShareLinkBusy(true);
+    setError(null);
+    try {
+      await api.del(`/designs/${design.id}/share`);
+      setShareLink(null);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShareLinkBusy(false);
+    }
+  }
+
   async function sendFeedback(rating: "liked" | "disliked", reason?: string) {
     setFeedbackBusy(true);
     setError(null);
@@ -142,6 +184,11 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
           <a href={downloadUrl(result.url)} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
             <Download className="h-4 w-4" aria-hidden /> {t.result.download}
           </a>
+          {own && design.status === "SUCCEEDED" && (
+            <button type="button" onClick={() => void makeShare()} disabled={shareLinkBusy} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+              <Share2 className="h-4 w-4" aria-hidden /> {t.result.share}
+            </button>
+          )}
           {own && (
             <>
               <button type="button" onClick={askChat} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
@@ -154,6 +201,19 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
           )}
         </div>
       </div>
+
+      {shareLink && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-surface p-3">
+          <Link2 className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+          <input readOnly value={shareLink} onFocus={(e) => e.currentTarget.select()} className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 text-xs text-muted" aria-label={t.result.share} />
+          <button type="button" onClick={() => void copyLink()} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+            {copied ? t.result.shareCopied : t.result.shareCopy}
+          </button>
+          <button type="button" onClick={() => void removeShare()} disabled={shareLinkBusy} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+            <Trash2 className="h-3.5 w-3.5" aria-hidden /> {t.result.shareRemove}
+          </button>
+        </div>
+      )}
 
       <BeforeAfter
         before={design.input.url}

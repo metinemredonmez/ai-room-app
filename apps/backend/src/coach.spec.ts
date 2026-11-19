@@ -267,12 +267,24 @@ describe('POST /v1/chat with the coach', () => {
       signReply: () => 'signed',
     };
     const ai = { chat: async () => (seen.ai++, { reply: 'Japandi dene.', suggestions: [] }) };
+    // Order: users, tokens, audit, deletion, mailer, emailTokens, images, designs, catalog, ai, prisma, limiter,
+    // redis, usage, consents, push, oauth, cfg, orgs, features, coach, prompts
     const ctrl = new UserController(
-      { get: async () => ({}), isPro: () => false } as never, {} as never, {} as never,
+      { get: async () => ({}), isPro: () => false } as never,
+      {} as never, {} as never, {} as never, {} as never, {} as never,
+      {} as never,
       { assertAiConsent: async () => undefined, assertBudgetFor: async () => undefined } as never,
-      { catalog: async () => ({ tools: [], styles: [], rooms: [] }) } as never, ai as never, {} as never, { hit: async () => undefined } as never,
-      {} as never, { record: async () => undefined } as never, {} as never, {} as never, {} as never, {} as never, {} as never,
-      { assert: () => undefined } as never, coach as never, { forTool: () => ({ templates: { coach: 'Calm coach.' }, versions: {} }) } as never,
+      { catalog: async () => ({ tools: [], styles: [], rooms: [] }) } as never,
+      ai as never,
+      {} as never,
+      { hit: async () => undefined } as never,
+      {} as never,
+      { record: async () => undefined } as never,
+      {} as never, {} as never, {} as never, {} as never,
+      {} as never,
+      { assert: () => undefined } as never,
+      coach as never,
+      { forTool: () => ({ templates: { coach: 'Calm coach.' }, versions: {} }) } as never,
     );
     const req = { query: {}, headers: {}, clientIp: '1', id: 'rid' } as never;
     const out = await ctrl.chat({ userId: 'u1' } as never, { messages: [{ role: 'user', text }], locale: 'tr' }, req);

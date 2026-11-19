@@ -80,6 +80,7 @@ import { ErrorFilter } from './common/errors.js';
 import { PrismaService, RateLimiter, RedisService } from './common/infra.js';
 import { WebCacheInvalidator } from './common/web-cache.js';
 import { WaitlistCampaignsService } from './waitlist/waitlist-campaigns.service.js';
+import { AccountDeletionService } from './users/account-deletion.service.js';
 import { CONFIG, loadConfig } from './config.js';
 import { DesignsService } from './designs/designs.service.js';
 import { ImagesService } from './images/images.service.js';
@@ -120,6 +121,7 @@ import { UsersService } from './users/users.service.js';
     BlogService,
     WebCacheInvalidator,
     WaitlistCampaignsService,
+    AccountDeletionService,
     SupportService,
     JobsService,
     RateLimiter,
