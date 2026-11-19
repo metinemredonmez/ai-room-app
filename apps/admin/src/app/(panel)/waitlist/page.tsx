@@ -1,13 +1,13 @@
 "use client";
 
-import { Download, Search, Trash2 } from "lucide-react";
+import { Download, Mail, Search, Send, Trash2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useFeedback } from "@/components/feedback";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, LoadMore, PageHeader, Spinner, Table, td, th } from "@/components/common";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, LoadMore, PageHeader, Select, Spinner, Table, Textarea, td, th } from "@/components/common";
 import { api, ApiError, useApi, usePaged } from "@/lib/api";
 import { fmtDateTime, fmtInt } from "@/lib/format";
-import { LOCALE_LABELS, type AdminMe, type Locale, type WaitlistOverview, type WaitlistRow, type WaitlistStatusName } from "@/lib/types";
+import { LOCALE_LABELS, type AdminMe, type Locale, type WaitlistCampaign, type WaitlistOverview, type WaitlistRow, type WaitlistStatusName } from "@/lib/types";
 
 // Bekleme listesi ve bülten (API.md §7.47): web ziyaretçileri uygulama çıkışı ve yenilikler için e-posta bırakır.
 // Çift onay: yalnız onaylanan adres listededir. Onaylanmayan 7 gün, çıkan 30 gün sonra silinir. SUPPORT ve EDITOR
@@ -72,6 +72,7 @@ export default function WaitlistPage() {
             </Card>
             <Settings key={o.version ?? "default"} o={o} canEdit={isAdmin} onSaved={(n) => overview.setData(() => n)} onReload={overview.reload} />
           </div>
+          <Campaigns canSend={isAdmin} confirmed={o.counts.confirmed} />
           <Entries isAdmin={isAdmin} onChanged={overview.reload} />
         </div>
       )}
@@ -269,6 +270,143 @@ function Entries({ isAdmin, onChanged }: { isAdmin: boolean; onChanged: () => vo
           </Table>
           <LoadMore hasMore={Boolean(list.nextCursor)} loading={list.loadingMore} onClick={list.loadMore} />
         </>
+      )}
+    </Card>
+  );
+}
+
+const CAMPAIGN_STATUS: Record<WaitlistCampaign["status"], { label: string; tone: "good" | "warn" | "neutral" }> = {
+  DRAFT: { label: "Taslak", tone: "neutral" },
+  SENDING: { label: "Gönderiliyor", tone: "warn" },
+  PAUSED: { label: "Bekliyor", tone: "warn" },
+  SENT: { label: "Gönderildi", tone: "good" },
+  FAILED: { label: "Başarısız", tone: "neutral" },
+  CANCELLED: { label: "İptal", tone: "neutral" },
+};
+
+// Listeye e-posta gönderme (API.md §7.47): lansman duyurusu ya da bülten. Gönderim Toplu Gönderim'in günlük
+// e-posta sınırını ve sessiz saatini paylaşır; her postada tek tıkla çıkma (RFC 8058) vardır.
+function Campaigns({ canSend, confirmed }: { canSend: boolean; confirmed: number }) {
+  const { toast, confirm } = useFeedback();
+  const campaigns = useApi<WaitlistCampaign[]>("/waitlist/campaigns");
+  const [subject, setSubject] = useState("");
+  const [kind, setKind] = useState<"ANNOUNCEMENT" | "NEWSLETTER">("NEWSLETTER");
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const valid = subject.trim().length >= 3 && body.trim().length >= 10;
+
+  async function create() {
+    setBusy(true);
+    try {
+      await api("/waitlist/campaigns", { method: "POST", body: { subject: subject.trim(), kind, body: body.trim() } });
+      setSubject("");
+      setBody("");
+      campaigns.reload();
+      toast("success", "Taslak oluşturuldu. Göndermek için listeden onayla.");
+    } catch (e) {
+      toast("error", e instanceof ApiError ? e.message : "Taslak oluşturulamadı.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function send(c: WaitlistCampaign) {
+    if (!(await confirm({ title: "Kampanya gönderilsin mi?", description: `“${c.subject}” ${fmtInt(c.targetCount)} onaylı adrese gider. Günlük sınır dolarsa kalan kendiliğinden bekler.`, confirmLabel: "Gönder" }))) return;
+    try {
+      await api(`/waitlist/campaigns/${c.id}/send`, { method: "POST" });
+      campaigns.reload();
+      toast("success", "Gönderim başladı.");
+    } catch (e) {
+      toast("error", e instanceof ApiError ? e.message : "Gönderilemedi.");
+    }
+  }
+
+  async function cancel(c: WaitlistCampaign) {
+    if (!(await confirm({ title: "Kampanya iptal edilsin mi?", description: `“${c.subject}” için kalan gönderimler durdurulur.`, confirmLabel: "İptal et" }))) return;
+    try {
+      await api(`/waitlist/campaigns/${c.id}/cancel`, { method: "POST" });
+      campaigns.reload();
+      toast("success", "İptal edildi.");
+    } catch (e) {
+      toast("error", e instanceof ApiError ? e.message : "İptal edilemedi.");
+    }
+  }
+
+  return (
+    <Card
+      title="Listeye e-posta gönder"
+      actions={<Badge tone="neutral"><Mail className="h-3 w-3" aria-hidden /> {fmtInt(confirmed)} onaylı adres</Badge>}
+    >
+      <div className="grid gap-3 lg:grid-cols-[1fr_11rem]">
+        <Field label="Konu" htmlFor="wc-subject">
+          <Input id="wc-subject" value={subject} maxLength={160} onChange={(e) => setSubject(e.target.value)} placeholder="Casalume yayında!" />
+        </Field>
+        <Field label="Tür" htmlFor="wc-kind">
+          <Select id="wc-kind" value={kind} onChange={(e) => setKind(e.target.value as "ANNOUNCEMENT" | "NEWSLETTER")}>
+            <option value="NEWSLETTER">Bülten</option>
+            <option value="ANNOUNCEMENT">Lansman duyurusu</option>
+          </Select>
+        </Field>
+      </div>
+      <Field label="Metin" htmlFor="wc-body" hint="Paragraflar arasında boş satır bırak. Alıcının dilinde çıkış bağlantısı otomatik eklenir.">
+        <Textarea id="wc-body" value={body} maxLength={2000} rows={5} onChange={(e) => setBody(e.target.value)} placeholder={"Merhaba!\n\nCasalume App Store ve Google Play'e çıktı…"} />
+      </Field>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">Ticari ifade (indirim, fiyat vb.) işaretlenir; gönderim için ADMIN onayı gerekir. Gönderim günde {fmtInt(300)} e-postalık ortak sınıra ve sessiz saate (21:00–09:00) uyar.</p>
+        <Button variant="primary" size="sm" loading={busy} disabled={!valid || confirmed === 0} onClick={() => void create()}>
+          Taslak oluştur
+        </Button>
+      </div>
+      {campaigns.data && campaigns.data.length > 0 && (
+        <Table
+          head={
+            <tr>
+              <th className={th}>Konu</th>
+              <th className={th}>Tür</th>
+              <th className={th}>Durum</th>
+              <th className={th}>Gönderim</th>
+              <th className={th}>Oluşturan</th>
+              <th className={th} />
+            </tr>
+          }
+        >
+          {campaigns.data.map((c) => (
+            <tr key={c.id}>
+              <td className={`${td} min-w-56`}>
+                {c.subject}
+                {c.commercial && <Badge tone="warn">ticari</Badge>}
+                {c.error === "quiet_hours" && <span className="block text-[11px] text-muted-foreground">Sessiz saat nedeniyle bekliyor</span>}
+                {c.error === "email_daily_cap" && <span className="block text-[11px] text-muted-foreground">Günlük sınır dolunca kaldığı yerden sürecek</span>}
+              </td>
+              <td className={td}>{c.kind === "ANNOUNCEMENT" ? "Lansman" : "Bülten"}</td>
+              <td className={td}>
+                <Badge tone={CAMPAIGN_STATUS[c.status].tone}>{CAMPAIGN_STATUS[c.status].label}</Badge>
+              </td>
+              <td className={`${td} tabular-nums`}>
+                {fmtInt(c.sentCount)}
+                {c.targetCount > 0 && <span className="text-muted-foreground"> / {fmtInt(c.targetCount)}</span>}
+                {c.failedCount > 0 && <span className="block text-[11px] text-muted-foreground">{fmtInt(c.failedCount)} başarısız</span>}
+              </td>
+              <td className={`${td} whitespace-nowrap text-muted-foreground`}>
+                {c.createdBy?.name ?? c.createdBy?.email ?? "—"}
+                <span className="block text-[11px]">{fmtDateTime(c.createdAt)}</span>
+              </td>
+              <td className={`${td} text-right`}>
+                {canSend && c.status === "DRAFT" && (
+                  <Button size="sm" variant="primary" onClick={() => void send(c)}>
+                    <Send className="h-3.5 w-3.5" aria-hidden /> Gönder
+                  </Button>
+                )}
+                {canSend && ["SENDING", "PAUSED"].includes(c.status) && (
+                  <Button size="sm" variant="ghost" onClick={() => void cancel(c)}>
+                    <XCircle className="h-3.5 w-3.5" aria-hidden /> İptal
+                  </Button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </Table>
       )}
     </Card>
   );

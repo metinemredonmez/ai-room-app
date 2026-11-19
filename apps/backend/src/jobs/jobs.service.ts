@@ -21,11 +21,12 @@ import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { WaitlistService } from '../waitlist/waitlist.service.js';
+import { WaitlistCampaignsService } from '../waitlist/waitlist-campaigns.service.js';
 import { LifecycleService } from '../lifecycle/lifecycle.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
 import { CoachService } from '../coach/coach.service.js';
 import { isManualJob, scheduleStatus } from './schedules.js';
-import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
+import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob, type WaitlistCampaignJob } from './queues.service.js';
 
 const DAY = 86_400_000;
 
@@ -55,6 +56,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private loyalty: LoyaltyService,
     private prices: PriceScheduleService,
     private waitlist: WaitlistService,
+    private waitlistCampaigns: WaitlistCampaignsService,
     private lifecycle: LifecycleService,
     private coach: CoachService,
   ) {}
@@ -70,6 +72,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       new Worker<BroadcastJob>('broadcasts', (job) => this.runBroadcast(job), { connection, concurrency: 1 }),
       // Marketing drafts: a few languages at a time keeps Claude's rate limit and the server load low.
       new Worker<MarketingJob>('marketing', (job) => this.marketing.process(job.data.draftId, job.attemptsMade + 1 >= (job.opts.attempts ?? 1)), { connection, concurrency: 3 }),
+      new Worker<WaitlistCampaignJob>('waitlist', (job) => this.runWaitlistCampaign(job), { connection, concurrency: 1 }),
     );
     for (const w of this.workers) {
       w.on('error', (e) => log.warn('worker_error', { error: e.name }));
@@ -149,6 +152,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       if (e instanceof PushRetryableError) throw e;
       log.error('push_failed', { job: job.name, error: (e as Error).name });
       throw new UnrecoverableError((e as Error).message);
+    }
+  }
+
+  private async runWaitlistCampaign(job: Job<WaitlistCampaignJob>) {
+    try {
+      return await this.waitlistCampaigns.process(job.data.campaignId);
+    } catch (e) {
+      log.warn('waitlist_campaign_job_failed', { campaignId: job.data.campaignId, error: (e as Error).name });
+      throw e;
     }
   }
 

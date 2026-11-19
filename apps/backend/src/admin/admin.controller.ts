@@ -256,6 +256,32 @@ export class AdminController {
     };
   }
 
+  @MinRole('SUPPORT')
+  @Get('designs/feedback-summary')
+  @Doc('Sonuç geri bildirimi özeti: puanlananların red oranı ve en sık nedenler', { errors: [401, 403] })
+  async designFeedbackSummary() {
+    const [byRating, reasons] = await Promise.all([
+      this.prisma.design.groupBy({ by: ['feedbackRating'], where: { feedbackAt: { not: null } }, _count: { _all: true } }),
+      this.prisma.design.groupBy({
+        by: ['feedbackReason'],
+        where: { feedbackRating: 'disliked', feedbackReason: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { feedbackReason: 'desc' } },
+        take: 10,
+      }),
+    ]);
+    const liked = byRating.find((r) => r.feedbackRating === 'liked')?._count._all ?? 0;
+    const disliked = byRating.find((r) => r.feedbackRating === 'disliked')?._count._all ?? 0;
+    const total = liked + disliked;
+    return {
+      total,
+      liked,
+      disliked,
+      redRate: total ? Math.round((disliked / total) * 1000) / 10 : null,
+      topReasons: reasons.map((r) => ({ reason: r.feedbackReason!, count: r._count._all })),
+    };
+  }
+
   @MinRole('EDITOR')
   @Patch('designs/:id')
   @Doc('Öne çıkar / kaldır (yalnız sahibinin izin verdiği tasarım)', { errors: [400, 401, 403, 404, 409] })

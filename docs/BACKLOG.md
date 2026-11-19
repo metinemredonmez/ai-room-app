@@ -36,7 +36,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
 5. İçerik
    - [x] Ana sayfa ve SSS panelden (API.md §7.46): metinler 11 dilde, SSS, bölümleri gizleme, duyuru çubuğu. Admin → İçerik → Ana sayfa ve SSS.
    - [x] Bekleme listesi + bülten (API.md §7.47): çift onay, listeden çıkma, KVKK saklama, admin ekranı, CSV. Admin → Pazarlama → Bekleme listesi.
-   - [ ] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır.
+   - [x] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır. (19 Kasım: `WaitlistCampaign` + `WaitlistCampaignSend`; §7.47 kampanyaları, admin → Bekleme listesi.)
    - [x] Yaşam döngüsü e-postaları (API.md §7.48): ilk tasarım hatırlatması, ikinci adım, geri çağırma; izinli, abonelikten çıkışlı, sessiz saat ve günlük sınırla. Admin → Pazarlama → Yaşam döngüsü e-postaları.
    - [x] Eski görünümdeki 8 admin ekranı — API.md §7.49
 
@@ -51,9 +51,10 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
 - [x] `FAL_KEY` sunucuda (4 Kasım). Ama fal.ai hesabı **“User is locked. Reason: TOP_UP”** — bakiye yüklenene kadar
   her SAM 3 isteği 403 (sahibi yükleyecek: https://fal.ai/dashboard/billing). O zamana dek seçim 502 verir.
 - [ ] Bakiye gelince canlıda gerçek fotoğrafla dene (hazır betik: tek misafir hesap, 5 seçim + 1 tasarım):
-  - metinsiz nokta istemi doğru nesneyi veriyor mu (belgede varsayılan `prompt` “wheel” görünüyor), maske sınırları iyi mi;
-  - **yazarak seçimde Türkçe ad** (“yastık”, “koltuk”): SAM 3 İngilizce kelime bekliyor olabilir — anlamazsa hedef
-    İngilizceye çevrilmeli (bu, mevcut otomatik kilidi de etkiler).
+  - metinsiz nokta istemi doğru nesneyi veriyor mu, maske sınırları iyi mi;
+  - ~~yazarak seçimde Türkçe ad~~ çeviri **yapıldı** (19 Kasım: `ai-service/app/translate.py`, belirleyici mobilya
+    sözlüğü; bilinmeyen kelimeye dokunulmaz; koddaki “wheel” izi yok, not belgedeki eski örnekti). Canlı doğrulama
+    yine fal.ai bakiyesine bağlı.
 - [ ] Mobil dokun-seç arayüzü (sen): aynı uç ve `points` alanı; katalogda `needs.points`.
 - Mobil için hazır kimlikler (4 Kasım; gizli değil): Expo projectId `0e6e7543-8b53-419b-b3ea-9b1fb83ae929` (slug `casalume`);
   Google OAuth iOS `…rolsejjn66v5dplhbtburkfkkf0mkien`, Android `…h88dnd5rfe85hapdftsc0c0p5iupleqj`, Web
@@ -190,7 +191,7 @@ Sıra:
 - Tahmini maliyet: ASO 11 dil ≈ 0,5–1 $; blog yazısı dil başına ≈ 0,2–0,5 $; sosyal gönderi ≈ 0,05 $.
 - [ ] Sosyal medya: kullanıcı tasarımlarını tanıtımda kullanmak için açık onay türü (`showcase`) + admin seçimi.
 - [ ] SEO: Search Console + GA4 verisi (fal-app `seo` deseni) — Google hizmet hesabı gerekir.
-- [ ] Blog: onaylanınca web önbelleğini anında yenileme (şimdi birkaç dakika); yazıya iç bağlantı olarak stil sayfaları.
+- [x] Blog: onaylanınca web önbelleğini anında yenileme (19 Kasım: backend `WebCacheInvalidator` → web `/api/revalidate`, ortak `WEB_REVALIDATE_SECRET`). Yazıya iç bağlantı olarak stil sayfaları hâlâ açık.
 - [ ] Instagram'a panelden paylaşım (Meta onayı) — şimdilik elle.
 
 ## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
@@ -224,7 +225,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   saniyede bir e-posta. E-posta şablonları eski “AI Room” markasından Casalume’a çevrildi.
 - [ ] Toplu e-postayı büyük listelerde Brevo gibi bir sağlayıcıya taşımak (hazal paylaşımlı; itibar riski) — liste büyüyünce.
 - [x] Yaşam döngüsü e-postaları ve geri çağırma (fal-app) — API.md §7.48.
-- [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
+- [x] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi). (19 Kasım: `POST /designs/:id/feedback`, web sonuç ekranında 👍/👎, admin Tasarımlar'da red oranı + en sık nedenler.)
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
 - [x] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi) (fal-app, maeyja) — API.md §7.47.

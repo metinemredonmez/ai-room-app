@@ -29,6 +29,7 @@ from .region import (
     masked_mean_abs_diff, region_target, selection_points, usable,
 )
 from .resilience import ChainResult, ProviderChain
+from .translate import english_target
 from .voice import Voice, VoiceUnavailable
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, BlogRequest, BlogResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
@@ -393,7 +394,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         started = time.perf_counter()
         image = decode_image(req.image_b64, settings.max_image_bytes)
         points = [(p.x, p.y) for p in req.points] if req.points else None
-        sel = await select(image, clean(req.target, 60) or "selection", points, min(30.0, settings.provider_timeout_s), started)
+        sel = await select(image, english_target(clean(req.target, 60)) or "selection", points, min(30.0, settings.provider_timeout_s), started)
         png = await asyncio.to_thread(mask_png, sel.mask)
         return SegmentResponse(mask_b64=to_b64(png), coverage=round(sel.coverage, 4), method=sel.method,  # type: ignore[arg-type]
                                usage=segment_usage(sel, started))

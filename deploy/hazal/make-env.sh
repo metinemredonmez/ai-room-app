@@ -21,7 +21,7 @@ for f in "$BACKEND_ENV" "$AI_ENV" "$ADMIN_ENV" "$WEB_ENV" "$REDIS_CONF"; do
 done
 
 rand() { openssl rand -base64 48 | tr -d '\n/+=' | cut -c1-48; }
-DB_PASS=$(rand); REDIS_PASS=$(rand); JWT=$(rand); IMG=$(rand); PEPPER=$(rand); AI_TOKEN=$(rand)
+DB_PASS=$(rand); REDIS_PASS=$(rand); JWT=$(rand); IMG=$(rand); PEPPER=$(rand); AI_TOKEN=$(rand); REV=$(rand)
 SMTP_PASS=$(awk '$1 == "no-reply@casalume.app" { print $2 }' "$MAILBOXES")
 [ -n "$SMTP_PASS" ] || { echo "no-reply@casalume.app parolası $MAILBOXES içinde yok" >&2; exit 1; }
 
@@ -56,6 +56,7 @@ NODE_ENV=production
 PORT=4300
 PUBLIC_BASE_URL=https://api.casalume.app
 WEB_APP_URL=https://casalume.app
+WEB_REVALIDATE_SECRET=$REV
 ADMIN_APP_URL=https://admin.casalume.app
 CORS_ORIGINS=https://casalume.app,https://www.casalume.app,https://admin.casalume.app
 # nginx in front, one hop (NET-03)
@@ -108,6 +109,8 @@ cat > "$WEB_ENV" <<EOF
 API_BASE_URL=http://127.0.0.1:4300/v1
 NEXT_PUBLIC_APP_URL=https://casalume.app
 IMAGE_ORIGINS=https://api.casalume.app
+# Blog/SEO yayınında web önbelleğinin anında yenilenmesi (backend ile ortak).
+WEB_REVALIDATE_SECRET=$REV
 EOF
 
 chown "$OWNER:$OWNER" "$BACKEND_ENV" "$AI_ENV" "$ADMIN_ENV" "$WEB_ENV" "$REDIS_CONF"

@@ -19,6 +19,10 @@ export interface MarketingJob {
   draftId: string;
 }
 
+export interface WaitlistCampaignJob {
+  campaignId: string;
+}
+
 /** BullMQ queues on the existing Redis (palemi jobs/outbox pattern, ported to Node). */
 @Injectable()
 export class QueuesService implements OnModuleDestroy {
@@ -31,6 +35,8 @@ export class QueuesService implements OnModuleDestroy {
   readonly broadcasts: Queue<BroadcastJob>;
   /** Pazarlama: one job per AI draft (API.md §7.18). */
   readonly marketing: Queue<MarketingJob>;
+  /** Bekleme listesi kampanyaları: one job per campaign (API.md §7.47). */
+  readonly waitlist: Queue<WaitlistCampaignJob>;
 
   constructor(@Inject(CONFIG) cfg: Config) {
     this.connection = new Redis(cfg.REDIS_URL, { maxRetriesPerRequest: null });
@@ -59,6 +65,15 @@ export class QueuesService implements OnModuleDestroy {
       },
     });
     this.broadcasts = new Queue<BroadcastJob>('broadcasts', {
+      connection: this.connection,
+      defaultJobOptions: {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 30_000 },
+        removeOnComplete: { count: 500 },
+        removeOnFail: { count: 500 },
+      },
+    });
+    this.waitlist = new Queue<WaitlistCampaignJob>('waitlist', {
       connection: this.connection,
       defaultJobOptions: {
         attempts: 5,

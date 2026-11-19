@@ -421,7 +421,14 @@
     "shareTitle": "İlham galerisinde paylaş",
     "shareText": "Açarsan Casalume ekibi bu tasarımın sonuç görselini uygulamadaki İlham galerisinde gösterebilir. Önceki fotoğrafın ve adın görünmez. İstediğin zaman kapatabilirsin; kapatınca galeriden hemen kalkar.",
     "shareLabel": "Galeride paylaşılabilir",
-    "shareLive": "Bu tasarım şu an İlham galerisinde."
+    "shareLive": "Bu tasarım şu an İlham galerisinde.",
+    "feedbackAsk": "Sonuç nasıldı?",
+    "feedbackThanks": "Geri bildirimin için teşekkürler.",
+    "feedbackLiked": "Beğendim",
+    "feedbackDisliked": "Bana uymadı",
+    "feedbackWhy": "Neden uymadı? (isteğe bağlı)",
+    "feedbackSend": "Gönder",
+    "feedbackChange": "Geri bildirimini değiştirebilirsin."
   },
   "analysis": {
     "title": "Alışveriş listesi ve bütçe",

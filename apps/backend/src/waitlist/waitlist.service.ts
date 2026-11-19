@@ -138,6 +138,12 @@ export class WaitlistService implements OnModuleInit, OnModuleDestroy {
     return { i: id, t: leaveSignature(id, this.key) };
   }
 
+  /** Signed one-click leave link for campaign mails (RFC 8058), in the recipient's language. */
+  leaveUrl(id: string, locale: string) {
+    const { i, t } = this.leaveParams(id);
+    return `${webPath(this.cfg.WEB_APP_URL, locale, '/bekleme-listesi/cik')}?i=${i}&t=${t}`;
+  }
+
   /** Signed leave link (web page or RFC 8058 one-click). A valid link always answers done, even for a purged entry. */
   async leave(id: string, signature: string) {
     if (typeof id !== 'string' || typeof signature !== 'string' || !verifyLeaveSignature(id, signature, this.key)) throw invalidLink();

@@ -101,7 +101,7 @@ function service(opts: { budget?: 'normal' | 'exceeded'; ai?: () => Promise<unkn
     precheck: (c: { kind: string }) => (opts.commercial ? { signals: ['indirim'], blocked: c.kind === 'SERVICE' } : { signals: [], blocked: false }),
     create: async (input: unknown) => { created.push(input); return { id: 'b1' }; },
   };
-  const svc = new MarketingService(prisma as never, queues as never, ai as never, usage as never, catalog as never, settings as never, broadcasts as never, {} as never, {} as never, blog as never);
+  const svc = new MarketingService(prisma as never, queues as never, ai as never, usage as never, catalog as never, settings as never, broadcasts as never, {} as never, {} as never, blog as never, { purge: () => undefined } as never);
   return { svc, rows, queued, recorded, asked, created, published };
 }
 

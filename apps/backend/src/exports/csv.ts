@@ -6,7 +6,11 @@ const FORMULA = /^[=+\-@\t\r]/;
 
 export function csvCell(v: unknown): string {
   if (v === null || v === undefined) return '';
-  let s = v instanceof Date ? v.toISOString() : typeof v === 'object' ? JSON.stringify(v) : String(v);
+  let s: string;
+  if (v instanceof Date) s = v.toISOString();
+  else if (typeof v === 'object') s = JSON.stringify(v) ?? '';
+  else if (typeof v === 'string') s = v;
+  else s = String(v as number | boolean | bigint);
   // Numbers are written as numbers; anything else that looks like a formula is neutralised.
   if (typeof v !== 'number' && FORMULA.test(s)) s = `'${s}`;
   return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;

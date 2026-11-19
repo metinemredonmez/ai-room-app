@@ -6,7 +6,7 @@ import { SupportController } from './support/support.controller.js';
 // API.md §7.28: feature flags from the admin. Every flag starts on; a switched-off feature is refused on the server
 // (403 `feature_disabled`, 404 for public blog pages) whatever an old client still shows; saving is versioned (BUS-02).
 
-function service(stored: unknown = undefined) {
+function service(stored?: unknown) {
   let row: { value: unknown; updatedAt: Date; updatedBy: string } | null = stored === undefined ? null : { value: stored, updatedAt: new Date('2026-11-05T08:00:00Z'), updatedBy: 'a0' };
   const tx = {
     $queryRaw: async () => [{ locked: 1 }],

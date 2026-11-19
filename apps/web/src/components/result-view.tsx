@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Heart, Images, LoaderCircle, MessageCircle, Receipt, RefreshCw, TriangleAlert } from "lucide-react";
+import { Download, Heart, Images, LoaderCircle, MessageCircle, Receipt, RefreshCw, ThumbsDown, ThumbsUp, TriangleAlert } from "lucide-react";
 import { api, downloadUrl } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { setChatPrefill, setStudioPrefill } from "@/lib/prefill";
@@ -25,6 +25,8 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
   const [error, setError] = useState<unknown>(null);
   const [favBusy, setFavBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
+  const [feedbackEdit, setFeedbackEdit] = useState<string | null>(null);
 
   const result = design.results[Math.min(selected, design.results.length - 1)];
   const analysis = result ? analyses[result.id] : undefined;
@@ -84,6 +86,20 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
     if (!result) return;
     setChatPrefill({ image: result });
     router.push(href("/sohbet"));
+  }
+
+  async function sendFeedback(rating: "liked" | "disliked", reason?: string) {
+    setFeedbackBusy(true);
+    setError(null);
+    try {
+      const updated = await api.post<Design>(`/designs/${design.id}/feedback`, reason ? { rating, reason } : { rating });
+      onChange?.(updated);
+      setFeedbackEdit(null);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setFeedbackBusy(false);
+    }
   }
 
   if (design.status === "FAILED" || !result) {
@@ -168,6 +184,68 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {own && design.status === "SUCCEEDED" && (
+        <div className="rounded-3xl border border-border bg-surface p-5">
+          {design.feedback && !feedbackEdit ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm">
+              {design.feedback.rating === "liked" ? (
+                <ThumbsUp className="h-4 w-4 text-primary" aria-hidden />
+              ) : (
+                <ThumbsDown className="h-4 w-4 text-danger" aria-hidden />
+              )}
+              <span>{t.result.feedbackThanks}</span>
+              <button type="button" className="text-primary hover:underline" onClick={() => setFeedbackEdit(design.feedback?.rating ?? null)}>
+                {t.result.feedbackChange}
+              </button>
+            </p>
+          ) : (
+            <>
+              <p className="font-medium">{t.result.feedbackAsk}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={feedbackBusy}
+                  onClick={() => void sendFeedback("liked")}
+                  className={`${btn.base} ${btn.ghost} ${btn.sm}`}
+                  aria-pressed={design.feedback?.rating === "liked"}
+                >
+                  <ThumbsUp className="h-4 w-4" aria-hidden /> {t.result.feedbackLiked}
+                </button>
+                <button
+                  type="button"
+                  disabled={feedbackBusy}
+                  onClick={() => setFeedbackEdit(feedbackEdit === "disliked" ? null : "disliked")}
+                  className={`${btn.base} ${btn.ghost} ${btn.sm}`}
+                  aria-pressed={feedbackEdit === "disliked"}
+                >
+                  <ThumbsDown className="h-4 w-4" aria-hidden /> {t.result.feedbackDisliked}
+                </button>
+              </div>
+              {feedbackEdit === "disliked" && (
+                <form
+                  className="mt-3 flex flex-col gap-2 sm:flex-row"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const data = new FormData(e.currentTarget);
+                    void sendFeedback("disliked", String(data.get("reason") ?? "").trim() || undefined);
+                  }}
+                >
+                  <input
+                    name="reason"
+                    maxLength={300}
+                    placeholder={t.result.feedbackWhy}
+                    className="h-9 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <button type="submit" disabled={feedbackBusy} className={`${btn.base} ${btn.primary} ${btn.sm}`}>
+                    {t.result.feedbackSend}
+                  </button>
+                </form>
+              )}
+            </>
+          )}
         </div>
       )}
 

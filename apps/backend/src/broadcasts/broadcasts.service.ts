@@ -336,14 +336,15 @@ export class BroadcastsService {
     return (userId: string) => (!consented.has(userId) ? 'consent_missing' : (thisWeek.get(userId) ?? 0) >= cap ? 'weekly_cap' : null);
   }
 
-  /** E-mails sent today (Istanbul) by broadcasts and lifecycle mails (§7.48): one shared `emailDailyCap`. */
+  /** E-mails sent today (Istanbul) by broadcasts, lifecycle mails (§7.48) and waitlist campaigns (§7.47): one shared `emailDailyCap`. */
   async emailSentToday() {
     const since = new Date(`${todayInIstanbul()}T00:00:00+03:00`);
-    const [broadcasts, lifecycle] = await Promise.all([
+    const [broadcasts, lifecycle, campaigns] = await Promise.all([
       this.prisma.broadcastDelivery.count({ where: { status: 'SENT', broadcast: { channel: 'EMAIL' }, sentAt: { gte: since } } }),
       this.prisma.lifecycleSend.count({ where: { status: 'SENT', createdAt: { gte: since } } }),
+      this.prisma.waitlistCampaignSend.count({ where: { createdAt: { gte: since } } }),
     ]);
-    return broadcasts + lifecycle;
+    return broadcasts + lifecycle + campaigns;
   }
 
   /**

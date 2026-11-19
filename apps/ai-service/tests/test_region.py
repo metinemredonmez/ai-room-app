@@ -66,7 +66,7 @@ def req(tool: str, **kw) -> GenerateRequest:
 def test_region_target_only_for_local_edits():
     assert region_target(req("paint")) == "wall"
     assert region_target(req("flooring")) == "floor"
-    assert region_target(req("replace", target="koltuk")) == "koltuk"
+    assert region_target(req("replace", target="koltuk")) == "sofa"  # Turkish name → English for SAM 3
     assert region_target(req("replace")) == "sofa"
     assert region_target(req("declutter", target="lamp")) == "lamp"
     assert region_target(req("declutter", remove_all=True, target="lamp")) is None
@@ -246,7 +246,7 @@ TAP = [{"x": 0.25, "y": 0.6}]
 
 def test_tap_selection_targets_and_area():
     assert region_target(req("replace", points=TAP)) == "selection"
-    assert region_target(req("replace", points=TAP, target="yastık")) == "yastık"
+    assert region_target(req("replace", points=TAP, target="yastık")) == "pillow"  # translated for SAM 3
     assert region_target(req("paint", points=TAP)) == "selection"
     assert selection_points(req("declutter", points=TAP)) == [(0.25, 0.6)]
     assert selection_points(req("replace")) is None

@@ -49,6 +49,7 @@ export type ListKey = keyof typeof LIST_LIMITS;
 export const FAQ_LIMITS = { items: 20, q: 160, a: 1000 } as const;
 export const ANNOUNCEMENT_MAX = 140;
 
+// oxlint-disable-next-line no-control-regex -- matching control chars is the point (input sanitation).
 const CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/;
 const NEWLINE = /[\n\t]/;
 const line = (max: number) =>

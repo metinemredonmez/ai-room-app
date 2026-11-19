@@ -29,6 +29,15 @@ export const PointsSchema = z.array(z.object({ x: z.number().min(0).max(1), y: z
 export const SelectionSchema = z.object({ points: PointsSchema.optional(), target: text(120).optional() }).strict();
 export type Selection = z.infer<typeof SelectionSchema>;
 
+/** Owner's verdict on a finished result (palemi): thumbs and, for a dislike, an optional why. */
+export const FeedbackSchema = z
+  .object({
+    rating: z.enum(['liked', 'disliked']),
+    reason: z.string().trim().max(300).optional(),
+  })
+  .strict();
+export type FeedbackInput = z.infer<typeof FeedbackSchema>;
+
 export const CreateDesignSchema = z
   .object({
     tool: z.enum(TOOL_IDS),
@@ -122,6 +131,9 @@ export class DesignsService {
       queuedAt: d.queuedAt?.toISOString() ?? null,
       startedAt: d.startedAt?.toISOString() ?? null,
       createdAt: d.createdAt.toISOString(),
+      feedback: d.feedbackAt
+        ? { rating: d.feedbackRating ?? null, reason: d.feedbackReason ?? null, at: d.feedbackAt.toISOString() }
+        : null,
     };
   }
 
@@ -467,6 +479,16 @@ export class DesignsService {
     if (projectId) await this.projects.usable(d.orgId, projectId);
     const updated = await this.prisma.design.update({ where: { id }, data: { projectId }, include: this.include });
     return this.toDto(updated, locale, userId);
+  }
+
+  /** Owner's thumbs on their finished design; overwrites a previous verdict. */
+  async feedback(userId: string, id: string, input: FeedbackInput) {
+    const d = await this.getOwned(userId, id);
+    if (d.status !== 'SUCCEEDED') throw new AppError(409, 'conflict', 'Yalnız bitmiş bir tasarıma geri bildirim verilebilir.');
+    return this.prisma.design.update({
+      where: { id: d.id },
+      data: { feedbackRating: input.rating, feedbackReason: input.reason?.slice(0, 300) ?? null, feedbackAt: new Date() },
+    });
   }
 
   async getOwned(userId: string, id: string) {

@@ -59,6 +59,15 @@ export type Design = {
 
 export type AdminDesign = Design & { userId: string; userEmail: string | null };
 
+/** Sonuç geri bildirimi özeti (API.md §7.24.1): puanlananların red oranı ve en sık nedenler. */
+export type DesignFeedbackSummary = {
+  total: number;
+  liked: number;
+  disliked: number;
+  redRate: number | null;
+  topReasons: Array<{ reason: string; count: number }>;
+};
+
 export type LedgerEntry = { id: string; delta: number; reason: string; refId: string | null; createdAt: string };
 
 export type AdminUserSubscription = {
@@ -806,6 +815,24 @@ export type WaitlistOverview = {
   byLocale: Record<string, number>;
   byPlatform: { ios: number; android: number; any: number };
   daily: Array<{ day: string; signups: number; confirmed: number }>;
+};
+
+// Listeye e-posta kampanyaları (API.md §7.47)
+export type WaitlistCampaign = {
+  id: string;
+  subject: string;
+  body: string;
+  kind: "ANNOUNCEMENT" | "NEWSLETTER";
+  commercial: boolean;
+  status: "DRAFT" | "SENDING" | "PAUSED" | "SENT" | "FAILED" | "CANCELLED";
+  targetCount: number;
+  sentCount: number;
+  failedCount: number;
+  error: string | null;
+  createdBy: { name: string | null; email: string | null } | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
 };
 
 // Yaşam döngüsü e-postaları (API.md §7.48)

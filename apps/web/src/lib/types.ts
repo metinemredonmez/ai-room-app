@@ -55,6 +55,8 @@ export type Design = {
   projectId?: string | null;
   mine?: boolean;
   createdAt: string;
+  /** Owner's verdict (API.md §7.24.1): thumbs + optional reason; set via POST /designs/:id/feedback. */
+  feedback?: { rating: "liked" | "disliked" | null; reason: string | null; at: string } | null;
 };
 
 /** API.md §7.23 step 4: a firm's shared folder. */

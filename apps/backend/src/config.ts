@@ -23,6 +23,8 @@ const Env = z.object({
   WEB_APP_URL: z.url().default('http://localhost:3000'),
   // Admin panel origin, used in security notices e-mailed to admins.
   ADMIN_APP_URL: z.url().default('http://localhost:3001'),
+  // Shared with the web app (its /api/revalidate): on-demand purge of the web's tagged caches on publish.
+  WEB_REVALIDATE_SECRET: z.string().min(32).optional(),
   MAIL_TRANSPORT: z.enum(['outbox', 'smtp']).default('outbox'),
   SMTP_URL: z.string().optional(),
   MAIL_FROM: z.string().default('Casalume <no-reply@casalume.local>'),

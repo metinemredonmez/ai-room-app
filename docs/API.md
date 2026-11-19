@@ -269,6 +269,7 @@ Marka: **Casalume** — "Odanı saniyeler içinde yeniden tasarla".
 | GET | `/me/consents` | — | `{ items: { kind, version, granted, createdAt }[], current: { terms, privacy, ai_processing, marketing } }` |
 | POST | `/me/consents` | `{ kind: 'terms'|'privacy'|'ai_processing'|'marketing', version: string, granted: boolean }` | 201 `{ kind, version, granted, createdAt }`. Kayıtlar eklenerek tutulur, silinmez. |
 | POST | `/designs/:id/report` | `{ reason: 'inappropriate'|'offensive'|'copyright'|'privacy'|'other', note?: string (≤500) }` | 201 `{ id, status: 'OPEN' }`. Kendi tasarımı ya da öne çıkarılmış bir tasarım bildirilebilir; Google Play üretken AI politikası gereği. |
+| POST | `/designs/:id/feedback` | `{ rating: 'liked'|'disliked', reason?: string (≤300) }` | Güncel `Design` (`feedback` alanı dolu). Yalnız kendi bitmiş tasarımına; son değer geçerli olur (palemi). Admin'de red oranı bunu okur: `GET /admin/designs/feedback-summary` → `{ total, liked, disliked, redRate, topReasons }`. |
 | GET | `/admin/reports` | `?status=OPEN|RESOLVED|DISMISSED&cursor&limit` | `{ items: { id, designId, reason, note, status, reporterId, createdAt, resolvedAt, resolution, design: Design }[], nextCursor }` |
 | PATCH | `/admin/reports/:id` | `{ status: 'RESOLVED'|'DISMISSED', resolution: string (3..500), unfeature?: boolean, deleteDesign?: boolean }` | Güncel kayıt (denetlenir) |
 | GET | `/admin/jobs` | `?limit=50` | Zamanlı işlerin son çalışmaları: `{ items: { id, name, status: 'ok'|'error', startedAt, finishedAt, details }[], queue: { waiting, active, failed, delayed } }` |
@@ -609,6 +610,9 @@ Tam oda araçları (`redesign` vb.) olduğu gibi kalır. Seçim yalnız `replace
 katalogda bu araçların `needs.points` alanı `true` döner.
 - Nokta: `{ x, y }`, fotoğrafın sol üst köşesinden 0..1 oranında. **Her nokta bir nesnedir**, en çok 8 nokta.
   Aynı türün hepsini seçmek için `target` yazılır (ör. `yastık`): SAM 3 metin istemiyle o türün hepsini bulur.
+- SAM 3'ün metin istemi İngilizce ağırlıklıdır; AI servisi kullanıcının yazdığı nesne adını çağrıdan önce çevirir
+  (`app/translate.py`: belirleyici mobilya sözlüğü; bilinmeyen kelimeye dokunulmaz). Görsel modelin istemindeki ad
+  çevrilemez, kullanıcının dilinde kalır.
 - AI servisinde her nokta SAM 3'e ayrı `object_id` ile ön plan noktası (`label: 1`) olarak, piksel koordinatıyla gider;
   maskelerin birleşimi kullanılır. `mock` modunda dokunulan yerin çevresine çizilen etiketli elips (`heuristic`) kullanılır.
 - Otomatik kilitten farkı: seçim kullanıcının açık isteğidir, **sessizce düşmez**. Maske üretimden **önce** çıkarılır.
@@ -2018,8 +2022,12 @@ bırakır (fal-app, maeyja, Yedi Oda #67). Hesaptan bağımsızdır (`WaitlistEn
   - ADMIN adresleri görür, formu açıp kapatır (gerekçe, sürüm; denetim `waitlist.settings`) ve adresi kalıcı siler
     (gerekçe; denetim `waitlist.delete`, adres maskeli).
   - Onaylı adreslerin CSV'si yalnız SUPER_ADMIN içindir (Dışa aktarma → Bekleme listesi).
-- **Listeye e-posta göndermek** (lansman duyurusu, bülten) ayrı bir adımdır. Tasarım kararı: Toplu Gönderim'in günlük
-  sınırını paylaşacak.
+- **Listeye e-posta göndermek** (lansman duyurusu, bülten) yapıldı (§7.47 kampanyaları): Toplu Gönderim'in günlük
+  e-posta sınırını (`emailDailyCap`) ve sessiz saatini paylaşır; saniyede bir posta gider. Her postada alıcının dilinde
+  sayfa bağlantısı ve RFC 8058 tek tık çıkış başlığı vardır. Aynı kampanya aynı adrese iki kez gitmez
+  (`WaitlistCampaignSend` tekil anahtarı); gönderim sırasında çıkan adres atlanır. Sınır dolarsa ya da sessiz saat
+  girerse kampanya `PAUSED` olur ve izin verilen ilk anda kaldığı yerden sürer. `commercialSignals` tasarımda işaretlenir
+  (ticari metinlerde bilgi için; listedekiler pazarlama metnini onaylamıştır).
 
 | Yöntem | Yol | Rol | Not |
 |---|---|---|---|
@@ -2031,6 +2039,11 @@ bırakır (fal-app, maeyja, Yedi Oda #67). Hesaptan bağımsızdır (`WaitlistEn
 | GET | `/admin/waitlist/overview` | SUPPORT | sayılar, dağılımlar, son 30 gün, ayar |
 | PATCH | `/admin/waitlist/settings` | ADMIN | `{ settings: { enabled }, reason, version }` |
 | POST | `/admin/waitlist/:id/delete` | ADMIN | `{ reason }` |
+| GET | `/admin/waitlist/campaigns` | EDITOR | son 50 kampanya (durum, sayaçlar, oluşturan) |
+| GET | `/admin/waitlist/campaigns/estimate` | EDITOR | `{ confirmed }` ulaşılabilir adres sayısı |
+| POST | `/admin/waitlist/campaigns` | EDITOR | `{ subject, body, kind: ANNOUNCEMENT\|NEWSLETTER }` → 201 taslak |
+| POST | `/admin/waitlist/campaigns/:id/send` | ADMIN | gönderimi başlat (sessiz saatte kendiliğinden bekler) |
+| POST | `/admin/waitlist/campaigns/:id/cancel` | ADMIN | gönderimi durdur |
 | GET | `/admin/exports/waitlist?from=&to=` | SUPER_ADMIN | onaylı adresler (CSV) |
 
 ### 7.48 Yaşam döngüsü e-postaları — backend + admin

@@ -10,6 +10,7 @@ import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js'
 import { Doc } from '../common/openapi.js';
 import { SLUG_RE } from '../marketing/marketing.rules.js';
 import { BlogService } from './blog.service.js';
+import { WebCacheInvalidator } from '../common/web-cache.js';
 import { FeaturesService } from '../features/features.service.js';
 
 const localeOrTr = (l: unknown) => (isLocale(l) ? l : 'tr');
@@ -60,7 +61,7 @@ export class BlogController {
 @Controller('v1/admin/blog')
 @UseGuards(AdminGuard)
 export class AdminBlogController {
-  constructor(private blog: BlogService, private audit: AuditService) {}
+  constructor(private blog: BlogService, private audit: AuditService, private cache: WebCacheInvalidator) {}
 
   @Get()
   @MinRole('EDITOR')
@@ -75,6 +76,7 @@ export class AdminBlogController {
   @Doc('Yazıyı yayından kaldır', { errors: [401, 403, 404] })
   async unpublish(@Auth() auth: AuthContext, @Param('id') id: string, @Req() req: AppRequest) {
     const out = await this.blog.setStatus(parse(z.uuid(), id), 'DRAFT');
+    this.cache.purge('blog');
     await this.audit.record(auth.userId, 'blog.unpublish', 'blog', out.id, { locale: out.locale, slug: out.slug }, req.clientIp);
     return out;
   }
@@ -85,6 +87,7 @@ export class AdminBlogController {
   @Doc('Yazıyı yeniden yayınla', { errors: [401, 403, 404] })
   async publish(@Auth() auth: AuthContext, @Param('id') id: string, @Req() req: AppRequest) {
     const out = await this.blog.setStatus(parse(z.uuid(), id), 'PUBLISHED');
+    this.cache.purge('blog');
     await this.audit.record(auth.userId, 'blog.publish', 'blog', out.id, { locale: out.locale, slug: out.slug }, req.clientIp);
     return out;
   }

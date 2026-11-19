@@ -18,7 +18,7 @@ import { ConsentsService } from './kvkk/consents.service.js';
 import { CONSENT_KINDS } from './kvkk/legal.js';
 import { UsageService } from './usage/usage.service.js';
 import { log } from './common/log.js';
-import { CreateDesignSchema, DesignsService, SelectionSchema, cursorArgs } from './designs/designs.service.js';
+import { CreateDesignSchema, DesignsService, FeedbackSchema, SelectionSchema, cursorArgs } from './designs/designs.service.js';
 import { ALLOWED_MIME, ImagesService, isUuid } from './images/images.service.js';
 import { SAMPLE_IDS, loadSample } from './images/samples.js';
 import { UsersService } from './users/users.service.js';
@@ -384,6 +384,16 @@ export class UserController {
     });
     log.info('content_reported', { designId: id, reportId: report.id, reason: input.reason });
     return { id: report.id, status: report.status };
+  }
+
+  @Post('designs/:id/feedback')
+  @Doc('Sonuca puan ver (beğendim / bana uymadı)', { body: FeedbackSchema, status: 200, response: 'Design', description: 'Yalnız kendi bitmiş tasarımına; son değer geçerli olur. Neden serbest metindir (en çok 300).', errors: [400, 401, 404, 409] })
+  async designFeedback(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(FeedbackSchema, body);
+    await this.limiter.hit(LIMITS.feedback, auth.userId);
+    const updated = await this.designs.feedback(auth.userId, id, input);
+    log.info('design_feedback', { designId: updated.id, rating: input.rating, requestId: req.id });
+    return this.designs.toDto(await this.designs.getOwned(auth.userId, updated.id), localeOf(req));
   }
 
   @Get('me/consents')

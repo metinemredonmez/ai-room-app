@@ -78,6 +78,8 @@ import { PromptTemplatesService } from './prompts/prompts.service.js';
 import { VersionGate } from './common/app-version.js';
 import { ErrorFilter } from './common/errors.js';
 import { PrismaService, RateLimiter, RedisService } from './common/infra.js';
+import { WebCacheInvalidator } from './common/web-cache.js';
+import { WaitlistCampaignsService } from './waitlist/waitlist-campaigns.service.js';
 import { CONFIG, loadConfig } from './config.js';
 import { DesignsService } from './designs/designs.service.js';
 import { ImagesService } from './images/images.service.js';
@@ -116,6 +118,8 @@ import { UsersService } from './users/users.service.js';
     BroadcastsService,
     MarketingService,
     BlogService,
+    WebCacheInvalidator,
+    WaitlistCampaignsService,
     SupportService,
     JobsService,
     RateLimiter,

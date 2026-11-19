@@ -124,6 +124,7 @@ export const LIMITS = {
   coachSpeak: { name: 'coach-speak', max: 60, windowSec: 3600 },
   coachPreview: { name: 'coach-preview', max: 30, windowSec: 3600 },
   reports: { name: 'reports', max: 20, windowSec: 3600 },
+  feedback: { name: 'feedback', max: 30, windowSec: 3600 },
   export: { name: 'export', max: 3, windowSec: 3600 },
   webhooks: { name: 'webhooks-ip', max: 600, windowSec: 60 },
   billingSync: { name: 'billing-sync', max: 20, windowSec: 600 },

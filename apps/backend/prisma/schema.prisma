@@ -153,6 +153,7 @@ model User {
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
+  waitlistCampaigns   WaitlistCampaign[]
 
   @@index([createdAt])
 }
@@ -233,6 +234,10 @@ model Design {
   /// In a firm project (step 4): the whole team sees it. The composite key (projectId, orgId) means a design can
   /// only sit in a project of its own firm, enforced by the database too (AZ-02).
   projectId      String?         @db.Uuid
+  /// Owner's verdict on the result (API.md §7.24.1 feedback): thumbs + an optional reason; feeds the admin red rate.
+  feedbackRating String?         @db.VarChar(8) // liked | disliked
+  feedbackReason String?         @db.VarChar(300)
+  feedbackAt     DateTime?
   createdAt      DateTime        @default(now())
   finishedAt     DateTime?
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1052,6 +1057,41 @@ enum WaitlistStatus {
 
 /// Waiting list and newsletter (API.md §7.47): web visitors who want an e-mail when the mobile apps launch and when
 /// there is news. Double opt-in; consent text version kept; not tied to a user account.
+model WaitlistCampaign {
+  id          String    @id @default(uuid()) @db.Uuid
+  subject     String    @db.VarChar(160)
+  body        String    @db.Text // plain-text paragraphs; escaped on render
+  kind        String    @db.VarChar(12) // ANNOUNCEMENT | NEWSLETTER
+  commercial  Boolean   @default(false) // commercialSignals at compose time (informational)
+  status      String    @default("DRAFT") @db.VarChar(12) // DRAFT | SENDING | PAUSED | SENT | FAILED | CANCELLED
+  targetCount Int       @default(0)
+  sentCount   Int       @default(0)
+  failedCount Int       @default(0)
+  error       String?
+  createdById String    @db.Uuid
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  sends WaitlistCampaignSend[]
+
+  @@index([status, createdAt])
+}
+
+/// One row per campaign mail actually sent (API.md §7.47): the shared emailDailyCap counts these, a repeat
+/// run never mails the same entry twice, and unsubscribe-mid-send is a plain status check.
+model WaitlistCampaignSend {
+  id         String           @id @default(uuid()) @db.Uuid
+  campaignId String           @db.Uuid
+  campaign   WaitlistCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  entryId    String           @db.Uuid
+  createdAt  DateTime         @default(now())
+
+  @@unique([campaignId, entryId])
+  @@index([createdAt])
+}
+
 model WaitlistEntry {
   id             String         @id @default(uuid()) @db.Uuid
   email          String         @unique @db.VarChar(254) // lower-cased
