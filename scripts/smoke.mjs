@@ -1425,10 +1425,13 @@ if (adminToken) {
   const wEmail = `welcome-${Date.now()}@example.com`;
   const first = await signUp(wEmail);
   ok(on.status === 200 && catWelcome === 2 && first.gift === 2 && first.credits === 2, 'welcome credits on the first verified sign-up (and announced in the catalog)', `gift ${first.gift}, credits ${first.credits}`);
-  const gone = await call('DELETE', '/me', { token: first.token });
-  const again = await signUp(wEmail);
-  const alias = await signUp(wEmail.replace('@', '+again@'));
-  ok(gone.status === 204 && again.gift === 0 && again.credits === 0 && alias.gift === 0, 'deleting and signing up again (or a +alias) gets no second welcome (BUS-01)', `${again.gift}/${alias.gift}`);
+// API.md §7.3: deletion schedules a 30-day window (YediOda #18). Re-signing up inside the window reactivates the
+// SAME account - credits preserved, no new gift; a +alias is a new account but the welcome identity hash still
+// blocks a second gift (BUS-01).
+const gone = await call('DELETE', '/me', { token: first.token });
+const again = await signUp(wEmail);
+const alias = await signUp(wEmail.replace('@', '+again@'));
+ok(gone.status === 204 && !again.gift && again.credits === 2 && alias.gift === 0 && alias.credits === 0, 'deletion window: re-signup reactivates (no second welcome, BUS-01)', `again ${again.gift}/${again.credits}, alias ${alias.gift}/${alias.credits}`);
   const off = await setWelcome(before, 'smoke welcome credits restore');
   ok(off.status === 200, 'welcome credits setting restored', String(before));
 }
