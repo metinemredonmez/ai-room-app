@@ -6,6 +6,7 @@
 - Casalume'un bugünkü kodu.
 
 Plan 7 Kasım'da onaylandı. Durum: **1. adım bitti** (API.md §7.54); diğerleri sırayla.
+Kaldığın yerden devam etmek için yeni bir oturuma `docs/KOC-DEVAM-PROMPTU.md` dosyasını yapıştır; fal-app incelemesi `docs/KOC-INCELEME-NOTLARI.md` dosyasında.
 
 ## Kararlar (7 Kasım, sahibi)
 
