@@ -50,6 +50,8 @@ const DesignsQuery = z.object({
   featured: z.enum(['true', 'false']).optional(),
   /** API.md §7.51: the owner allows the gallery. */
   shareable: z.enum(['true', 'false']).optional(),
+  /** API.md §7.51: the owner allows social-media / showcase use. */
+  showcase: z.enum(['true', 'false']).optional(),
 });
 const PatchUser = z
   .object({ status: z.enum(['ACTIVE', 'BANNED']).optional(), plan: z.enum(['FREE', 'PRO']).optional(), planExpiresAt: z.iso.datetime().nullable().optional() })
@@ -244,6 +246,7 @@ export class AdminController {
       ...(q.userId ? { userId: q.userId } : {}),
       ...(q.featured ? { featured: q.featured === 'true' } : {}),
       ...(q.shareable ? { shareConsentAt: q.shareable === 'true' ? { not: null } : null } : {}),
+      ...(q.showcase ? { showcaseConsentAt: q.showcase === 'true' ? { not: null } : null } : {}),
     };
     const rows = await this.prisma.design.findMany({
       where, include: { inputImage: true, results: true, user: { select: { email: true } } },
@@ -253,6 +256,32 @@ export class AdminController {
     return {
       items: await Promise.all(page.map(async (d) => ({ ...(await this.designs.toDto(d)), userId: d.userId, userEmail: d.user.email }))),
       nextCursor: rows.length > q.limit ? page[page.length - 1].id : null,
+    };
+  }
+
+  @MinRole('SUPPORT')
+  @Get('designs/feedback-summary')
+  @Doc('Sonuç geri bildirimi özeti: puanlananların red oranı ve en sık nedenler', { errors: [401, 403] })
+  async designFeedbackSummary() {
+    const [byRating, reasons] = await Promise.all([
+      this.prisma.design.groupBy({ by: ['feedbackRating'], where: { feedbackAt: { not: null } }, _count: { _all: true } }),
+      this.prisma.design.groupBy({
+        by: ['feedbackReason'],
+        where: { feedbackRating: 'disliked', feedbackReason: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { feedbackReason: 'desc' } },
+        take: 10,
+      }),
+    ]);
+    const liked = byRating.find((r) => r.feedbackRating === 'liked')?._count._all ?? 0;
+    const disliked = byRating.find((r) => r.feedbackRating === 'disliked')?._count._all ?? 0;
+    const total = liked + disliked;
+    return {
+      total,
+      liked,
+      disliked,
+      redRate: total ? Math.round((disliked / total) * 1000) / 10 : null,
+      topReasons: reasons.map((r) => ({ reason: r.feedbackReason!, count: r._count._all })),
     };
   }
 

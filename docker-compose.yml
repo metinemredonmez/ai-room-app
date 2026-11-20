@@ -29,6 +29,8 @@ services:
       IMAGE_PROVIDER: ${IMAGE_PROVIDER:-mock}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      FAL_KEY: ${FAL_KEY:-}
+      RUNWARE_API_KEY: ${RUNWARE_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       IMAGE_FALLBACKS: ${IMAGE_FALLBACKS:-}
 
@@ -49,6 +51,7 @@ services:
       DEVICE_PEPPER: ${DEVICE_PEPPER:?set DEVICE_PEPPER}
       AI_SERVICE_URL: http://ai-service:8001
       WEB_APP_URL: ${WEB_URL:-http://localhost:3000}
+      WEB_REVALIDATE_SECRET: ${WEB_REVALIDATE_SECRET:-}
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-outbox}
       SMTP_URL: ${SMTP_URL:-}
       MAIL_FROM: ${MAIL_FROM:-Casalume <no-reply@casalume.local>}
@@ -77,6 +80,7 @@ services:
     environment:
       API_BASE_URL: http://backend:4000/v1
       NEXT_PUBLIC_APP_URL: ${WEB_URL:-http://localhost:3000}
+      WEB_REVALIDATE_SECRET: ${WEB_REVALIDATE_SECRET:-}
       IMAGE_ORIGINS: ${PUBLIC_BASE_URL:-http://localhost:4000}
     ports: ["3000:3000"]
 

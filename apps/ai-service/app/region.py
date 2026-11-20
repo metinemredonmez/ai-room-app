@@ -23,6 +23,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageStat
 from .prompts import clean
 from .providers import ProviderError, http_error, transport_error
 from .schemas import GenerateRequest
+from .translate import english_target
 
 FAL_RUN = "https://fal.run"
 SEG_MIN_SCORE = 0.5
@@ -41,17 +42,18 @@ def selection_points(req: GenerateRequest) -> Taps | None:
 
 
 def region_target(req: GenerateRequest) -> str | None:
-    """The thing to segment, or None when the tool edits the whole scene."""
+    """The thing to segment, or None when the tool edits the whole scene. SAM 3's text prompt is
+    English-first, so a user-supplied name is translated before it leaves this module (§7.15)."""
     if req.points and req.tool in SELECTABLE_TOOLS:
-        return clean(req.target, 60) or "selection"
+        return english_target(clean(req.target, 60)) or "selection"
     if req.tool == "paint":
         return "wall"
     if req.tool == "flooring":
         return "floor"
     if req.tool == "replace":
-        return clean(req.target, 60) or "sofa"
+        return english_target(clean(req.target, 60)) or "sofa"
     if req.tool == "declutter" and not req.remove_all and req.target:
-        return clean(req.target, 60) or None
+        return english_target(clean(req.target, 60)) or None
     return None
 
 
@@ -204,6 +206,13 @@ def composite(original: bytes, generated: bytes, mask: Image.Image, feather: int
     out = io.BytesIO()
     Image.composite(top, base, alpha).save(out, format="JPEG", quality=92)
     return out.getvalue()
+
+
+def outside_mean_abs_diff(a: bytes, b: bytes, mask: Image.Image, side: int = 256) -> float:
+    """Mean absolute grayscale difference OUTSIDE the mask — the 'odan bozulmaz' metric (API.md §7.8.1):
+    a local edit must leave the rest of the photo pixel-identical (up to JPEG re-encoding)."""
+    outside = mask.point(lambda p: 255 - p)
+    return masked_mean_abs_diff(a, b, outside, side)
 
 
 def masked_mean_abs_diff(a: bytes, b: bytes, mask: Image.Image, side: int = 256) -> float:

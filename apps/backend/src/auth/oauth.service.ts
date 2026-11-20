@@ -96,7 +96,15 @@ export class OAuthService {
     // API.md §7.28: with sign-up switched off, Apple/Google only sign existing accounts in (no new account, no guest upgrade).
     if (decision.kind === 'create' || (decision.kind === 'attach' && decision.upgradeGuest)) this.features.assert('signup');
 
-    const target = decision.kind === 'create' ? null : await this.users.get(decision.userId);
+    let target = decision.kind === 'create' ? null : await this.users.get(decision.userId);
+    if (target && target.status === 'PENDING_DELETION') {
+      // Sign-in within the 30-day window cancels the scheduled deletion (YediOda #18). Kept inline to avoid
+      // a module cycle with AccountDeletionService; the past-deadline erase is the retention job's job.
+      target =
+        target.deletionScheduledAt && target.deletionScheduledAt.getTime() > Date.now()
+          ? await this.prisma.user.update({ where: { id: target.id }, data: { status: 'ACTIVE', deletionScheduledAt: null } })
+          : null;
+    }
     if (target && target.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
 
     // Apple: trade the one-time code for a refresh token we can revoke on deletion (App Store 5.1.1(v)).

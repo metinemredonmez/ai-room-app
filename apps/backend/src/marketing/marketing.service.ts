@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AiClient, AiError } from '../ai/ai.client.js';
 import { BlogService, type BlogDraftInput } from '../blog/blog.service.js';
+import { WebCacheInvalidator } from '../common/web-cache.js';
 import { BroadcastsService } from '../broadcasts/broadcasts.service.js';
 import { LINKS } from '../broadcasts/broadcast.rules.js';
 import { LOCALES, isLocale, type Locale } from '../catalog/catalog.data.js';
@@ -53,6 +54,7 @@ export class MarketingService {
     private mailer: MailerService,
     @Inject(CONFIG) private cfg: Config,
     private blog: BlogService,
+    private cache: WebCacheInvalidator,
   ) {}
 
   async facts(locale: Locale = 'en') {
@@ -384,6 +386,11 @@ export class MarketingService {
       // A blog article goes live on approval, with the text that was approved.
       if (draft.kind === 'blog') await this.blog.publish(tx, draft, userId);
       return this.dto((await tx.marketingDraft.findUnique({ where: { id } }))!);
+    }).then((out) => {
+      // The web caches blog/SEO content for a few minutes; a purge makes an approval immediate.
+      if (out.kind === 'blog') this.cache.purge('blog');
+      else if (out.kind === 'seo') this.cache.purge('seo');
+      return out;
     });
   }
 

@@ -294,7 +294,7 @@ describe('admin roles (AZ-01 / AZ-05)', () => {
 
   const guardFor = (role: string, declared?: 'SUPPORT' | 'ADMIN' | 'SUPER_ADMIN', amr = ['pwd', 'otp'], panelKey: string | null = null) => {
     class Probe {
-      handler() {}
+      handler(this: void) {}
     }
     if (declared) MinRole(declared)(Probe.prototype, 'handler', Object.getOwnPropertyDescriptor(Probe.prototype, 'handler')!);
     const req = { headers: { authorization: 'Bearer t' }, path: '/v1/admin/x' } as unknown as Request & { auth?: { role: string } };

@@ -50,11 +50,15 @@ export type Design = {
   featured: boolean;
   /** API.md §7.51: the owner allows it in the public inspiration gallery. */
   shareable?: boolean;
+  /** API.md §7.51: the owner allows this design in social-media / showcase posts. */
+  showcaseConsentAt?: string | null;
   /** API.md §7.23: firm workspace and shared project; `mine` false for a teammate's design (view only). */
   orgId?: string | null;
   projectId?: string | null;
   mine?: boolean;
   createdAt: string;
+  /** Owner's verdict (API.md §7.24.1): thumbs + optional reason; set via POST /designs/:id/feedback. */
+  feedback?: { rating: "liked" | "disliked" | null; reason: string | null; at: string } | null;
 };
 
 /** API.md §7.23 step 4: a firm's shared folder. */
@@ -160,6 +164,8 @@ export type CreateDesign = {
   tool: ToolId;
   inputImageId: string;
   variants?: 1 | 2 | 3 | 4;
+  /** API.md §7.24.2: PRO high quality (Nano Banana Pro leg, priced separately). */
+  quality?: "standard" | "high";
   styleId?: string;
   roomId?: string;
   floorId?: string;

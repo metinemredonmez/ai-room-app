@@ -32,6 +32,8 @@ export default async function DeletionPage({ params }: PageProps<"/[locale]/hesa
       <p className="mt-6 rounded-2xl bg-surface px-4 py-3 text-sm">{t.subscription}</p>
       <h2 className="mt-10 text-lg font-medium">{t.whatTitle}</h2>
       <p className="mt-2 text-muted">{t.what}</p>
+      <h2 className="mt-8 text-lg font-medium">{t.whenTitle}</h2>
+      <p className="mt-2 text-muted">{t.when}</p>
       <h2 className="mt-8 text-lg font-medium">{t.keepTitle}</h2>
       <p className="mt-2 text-muted">{t.keep}</p>
       <Link href={localePath(locale, "/hesap")} className="mt-10 inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-white hover:bg-primary-strong">

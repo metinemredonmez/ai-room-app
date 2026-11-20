@@ -21,6 +21,8 @@ import { reviewExpired } from '../admin/review-account.service.js';
 import { clientInfo } from './client-info.js';
 import { assertPassword, MIN_ADMIN } from './password-policy.js';
 import { SessionsService } from './sessions.service.js';
+import { AccountDeletionService } from '../users/account-deletion.service.js';
+import { MailerService, renderActionMail } from '../mail/mailer.service.js';
 import { AUD_APP, TokensService, UserGuard, type SessionMethod } from './tokens.service.js';
 
 const email = z.email().max(254).transform((v) => v.trim().toLowerCase());
@@ -71,6 +73,8 @@ export class AuthController {
     private welcome: WelcomeService,
     private features: FeaturesService,
     private sessions: SessionsService,
+    private mailer: MailerService,
+    private deletion: AccountDeletionService,
   ) {}
 
   /** A new sign-in: a new session (API.md §7.37) and a line in the sign-in history. */
@@ -78,8 +82,35 @@ export class AuthController {
     const user = await this.users.get(userId);
     const client = clientInfo(req);
     const tokens = await this.tokens.issueUser(user, undefined, { method, client });
+    await this.alertNewDevice(user, method, client);
     this.sessions.recordLogin(user.id, true, method, client);
     return { ...tokens, user: this.users.toDto(user) };
+  }
+
+  /** First successful sign-in from this device label in 30 days (registered accounts only): a quiet heads-up mail. */
+  private async alertNewDevice(user: { id: string; email: string | null; locale: string | null; isGuest: boolean }, method: SessionMethod, client: { device: string }) {
+    if (method === 'guest' || user.isGuest || !user.email) return;
+    const seen = await this.prisma.loginEvent.findFirst({
+      where: { userId: user.id, ok: true, device: client.device, createdAt: { gt: new Date(Date.now() - 30 * 86_400_000) } },
+      select: { id: true },
+    });
+    if (seen) return;
+    const en = user.locale !== 'tr';
+    void this.mailer
+      .send(
+        renderActionMail({
+          to: user.email,
+          subject: en ? 'New sign-in to your Casalume account' : 'Casalume hesabında yeni giriş',
+          heading: en ? 'New sign-in' : 'Yeni giriş',
+          lines: en
+            ? [`${client.device}. If this was you, nothing to do. If not, reset your password right away — every session will be closed.`]
+            : [`${client.device}. Bu sen değilsen hemen şifreni sıfırla — bütün oturumlar kapanacak. Sen yaptıysan bir şey yapmana gerek yok.`],
+          cta: en ? 'Review my sessions' : 'Oturumlarımı gör',
+          url: `${this.cfg.WEB_APP_URL}/hesap`,
+          footer: en ? 'You get this mail because a new device signed in to your account.' : 'Bu e-posta hesabına yeni bir cihaz giriş yaptığı için gönderildi.',
+        }),
+      )
+      .catch(() => undefined);
   }
 
   @Post('guest')
@@ -90,8 +121,14 @@ export class AuthController {
     const deviceHash = sha256(`${this.cfg.DEVICE_PEPPER}:${deviceId}`);
     const existing = await this.prisma.user.findUnique({ where: { deviceHash } });
     if (existing) {
-      if (existing.status !== 'ACTIVE') throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
-      return this.respond(existing.id, 'guest', req);
+      if (existing.status === 'PENDING_DELETION') {
+        const restored = await this.deletion.reactivateIfPending(existing);
+        if (restored !== 'purged') return this.respond(restored.id, 'guest', req);
+      } else if (existing.status !== 'ACTIVE') {
+        throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
+      } else {
+        return this.respond(existing.id, 'guest', req);
+      }
     }
     // API.md §7.28: no new guests while switched off; a device that already has a guest account still signs in.
     this.features.assert('guest_mode');
@@ -106,7 +143,14 @@ export class AuthController {
     this.features.assert('signup');
     assertPassword(input.password, { email: input.email }); // PWD (API.md §7.38): no common or guessable passwords
     await this.limiter.hit(LIMITS.register, req.clientIp);
-    if (await this.prisma.user.findUnique({ where: { email: input.email } })) {
+    const existing = await this.prisma.user.findUnique({ where: { email: input.email } });
+    if (existing) {
+      // YediOda #18: re-signing up inside the 30-day deletion window cancels the deletion (same rule as
+      // signing in) — and never pays a second welcome grant, because the account simply continues.
+      if (existing.status === 'PENDING_DELETION' && (await verifyPassword(existing.passwordHash, input.password))) {
+        const restored = await this.deletion.reactivateIfPending(existing);
+        if (restored !== 'purged') return this.respond(restored.id, 'password', req);
+      }
       throw new AppError(409, 'conflict', 'Bu e-posta ile kayıtlı bir hesap var');
     }
     const passwordHash = await hashPassword(input.password);
@@ -145,8 +189,15 @@ export class AuthController {
       if (user) this.sessions.recordLogin(user.id, false, 'password', clientInfo(req), 'bad_password');
       throw INVALID();
     }
-    if (user.status !== 'ACTIVE') {
-      this.sessions.recordLogin(user.id, false, 'password', clientInfo(req), 'suspended');
+    let active = user;
+    if (active.status === 'PENDING_DELETION') {
+      // Sign-in within the 30-day window cancels the scheduled deletion (YediOda #18).
+      const restored = await this.deletion.reactivateIfPending(active);
+      if (restored === 'purged') throw INVALID();
+      active = restored;
+    }
+    if (active.status !== 'ACTIVE') {
+      this.sessions.recordLogin(active.id, false, 'password', clientInfo(req), 'suspended');
       throw new AppError(403, 'forbidden', 'Hesap askıya alınmış');
     }
     // API.md §7.40: the store review account signs in only during its review period.
@@ -155,8 +206,8 @@ export class AuthController {
       throw new AppError(403, 'review_expired', 'Bu inceleme hesabının süresi doldu.');
     }
     await this.limiter.reset(LIMITS.loginAccount, sha256(input.email));
-    log.info('login_succeeded', { userId: user.id, ip: req.clientIp });
-    return this.respond(user.id, user.reviewUntil ? 'review' : 'password', req);
+    log.info('login_succeeded', { userId: active.id, ip: req.clientIp });
+    return this.respond(active.id, active.reviewUntil ? 'review' : 'password', req);
   }
 
   /** TOK-03: step 1 of Apple / Google sign-in — a single-use nonce for this attempt (10 minutes). */

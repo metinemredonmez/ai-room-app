@@ -26,9 +26,10 @@ from .providers import ImageProvider, ProviderError, create_providers
 from .quality import assess
 from .region import (
     SELECTABLE_TOOLS, RegionMask, Segmenter, Taps, composite, create_segmenter, describe_area, mask_png,
-    masked_mean_abs_diff, region_target, selection_points, usable,
+    masked_mean_abs_diff, outside_mean_abs_diff, region_target, selection_points, usable,
 )
 from .resilience import ChainResult, ProviderChain
+from .translate import english_target
 from .voice import Voice, VoiceUnavailable
 from .schemas import (
     AnalyzeRequest, AnalyzeResponse, AsoRequest, AsoResponse, BlogRequest, BlogResponse, CampaignRequest, CampaignResponse, ChatRequest, ChatResponse,
@@ -295,11 +296,16 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         seg_task = (asyncio.create_task(segment(image, target, remaining()))
                     if target and segmenter and not selected else None)
 
-        chosen = engines.chain_for(req.engine.chain, req.engine.models) if req.engine else None
+        # API.md §7.24.2: high quality swaps the Gemini leg to the pro image model (the PRO gate lives in the API).
+        chain_names = req.engine.chain if req.engine and req.engine.chain else list(settings.provider_chain)
+        models = dict(req.engine.models) if req.engine else {}
+        if req.quality == "high" and "gemini" in chain_names:
+            models["gemini"] = settings.gemini_pro_image_model
+        chosen = engines.chain_for(chain_names, models) if (req.engine or req.quality == "high") else None
 
-        async def one(variant: int) -> ChainResult:
+        async def one(variant: int, text: str | None = None) -> ChainResult:
             async with generation_slots:
-                return await chain.generate(image, prompt, variant, tint, deadline, chosen)
+                return await chain.generate(image, text or prompt, variant, tint, deadline, chosen)
 
         try:
             outcomes = await asyncio.wait_for(
@@ -335,7 +341,14 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
             raise next((f for f in failures if not f.retryable), failures[0])  # type: ignore[union-attr]
 
         images: list[str] = []
+        retried: list[ChainResult] = []
+        max_drift = 0.0
+        strict_prompt = f"{prompt}\n\nChange ONLY the selected area. Reproduce every other part of the original photo exactly as it is — walls, windows, doors, furniture outside the selection, floors and lighting must stay untouched."
+        # billed keeps the gather order (successes only); the retry needs the variant number for the
+        # "Alternative variation #n" hint, and successes map 1:1 onto their position.
+        variant_of_result = {id(r): i for i, r in enumerate(billed)}
         for result in billed:
+            variant = variant_of_result[id(result)]
             try:
                 output = decode_image(to_b64(result.image), OUTPUT_MAX_BYTES)  # re-validate provider output
             except ImageInputError:
@@ -343,6 +356,26 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
                 continue
             if mask is not None:
                 output = await asyncio.to_thread(composite, image, output, mask.mask)
+                drift = await asyncio.to_thread(outside_mean_abs_diff, image, output, mask.mask)
+                max_drift = max(max_drift, drift)
+                # §7.8.1 "odan bozulmaz": the pixels outside the mask are the user's own; a variant that
+                # repaints them is rendered once more with a stricter instruction, then kept and measured.
+                if drift > settings.region_drift_max and settings.region_lock == "auto":
+                    log.warning('{"event":"region_drift_retry","variant":%d,"drift":%.1f}', variant, drift)
+                    try:
+                        redo = await asyncio.wait_for(one(variant, strict_prompt), timeout=remaining())
+                    except Exception:
+                        redo = None
+                    if isinstance(redo, ChainResult):
+                        try:
+                            fixed = await asyncio.to_thread(composite, image, decode_image(to_b64(redo.image), OUTPUT_MAX_BYTES), mask.mask)
+                            fixed_drift = await asyncio.to_thread(outside_mean_abs_diff, image, fixed, mask.mask)
+                            retried.append(redo)
+                            if fixed_drift <= drift:
+                                output, drift = fixed, fixed_drift
+                                max_drift = max(max_drift, fixed_drift)
+                        except ImageInputError:
+                            pass
                 unchanged = await asyncio.to_thread(masked_mean_abs_diff, image, output, mask.mask) < NO_CHANGE_BELOW
             else:
                 unchanged = is_unchanged(image, output)
@@ -350,6 +383,8 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
                 log.warning('{"event":"variant_unchanged","provider":"%s"}', result.provider)
                 continue
             images.append(to_b64(output))
+        if region is not None and mask is not None:
+            region.drift = round(max_drift, 2)
 
         seg_cost = seg.cost_usd if target and isinstance(seg, RegionMask) else 0.0
         usage = generation_usage(billed, describe, started, seg_cost)
@@ -393,7 +428,7 @@ def create_app(settings: Settings, providers: list[ImageProvider] | None = None,
         started = time.perf_counter()
         image = decode_image(req.image_b64, settings.max_image_bytes)
         points = [(p.x, p.y) for p in req.points] if req.points else None
-        sel = await select(image, clean(req.target, 60) or "selection", points, min(30.0, settings.provider_timeout_s), started)
+        sel = await select(image, english_target(clean(req.target, 60)) or "selection", points, min(30.0, settings.provider_timeout_s), started)
         png = await asyncio.to_thread(mask_png, sel.mask)
         return SegmentResponse(mask_b64=to_b64(png), coverage=round(sel.coverage, 4), method=sel.method,  # type: ignore[arg-type]
                                usage=segment_usage(sel, started))

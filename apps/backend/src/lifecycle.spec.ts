@@ -67,6 +67,7 @@ describe('lifecycle unsubscribe', () => {
     const prisma = {
       broadcastDelivery: { findUnique: async () => null },
       lifecycleSend: { findUnique: async ({ where }: { where: { id: string } }) => (where.id === sendId ? { userId: 'u-life' } : null) },
+      waitlistCampaignSend: { count: async () => 0 },
     };
     const consents = { record: async (userId: string, kind: string, _v: string, granted: boolean) => void recorded.push([userId, kind, granted]) };
     const legal = { versionOf: () => ({ version: 'v1' }) };

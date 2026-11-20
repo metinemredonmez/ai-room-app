@@ -96,7 +96,7 @@ export class LoyaltyService implements OnModuleInit, OnModuleDestroy {
     if (s.anniversary.enabled) {
       const rows = await this.prisma.$queryRaw<Array<{ id: string; years: number }>>`
         SELECT u.id, EXTRACT(YEAR FROM age(${now}::timestamp, u."createdAt"))::int AS years FROM "User" u WHERE ${this.anniversaryWhere(now)} ORDER BY u.id`;
-      for (const years of [...new Set(rows.map((r) => r.years))]) {
+      for (const years of new Set(rows.map((r) => r.years))) {
         const ids = rows.filter((r) => r.years === years).map((r) => r.id);
         const granted = await this.grant('anniversary', today.slice(0, 4), s.anniversary.credits, ids);
         out.anniversary += granted.length;

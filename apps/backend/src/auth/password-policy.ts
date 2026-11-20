@@ -38,7 +38,7 @@ export type PasswordProblem = 'too_short' | 'too_long' | 'common' | 'contains_em
 
 /** Why a new password is not acceptable, or null. */
 export function passwordProblem(password: string, ctx: { email?: string | null; min?: number } = {}): PasswordProblem | null {
-  const length = [...password].length;
+  const length = Array.from(password).length;
   if (length < (ctx.min ?? MIN_USER)) return 'too_short';
   if (length > MAX_LENGTH) return 'too_long';
   const lower = password.normalize('NFKC').toLowerCase();

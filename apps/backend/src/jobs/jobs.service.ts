@@ -21,11 +21,13 @@ import { WelcomeService } from '../users/welcome.service.js';
 import { OrgsService } from '../orgs/orgs.service.js';
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { WaitlistService } from '../waitlist/waitlist.service.js';
+import { WaitlistCampaignsService } from '../waitlist/waitlist-campaigns.service.js';
+import { AccountDeletionService } from '../users/account-deletion.service.js';
 import { LifecycleService } from '../lifecycle/lifecycle.service.js';
 import { PriceScheduleService } from '../prices/price-schedule.service.js';
 import { CoachService } from '../coach/coach.service.js';
 import { isManualJob, scheduleStatus } from './schedules.js';
-import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob } from './queues.service.js';
+import { QueuesService, type BroadcastJob, type DesignJob, type MarketingJob, type NotificationJob, type WaitlistCampaignJob } from './queues.service.js';
 
 const DAY = 86_400_000;
 
@@ -55,6 +57,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private loyalty: LoyaltyService,
     private prices: PriceScheduleService,
     private waitlist: WaitlistService,
+    private waitlistCampaigns: WaitlistCampaignsService,
+    private deletion: AccountDeletionService,
     private lifecycle: LifecycleService,
     private coach: CoachService,
   ) {}
@@ -70,6 +74,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       new Worker<BroadcastJob>('broadcasts', (job) => this.runBroadcast(job), { connection, concurrency: 1 }),
       // Marketing drafts: a few languages at a time keeps Claude's rate limit and the server load low.
       new Worker<MarketingJob>('marketing', (job) => this.marketing.process(job.data.draftId, job.attemptsMade + 1 >= (job.opts.attempts ?? 1)), { connection, concurrency: 3 }),
+      new Worker<WaitlistCampaignJob>('waitlist', (job) => this.runWaitlistCampaign(job), { connection, concurrency: 1 }),
     );
     for (const w of this.workers) {
       w.on('error', (e) => log.warn('worker_error', { error: e.name }));
@@ -152,6 +157,15 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private async runWaitlistCampaign(job: Job<WaitlistCampaignJob>) {
+    try {
+      return await this.waitlistCampaigns.process(job.data.campaignId);
+    } catch (e) {
+      log.warn('waitlist_campaign_job_failed', { campaignId: job.data.campaignId, error: (e as Error).name });
+      throw e;
+    }
+  }
+
   private async runBroadcast(job: Job<BroadcastJob>) {
     try {
       return await this.broadcasts.process(job.data.broadcastId);
@@ -221,6 +235,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       await this.prisma.image.deleteMany({ where: { id: { in: orphans.map((o) => o.id) } } });
       await this.images.remove(orphans.map((o) => o.id));
     }
+    const deletedUsers = await this.deletion.purgeDue();
     const tokens = await this.prisma.emailToken.deleteMany({
       where: { OR: [{ expiresAt: { lt: new Date(now - DAY) } }, { usedAt: { lt: new Date(now - 7 * DAY) } }] },
     });
@@ -233,6 +248,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const sessions = await this.prisma.authSession.deleteMany({ where: { lastUsedAt: { lt: new Date(now - 90 * DAY) } } });
     // API.md §7.41: alert history 90 days; resolved error groups 90 days after they were last seen.
     const alertLogs = await this.prisma.alertLog.deleteMany({ where: { createdAt: { lt: new Date(now - 90 * DAY) } } });
+    void deletedUsers;
     const errorGroups = await this.prisma.errorGroup.deleteMany({ where: { resolvedAt: { not: null }, lastSeen: { lt: new Date(now - 90 * DAY) } } });
     let mails = 0;
     for (const dir of ['outbox', 'push-outbox']) {
@@ -258,9 +274,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const lifecycleSends = await this.lifecycle.purge(now);
     // API.md §7.54: the coach's spoken replies unused for the panel's cache period (file and row).
     const coachAudio = await this.coach.purgeAudio(now);
+    // App events (funnel, API.md §7.55): the panel reads at most 90 days; keep 180, then they go (KVKK minimisation).
+    const appEvents = (await this.prisma.appEvent.deleteMany({ where: { createdAt: { lt: new Date(now - 180 * DAY) } } })).count;
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, loginEvents: logins.count, authSessions: sessions.count, alertLogs: alertLogs.count, errorGroups: errorGroups.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends, coachAudio,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends, coachAudio, appEvents,
     };
   }
 

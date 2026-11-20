@@ -69,6 +69,8 @@ class GenerateRequest(Strict):
     reference_image_b64: str | None = Field(None, max_length=17_000_000)
     points: list[Point] | None = Points
     engine: "EngineChoice | None" = Field(None, description="The panel's provider chain and models (API.md §7.27)")
+    # API.md §7.24.2: PRO high quality — the Gemini leg renders with the pro image model at its own price.
+    quality: Literal["standard", "high"] = Field("standard", alias="quality")
     prompt_templates: dict[str, str] | None = Field(
         None, max_length=16,
         description="Active panel templates, key → text (API.md §7.26); a missing or unusable one uses the default",
@@ -168,6 +170,7 @@ class RegionInfo(BaseModel):
     method: Literal["sam3", "heuristic", "none"]
     coverage: float = Field(ge=0, le=1, description="Share of the image inside the mask")
     reason: Literal["no_segmenter", "segmentation_failed", "mask_unusable"] | None = None
+    drift: float | None = Field(None, description="Mean gray diff OUTSIDE the mask (0..255); null = not measured")
 
 
 class GenerateResponse(BaseModel):

@@ -20,10 +20,15 @@
       "invite": "Ekip daveti",
       "team": "Ekip",
       "waitlistConfirm": "Kaydı onayla",
-      "waitlistLeave": "Listeden çık"
+      "waitlistLeave": "Listeden çık",
+      "emailChange": "E-posta adresi değişti"
     }
   },
   "brandTagline": "Odanı saniyeler içinde yeniden tasarla",
+  "cookieBanner": {
+    "text": "Sitemizde dil, tema ve oturum için gerekli çerezleri kullanıyoruz. Daha fazla bilgi için Gizlilik ve Çerez sayfalarımıza bakabilirsin.",
+    "accept": "Anladım"
+  },
   "nav": {
     "studio": "Stüdyo",
     "designs": "Tasarımlarım",
@@ -402,7 +407,9 @@
     "needReference": "Bir referans görsel yükle.",
     "proHint": "PRO özellik — sunucu planını kontrol eder.",
     "newDesign": "Yeni tasarım",
-    "prefilled": "Sohbetteki öneri stüdyoya aktarıldı. Kontrol edip “Tasarla”ya bas."
+    "prefilled": "Sohbetteki öneri stüdyoya aktarıldı. Kontrol edip “Tasarla”ya bas.",
+    "highQuality": "Yüksek kalite (PRO)",
+    "highQualityHint": "Nano Banana Pro ile üretim: daha keskin detay, başına ayrı fiyat."
   },
   "result": {
     "before": "Önce",
@@ -421,7 +428,22 @@
     "shareTitle": "İlham galerisinde paylaş",
     "shareText": "Açarsan Casalume ekibi bu tasarımın sonuç görselini uygulamadaki İlham galerisinde gösterebilir. Önceki fotoğrafın ve adın görünmez. İstediğin zaman kapatabilirsin; kapatınca galeriden hemen kalkar.",
     "shareLabel": "Galeride paylaşılabilir",
-    "shareLive": "Bu tasarım şu an İlham galerisinde."
+    "shareLive": "Bu tasarım şu an İlham galerisinde.",
+    "feedbackAsk": "Sonuç nasıldı?",
+    "feedbackThanks": "Geri bildirimin için teşekkürler.",
+    "feedbackLiked": "Beğendim",
+    "feedbackDisliked": "Bana uymadı",
+    "feedbackWhy": "Neden uymadı? (isteğe bağlı)",
+    "feedbackSend": "Gönder",
+    "feedbackChange": "Geri bildirimini değiştirebilirsin.",
+    "share": "Paylaş",
+    "shareCopy": "Kopyala",
+    "shareCopied": "Kopyalandı",
+    "shareRemove": "Kaldır",
+    "showcaseTitle": "Sosyal medya vitrininde kullan",
+    "showcaseText": "Açarsan Casalume bu tasarımın sonuç görselini sosyal medya, reklam ve vitrin paylaşımlarında kullanabilir. Önceki fotoğrafın ve adın görünmez; sadece sonuç görseli ve stil bilgisi paylaşılır. İstediğin zaman kapatabilirsin.",
+    "showcaseLabel": "Vitrinde kullanılabilir",
+    "showcaseLive": "Bu tasarım vitrin kullanımına açık."
   },
   "analysis": {
     "title": "Alışveriş listesi ve bütçe",
@@ -649,11 +671,24 @@
       "REJECTED": "Reddedildi"
     },
     "deleteTitle": "Hesabı sil",
-    "deleteBody": "Hesabın, tasarımların ve fotoğrafların kalıcı olarak silinir; geri alınamaz. Aboneliğin varsa önce App Store ya da Google Play'den iptal et.",
+    "deleteBody": "Hesabın 30 gün sonra tamamen silinir. Bu süre içinde giriş yaparsan silme iptal olur ve hesabın olduğu gibi kalır; oturumların ise anında kapanır.",
     "deleteConfirm": "Onaylamak için {word} yaz",
     "deleteWord": "SİL",
     "deleteButton": "Hesabımı kalıcı olarak sil",
-    "deleted": "Hesabın silindi."
+    "deleted": "Hesabın silinmeye planlandı. 30 gün içinde giriş yaparsan iptal olur.",
+    "securityTitle": "Güvenlik",
+    "pwdTitle": "Şifre değiştir",
+    "pwdCurrent": "Mevcut şifre",
+    "pwdNext": "Yeni şifre (en az 10 karakter)",
+    "pwdConfirm": "Yeni şifre (tekrar)",
+    "pwdDone": "Şifren değiştirildi; {n} başka oturum kapatıldı.",
+    "emailTitle": "E-posta değiştir",
+    "emailNew": "Yeni e-posta adresi",
+    "emailPassword": "Şifren",
+    "emailHint": "Yeni adrese bir onay bağlantısı gider; bağlantıya tıklayınca değişiklik tamamlanır.",
+    "emailSent": "Onay bağlantısı {email} adresine gönderildi.",
+    "mismatch": "Şifreler eşleşmiyor.",
+    "emailSend": "Onay bağlantısı gönder"
   },
   "legal": {
     "title": "Yasal metinler",
@@ -670,7 +705,7 @@
   },
   "deletion": {
     "title": "Hesabını nasıl silersin?",
-    "intro": "Casalume hesabını ve sana ait bütün verileri istediğin zaman silebilirsin.",
+    "intro": "Casalume hesabını ve sana ait bütün verileri istediğin zaman silebilirsin. Silme 30 günlük bir geri alma penceresiyle yapılır: bu süre içinde giriş yaparsan her şey olduğu gibi kalır.",
     "inApp": "Uygulamada: Profil → Hesabı sil.",
     "onWeb": "Web'de: giriş yap, Hesabım → Hesabı sil.",
     "byMail": "Hesabına erişemiyorsan hesabının e-posta adresinden {email} adresine “Hesabımı silin” diye yaz; en geç 30 gün içinde sileriz.",
@@ -679,7 +714,9 @@
     "keepTitle": "Neler saklanır?",
     "keep": "Yalnız yasal yükümlülük için gereken kayıtlar ilgili süre boyunca saklanır (ör. KVKK başvuru kayıtları kapanıştan sonra 2 yıl). Ödeme kayıtları App Store ve Google Play'de tutulur.",
     "subscription": "Aktif aboneliğin varsa önce App Store ya da Google Play'den iptal et; hesabı silmek aboneliği durdurmaz.",
-    "cta": "Hesabıma git"
+    "cta": "Hesabıma git",
+    "whenTitle": "Ne zaman silinir?",
+    "when": "Silme isteğinden hemen sonra oturumların kapanır; verilerin 30 gün sonra tamamen silinir. Süre dolmadan giriş yaparsan silme otomatik iptal olur."
   },
   "support": {
     "title": "Destek",
@@ -802,5 +839,20 @@
     "emptyProject": "Bu projede henüz tasarım yok.",
     "designsCount": "{n} tasarım",
     "teamOnly": "Ekip arkadaşının tasarımı: görebilir ve indirebilirsin."
+  },
+  "share": {
+    "expiredTitle": "Bağlantı geçerli değil",
+    "expiredText": "Bu paylaşımın süresi dolmuş ya da kaldırılmış. Tasarım sahibinden yeni bir bağlantı isteyebilirsin.",
+    "cta": "Casalume'u keşfet",
+    "subtitle": "Yapay zekâ ile yeniden tasarlanmış oda — öncesi ve sonrası.",
+    "footer": "Kendi odanı yeniden tasarlamak ister misin? Fotoğrafını yükle, stilini seç, saniyeler içinde sonucu gör.",
+    "views": "{n} görüntülenme"
+  },
+  "emailChange": {
+    "title": "E-posta adresin değişti",
+    "working": "Adres değiştiriliyor…",
+    "done": "Yeni e-posta adresin onaylandı ve hesabına kaydedildi.",
+    "invalid": "Bağlantı geçersiz, kullanılmış ya da süresi dolmuş. Hesap sayfasından yeniden isteyebilirsin.",
+    "toAccount": "Hesabıma dön"
   }
 }

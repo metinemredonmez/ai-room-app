@@ -37,10 +37,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api, ApiError, useApi, usePaged } from "@/lib/api";
 import { fmtDateTime, STATUS_LABELS, TOOL_LABELS, toolLabel } from "@/lib/format";
-import type { AdminDesign, AdminMe, AdminStyle, Design } from "@/lib/types";
+import type { AdminDesign, AdminMe, AdminStyle, Design, DesignFeedbackSummary } from "@/lib/types";
 
 type View = "grid" | "list";
-type Tab = "all" | "featured" | "shareable" | Design["status"];
+type Tab = "all" | "featured" | "shareable" | "showcase" | Design["status"];
 
 const TABS: { value: Tab; label: string }[] = [
   { value: "all", label: "Tümü" },
@@ -49,6 +49,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: "PENDING", label: STATUS_LABELS.PENDING },
   { value: "featured", label: "Öne çıkanlar" },
   { value: "shareable", label: "Paylaşım izni olanlar" },
+  { value: "showcase", label: "Vitrin izni olanlar" },
 ];
 /** API.md §7.51: only a successful design whose owner allowed the gallery can be featured. */
 const featureBlock = (d: Design) =>
@@ -80,15 +81,17 @@ export function DesignsView({ initialUserId }: { initialUserId: string }) {
   // The API takes a full user id only; a half-typed one would just come back as a 400.
   const userIdValid = UUID_RE.test(userId);
   const designs = usePaged<AdminDesign>("/designs", {
-    status: tab === "all" || tab === "featured" || tab === "shareable" ? "" : tab,
+    status: tab === "all" || tab === "featured" || tab === "shareable" || tab === "showcase" ? "" : tab,
     featured: tab === "featured" ? "true" : "",
     shareable: tab === "shareable" ? "true" : "",
+    showcase: tab === "showcase" ? "true" : "",
     tool: tool === ALL ? "" : tool,
     styleId: styleId === ALL ? "" : styleId,
     userId: userIdValid ? userId : "",
   });
   const styles = useApi<AdminStyle[]>("/styles");
   const me = useApi<AdminMe>("/me");
+  const feedback = useApi<DesignFeedbackSummary>("/designs/feedback-summary");
   const { toast, confirm } = useFeedback();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -156,6 +159,27 @@ export function DesignsView({ initialUserId }: { initialUserId: string }) {
   return (
     <>
       <PageHeader title="Tasarımlar" description="Tüm üretimler; moderasyon ve ilham galerisi seçimi. Galeride yalnız sahibinin izin verdiği tasarım öne çıkarılabilir; izin geri çekilince tasarım galeriden kendiliğinden kalkar." />
+
+      {feedback.data && feedback.data.total > 0 && (
+        <Card className="mb-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <span>
+              Sonuç geri bildirimi: <strong>{feedback.data.total}</strong> puanlama · red oranı{" "}
+              <strong className={feedback.data.redRate !== null && feedback.data.redRate >= 30 ? "text-danger" : ""}>
+                %{feedback.data.redRate ?? "—"}
+              </strong>
+            </span>
+            <span className="text-muted-foreground">
+              👍 {feedback.data.liked} · 👎 {feedback.data.disliked}
+            </span>
+            {feedback.data.topReasons.length > 0 && (
+              <span className="text-muted-foreground">
+                En sık nedenler: {feedback.data.topReasons.slice(0, 3).map((r) => `“${r.reason}” (${r.count})`).join(" · ")}
+              </span>
+            )}
+          </div>
+        </Card>
+      )}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <ToggleGroup type="single" variant="outline" size="sm" value={tab} onValueChange={(v) => v && setTab(v as Tab)} aria-label="Durum">
@@ -228,7 +252,7 @@ export function DesignsView({ initialUserId }: { initialUserId: string }) {
         <GridSkeleton />
       ) : designs.items.length === 0 ? (
         <EmptyState
-          title={tab === "featured" ? "Öne çıkan tasarım yok" : tab === "shareable" ? "Galeri izni verilmiş tasarım yok" : "Tasarım bulunamadı"}
+          title={tab === "featured" ? "Öne çıkan tasarım yok" : tab === "shareable" ? "Galeri izni verilmiş tasarım yok" : tab === "showcase" ? "Vitrin izni verilmiş tasarım yok" : "Tasarım bulunamadı"}
           description={filtered ? "Filtreleri değiştirip tekrar dene." : "Kullanıcılar henüz tasarım üretmedi."}
         />
       ) : (
@@ -519,6 +543,8 @@ function DetailSheet({
                 </dd>
                 <dt className="text-muted-foreground">Galeri izni</dt>
                 <dd>{d.shareable ? <span className="text-good">Kullanıcı izin verdi</span> : <span className="text-muted-foreground">İzin yok</span>}</dd>
+                <dt className="text-muted-foreground">Vitrin izni</dt>
+                <dd>{d.showcaseConsentAt ? <span className="text-good">Kullanıcı izin verdi</span> : <span className="text-muted-foreground">İzin yok</span>}</dd>
                 <dt className="text-muted-foreground">Kullanıcı</dt>
                 <dd className="min-w-0 truncate">
                   <Link href={`/users/${encodeURIComponent(d.userId)}`} className="text-primary hover:underline">

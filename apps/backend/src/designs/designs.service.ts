@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import sharp from 'sharp';
 import { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';
 import { AiClient, AiError } from '../ai/ai.client.js';
@@ -12,6 +13,7 @@ import { ProductCatalogService } from '../catalog/product.service.js';
 import { PromptTemplatesService } from '../prompts/prompts.service.js';
 import { EngineService } from '../ai/engine.service.js';
 import { ReferralService } from '../referral/referral.service.js';
+import { randomToken } from '../auth/crypto.js';
 import { AppError, notFound } from '../common/errors.js';
 import { PrismaService, Semaphore } from '../common/infra.js';
 import { log } from '../common/log.js';
@@ -23,11 +25,52 @@ import { ProjectsService } from '../orgs/projects.service.js';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
+/**
+ * The share page's og:image: before/after side by side under a small brand bar, JPEG for every crawler.
+ * Both photos are centre-cropped to the same square so the framing always matches.
+ */
+export async function shareOg(before: Buffer, after: Buffer, title: string): Promise<Buffer> {
+  const W = 1200;
+  const H = 630;
+  const BAR = 84;
+  const panel = Math.floor((H - BAR) / 2) - 12;
+  const crop = (buf: Buffer) =>
+    sharp(buf).rotate().resize(panel, panel, { fit: 'cover', position: 'centre' }).jpeg({ quality: 88 }).toBuffer();
+  const [b, a] = await Promise.all([crop(before), crop(after)]);
+  const label = (title.length > 60 ? `${title.slice(0, 57)}…` : title).replace(/[<>&]/g, '');
+  const bar = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${BAR}">
+      <rect width="100%" height="100%" fill="#1C1714"/>
+      <text x="36" y="54" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#F6F1EA">Casa<tspan fill="#A9532E">lume</tspan></text>
+      <text x="${W - 36}" y="54" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="24" fill="#B7ACA2">${label}</text>
+    </svg>`,
+  );
+  return sharp({
+    create: { width: W, height: H, channels: 3, background: '#F6F1EA' },
+  })
+    .composite([
+      { input: b, top: 12, left: Math.floor((W - panel * 2 - 12) / 2) },
+      { input: a, top: 12, left: Math.floor((W - panel * 2 - 12) / 2) + panel + 12 },
+      { input: bar, top: H - BAR, left: 0 },
+    ])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+}
+
 /** Tap selection (API.md §7.15): 0..1 from the top-left of the input photo, one object per point. */
 export const PointsSchema = z.array(z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).strict()).min(1).max(8);
 
 export const SelectionSchema = z.object({ points: PointsSchema.optional(), target: text(120).optional() }).strict();
 export type Selection = z.infer<typeof SelectionSchema>;
+
+/** Owner's verdict on a finished result (palemi): thumbs and, for a dislike, an optional why. */
+export const FeedbackSchema = z
+  .object({
+    rating: z.enum(['liked', 'disliked']),
+    reason: z.string().trim().max(300).optional(),
+  })
+  .strict();
+export type FeedbackInput = z.infer<typeof FeedbackSchema>;
 
 export const CreateDesignSchema = z
   .object({
@@ -46,6 +89,8 @@ export const CreateDesignSchema = z
     removeAll: z.boolean().optional(),
     referenceImageId: z.uuid().optional(),
     points: PointsSchema.optional(),
+    /** API.md §7.24.2: PRO high quality (the Gemini leg renders with the pro image model, priced separately). */
+    quality: z.enum(['standard', 'high']).default('standard'),
     /** API.md §7.23: create in this firm's workspace (charged to its pool, PRO features). */
     orgId: z.uuid().optional(),
     /** API.md §7.23 step 4: put it in this firm project (shared with the team); needs `orgId`. */
@@ -114,6 +159,8 @@ export class DesignsService {
       featured: d.featured,
       /** API.md §7.51: the owner allows it in the public inspiration gallery. */
       shareable: d.shareConsentAt !== null,
+      /** API.md §7.51: the owner allows this design in social-media / showcase posts. */
+      showcaseConsentAt: d.showcaseConsentAt?.toISOString() ?? null,
       orgId: d.orgId,
       projectId: d.projectId,
       mine: viewerId ? d.userId === viewerId : true,
@@ -122,6 +169,9 @@ export class DesignsService {
       queuedAt: d.queuedAt?.toISOString() ?? null,
       startedAt: d.startedAt?.toISOString() ?? null,
       createdAt: d.createdAt.toISOString(),
+      feedback: d.feedbackAt
+        ? { rating: d.feedbackRating ?? null, reason: d.feedbackReason ?? null, at: d.feedbackAt.toISOString() }
+        : null,
     };
   }
 
@@ -162,6 +212,7 @@ export class DesignsService {
     const tool = this.product.offeredTool(body.tool);
     this.product.assertOffered(body.roomId, body.floorId);
     if (tool.isPro && !pro) throw new AppError(402, 'pro_required', 'Bu araç PRO üyelere özel');
+    if (body.quality === 'high' && !pro) throw new AppError(402, 'pro_required', 'Yüksek kalite PRO üyelere özel');
     await this.assertAiConsent(userId);
 
     // Budget brake (fal-app butce-freni / yoga brakeFreeUsers): only FREE users are affected.
@@ -186,7 +237,7 @@ export class DesignsService {
     if (body.referenceImageId) await this.images.owned(body.referenceImageId, userId);
 
     const params: Record<string, unknown> = {};
-    for (const k of ['floorId', 'colorHex', 'colorName', 'target', 'replacement', 'instructions', 'removeAll', 'referenceImageId', 'points'] as const) {
+    for (const k of ['floorId', 'colorHex', 'colorName', 'target', 'replacement', 'instructions', 'removeAll', 'referenceImageId', 'points', 'quality'] as const) {
       if (body[k] !== undefined) params[k] = body[k];
     }
     params.variants = variants;
@@ -299,6 +350,7 @@ export class DesignsService {
             ? (await this.images.read(str(params.referenceImageId)!)).toString('base64')
             : undefined,
           points: points.success ? points.data : undefined,
+          quality: (d.params as { quality?: unknown } | null)?.quality === 'high' ? 'high' : 'standard',
           prompt_templates: prompts.templates,
           // The panel's provider chain and models (API.md §7.27); undefined = the AI service's own chain.
           engine: this.engine.current,
@@ -469,6 +521,75 @@ export class DesignsService {
     return this.toDto(updated, locale, userId);
   }
 
+  /** Owner's thumbs on their finished design; overwrites a previous verdict. */
+  async feedback(userId: string, id: string, input: FeedbackInput) {
+    const d = await this.getOwned(userId, id);
+    if (d.status !== 'SUCCEEDED') throw new AppError(409, 'conflict', 'Yalnız bitmiş bir tasarıma geri bildirim verilebilir.');
+    return this.prisma.design.update({
+      where: { id: d.id },
+      data: { feedbackRating: input.rating, feedbackReason: input.reason?.slice(0, 300) ?? null, feedbackAt: new Date() },
+    });
+  }
+
+  // ---- public before/after share links (API.md §7.23 client sharing; fal-app share pattern) ----
+
+  /** One active link per design: minting a new one rotates the token and resets the counter. */
+  async share(userId: string, id: string, days: number) {
+    const d = await this.getOwned(userId, id);
+    if (d.status !== 'SUCCEEDED') throw new AppError(409, 'conflict', 'Yalnız bitmiş bir tasarım paylaşılabilir.');
+    if (d.orgId) throw new AppError(409, 'conflict', 'Firma çalışma alanındaki tasarımların paylaşımı yakında; şimdilik kişisel tasarımlar paylaşılabilir.');
+    const token = randomToken(24);
+    const share = await this.prisma.$transaction(async (tx) => {
+      await tx.designShare.deleteMany({ where: { designId: d.id } });
+      await tx.designShare.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+      return tx.designShare.create({ data: { designId: d.id, createdById: userId, token, expiresAt: new Date(Date.now() + days * 86_400_000) } });
+    });
+    return { token: share.token, expiresAt: share.expiresAt.toISOString() };
+  }
+
+  async unshare(userId: string, id: string) {
+    const d = await this.getOwned(userId, id);
+    await this.prisma.designShare.deleteMany({ where: { designId: d.id } });
+  }
+
+  /** The shared payload: no account needed, the view counter ticks once per fetch. */
+  async shared(token: string) {
+    const share = await this.activeShare(token);
+    const [updated, title] = await Promise.all([
+      this.prisma.designShare.update({ where: { id: share.id }, data: { views: { increment: 1 } } }),
+      this.titleOf(share.design, 'tr'),
+    ]);
+    return { ...this.shareDto(share.design, title, updated.views), expiresAt: share.expiresAt.toISOString() };
+  }
+
+  /** Crawler image (og:image): same payload without counting the fetch as a view. */
+  async sharedOg(token: string) {
+    const share = await this.activeShare(token);
+    const title = await this.titleOf(share.design, 'tr');
+    const [before, after] = await Promise.all([
+      this.images.bytes(share.design.inputImageId),
+      this.images.bytes(share.design.results[0]?.id ?? ''),
+    ]);
+    if (!before || !after) throw notFound();
+    return { jpeg: await shareOg(before, after, title), title };
+  }
+
+  private async activeShare(token: string) {
+    if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{20,48}$/.test(token)) throw notFound();
+    const share = await this.prisma.designShare.findUnique({
+      where: { token },
+      include: { design: { include: { inputImage: true, results: true, user: { select: { status: true } } } } },
+    });
+    // A suspended account, or one waiting out its deletion window, shares nothing.
+    if (!share || share.expiresAt.getTime() < Date.now() || share.design.user.status !== 'ACTIVE') throw notFound();
+    return share;
+  }
+
+  private shareDto(d: DesignWithImages, title: string, views: number) {
+    const after = [...d.results].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+    return { title, tool: d.tool, before: this.images.ref(d.inputImage), after: after ? this.images.ref(after) : null, views };
+  }
+
   async getOwned(userId: string, id: string) {
     if (!isUuid(id)) throw notFound();
     const d = await this.prisma.design.findFirst({ where: { id, userId }, include: this.include });
@@ -497,6 +618,21 @@ export class DesignsService {
       include: this.include,
     });
     if (!shareable && owned.featured) log.info('design_share_withdrawn', { designId: id });
+    return this.toDto(d, locale);
+  }
+
+  /**
+   * API.md §7.51: the owner allows (or withdraws) using this design in social-media / showcase posts. A firm design
+   * belongs to the firm and its client, so it is never showcase-allowed.
+   */
+  async setShowcaseConsent(userId: string, id: string, showcase: boolean, locale: Locale) {
+    const owned = await this.getOwned(userId, id);
+    if (showcase && owned.orgId) throw new AppError(409, 'org_design', 'Firma tasarımları vitrinde kullanılamaz.');
+    const d = await this.prisma.design.update({
+      where: { id },
+      data: showcase ? { showcaseConsentAt: owned.showcaseConsentAt ?? new Date() } : { showcaseConsentAt: null },
+      include: this.include,
+    });
     return this.toDto(d, locale);
   }
 

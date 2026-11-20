@@ -28,6 +28,7 @@ enum Plan {
 enum UserStatus {
   ACTIVE
   BANNED
+  PENDING_DELETION // silme istendi; 30 gün içinde giriş yapılırsa geri alınır (YediOda #18)
 }
 
 enum ImageKind {
@@ -39,6 +40,7 @@ enum ImageKind {
 enum EmailTokenPurpose {
   RESET_PASSWORD
   VERIFY_EMAIL
+  EMAIL_CHANGE
 }
 
 enum ChargeState {
@@ -97,33 +99,35 @@ enum DeliveryStatus {
 }
 
 model User {
-  id                String     @id @default(uuid()) @db.Uuid
-  email             String?    @unique
-  emailVerifiedAt   DateTime?
-  passwordHash      String?
-  name              String?
-  role              Role       @default(USER)
-  status            UserStatus @default(ACTIVE)
-  isGuest           Boolean    @default(true)
-  deviceHash        String?    @unique
-  plan              Plan       @default(FREE)
-  planExpiresAt     DateTime?
-  storeProUntil     DateTime? // App Store / Play entitlement synced from RevenueCat (separate from admin/dev grants)
-  credits           Int        @default(0)
-  freeUsedOn        String? // YYYY-MM-DD, Europe/Istanbul
-  freeUsedCount     Int        @default(0)
-  locale            String     @default("tr")
-  totpSecret        String?
-  totpLastStep      BigInt?
-  totpPendingSecret String? // TOTP enrollment in progress (confirmed with a first code)
-  mfaEnrollBefore   DateTime? // set on promotion / MFA reset: enrollment window (AUT-04)
-  tokenVersion      Int        @default(0) // bumped to revoke every access token (SES-04)
-  lastSeenAt        DateTime?
-  streakDays        Int        @default(0) // consecutive Istanbul days with activity (API.md §7.35)
-  streakDay         String?    @db.VarChar(10) // last active day, YYYY-MM-DD Europe/Istanbul
-  reviewUntil       DateTime? // App Store / Play review account (API.md §7.40): signs in only until then
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  id                  String     @id @default(uuid()) @db.Uuid
+  email               String?    @unique
+  emailVerifiedAt     DateTime?
+  passwordHash        String?
+  name                String?
+  role                Role       @default(USER)
+  status              UserStatus @default(ACTIVE)
+  /// Silme planlandığında dolacak an (PENDING_DELETION); iş bu tarihte kalıcı silinir.
+  deletionScheduledAt DateTime?
+  isGuest             Boolean    @default(true)
+  deviceHash          String?    @unique
+  plan                Plan       @default(FREE)
+  planExpiresAt       DateTime?
+  storeProUntil       DateTime? // App Store / Play entitlement synced from RevenueCat (separate from admin/dev grants)
+  credits             Int        @default(0)
+  freeUsedOn          String? // YYYY-MM-DD, Europe/Istanbul
+  freeUsedCount       Int        @default(0)
+  locale              String     @default("tr")
+  totpSecret          String?
+  totpLastStep        BigInt?
+  totpPendingSecret   String? // TOTP enrollment in progress (confirmed with a first code)
+  mfaEnrollBefore     DateTime? // set on promotion / MFA reset: enrollment window (AUT-04)
+  tokenVersion        Int        @default(0) // bumped to revoke every access token (SES-04)
+  lastSeenAt          DateTime?
+  streakDays          Int        @default(0) // consecutive Istanbul days with activity (API.md §7.35)
+  streakDay           String?    @db.VarChar(10) // last active day, YYYY-MM-DD Europe/Istanbul
+  reviewUntil         DateTime? // App Store / Play review account (API.md §7.40): signs in only until then
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
   refreshTokens       RefreshToken[]
   emailTokens         EmailToken[]
@@ -153,6 +157,9 @@ model User {
   audits              AuditLog[]          @relation("actor")
   broadcastDeliveries BroadcastDelivery[]
   broadcasts          Broadcast[]         @relation("broadcastAuthor")
+  waitlistCampaigns   WaitlistCampaign[]
+  designShares        DesignShare[]
+  appEvents           AppEvent[]
 
   @@index([createdAt])
 }
@@ -206,43 +213,50 @@ model Image {
 }
 
 model Design {
-  id             String          @id @default(uuid()) @db.Uuid
-  userId         String          @db.Uuid
-  tool           String
-  styleId        String?
-  roomId         String?
-  params         Json            @default("{}")
-  prompt         String?
-  provider       String?
-  status         DesignStatus    @default(PENDING)
-  error          String?
-  inputImageId   String          @db.Uuid
-  creditsUsed    Int             @default(0)
-  freeUsed       Int             @default(0)
-  chargeDay      String?
-  chargeState    ChargeState?
-  queuedAt       DateTime?
-  startedAt      DateTime?
-  favorite       Boolean         @default(false)
-  featured       Boolean         @default(false)
+  id                String          @id @default(uuid()) @db.Uuid
+  userId            String          @db.Uuid
+  tool              String
+  styleId           String?
+  roomId            String?
+  params            Json            @default("{}")
+  prompt            String?
+  provider          String?
+  status            DesignStatus    @default(PENDING)
+  error             String?
+  inputImageId      String          @db.Uuid
+  creditsUsed       Int             @default(0)
+  freeUsed          Int             @default(0)
+  chargeDay         String?
+  chargeState       ChargeState?
+  queuedAt          DateTime?
+  startedAt         DateTime?
+  favorite          Boolean         @default(false)
+  featured          Boolean         @default(false)
   /// When the owner allowed this design in the public inspiration gallery (API.md §7.51); null = not allowed. Only an
   /// allowed design can be featured (CHECK in the migration); withdrawing also unfeatures it.
-  shareConsentAt DateTime?
+  shareConsentAt    DateTime?
+  /// When the owner allowed this design to be used in social-media / showcase posts (API.md §7.51). Null = not allowed.
+  showcaseConsentAt DateTime?
   /// Made in a firm's workspace (API.md §7.23): charged to the firm's pool, visible only while the maker is a member.
-  orgId          String?         @db.Uuid
+  orgId             String?         @db.Uuid
   /// In a firm project (step 4): the whole team sees it. The composite key (projectId, orgId) means a design can
   /// only sit in a project of its own firm, enforced by the database too (AZ-02).
-  projectId      String?         @db.Uuid
-  createdAt      DateTime        @default(now())
-  finishedAt     DateTime?
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org            Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  project        Project?        @relation(fields: [projectId, orgId], references: [id, orgId], onDelete: Restrict)
-  inputImage     Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
-  results        Image[]         @relation("results")
-  analyses       Analysis[]
-  reports        ContentReport[]
-  usages         AiUsage[]
+  projectId         String?         @db.Uuid
+  /// Owner's verdict on the result (API.md §7.24.1 feedback): thumbs + an optional reason; feeds the admin red rate.
+  feedbackRating    String?         @db.VarChar(8) // liked | disliked
+  feedbackReason    String?         @db.VarChar(300)
+  feedbackAt        DateTime?
+  createdAt         DateTime        @default(now())
+  finishedAt        DateTime?
+  shares            DesignShare[]
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org               Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  project           Project?        @relation(fields: [projectId, orgId], references: [id, orgId], onDelete: Restrict)
+  inputImage        Image           @relation("input", fields: [inputImageId], references: [id], onDelete: Cascade)
+  results           Image[]         @relation("results")
+  analyses          Analysis[]
+  reports           ContentReport[]
+  usages            AiUsage[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -1052,6 +1066,41 @@ enum WaitlistStatus {
 
 /// Waiting list and newsletter (API.md §7.47): web visitors who want an e-mail when the mobile apps launch and when
 /// there is news. Double opt-in; consent text version kept; not tied to a user account.
+model WaitlistCampaign {
+  id          String    @id @default(uuid()) @db.Uuid
+  subject     String    @db.VarChar(160)
+  body        String    @db.Text // plain-text paragraphs; escaped on render
+  kind        String    @db.VarChar(12) // ANNOUNCEMENT | NEWSLETTER
+  commercial  Boolean   @default(false) // commercialSignals at compose time (informational)
+  status      String    @default("DRAFT") @db.VarChar(12) // DRAFT | SENDING | PAUSED | SENT | FAILED | CANCELLED
+  targetCount Int       @default(0)
+  sentCount   Int       @default(0)
+  failedCount Int       @default(0)
+  error       String?
+  createdById String    @db.Uuid
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  sends WaitlistCampaignSend[]
+
+  @@index([status, createdAt])
+}
+
+/// One row per campaign mail actually sent (API.md §7.47): the shared emailDailyCap counts these, a repeat
+/// run never mails the same entry twice, and unsubscribe-mid-send is a plain status check.
+model WaitlistCampaignSend {
+  id         String           @id @default(uuid()) @db.Uuid
+  campaignId String           @db.Uuid
+  campaign   WaitlistCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  entryId    String           @db.Uuid
+  createdAt  DateTime         @default(now())
+
+  @@unique([campaignId, entryId])
+  @@index([createdAt])
+}
+
 model WaitlistEntry {
   id             String         @id @default(uuid()) @db.Uuid
   email          String         @unique @db.VarChar(254) // lower-cased
@@ -1069,6 +1118,39 @@ model WaitlistEntry {
   updatedAt      DateTime       @updatedAt
 
   @@index([status, createdAt])
+}
+
+/// Public before/after share link (API.md §7.23 client sharing + fal-app share pattern): owner mints a token,
+/// the page needs no account and counts views. Expired links answer 404; expired rows are purged by maintenance.
+model DesignShare {
+  id          String   @id @default(uuid()) @db.Uuid
+  designId    String   @db.Uuid
+  design      Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+  token       String   @unique @db.VarChar(48)
+  createdById String   @db.Uuid
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  expiresAt   DateTime
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+/// In-app event telemetry (white-listed names only). Anonymous events (userId null) are kept for funnel counting;
+/// signed-in events are linked to the user for retention / cohort queries. Purged after 90 days.
+model AppEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  name      String   @db.VarChar(40)
+  platform  String?  @db.VarChar(12)
+  version   String?  @db.VarChar(20)
+  sessionId String?  @db.VarChar(64)
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
 }
 
 /// Lifecycle e-mails (API.md §7.48): one row per mail a rule sent to a user. The unique (user, rule, period) stops a

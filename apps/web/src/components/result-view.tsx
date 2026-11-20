@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Heart, Images, LoaderCircle, MessageCircle, Receipt, RefreshCw, TriangleAlert } from "lucide-react";
-import { api, downloadUrl } from "@/lib/api";
+import { Download, Heart, Images, Link2, LoaderCircle, MessageCircle, Receipt, RefreshCw, Share2, ThumbsDown, ThumbsUp, Trash2, TriangleAlert } from "lucide-react";
+import { api, downloadUrl, trackEvent } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { setChatPrefill, setStudioPrefill } from "@/lib/prefill";
 import type { Analysis, Design } from "@/lib/types";
@@ -25,6 +25,12 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
   const [error, setError] = useState<unknown>(null);
   const [favBusy, setFavBusy] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [showcaseBusy, setShowcaseBusy] = useState(false);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
+  const [feedbackEdit, setFeedbackEdit] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareLinkBusy, setShareLinkBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const result = design.results[Math.min(selected, design.results.length - 1)];
   const analysis = result ? analyses[result.id] : undefined;
@@ -52,6 +58,19 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
       setError(e);
     } finally {
       setShareBusy(false);
+    }
+  }
+
+  /** API.md §7.51: the owner's permission to use the design in social-media / showcase posts. */
+  async function toggleShowcase() {
+    setShowcaseBusy(true);
+    try {
+      const updated = await api.patch<Design>(`/designs/${design.id}`, { showcase: !design.showcaseConsentAt });
+      onChange?.(updated);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShowcaseBusy(false);
     }
   }
 
@@ -84,6 +103,60 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
     if (!result) return;
     setChatPrefill({ image: result });
     router.push(href("/sohbet"));
+  }
+
+  /** API.md §7.23 client sharing: a time-boxed public link; revoked from here too. */
+  async function makeShare() {
+    setShareLinkBusy(true);
+    setError(null);
+    try {
+      const out = await api.post<{ token: string }>(`/designs/${design.id}/share`, { days: 30 });
+      const url = `${window.location.origin}${locale === "tr" ? "" : `/${locale}`}/paylas/${out.token}`;
+      setShareLink(url);
+      setCopied(false);
+      trackEvent("share_link_created", { designId: design.id, tool: design.tool });
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShareLinkBusy(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  async function removeShare() {
+    setShareLinkBusy(true);
+    setError(null);
+    try {
+      await api.del(`/designs/${design.id}/share`);
+      setShareLink(null);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setShareLinkBusy(false);
+    }
+  }
+
+  async function sendFeedback(rating: "liked" | "disliked", reason?: string) {
+    setFeedbackBusy(true);
+    setError(null);
+    try {
+      const updated = await api.post<Design>(`/designs/${design.id}/feedback`, reason ? { rating, reason } : { rating });
+      onChange?.(updated);
+      setFeedbackEdit(null);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setFeedbackBusy(false);
+    }
   }
 
   if (design.status === "FAILED" || !result) {
@@ -126,6 +199,11 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
           <a href={downloadUrl(result.url)} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
             <Download className="h-4 w-4" aria-hidden /> {t.result.download}
           </a>
+          {own && design.status === "SUCCEEDED" && (
+            <button type="button" onClick={() => void makeShare()} disabled={shareLinkBusy} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+              <Share2 className="h-4 w-4" aria-hidden /> {t.result.share}
+            </button>
+          )}
           {own && (
             <>
               <button type="button" onClick={askChat} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
@@ -138,6 +216,19 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
           )}
         </div>
       </div>
+
+      {shareLink && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-surface p-3">
+          <Link2 className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+          <input readOnly value={shareLink} onFocus={(e) => e.currentTarget.select()} className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 text-xs text-muted" aria-label={t.result.share} />
+          <button type="button" onClick={() => void copyLink()} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+            {copied ? t.result.shareCopied : t.result.shareCopy}
+          </button>
+          <button type="button" onClick={() => void removeShare()} disabled={shareLinkBusy} className={`${btn.base} ${btn.ghost} ${btn.sm}`}>
+            <Trash2 className="h-3.5 w-3.5" aria-hidden /> {t.result.shareRemove}
+          </button>
+        </div>
+      )}
 
       <BeforeAfter
         before={design.input.url}
@@ -168,6 +259,68 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {own && design.status === "SUCCEEDED" && (
+        <div className="rounded-3xl border border-border bg-surface p-5">
+          {design.feedback && !feedbackEdit ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm">
+              {design.feedback.rating === "liked" ? (
+                <ThumbsUp className="h-4 w-4 text-primary" aria-hidden />
+              ) : (
+                <ThumbsDown className="h-4 w-4 text-danger" aria-hidden />
+              )}
+              <span>{t.result.feedbackThanks}</span>
+              <button type="button" className="text-primary hover:underline" onClick={() => setFeedbackEdit(design.feedback?.rating ?? null)}>
+                {t.result.feedbackChange}
+              </button>
+            </p>
+          ) : (
+            <>
+              <p className="font-medium">{t.result.feedbackAsk}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={feedbackBusy}
+                  onClick={() => void sendFeedback("liked")}
+                  className={`${btn.base} ${btn.ghost} ${btn.sm}`}
+                  aria-pressed={design.feedback?.rating === "liked"}
+                >
+                  <ThumbsUp className="h-4 w-4" aria-hidden /> {t.result.feedbackLiked}
+                </button>
+                <button
+                  type="button"
+                  disabled={feedbackBusy}
+                  onClick={() => setFeedbackEdit(feedbackEdit === "disliked" ? null : "disliked")}
+                  className={`${btn.base} ${btn.ghost} ${btn.sm}`}
+                  aria-pressed={feedbackEdit === "disliked"}
+                >
+                  <ThumbsDown className="h-4 w-4" aria-hidden /> {t.result.feedbackDisliked}
+                </button>
+              </div>
+              {feedbackEdit === "disliked" && (
+                <form
+                  className="mt-3 flex flex-col gap-2 sm:flex-row"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const data = new FormData(e.currentTarget);
+                    void sendFeedback("disliked", String(data.get("reason") ?? "").trim() || undefined);
+                  }}
+                >
+                  <input
+                    name="reason"
+                    maxLength={300}
+                    placeholder={t.result.feedbackWhy}
+                    className="h-9 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <button type="submit" disabled={feedbackBusy} className={`${btn.base} ${btn.primary} ${btn.sm}`}>
+                    {t.result.feedbackSend}
+                  </button>
+                </form>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -202,6 +355,25 @@ export function ResultView({ design, onChange }: { design: Design; onChange?: (d
             {shareBusy && <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted" aria-hidden />}
           </label>
           {design.featured && design.shareable && <p className="mt-2 text-xs text-primary">{t.result.shareLive}</p>}
+
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="flex items-center gap-2 font-medium">
+              <Share2 className="h-4 w-4 text-primary" aria-hidden /> {t.result.showcaseTitle}
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">{t.result.showcaseText}</p>
+            <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={Boolean(design.showcaseConsentAt)}
+                onChange={toggleShowcase}
+                disabled={showcaseBusy}
+                className="h-4 w-4 accent-[var(--primary)]"
+              />
+              {t.result.showcaseLabel}
+              {showcaseBusy && <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted" aria-hidden />}
+            </label>
+            {design.showcaseConsentAt && <p className="mt-2 text-xs text-primary">{t.result.showcaseLive}</p>}
+          </div>
         </div>
       )}
     </div>

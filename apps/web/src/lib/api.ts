@@ -81,6 +81,36 @@ export function downloadUrl(imageUrl: string) {
   return `/api/download?src=${encodeURIComponent(imageUrl)}`;
 }
 
+// A per-tab-session id for the funnel (sessionStorage): it ends when the browser session does, so it is not a
+// lasting device identifier — in line with the "essential cookies only" banner. No storage → no id.
+let sessionId: string | undefined;
+function getSessionId() {
+  if (typeof window === "undefined") return undefined;
+  if (!sessionId) {
+    try {
+      sessionId = sessionStorage.getItem("casalume:sessionId") || undefined;
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem("casalume:sessionId", sessionId);
+      }
+    } catch {
+      return undefined;
+    }
+  }
+  return sessionId;
+}
+
+/** Fire-and-forget app event to the backend analytics funnel. */
+export function trackEvent(name: string, meta?: Record<string, unknown>) {
+  const body = {
+    name,
+    platform: "web",
+    sessionId: getSessionId(),
+    meta: meta ?? {},
+  };
+  api.post("/events", body).catch(() => undefined);
+}
+
 /** Only http(s) links from AI output are ever rendered as hrefs (WEB-01). */
 export function safeHref(url: string): string | null {
   try {

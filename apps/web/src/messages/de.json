@@ -24,6 +24,10 @@
     }
   },
   "brandTagline": "Gestalte deinen Raum in Sekunden neu",
+  "cookieBanner": {
+    "text": "Wir verwenden essenzielle Cookies für Sprache, Theme und Sitzung. Weitere Informationen findest du auf unseren Datenschutz- und Cookie-Seiten.",
+    "accept": "Verstanden"
+  },
   "nav": {
     "studio": "Studio",
     "designs": "Meine Designs",

@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { LOCALES } from '../catalog/catalog.data.js';
-import { renderActionMail, type Mail } from '../mail/mailer.service.js';
+import { escapeHtml, mailShell, renderActionMail, type Mail } from '../mail/mailer.service.js';
 
 // Waiting list and newsletter (API.md §7.47; fal-app / maeyja / Yedi Oda #67). Web visitors leave an e-mail to hear
 // when the mobile apps launch and when there is news. Commercial e-mail, so: explicit consent with the text version
@@ -83,4 +83,40 @@ export function confirmMail(to: string, locale: string, url: string): Mail {
       ? 'The link is valid for 7 days. If you did not ask for this, ignore this e-mail and you will not be added.'
       : 'Bağlantı 7 gün geçerlidir. Bu isteği sen yapmadıysan e-postayı yok say; listeye eklenmezsin.',
   });
+}
+
+/** Admin campaign to the confirmed list (API.md §7.47): a launch note or a newsletter issue. */
+export const CampaignInputSchema = z
+  .object({
+    subject: z.string().trim().min(3).max(160),
+    body: z.string().trim().min(10).max(2000),
+    kind: z.enum(['ANNOUNCEMENT', 'NEWSLETTER']),
+  })
+  .strict();
+export type CampaignInput = z.infer<typeof CampaignInputSchema>;
+
+/**
+ * Campaign e-mail: the admin's paragraphs (escaped), a leave link in the recipient's language and the
+ * RFC 8058 one-click headers. Plain-text twin mirrors the HTML.
+ */
+export function campaignMail(o: { to: string; locale: string; subject: string; body: string; leaveUrl: string }): Mail {
+  const en = o.locale !== 'tr';
+  const footer = en
+    ? `You get this mail because you joined the Casalume waiting list. Leave the list in one click: ${o.leaveUrl}`
+    : `Bu e-postayı Casalume bekleme listesine katıldığın için alıyorsun. Tek tıkla listeden ayrıl: ${o.leaveUrl}`;
+  const paras = o.body
+    .split(/\n{2,}/)
+    .map((pText) => pText.trim())
+    .filter(Boolean)
+    .map((pText) => `<p style="font-size:15px;line-height:1.5;margin:0 0 12px">${escapeHtml(pText).replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+  const html = mailShell({ heading: o.subject, bodyHtml: paras, footerHtml: escapeHtml(footer) });
+  const text = `${o.subject}\n\n${o.body}\n\n${footer}`;
+  return {
+    to: o.to,
+    subject: o.subject,
+    text,
+    html,
+    headers: { 'List-Unsubscribe': `<${o.leaveUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+  };
 }

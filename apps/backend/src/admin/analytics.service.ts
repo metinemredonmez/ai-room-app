@@ -3,6 +3,7 @@ import { todayInIstanbul } from '../common/http.js';
 import { PrismaService } from '../common/infra.js';
 import { CONFIG, type Config } from '../config.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { AppEventsService } from '../app-events/app-events.service.js';
 import {
   ACTIVITY_AI_KINDS,
   REVENUE_EVENT_TYPES,
@@ -32,7 +33,11 @@ const nowUtc = Prisma.sql`(now() AT TIME ZONE 'UTC')`;
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService, @Inject(CONFIG) private cfg: Config) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CONFIG) private cfg: Config,
+    private appEvents: AppEventsService,
+  ) {}
 
   async revenue(days: number, env: BillingEnv) {
     const day = todayInIstanbul();
@@ -176,5 +181,9 @@ export class AnalyticsService {
         GROUP BY 1, 2`,
     ]);
     return { segment, ...cohortGrid({ currentWeek: current.week, weeks, sizes, active }) };
+  }
+
+  eventFunnel(days: number) {
+    return this.appEvents.funnel(days);
   }
 }

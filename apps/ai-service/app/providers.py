@@ -201,6 +201,69 @@ class ReplicateProvider:
 
 FAL_RESULT_HOSTS = ("fal.media", "fal.run", "fal.ai")
 
+RUNWARE_RESULT_HOSTS = ("runware.ai", "im.runware.ai", "runware-qa.web.app", "runware-qa.firebaseapp.com")
+
+
+class RunwareProvider:
+    """Runware inference API (API.md §7.27 fallback chain): FLUX image editing keyed by task."""
+
+    name = "runware"
+
+    def __init__(self, key: str, model: str, transport: httpx.AsyncBaseTransport | None = None):
+        self._headers = {"Authorization": f"Bearer {key}"}
+        self.model = model
+        self._transport = transport
+
+    async def generate(self, image: bytes, prompt: str, variant: int, tint_hex: str | None, timeout: float) -> bytes:
+        with Image.open(io.BytesIO(image)) as src:
+            w, h = src.size
+        body = {
+            "tasks": [{
+                "taskType": "imageInference",
+                "taskUUID": str(variant),
+                "model": self.model,
+                "positivePrompt": prompt,
+                "width": max(16, w // 16 * 16),
+                "height": max(16, h // 16 * 16),
+                "numberResults": 1,
+                "seed": 1000 + variant,
+                "includeCost": False,
+            }],
+            "image": [f"data:image/jpeg;base64,{base64.b64encode(image).decode()}"],
+        }
+        try:
+            async with httpx.AsyncClient(timeout=_timeout(timeout), transport=self._transport) as client:
+                res = await client.post("https://api.runware.ai/v1", json=body, headers=self._headers)
+                if res.status_code != 200:
+                    raise http_error(self.name, res.status_code)
+                data = res.json()
+                tasks = data.get("data") if isinstance(data, dict) else None
+                if not isinstance(tasks, list) or not tasks or not isinstance(tasks[0], dict):
+                    raise ProviderError("runware_bad_output", retryable=False)
+                item = tasks[0]
+                if item.get("error"):
+                    raise ProviderError("runware_task_failed", retryable=True)
+                b64 = item.get("imageBase64Data")
+                if isinstance(b64, str) and b64:
+                    return base64.b64decode(b64)
+                return await self._download(client, item.get("imageURL"))
+        except httpx.TransportError as exc:
+            raise transport_error(self.name, exc) from exc
+
+    @staticmethod
+    async def _download(client: httpx.AsyncClient, url: object) -> bytes:
+        # EXT: only https results from Runware's own hosts, never an arbitrary URL from the response.
+        parsed = urlparse(url if isinstance(url, str) else "")
+        host = parsed.hostname or ""
+        if parsed.scheme != "https" or not any(host == h or host.endswith("." + h) for h in RUNWARE_RESULT_HOSTS):
+            raise ProviderError("runware_untrusted_output_host", retryable=False)
+        res = await client.get(parsed.geturl(), follow_redirects=False)
+        if res.status_code != 200:
+            raise http_error("runware_download", res.status_code)
+        if len(res.content) > MAX_RESULT_BYTES:
+            raise ProviderError("runware_output_too_large", retryable=True)
+        return res.content
+
 
 class FalProvider:
     """fal.ai FLUX.2 [klein] instruction edit (input and output inline as data URIs with sync_mode)."""
@@ -266,6 +329,8 @@ def create_provider(name: str, settings: Settings, model: str | None = None) -> 
         return ReplicateProvider(settings.replicate_api_token or "", model or settings.replicate_model)
     if name == "falai":
         return FalProvider(settings.fal_key or "", model or settings.falai_edit_model)
+    if name == "runware":
+        return RunwareProvider(settings.runware_api_key or "", model or settings.runware_model)
     return MockProvider()
 
 

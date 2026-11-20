@@ -36,7 +36,7 @@ Her özellik admin panelinden yönetilir. Kaynak backend'dir, admin onu düzenle
 5. İçerik
    - [x] Ana sayfa ve SSS panelden (API.md §7.46): metinler 11 dilde, SSS, bölümleri gizleme, duyuru çubuğu. Admin → İçerik → Ana sayfa ve SSS.
    - [x] Bekleme listesi + bülten (API.md §7.47): çift onay, listeden çıkma, KVKK saklama, admin ekranı, CSV. Admin → Pazarlama → Bekleme listesi.
-   - [ ] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır.
+   - [x] Listeye e-posta gönderme (lansman duyurusu / bülten); Toplu Gönderim'in günlük sınırını paylaşır. (19 Kasım: `WaitlistCampaign` + `WaitlistCampaignSend`; §7.47 kampanyaları, admin → Bekleme listesi.)
    - [x] Yaşam döngüsü e-postaları (API.md §7.48): ilk tasarım hatırlatması, ikinci adım, geri çağırma; izinli, abonelikten çıkışlı, sessiz saat ve günlük sınırla. Admin → Pazarlama → Yaşam döngüsü e-postaları.
    - [x] Eski görünümdeki 8 admin ekranı — API.md §7.49
 
@@ -51,9 +51,10 @@ Tam oda yeniden tasarımı **kalır** (bir özellik olarak); ama odanın tamamı
 - [x] `FAL_KEY` sunucuda (4 Kasım). Ama fal.ai hesabı **“User is locked. Reason: TOP_UP”** — bakiye yüklenene kadar
   her SAM 3 isteği 403 (sahibi yükleyecek: https://fal.ai/dashboard/billing). O zamana dek seçim 502 verir.
 - [ ] Bakiye gelince canlıda gerçek fotoğrafla dene (hazır betik: tek misafir hesap, 5 seçim + 1 tasarım):
-  - metinsiz nokta istemi doğru nesneyi veriyor mu (belgede varsayılan `prompt` “wheel” görünüyor), maske sınırları iyi mi;
-  - **yazarak seçimde Türkçe ad** (“yastık”, “koltuk”): SAM 3 İngilizce kelime bekliyor olabilir — anlamazsa hedef
-    İngilizceye çevrilmeli (bu, mevcut otomatik kilidi de etkiler).
+  - metinsiz nokta istemi doğru nesneyi veriyor mu, maske sınırları iyi mi;
+  - ~~yazarak seçimde Türkçe ad~~ çeviri **yapıldı** (19 Kasım: `ai-service/app/translate.py`, belirleyici mobilya
+    sözlüğü; bilinmeyen kelimeye dokunulmaz; koddaki “wheel” izi yok, not belgedeki eski örnekti). Canlı doğrulama
+    yine fal.ai bakiyesine bağlı.
 - [ ] Mobil dokun-seç arayüzü (sen): aynı uç ve `points` alanı; katalogda `needs.points`.
 - Mobil için hazır kimlikler (4 Kasım; gizli değil): Expo projectId `0e6e7543-8b53-419b-b3ea-9b1fb83ae929` (slug `casalume`);
   Google OAuth iOS `…rolsejjn66v5dplhbtburkfkkf0mkien`, Android `…h88dnd5rfe85hapdftsc0c0p5iupleqj`, Web
@@ -190,7 +191,7 @@ Sıra:
 - Tahmini maliyet: ASO 11 dil ≈ 0,5–1 $; blog yazısı dil başına ≈ 0,2–0,5 $; sosyal gönderi ≈ 0,05 $.
 - [ ] Sosyal medya: kullanıcı tasarımlarını tanıtımda kullanmak için açık onay türü (`showcase`) + admin seçimi.
 - [ ] SEO: Search Console + GA4 verisi (fal-app `seo` deseni) — Google hizmet hesabı gerekir.
-- [ ] Blog: onaylanınca web önbelleğini anında yenileme (şimdi birkaç dakika); yazıya iç bağlantı olarak stil sayfaları.
+- [x] Blog: onaylanınca web önbelleğini anında yenileme (19 Kasım: backend `WebCacheInvalidator` → web `/api/revalidate`, ortak `WEB_REVALIDATE_SECRET`). Yazıya iç bağlantı olarak stil sayfaları hâlâ açık.
 - [ ] Instagram'a panelden paylaşım (Meta onayı) — şimdilik elle.
 
 ## Diğer uygulamalardan alınacaklar (yoga, fal-app, palemi, maeyja)
@@ -203,8 +204,10 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Destek talebi (API.md §7.19): web `/destek` (hata ekranından istek kimliğiyle), admin **Destek** kutusu (açık sayısı
   rozetle), yanıt e-posta + push ile; veri indirmede, hesapla birlikte silinir. Kaynak: palemi, fal-app.
   - [ ] Mobil (sen): Profil → Destek ekranı, `casalume://support/<id>` derin bağlantısı, Android `support` kanalı.
-- [ ] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
-  da temeli (fal-app `share/`); mobilde story kartı 1080×1920 (sen, palemi).
+- [x] Herkese açık önce/sonra paylaşım sayfası (OG görseli, süreli, görüntülenme sayacı) — mimar müşteri bağlantısının
+  da temeli (fal-app `share/`). (19 Kasım: `DesignShare` + `POST /designs/:id/share`, `/shared/:token`, `og.jpg`;
+  web `/paylas/[token]`. Story kartı 1080×1920 mobilde, sen.)
+  - [ ] Logolu PDF sunum: önce/sonra, malzeme listesi, bütçe. (Profesyonel katmanın parçası olarak açık.)
 - [x] Admin **Analiz** (API.md §7.20): gelir (brüt, iade, net, ele geçen, MRR, ürün/mağaza/para birimi; canlı ve
   sandbox ayrı), etkileşim (günlük/7/30 gün aktif, yapışkanlık, yeni kullanıcı hunisi, özelliklere ulaşan kişi), haftalık
   kohort tutma tablosu. Etkinlik, tasarım ve AI kayıtlarından ölçülür; uygulamaya ölçüm kodu gerekmedi.
@@ -224,7 +227,7 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
   saniyede bir e-posta. E-posta şablonları eski “AI Room” markasından Casalume’a çevrildi.
 - [ ] Toplu e-postayı büyük listelerde Brevo gibi bir sağlayıcıya taşımak (hazal paylaşımlı; itibar riski) — liste büyüyünce.
 - [x] Yaşam döngüsü e-postaları ve geri çağırma (fal-app) — API.md §7.48.
-- [ ] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi).
+- [x] Sonuç geri bildirimi (“beğendim / bana uymadı” + neden) → admin’de red oranı; model değerlendirmesini besler (palemi). (19 Kasım: `POST /designs/:id/feedback`, web sonuç ekranında 👍/👎, admin Tasarımlar'da red oranı + en sık nedenler.)
 - [ ] Onboarding sorusu “Ev sahibi misin, mimar mı?” → Profesyonel katmana yönlendirme; A/B deneyleri (fal-app, palemi).
 - [ ] Kurucu uyarıları: disk/DB/model emekliliği/kota, ödeme bildirimi, haftalık KPI e-postası (fal-app).
 - [x] Bekleme listesi + bülten (mağazalar açılmadan web ziyaretçisi) (fal-app, maeyja) — API.md §7.47.
@@ -232,7 +235,9 @@ Değere göre sıralı; kaynak dosyalar karşılaştırma raporunda. “(sen)”
 - [x] Admin CMS: SSS, ana sayfa metinleri, bölümler, duyuru çubuğu (maeyja) — API.md §7.46.
 - [ ] Admin’de `support@casalume.app` gelen kutusu (maeyja `mailbox`, IMAP): kullanıcı e-postalarını panelden okuyup yanıtlamak.
 - [x] Kupon / hediye kodu ekranı (maeyja `coupons`, fal-app `promo`) — API.md §7.29.
-- [ ] Giriş yapmışken şifre/e-posta değiştirme, aktif oturumlar, yeni giriş uyarısı (palemi, yoga).
+- [x] Giriş yapmışken şifre/e-posta değiştirme, yeni giriş uyarısı (palemi, yoga). (19 Kasım: `POST /me/password`,
+  `/me/email` + `/me/email/confirm` (yeni adresten onay), 30 günde bir cihaz başına yeni giriş e-postası;
+  aktif oturumlar zaten vardı §7.37.)
 - [ ] Mobil dokunuşlar (sen): haptik (`expo-haptics` kurulu ama kullanılmıyor), iskelet yükleyici, iOS yeniden kurulumda
   Keychain temizliği, uygulama içi değerlendirme istemi.
 
@@ -258,7 +263,8 @@ Casalume'da olmayan ve uyanlar; kaynak · zorluk. Yeni kataloglar `~/Desktop/app
 - [x] Zamanlı işi panelden elle tetikleme + gecikme tespiti (YediOda #91) — API.md §7.42
 - [x] Özellik bayrakları + `GET /v1/features` (yanıt yoksa kapalı) (Palemi) — API.md §7.28
 - [x] İstemci hata ucu (mobil/web hataları) (YediOda #106) — API.md §7.43 (mobil bağlantısı: sen)
-- [ ] Hesap silmede 30 gün geri alma penceresi (YediOda #18) · orta
+- [x] Hesap silmede 30 gün geri alma penceresi (YediOda #18). (19 Kasım: `PENDING_DELETION` + `AccountDeletionService`;
+  giriş pencere içinde iptal eder, `retention` işi süre dolunca gerçek silmeyi yapar.)
 - [x] İstem şablonlarını ve AI sağlayıcı/model seçimini panelden yönetme (YediOda #27, #30) — API.md §7.26, §7.27
 - [x] llms.txt + AI tarayıcı izinleri panelden (MAEYJA, YediOda #94) — API.md §7.53
 - [ ] Çerez bandı + reklam pikselleri yalnız onayla, sunucu tarafı dönüşüm (MAEYJA) · orta

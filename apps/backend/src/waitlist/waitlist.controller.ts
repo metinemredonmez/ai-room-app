@@ -8,8 +8,9 @@ import { AppError, parse } from '../common/errors.js';
 import { Auth, Req, type AppRequest, type AuthContext } from '../common/http.js';
 import { LIMITS, RateLimiter } from '../common/infra.js';
 import { Doc } from '../common/openapi.js';
-import { SignupSchema, WaitlistSettingsSchema } from './waitlist.rules.js';
+import { CampaignInputSchema, SignupSchema, WaitlistSettingsSchema } from './waitlist.rules.js';
 import { WaitlistService } from './waitlist.service.js';
+import { WaitlistCampaignsService } from './waitlist-campaigns.service.js';
 
 // API.md §7.47. Public: the form's status, signup (double opt-in), confirmation and the signed leave link.
 // Admin: SUPPORT sees the list with masked addresses, ADMIN sees addresses, switches the form and removes entries.
@@ -82,7 +83,7 @@ const ReasonBody = z.object({ reason: z.string().trim().min(3).max(200) }).stric
 @Controller('v1/admin/waitlist')
 @UseGuards(AdminGuard)
 export class AdminWaitlistController {
-  constructor(private waitlist: WaitlistService, private audit: AuditService) {}
+  constructor(private waitlist: WaitlistService, private campaigns: WaitlistCampaignsService, private audit: AuditService) {}
 
   @MinRole('SUPPORT')
   @Get()
@@ -118,5 +119,50 @@ export class AdminWaitlistController {
     if (!masked) throw new AppError(404, 'not_found', 'Kayıt bulunamadı.');
     await this.audit.record(auth.userId, 'waitlist.delete', 'waitlist', id, { reason, email: masked }, req.clientIp);
     return { ok: true };
+  }
+
+  @MinRole('EDITOR')
+  @Get('campaigns')
+  @Doc('Listeye e-posta kampanyaları (son 50)', { errors: [401, 403] })
+  campaignList() {
+    return this.campaigns.list();
+  }
+
+  @MinRole('EDITOR')
+  @Get('campaigns/estimate')
+  @Doc('Kampanyanın ulaşacağı onaylı adres sayısı', { errors: [401, 403] })
+  campaignEstimate() {
+    return this.campaigns.estimate();
+  }
+
+  @MinRole('EDITOR')
+  @Post('campaigns')
+  @HttpCode(201)
+  @Doc('Kampanya taslağı (lansman duyurusu / bülten)', { body: CampaignInputSchema, description: 'Ticari ifade işaretlenir; gönderim ADMIN onayı ister. Günlük e-posta sınırı Toplu Gönderim ile ortaktır.', errors: [400, 401, 403] })
+  async createCampaign(@Body() body: unknown, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const input = parse(CampaignInputSchema, body);
+    const out = await this.campaigns.create(auth.userId, input);
+    await this.audit.record(auth.userId, 'waitlist.campaign_create', 'waitlist', out.id, { kind: out.kind, subject: out.subject, commercial: out.commercial }, req.clientIp);
+    return out;
+  }
+
+  @MinRole('ADMIN')
+  @Post('campaigns/:id/send')
+  @HttpCode(200)
+  @Doc('Kampanyayı gönder (onaylı listeye; sessiz saatte kendiliğinden bekler)', { errors: [401, 403, 404, 409] })
+  async sendCampaign(@Param('id') id: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const out = await this.campaigns.send(parse(z.uuid(), id));
+    await this.audit.record(auth.userId, 'waitlist.campaign_send', 'waitlist', out.id, { kind: out.kind, targets: out.targetCount }, req.clientIp);
+    return out;
+  }
+
+  @MinRole('ADMIN')
+  @Post('campaigns/:id/cancel')
+  @HttpCode(200)
+  @Doc('Kampanyayı iptal et', { errors: [401, 403, 404, 409] })
+  async cancelCampaign(@Param('id') id: string, @Auth() auth: AuthContext, @Req() req: AppRequest) {
+    const out = await this.campaigns.cancel(parse(z.uuid(), id));
+    await this.audit.record(auth.userId, 'waitlist.campaign_cancel', 'waitlist', out.id, { status: out.status }, req.clientIp);
+    return out;
   }
 }

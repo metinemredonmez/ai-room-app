@@ -18,11 +18,19 @@ import { ConsentsService } from './kvkk/consents.service.js';
 import { CONSENT_KINDS } from './kvkk/legal.js';
 import { UsageService } from './usage/usage.service.js';
 import { log } from './common/log.js';
-import { CreateDesignSchema, DesignsService, SelectionSchema, cursorArgs } from './designs/designs.service.js';
+import { CreateDesignSchema, DesignsService, FeedbackSchema, SelectionSchema, cursorArgs } from './designs/designs.service.js';
 import { ALLOWED_MIME, ImagesService, isUuid } from './images/images.service.js';
 import { SAMPLE_IDS, loadSample } from './images/samples.js';
 import { UsersService } from './users/users.service.js';
 import { PUSH_TOKEN_RE, PushService, maskToken } from './push/push.service.js';
+import { AuditService } from './admin/audit.service.js';
+import { EmailTokensService } from './auth/email-tokens.service.js';
+import { assertPassword } from './auth/password-policy.js';
+import { hashPassword, verifyPassword } from './auth/crypto.js';
+import { MailerService, renderActionMail } from './mail/mailer.service.js';
+import { clientInfo } from './auth/client-info.js';
+import { maskEmail } from './waitlist/waitlist.rules.js';
+import { AccountDeletionService } from './users/account-deletion.service.js';
 import { OAuthService } from './auth/oauth.service.js';
 import { OAUTH_PROVIDERS } from './auth/oidc.js';
 import { APP_PLATFORMS, SkipVersionGate } from './common/app-version.js';
@@ -66,6 +74,8 @@ const PageQuery = z.object({
   projectId: z.uuid().optional(),
 });
 
+const EmailConfirmSchema = z.object({ token: z.string().min(20).max(100) }).strict();
+
 @ApiTags('public')
 @Controller('v1')
 export class PublicController {
@@ -77,6 +87,11 @@ export class PublicController {
     private ai: AiClient,
     private settings: SettingsService,
     private product: ProductCatalogService,
+    private designs: DesignsService,
+    private limiter: RateLimiter,
+    private emailTokens: EmailTokensService,
+    private mailer: MailerService,
+    @Inject(CONFIG) private cfg: Config,
   ) {}
 
   @Get('health')
@@ -139,6 +154,56 @@ export class PublicController {
     res.end(buf);
   }
 
+  @Get('shared/:token/og.jpg')
+  @Header('Cache-Control', 'public, max-age=86400')
+  @Doc('Paylaşım sayfasının og:image görselleri (tarayıcı botları)', { description: 'Sayaç artmaz; içerik-türü image/jpeg.' })
+  async sharedOg(@Param('token') token: string, @Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
+    await this.limiter.hit(LIMITS.shareOg, req.clientIp); // RES-01: each call composes an image
+    const { jpeg } = await this.designs.sharedOg(token);
+    res.type('image/jpeg');
+    return res.send(jpeg);
+  }
+
+  @Get('shared/:token')
+  @Header('Cache-Control', 'no-store')
+  @Doc('Herkese açık önce/sonra sayfası (hesap gerekmez)', { description: 'Her çağrı görüntülenme sayacını bir artırır; süresi dolmuş ya da kaldırılmış bağlantı 404.', errors: [404, 429] })
+  async shared(@Param('token') token: string, @Req() req: AppRequest) {
+    await this.limiter.hit(LIMITS.shareView, req.clientIp);
+    return this.designs.shared(token);
+  }
+
+  /** Public by design: confirming an e-mail change bumps tokenVersion (every session dies), so the click may carry no token. */
+  @Post('me/email/confirm')
+  @Doc('E-posta değişikliğini onayla (yeni adresteki bağlantı)', { body: EmailConfirmSchema, description: 'Oturum isterse de istemezse de çalışır; onayda oturumların hepsi kapanır.', errors: [400, 409, 429] })
+  async confirmEmailChange(@Body() body: unknown, @Req() req: AppRequest) {
+    const { token } = parse(EmailConfirmSchema, body);
+    await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
+    const { user, email } = await this.emailTokens.consumeEmailChange(token);
+    if (await this.prisma.user.findFirst({ where: { email, id: { not: user.id } }, select: { id: true } })) {
+      throw new AppError(409, 'email_taken', 'Bu adres bu arada başka bir hesapta kullanılmaya başlandı.');
+    }
+    await this.prisma.user.update({ where: { id: user.id }, data: { email, emailVerifiedAt: new Date(), tokenVersion: { increment: 1 } } });
+    log.info('account_email_changed', { userId: user.id, to: maskEmail(email) });
+    // AUT: the previous address learns of the change, so a hijack does not go unnoticed.
+    if (user.email && user.email !== email) {
+      const en = user.locale !== 'tr';
+      void this.mailer
+        .send(
+          renderActionMail({
+            to: user.email,
+            subject: en ? 'Your Casalume e-mail address was changed' : 'Casalume e-posta adresin değiştirildi',
+            heading: en ? 'E-mail address changed' : 'E-posta adresi değiştirildi',
+            lines: [en ? `Your account now uses ${maskEmail(email)}. If this was not you, contact support right away.` : `Hesabın artık ${maskEmail(email)} adresini kullanıyor. Bu sen değilsen hemen destekle iletişime geç.`],
+            cta: en ? 'Contact support' : 'Destek',
+            url: `${this.cfg.WEB_APP_URL}/destek`,
+            footer: en ? 'You get this mail because your account security changed.' : 'Bu e-posta hesap güvenliğin değiştiği için gönderildi.',
+          }),
+        )
+        .catch(() => undefined);
+    }
+    return { ok: true, email };
+  }
+
   @Get('inspiration')
   @Doc('İlham galerisi: sahibinin izin verdiği öne çıkarılan tasarımlar + stil kartları')
   async inspiration(@Req() req: AppRequest) {
@@ -189,10 +254,17 @@ const FavoriteSchema = z
     projectId: z.uuid().nullable().optional(),
     /** API.md §7.51: allow (or withdraw) showing this design in the public inspiration gallery. */
     shareable: z.boolean().optional(),
+    /** API.md §7.51: allow (or withdraw) using this design in social-media / showcase posts. */
+    showcase: z.boolean().optional(),
   })
   .strict()
-  .refine((v) => v.favorite !== undefined || v.projectId !== undefined || v.shareable !== undefined, { message: 'nothing_to_change' });
+  .refine((v) => v.favorite !== undefined || v.projectId !== undefined || v.shareable !== undefined || v.showcase !== undefined, { message: 'nothing_to_change' });
 const AnalysisSchema = z.object({ imageId: z.uuid().optional() }).strict();
+const ShareSchema = z.object({ days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30) }).strict();
+
+const PasswordChangeSchema = z.object({ current: z.string().min(1).max(128), next: z.string().min(1).max(128) }).strict();
+const EmailChangeSchema = z.object({ next: z.email(), password: z.string().min(1).max(128) }).strict();
+
 const ReportSchema = z
   .object({ reason: z.enum(['inappropriate', 'offensive', 'copyright', 'privacy', 'other']), note: z.string().trim().max(500).optional() })
   .strict();
@@ -217,6 +289,10 @@ export class UserController {
   constructor(
     private users: UsersService,
     private tokens: TokensService,
+    private audit: AuditService,
+    private deletion: AccountDeletionService,
+    private mailer: MailerService,
+    private emailTokens: EmailTokensService,
     private images: ImagesService,
     private designs: DesignsService,
     private catalog: CatalogService,
@@ -241,6 +317,80 @@ export class UserController {
     return this.users.toDto(await this.users.get(auth.userId));
   }
 
+  /** palemi/yoga: a signed-in user changes their own password; other sessions die, this one survives. */
+  @Post('me/password')
+  @Doc('Şifre değiştir (mevcut şifre doğrulanır; diğer oturumlar kapanır)', { body: PasswordChangeSchema, errors: [400, 401, 409, 429] })
+  async changePassword(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(PasswordChangeSchema, body);
+    await this.limiter.hit(LIMITS.passwordChange, auth.userId);
+    const user = await this.users.get(auth.userId);
+    if (!user.passwordHash) throw new AppError(409, 'no_password', 'Bu hesapta bir şifre yok.');
+    if (!(await verifyPassword(user.passwordHash, input.current))) {
+      await this.audit.record(auth.userId, 'account.password_failed', 'user', auth.userId, {}, req.clientIp);
+      throw new AppError(400, 'bad_request', 'Mevcut şifre hatalı.');
+    }
+    assertPassword(input.next, { email: user.email });
+    await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.next) } });
+    const revoked = auth.sessionId ? await this.tokens.revokeOthers(user.id, auth.sessionId) : 0;
+    await this.audit.record(auth.userId, 'account.password_change', 'user', user.id, { revoked }, req.clientIp);
+    if (user.email) {
+      const en = user.locale !== 'tr';
+      void this.mailer
+        .send(
+          renderActionMail({
+            to: user.email,
+            subject: en ? 'Your Casalume password was changed' : 'Casalume şifren değiştirildi',
+            heading: en ? 'Password changed' : 'Şifre değiştirildi',
+            lines: [
+              en
+                ? `This was done from ${clientInfo(req).ipPrefix}. If it was not you, reset your password right away; every session is closed.`
+                : `Bu işlem ${clientInfo(req).ipPrefix} adresinden yapıldı. Sen değilsen hemen şifreni sıfırla; bütün oturumların kapanır.`,
+            ],
+            cta: en ? 'Reset password' : 'Şifremi sıfırla',
+            url: `${this.cfg.WEB_APP_URL}/sifremi-unuttu`,
+            footer: en ? 'You get this mail because your account security changed.' : 'Bu e-posta hesap güvenliğin değiştiği için gönderildi.',
+          }),
+        )
+        .catch(() => undefined);
+    }
+    return { ok: true, revoked };
+  }
+
+  /** The new address must be confirmed from a mail sent TO IT before the swap (AUT-03). */
+  @Post('me/email')
+  @Doc('E-posta değiştir (yeni adrese onay postası gider)', { body: EmailChangeSchema, errors: [400, 401, 409, 429] })
+  async changeEmail(@Auth() auth: AuthContext, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(EmailChangeSchema, body);
+    await this.limiter.hit(LIMITS.passwordChange, auth.userId);
+    const user = await this.users.get(auth.userId);
+    if (!user.passwordHash) throw new AppError(409, 'no_password', 'Bu hesapta bir şifre yok.');
+    if (!(await verifyPassword(user.passwordHash, input.password))) throw new AppError(400, 'bad_request', 'Şifre hatalı.');
+    const next = input.next.toLowerCase();
+    if (next === user.email) throw new AppError(400, 'bad_request', 'Yeni adres mevcut adresle aynı.');
+    if (await this.prisma.user.findUnique({ where: { email: next }, select: { id: true } })) {
+      throw new AppError(409, 'email_taken', 'Bu adres başka bir hesapta kullanılıyor.');
+    }
+    const token = await this.emailTokens.issue(user, 'EMAIL_CHANGE', next);
+    const en = user.locale !== 'tr';
+    await this.mailer
+      .send(
+        renderActionMail({
+          to: next,
+          subject: en ? 'Confirm your new Casalume address' : 'Yeni Casalume adresini onayla',
+          heading: en ? 'Confirm this address' : 'Bu adresi onayla',
+          lines: en
+            ? ['Your Casalume account wants to use this e-mail address. Confirm to complete the change; the link works for one hour.']
+            : ['Casalume hesabın bu e-posta adresini kullanmak istiyor. Değişikliği tamamlamak için onayla; bağlantı bir saat geçerli.'],
+          cta: en ? 'Confirm address' : 'Adresi onayla',
+          url: this.emailTokens.link('EMAIL_CHANGE', token),
+          footer: en ? 'Not you? Ignore this mail — nothing changes.' : 'Bu istek senin değilse e-postayı yok say; hiçbir şey değişmez.',
+        }),
+      )
+      .catch((e: Error) => log.warn('email_change_mail_failed', { error: e.name }));
+    await this.audit.record(auth.userId, 'account.email_change_request', 'user', user.id, { to: maskEmail(next) }, req.clientIp);
+    return { ok: true, sentTo: maskEmail(next) };
+  }
+
   @Patch('me')
   @Doc('Ad / dil güncelle', { body: PatchMeSchema, response: 'User', errors: [400, 401] })
   async patchMe(@Auth() auth: AuthContext, @Body() body: unknown) {
@@ -251,14 +401,11 @@ export class UserController {
   /** KVKK: erases the account, designs, analyses and every stored image file. */
   @Delete('me')
   @HttpCode(204)
-  @Doc('Hesabı ve tüm verileri sil (KVKK)', { status: 204, errors: [401] })
-  async deleteMe(@Auth() auth: AuthContext) {
-    // App Store 5.1.1(v): Apple tokens are revoked by a retrying job, so Apple being down never blocks the deletion.
-    const appleRevokes = await this.oauth.scheduleAccountRevocations(auth.userId);
-    const imgs = await this.prisma.image.findMany({ where: { ownerId: auth.userId }, select: { id: true } });
-    await this.prisma.user.delete({ where: { id: auth.userId } });
-    await this.images.remove(imgs.map((i) => i.id));
-    log.info('account_deleted', { userId: auth.userId, images: imgs.length, appleRevokes });
+  @Doc('Hesabı silmeyi planla (KVKK)', { status: 204, description: 'Silme 30 gün sonraya planlanır; bu süre içinde giriş yapılırsa iptal olur. Oturumlar anında kapanır.', errors: [401] })
+  async deleteMe(@Auth() auth: AuthContext, @Req() req: AppRequest) {
+    // YediOda #18: the erase is scheduled 30 days out; signing back in within the window cancels it
+    // (API.md §7.3). Sessions die immediately; the retention job runs the actual erase.
+    await this.deletion.schedule(auth.userId, req.clientIp);
   }
 
   @Get('me/identities')
@@ -386,6 +533,31 @@ export class UserController {
     return { id: report.id, status: report.status };
   }
 
+  @Post('designs/:id/feedback')
+  @Doc('Sonuca puan ver (beğendim / bana uymadı)', { body: FeedbackSchema, status: 200, response: 'Design', description: 'Yalnız kendi bitmiş tasarımına; son değer geçerli olur. Neden serbest metindir (en çok 300).', errors: [400, 401, 404, 409] })
+  async designFeedback(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: AppRequest) {
+    const input = parse(FeedbackSchema, body);
+    await this.limiter.hit(LIMITS.feedback, auth.userId);
+    const updated = await this.designs.feedback(auth.userId, id, input);
+    log.info('design_feedback', { designId: updated.id, rating: input.rating, requestId: req.id });
+    return this.designs.toDto(await this.designs.getOwned(auth.userId, updated.id), localeOf(req));
+  }
+
+  @Post('designs/:id/share')
+  @Doc('Herkese açık önce/sonra paylantı bağlantısı üret (süreli)', { body: ShareSchema, status: 201, description: 'Yeni jeton üretilir, eski bağlantı ve sayaç sıfırlanır. Firma tasarımları için yakında.', errors: [401, 404, 409] })
+  async shareDesign(@Auth() auth: AuthContext, @Param('id') id: string, @Body() body: unknown) {
+    const { days } = parse(ShareSchema, body);
+    const out = await this.designs.share(auth.userId, id, days);
+    return { ...out, url: `${this.cfg.WEB_APP_URL}/paylas/${out.token}` };
+  }
+
+  @Delete('designs/:id/share')
+  @HttpCode(204)
+  @Doc('Paylaşım bağlantısını kaldır (erişim anında kesilir)', { errors: [401, 404] })
+  async unshareDesign(@Auth() auth: AuthContext, @Param('id') id: string) {
+    await this.designs.unshare(auth.userId, id);
+  }
+
   @Get('me/consents')
   @Doc('Onay geçmişi ve güncel durum (KVKK)', { errors: [401] })
   async getConsents(@Auth() auth: AuthContext) {
@@ -489,6 +661,7 @@ export class UserController {
     let out = input.projectId !== undefined ? await this.designs.setProject(auth.userId, id, input.projectId, localeOf(req)) : null;
     if (input.favorite !== undefined) out = await this.designs.setFavorite(auth.userId, id, input.favorite, localeOf(req));
     if (input.shareable !== undefined) out = await this.designs.setShareable(auth.userId, id, input.shareable, localeOf(req));
+    if (input.showcase !== undefined) out = await this.designs.setShowcaseConsent(auth.userId, id, input.showcase, localeOf(req));
     return out;
   }
 

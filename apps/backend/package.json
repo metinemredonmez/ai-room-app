@@ -81,6 +81,9 @@
     },
     "@sentry/bundler-plugins": {
       "glob": "^14.0.3"
+    },
+    "@prisma/config": {
+      "effect": "^3.22.5"
     }
   }
 }

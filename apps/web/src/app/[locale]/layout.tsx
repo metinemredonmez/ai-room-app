@@ -5,6 +5,7 @@ import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import { AnnouncementBar } from "@/components/announcement-bar";
 import { AppProvider } from "@/components/app-provider";
 import { ErrorReporter } from "@/components/error-reporter";
+import { CookieBanner } from "@/components/cookie-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeOptionsProvider } from "@/components/palette-picker";
 import { PreviewBadge } from "@/components/preview-badge";
@@ -81,6 +82,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           <main className="flex-1">{children}</main>
           <SiteFooter newsletter={waitlist.enabled} />
           <PreviewBadge />
+          <CookieBanner />
         </AppProvider>
       </body>
     </html>

@@ -82,6 +82,7 @@ export function Studio() {
   const [removeAll, setRemoveAll] = useState(false);
   const [reference, setReference] = useState<ImageRef | null>(null);
   const [variants, setVariants] = useState<1 | 2 | 3 | 4>(2);
+  const [highQuality, setHighQuality] = useState(false);
   // API.md §7.23 step 4: in a firm workspace a design can go straight into one of the firm's open projects.
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
@@ -266,6 +267,7 @@ export function Studio() {
       return;
     }
     const body: CreateDesign = { tool: tool.id, inputImageId: image.id, variants };
+    if (highQuality) body.quality = "high";
     if (needs.style && effStyle) body.styleId = effStyle.id;
     if (needs.room && effRoom) body.roomId = effRoom.id;
     if (needs.floor && effFloor) body.floorId = effFloor.id;
@@ -648,6 +650,20 @@ export function Studio() {
                   ))}
                 </div>
               </div>
+              {user && (user.plan === "PRO" || activeOrg) && (
+                <div>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={highQuality}
+                      onChange={(e) => setHighQuality(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                    />
+                    {t.studio.highQuality}
+                  </label>
+                  <p className="mt-1 text-xs text-muted">{t.studio.highQualityHint}</p>
+                </div>
+              )}
               {activeOrg && projects.length > 0 && (
                 <div>
                   <label htmlFor="studio-project" className={label}>

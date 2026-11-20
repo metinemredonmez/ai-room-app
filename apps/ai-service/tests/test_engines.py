@@ -51,8 +51,10 @@ def test_catalog_lists_what_the_server_allows():
     by = {p["name"]: p for p in catalog(s)}
     assert by["gemini"]["usable"] and by["replicate"]["usable"]
     assert not by["falai"]["configured"] and not by["falai"]["usable"]
-    assert [m["id"] for m in by["gemini"]["models"]] == ["gemini-3.1-flash-image", "gemini-test-pro-image"]
-    assert by["gemini"]["models"][1] == {"id": "gemini-test-pro-image", "label": "Gemini Pro (test)", "cost_usd": 0.13}
+    # flash first, then the high-quality pro model (API.md §7.24.2), then the allow-listed extra
+    assert [m["id"] for m in by["gemini"]["models"]] == ["gemini-3.1-flash-image", "gemini-3-pro-image", "gemini-test-pro-image"]
+    assert "yüksek kalite" in by["gemini"]["models"][1]["label"] and by["gemini"]["models"][1]["cost_usd"] == s.gemini_pro_image_cost_usd
+    assert by["gemini"]["models"][2] == {"id": "gemini-test-pro-image", "label": "Gemini Pro (test)", "cost_usd": 0.13}
     assert by["replicate"]["models"][1]["label"] == "black-forest-labs/flux-kontext-max"  # no label given: the id
     assert by["gemini"]["models"][0]["cost_usd"] == s.gemini_image_cost_usd
     prod = settings(ENV="production")
@@ -126,7 +128,7 @@ def test_engines_endpoint_needs_the_token_and_shows_breakers():
     assert client.get("/internal/v1/engines").status_code == 401
     body = client.get("/internal/v1/engines", headers=AUTH).json()
     assert body["default_chain"] == ["gemini", "replicate"]
-    assert {p["name"] for p in body["providers"]} == {"mock", "gemini", "replicate", "falai"}
+    assert {p["name"] for p in body["providers"]} == {"mock", "gemini", "replicate", "falai", "runware"}
     assert {b["name"] for b in body["breakers"]} >= {"gemini", "replicate"}
     bad = client.post("/internal/v1/generate", headers=AUTH, json={"tool": "redesign", "image_b64": room_b64(), "engine": {"chain": ["x" * 21]}})
     assert bad.status_code == 400
