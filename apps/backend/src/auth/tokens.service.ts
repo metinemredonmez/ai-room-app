@@ -79,6 +79,31 @@ export class TokensService {
     }
   }
 
+  /**
+   * Public endpoints that may carry a session (app events): the signed-in user's id, or undefined. Same checks as
+   * UserGuard — current token version, active account, session not closed — but anything invalid is simply
+   * anonymous, never an error, so a stale token can't break a fire-and-forget call.
+   */
+  async optionalUserId(authorization: string | undefined): Promise<string | undefined> {
+    const m = /^Bearer ([A-Za-z0-9._-]{20,4096})$/.exec(authorization ?? '');
+    if (!m) return undefined;
+    try {
+      const claims = await this.verify(m[1]!, AUD_APP);
+      const user = await this.prisma.user.findUnique({
+        where: { id: claims.sub },
+        select: { tokenVersion: true, status: true, ...(claims.sid ? { authSessions: { where: { id: claims.sid }, select: { revokedAt: true } } } : {}) },
+      });
+      if (!user || user.tokenVersion !== claims.ver || user.status !== 'ACTIVE') return undefined;
+      if (claims.sid) {
+        const session = (user as { authSessions?: Array<{ revokedAt: Date | null }> }).authSessions?.[0];
+        if (!session || session.revokedAt) return undefined;
+      }
+      return claims.sub;
+    } catch {
+      return undefined;
+    }
+  }
+
   /** A new sign-in (no familyId) opens a session row (API.md §7.37); a rotation keeps the family and its session. */
   async issueUser(user: User, familyId?: string, origin?: SessionOrigin) {
     const family = familyId ?? randomUUID();

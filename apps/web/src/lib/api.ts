@@ -81,18 +81,20 @@ export function downloadUrl(imageUrl: string) {
   return `/api/download?src=${encodeURIComponent(imageUrl)}`;
 }
 
+// A per-tab-session id for the funnel (sessionStorage): it ends when the browser session does, so it is not a
+// lasting device identifier — in line with the "essential cookies only" banner. No storage → no id.
 let sessionId: string | undefined;
 function getSessionId() {
   if (typeof window === "undefined") return undefined;
   if (!sessionId) {
     try {
-      sessionId = localStorage.getItem("casalume:sessionId") || undefined;
+      sessionId = sessionStorage.getItem("casalume:sessionId") || undefined;
       if (!sessionId) {
-        sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-        localStorage.setItem("casalume:sessionId", sessionId);
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem("casalume:sessionId", sessionId);
       }
     } catch {
-      sessionId = "unknown";
+      return undefined;
     }
   }
   return sessionId;

@@ -274,9 +274,11 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const lifecycleSends = await this.lifecycle.purge(now);
     // API.md §7.54: the coach's spoken replies unused for the panel's cache period (file and row).
     const coachAudio = await this.coach.purgeAudio(now);
+    // App events (funnel, API.md §7.55): the panel reads at most 90 days; keep 180, then they go (KVKK minimisation).
+    const appEvents = (await this.prisma.appEvent.deleteMany({ where: { createdAt: { lt: new Date(now - 180 * DAY) } } })).count;
     return {
       images: orphans.length, emailTokens: tokens.count, refreshTokens: refresh.count, jobRuns: runs.count, loginEvents: logins.count, authSessions: sessions.count, alertLogs: alertLogs.count, errorGroups: errorGroups.count,
-      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends, coachAudio,
+      outboxMails: mails, pushTokens: pushTokens.count, dataRequests, broadcastDeliveries, supportTickets, welcomeGrants, orgInvites, waitlist, lifecycleSends, coachAudio, appEvents,
     };
   }
 

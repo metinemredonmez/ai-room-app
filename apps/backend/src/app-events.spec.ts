@@ -12,6 +12,17 @@ describe('app events', () => {
     expect(() => TrackEventBody.parse({ name: 'share_link_created', platform: 'desktop' })).toThrow();
   });
 
+  it('refuses anything big or nested on the public endpoint (INP, RES-01)', () => {
+    const bad = (body: Record<string, unknown>) => TrackEventBody.safeParse({ name: 'studio_open', ...body }).success;
+    expect(bad({ meta: { designId: 'd1', tool: 'redesign', count: 2, ok: true } })).toBe(true);
+    expect(bad({ meta: { nested: { a: 1 } } })).toBe(false);
+    expect(bad({ meta: { note: 'x'.repeat(81) } })).toBe(false);
+    expect(bad({ meta: Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`k${i}`, i])) })).toBe(false);
+    expect(bad({ meta: { 'bad key': 1 } })).toBe(false);
+    expect(bad({ userId: 'someone-else' })).toBe(false); // the user comes only from a valid session
+    expect(bad({ sessionId: 'x' })).toBe(false);
+  });
+
   it('builds a funnel from raw event counts', async () => {
     const rows = [
       { name: 'studio_open', total: 100, users: 80 },

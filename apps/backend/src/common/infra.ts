@@ -126,6 +126,9 @@ export const LIMITS = {
   reports: { name: 'reports', max: 20, windowSec: 3600 },
   feedback: { name: 'feedback', max: 30, windowSec: 3600 },
   passwordChange: { name: 'password-change', max: 5, windowSec: 3600 },
+  // Public share page: its own budget (the web server fetches on visitors' behalf, cached per link), apart from e-mail tokens.
+  shareView: { name: 'share-view', max: 600, windowSec: 600 },
+  shareOg: { name: 'share-og', max: 120, windowSec: 600 },
   export: { name: 'export', max: 3, windowSec: 3600 },
   webhooks: { name: 'webhooks-ip', max: 600, windowSec: 60 },
   billingSync: { name: 'billing-sync', max: 20, windowSec: 600 },

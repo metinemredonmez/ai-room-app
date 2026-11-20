@@ -28,6 +28,7 @@ import { EmailTokensService } from './auth/email-tokens.service.js';
 import { assertPassword } from './auth/password-policy.js';
 import { hashPassword, verifyPassword } from './auth/crypto.js';
 import { MailerService, renderActionMail } from './mail/mailer.service.js';
+import { clientInfo } from './auth/client-info.js';
 import { maskEmail } from './waitlist/waitlist.rules.js';
 import { AccountDeletionService } from './users/account-deletion.service.js';
 import { OAuthService } from './auth/oauth.service.js';
@@ -89,6 +90,8 @@ export class PublicController {
     private designs: DesignsService,
     private limiter: RateLimiter,
     private emailTokens: EmailTokensService,
+    private mailer: MailerService,
+    @Inject(CONFIG) private cfg: Config,
   ) {}
 
   @Get('health')
@@ -154,7 +157,8 @@ export class PublicController {
   @Get('shared/:token/og.jpg')
   @Header('Cache-Control', 'public, max-age=86400')
   @Doc('Paylaşım sayfasının og:image görselleri (tarayıcı botları)', { description: 'Sayaç artmaz; içerik-türü image/jpeg.' })
-  async sharedOg(@Param('token') token: string, @Res({ passthrough: true }) res: Response) {
+  async sharedOg(@Param('token') token: string, @Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
+    await this.limiter.hit(LIMITS.shareOg, req.clientIp); // RES-01: each call composes an image
     const { jpeg } = await this.designs.sharedOg(token);
     res.type('image/jpeg');
     return res.send(jpeg);
@@ -164,7 +168,7 @@ export class PublicController {
   @Header('Cache-Control', 'no-store')
   @Doc('Herkese açık önce/sonra sayfası (hesap gerekmez)', { description: 'Her çağrı görüntülenme sayacını bir artırır; süresi dolmuş ya da kaldırılmış bağlantı 404.', errors: [404, 429] })
   async shared(@Param('token') token: string, @Req() req: AppRequest) {
-    await this.limiter.hit(LIMITS.tokenIp, req.clientIp);
+    await this.limiter.hit(LIMITS.shareView, req.clientIp);
     return this.designs.shared(token);
   }
 
@@ -180,6 +184,23 @@ export class PublicController {
     }
     await this.prisma.user.update({ where: { id: user.id }, data: { email, emailVerifiedAt: new Date(), tokenVersion: { increment: 1 } } });
     log.info('account_email_changed', { userId: user.id, to: maskEmail(email) });
+    // AUT: the previous address learns of the change, so a hijack does not go unnoticed.
+    if (user.email && user.email !== email) {
+      const en = user.locale !== 'tr';
+      void this.mailer
+        .send(
+          renderActionMail({
+            to: user.email,
+            subject: en ? 'Your Casalume e-mail address was changed' : 'Casalume e-posta adresin değiştirildi',
+            heading: en ? 'E-mail address changed' : 'E-posta adresi değiştirildi',
+            lines: [en ? `Your account now uses ${maskEmail(email)}. If this was not you, contact support right away.` : `Hesabın artık ${maskEmail(email)} adresini kullanıyor. Bu sen değilsen hemen destekle iletişime geç.`],
+            cta: en ? 'Contact support' : 'Destek',
+            url: `${this.cfg.WEB_APP_URL}/destek`,
+            footer: en ? 'You get this mail because your account security changed.' : 'Bu e-posta hesap güvenliğin değiştiği için gönderildi.',
+          }),
+        )
+        .catch(() => undefined);
+    }
     return { ok: true, email };
   }
 
@@ -322,8 +343,8 @@ export class UserController {
             heading: en ? 'Password changed' : 'Şifre değiştirildi',
             lines: [
               en
-                ? `This was done from ${req.clientIp}. If it was not you, reset your password right away; every session is closed.`
-                : `Bu işlem ${req.clientIp} adresinden yapıldı. Sen değilsen hemen şifreni sıfırla; bütün oturumların kapanır.`,
+                ? `This was done from ${clientInfo(req).ipPrefix}. If it was not you, reset your password right away; every session is closed.`
+                : `Bu işlem ${clientInfo(req).ipPrefix} adresinden yapıldı. Sen değilsen hemen şifreni sıfırla; bütün oturumların kapanır.`,
             ],
             cta: en ? 'Reset password' : 'Şifremi sıfırla',
             url: `${this.cfg.WEB_APP_URL}/sifremi-unuttu`,

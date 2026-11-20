@@ -578,9 +578,10 @@ export class DesignsService {
     if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{20,48}$/.test(token)) throw notFound();
     const share = await this.prisma.designShare.findUnique({
       where: { token },
-      include: { design: { include: { inputImage: true, results: true } } },
+      include: { design: { include: { inputImage: true, results: true, user: { select: { status: true } } } } },
     });
-    if (!share || share.expiresAt.getTime() < Date.now()) throw notFound();
+    // A suspended account, or one waiting out its deletion window, shares nothing.
+    if (!share || share.expiresAt.getTime() < Date.now() || share.design.user.status !== 'ACTIVE') throw notFound();
     return share;
   }
 

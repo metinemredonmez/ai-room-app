@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 // On-demand purge of this site's tagged caches (Next "use cache"), called by the API when content
@@ -6,9 +7,17 @@ import { revalidateTag } from "next/cache";
 // fixed allow-list, so a leaked secret alone cannot purge anything else.
 const TAGS = new Set(["blog", "seo"]);
 
+/** KEY / timing: compare digests in constant time, so the answer time says nothing about the secret. */
+function sameSecret(given: string | null, expected: string): boolean {
+  if (!given) return false;
+  const a = createHash("sha256").update(given).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
 export async function POST(request: NextRequest) {
   const expected = process.env.WEB_REVALIDATE_SECRET;
-  if (!expected || request.headers.get("x-revalidate-secret") !== expected) {
+  if (!expected || expected.length < 32 || !sameSecret(request.headers.get("x-revalidate-secret"), expected)) {
     return NextResponse.json({ error: { code: "unauthorized", message: "Yetkisiz." } }, { status: 401 });
   }
   let body: unknown = null;
